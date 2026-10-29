@@ -1,0 +1,25 @@
+{
+  "name": "codeyears",
+  "version": "0.0.0",
+  "private": true,
+  "description": "免费的 GitHub 贡献历史可视化浏览器扩展",
+  "type": "module",
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "npm run check && vite build",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "0.3.7",
+    "@types/node": "26.6.6",
+    "@types/three": "0.186.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}
