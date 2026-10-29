@@ -55,3 +55,7 @@ git diff --check
 远程仓库为 `wxy/CodeYears`，已用本地 `gh` 创建并通过 API 核实为 private。默认分支仅为空白仓库基线，文档与骨架通过初始化分支和 PR 交付；是否合入以 GitHub 状态为准。
 
 构建、npm 下载缓存和预览服务使用本次任务的系统临时目录。完成检查后关闭预览并清理，只保留本报告。项目正式依赖 `node_modules/` 不进入 Git；无测试截图、录屏、响应、缓存或构建产物加入版本管理。
+
+## 后续状态变更 · 2026-10-29
+
+用户明确要求公开仓库后，已使用本地 `gh repo edit wxy/CodeYears --visibility public --accept-visibility-change-consequences` 修改，并以 `gh api repos/wxy/CodeYears` 核实 `visibility: public`。上文的 private 是初始化时的历史状态。执行计划与云端接续说明已补充；这些文档不代表云端环境已创建或 P1 功能已完成。

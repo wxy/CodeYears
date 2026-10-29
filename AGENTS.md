@@ -1,6 +1,7 @@
 # CodeYears 协作约定
 
 - 默认使用中文维护项目文档。产品边界以 `docs/PRODUCT.md` 为准。
+- 开发按 `docs/DEVELOPMENT_PLAN.md` 的依赖与验收门槛推进；云端先读 `docs/CLOUD_DEVELOPMENT.md`，不可把云端结果冒充真实登录会话或硬件验收。
 - 决策、待验证假设、实际实现和验收结果必须分开写。不能把路线图写成已实现功能。
 - 所有功能与修复在分支实现，通过 PR 交付；没有授权不要合入。
 - 数据请求和解析前先读 `docs/DATA_AND_PRIVACY.md`；渲染前先读 `docs/PERFORMANCE.md`。

@@ -23,6 +23,8 @@ CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，�
 | [产品定义](docs/PRODUCT.md) | 已确认决策、使用流程、范围与后续设想 |
 | [技术架构](docs/ARCHITECTURE.md) | 模块边界、数据流、生命周期与当前骨架 |
 | [开发路线](docs/ROADMAP.md) | 数据与性能验证 → City MVP → Terrain → 发布 |
+| [执行计划](docs/DEVELOPMENT_PLAN.md) | 工作包、依赖、PR 切分与阶段验收 |
+| [云端开发](docs/CLOUD_DEVELOPMENT.md) | Codex 环境配置、首次任务与本地验收边界 |
 | [数据与隐私](docs/DATA_AND_PRIVACY.md) | 数量准确性、身份隔离、缓存和权限待验证项 |
 | [性能约束](docs/PERFORMANCE.md) | 20 年数据验证方法、按需渲染、资源释放 |
 | [初始化验证记录](docs/reports/BOOTSTRAP.md) | 实际检查结果与未完成验收范围 |
@@ -63,4 +65,4 @@ Three.js 已列为依赖，但状态页不导入它，当前构建不会包含 3
 
 先验证无 Token 获取与准确解析、登录访问者隔离与年度缓存，以及约 20 年数据的 3D 性能。通过后再进入 City MVP。失败或不确定的结果按 [路线图](docs/ROADMAP.md) 记录，不能用模拟数据代表真实数据验证。
 
-GitHub 仓库先保持 private；免费使用不等于已经选择开源许可证。公开与许可证另行决定。扩展尚未发布，没有商店下载链接。独立网站仅是扩展成功后的后续设想，当前不建设。
+GitHub 仓库 [wxy/CodeYears](https://github.com/wxy/CodeYears) 已于 2026-10-29 按用户决定公开；尚未选择开源许可证。扩展尚未发布，没有商店下载链接。独立网站仅是扩展成功后的后续设想，当前不建设。
