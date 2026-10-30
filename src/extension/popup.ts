@@ -44,9 +44,14 @@ button.addEventListener("click", async () => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab.id || !tab.url || new URL(tab.url).origin !== "https://github.com") throw new Error("请先打开 GitHub 个人主页，再点击扩展。");
-    const [page] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => /^\/[a-zA-Z0-9-]{1,39}\/?$/.test(location.pathname) && Boolean(document.querySelector("table.ContributionCalendar-grid")) && Boolean(document.querySelector('a[id^="year-link-"]')) });
+    const [page] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => /^\/[a-zA-Z0-9-]{1,39}\/?$/.test(location.pathname) && Boolean(document.querySelector(".js-yearly-contributions")) && Boolean(document.querySelector("table.ContributionCalendar-grid")) && Boolean(document.querySelector('a[id^="year-link-"]')) });
     if (page.result !== true) throw new Error("请在 GitHub 个人主页的贡献日历加载完成后重试。");
     await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
+    const [mounted] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => {
+      const panel = document.getElementById("codeyears-data-probe");
+      return Boolean(panel?.isConnected && panel.shadowRoot?.querySelector("form #year") && panel.shadowRoot.querySelector('form #run[type="submit"]'));
+    } });
+    if (mounted.result !== true) throw new Error("诊断面板未能完整打开，请等待主页加载完成后重试。");
     popupStatus.textContent = "诊断面板已打开，请回到 GitHub 页面选择年份。";
   } catch (error) {
     popupStatus.textContent = error instanceof Error ? error.message : "无法打开诊断，请重新加载扩展。";

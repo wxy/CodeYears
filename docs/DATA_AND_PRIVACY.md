@@ -27,6 +27,8 @@
 
 当前原型根据本轮真实响应选择 `data-date` 与 `tool-tip[for]` 解析英文数量；年度请求路径及 HTML 属性不是稳定 API。本轮成功样本不能证明接口长期稳定或私有贡献可见性完整。
 
+请求的当年截止、可选年份上限使用浏览器本地日历日期（不是 UTC 日期）；来源 `data-date` 不重新换算时区。解析完整日历后，仅排除截止日之后的零数量占位；若响应在更晚日期已含非零数量，则保留并将连续覆盖范围延长到该日，再校验年度合计。GitHub 对不同贡献事件使用不同的时间来源，不能把浏览器本地日期视为所有贡献的统一归日规则。跨时区样本及版本限制见 P1-A 报告。
+
 GitHub 的官方说明区分公开与私有贡献的可见性：[Contributions on your profile](https://docs.github.com/en/account-and-profile/concepts/contributions-on-your-profile)。这不能证明某个网页解析器能取得所有贡献，也不能保证逐日与年度统计在任意范围自动一致。
 
 ## 访问者隔离

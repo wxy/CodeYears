@@ -7,7 +7,7 @@ import { fetchContributionYear, readPageContext } from "../platform/github/probe
   const context = readPageContext(document, new URL(location.href));
   const years = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
     .map(link => Number(link.id.slice("year-link-".length)))
-    .filter(year => Number.isInteger(year) && year >= 2008 && year <= new Date().getUTCFullYear());
+    .filter(year => Number.isInteger(year) && year >= 2008 && year <= new Date().getFullYear());
   if (!years.length) throw new Error("当前页面没有可识别的年度入口。");
 
   const host = document.createElement("section");
