@@ -4,9 +4,9 @@
 
 ## 当前基线
 
-仓库 `wxy/CodeYears` 已公开。初始化 PR #1 已获用户授权保留历史合入，`main` 合并提交为 `ae876a45d7cb93fbd30826a5fe0ba350400bc85c`，包含共同起点 `cde38e6`。后续状态以实际 GitHub 为准。
+仓库 `wxy/CodeYears` 已公开。PR #1、#3、#2 均已获用户授权保留历史合入；本轮起点为 `main` 的 `12b00e2c4ae74bb25156a96268bbed6a22f23159`（PR #3 合并提交 `2f3f2a9`，PR #2 合并提交 `12b00e2`）。后续状态以实际 GitHub 为准。
 
-P1-A 已通过 [PR #3](https://github.com/wxy/CodeYears/pull/3) 交付；真实 Chrome 完整扩展路径验证仅对应 `74926d2`，当前 `32b6393` 的构建和针对性受控检查通过，尚待重新加载后复验，见 [报告](reports/P1-A-DATA-PROBE.md)。Edge、语言与身份可见性矩阵仍待验收。P1-C 已通过 [PR #2](https://github.com/wxy/CodeYears/pull/2) 提交独立性能原型及报告，目标性能预算仍待验收。两个 PR 均未合入；正式缓存、时间轴与 3D MVP 尚未集成。以下表格是工作范围，不承诺未经验证的工期。
+P1-A 早期真实 Chrome 完整路径验证对应 `74926d2`；修订范围见 [报告](reports/P1-A-DATA-PROBE.md)。P1-C 原型及性能报告已合入，目标预算仍待验收。本地 P1-B 已实现缓存主线并交付 [PR #5](https://github.com/wxy/CodeYears/pull/5)，18 项受控检查通过；`adb5eab` 通过真实 Chrome 已登录年度读取、命中、刷新、清除和面板重开，真实身份矩阵及 Edge 待验收，见 [任务](tasks/P1-B.md) 与 [报告](reports/P1-B-VIEWER-CACHE.md)。云端时间轴前置原型已交付 [PR #4](https://github.com/wxy/CodeYears/pull/4)，两份新 PR 均未合入，正式 3D MVP 尚未集成。以下表格是范围，不承诺未经验证的工期。
 
 ## 工作包与 PR 切分
 
@@ -37,6 +37,8 @@ P1-A 已通过 [PR #3](https://github.com/wxy/CodeYears/pull/3) 交付；真实 
 
 ## 分支与交付
 
+2026-10-30 第二轮分工：本地 `codex/p1-viewer-cache` 负责数据、GitHub 适配、缓存、扩展入口/权限与全局文档；现有云端任务在 `codex/time-travel-probe` 只负责 `src/timeline/**`、`probes/timeline/**` 和时间轴自己的任务/报告。云端以 `12b00e2` 为起点，验证全量输入从历史起点播放、暂停/继续/跳过/重播，单独 PR 交付，不合入。该前置原型不表示跳过 P1-G 或正式 P2-B 已通过。
+
 - 初始化 PR 未合入时，云端从 `codex/project-bootstrap` 出发，为 P1-A 建议使用 `codex/p1-data-probe` 分支，创建以初始化分支为 base 的堆叠 PR；初始化合入后再把 base 调整为 `main`。
 - 如果云端启动时初始化已经合入，则从实际最新 `main` 开始。不更改仓库默认分支来绕开 PR，也不直接往 `main` 写功能。
 - 每个 PR 说明行为、验证依据、实际结果、未验收范围；完成源码修改后必须提交、推送并创建或更新 PR。平台权限不足时准确记录阻塞，不能把本地 diff 称作 PR 已交付。
@@ -53,3 +55,5 @@ P1-A 已通过 [PR #3](https://github.com/wxy/CodeYears/pull/3) 交付；真实 
 ## 收敛条件
 
 数量不可可靠取得、身份不可确认或硬件预算不满足时，先记录具体失败和最小下一步；不添加 Token、后端、估算数量、收费功能或独立网站绕过限制。只有产品约束确需改变时再请用户确认具体方案。
+
+用户本轮明确要求以主要目标为先；无严重阻断的原型先合入推进。非阻断待办：P1-C 诊断跳过后的固定等待可能误报，后续调整驱动时改为等待最终帧；City 的双面材质可在性能预算收敛时再调整。当前不为这两项扩大极端时序测试，仍保留真实身份/扩展加载等主线验收要求。

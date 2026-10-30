@@ -1,4 +1,5 @@
-import { fetchContributionYear, readPageContext } from "../platform/github/probe";
+import { readPageContext } from "../platform/github/probe";
+import { clearContributionCache, loadContributionYear } from "../platform/github/load-year";
 
 (() => {
   const existing = document.getElementById("codeyears-data-probe");
@@ -26,10 +27,10 @@ import { fetchContributionYear, readPageContext } from "../platform/github/probe
       td,th { padding:3px 10px; text-align:left; border-bottom:1px solid #dce6de; } .days { max-height:280px; overflow:auto; }
     </style>
     <div class="panel">
-      <header><h2>CodeYears · 年度数据诊断</h2><button id="close" type="button">关闭诊断</button></header>
+      <header><h2>CodeYears · 年度数据与缓存诊断</h2><button id="close" type="button">关闭诊断</button></header>
       <p id="identity"></p>
-      <p class="note">仅获取所选年份，结果保留在本页内存。当前验证英文页面格式；不启用缓存或 3D。</p>
-      <form><label>年份 <select id="year" aria-label="诊断年份"></select></label><button class="primary" id="run" type="submit">获取并校验</button><button id="cancel" type="button" disabled>取消请求</button></form>
+      <p class="note">选择年份后才读取数据。缓存按访问者与主页隔离，使用前会联网确认身份；当前验证英文页面，不启用 3D。</p>
+      <form><label>年份 <select id="year" aria-label="诊断年份"></select></label><button class="primary" id="run" type="submit">读取年度数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
       <output id="status" role="status" aria-live="polite">请选择年份，开始同源数据验证。</output>
       <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
     </div>`;
@@ -39,11 +40,21 @@ import { fetchContributionYear, readPageContext } from "../platform/github/probe
   shadow.querySelector("#identity")!.textContent = `主页 ${context.profileLogin} · ${identity}`;
   const form = shadow.querySelector("form")!;
   const run = shadow.querySelector<HTMLButtonElement>("#run")!;
+  const refresh = shadow.querySelector<HTMLButtonElement>("#refresh")!;
+  const clear = shadow.querySelector<HTMLButtonElement>("#clear")!;
   const cancel = shadow.querySelector<HTMLButtonElement>("#cancel")!;
   const status = shadow.querySelector<HTMLOutputElement>("#status")!;
   const details = shadow.querySelector<HTMLDetailsElement>("#details")!;
   const body = shadow.querySelector("tbody")!;
   let controller: AbortController | undefined;
+  const currentContext = () => readPageContext(document, new URL(location.href));
+  const resetResult = () => { details.hidden = true; body.replaceChildren(); };
+  const setBusy = (busy: boolean) => {
+    run.disabled = refresh.disabled = select.disabled = busy;
+    clear.disabled = busy || context.viewer.state === "unknown";
+    cancel.disabled = !busy;
+  };
+  setBusy(false);
 
   const close = () => {
     controller?.abort();
@@ -51,35 +62,56 @@ import { fetchContributionYear, readPageContext } from "../platform/github/probe
     window.removeEventListener("pagehide", close);
     document.removeEventListener("turbo:before-cache", close);
     document.removeEventListener("turbo:before-render", close);
+    document.removeEventListener("visibilitychange", visibility);
+  };
+  const visibility = () => {
+    if (!document.hidden) return;
+    controller?.abort();
+    resetResult();
+    status.textContent = "页面进入后台，结果已清除；返回后重新读取时会核对当前身份。";
   };
   shadow.querySelector("#close")!.addEventListener("click", close);
   window.addEventListener("pagehide", close);
   document.addEventListener("turbo:before-cache", close);
   document.addEventListener("turbo:before-render", close);
+  document.addEventListener("visibilitychange", visibility);
   cancel.addEventListener("click", () => controller?.abort());
-  form.addEventListener("submit", async event => {
-    event.preventDefault();
+  const load = async (forceRefresh: boolean) => {
     const request = new AbortController();
     controller = request;
-    run.disabled = true; select.disabled = true; cancel.disabled = false;
-    details.hidden = true; body.replaceChildren();
-    status.textContent = "正在同源请求所选年度…";
+    setBusy(true);
+    resetResult();
+    status.textContent = "正在确认身份并读取所选年度…";
     try {
-      const result = await fetchContributionYear(context, Number(select.value), request.signal);
-      const current = readPageContext(document, new URL(location.href));
-      if (!host.isConnected || current.profileLogin !== context.profileLogin || JSON.stringify(current.viewer) !== JSON.stringify(context.viewer)) throw new Error("主页或页面中的访问者身份已改变，请重新打开诊断。");
+      const result = await loadContributionYear(context, Number(select.value), forceRefresh, request.signal, currentContext);
       for (const day of result.value.days) {
         const row = document.createElement("tr");
         for (const value of [day.date, String(day.count)]) { const cell = document.createElement("td"); cell.textContent = value; row.append(cell); }
         body.append(row);
       }
-      status.textContent = `${result.value.year} 年校验通过：${result.value.days.length} 天\n${result.value.days[0].date} 至 ${result.value.days.at(-1)!.date}\n逐日合计 ${result.total}，页面年度总数 ${result.displayedTotal}。\n本次结果未写入缓存；跨标签页登录变化与私有贡献可见性仍需 P1-B 验证。`;
+      const total = result.value.days.reduce((sum, day) => sum + day.count, 0);
+      const source = result.source === "cache" ? "来源：本地缓存；本次未重新核对年度标题。" : `来源：网络；逐日合计与页面年度总数 ${result.displayedTotal} 一致。`;
+      status.textContent = `${result.value.year} 年 · ${result.value.days.length} 天\n${result.value.days[0].date} 至 ${result.value.days.at(-1)!.date}\n逐日合计 ${total}。${source}\n抓取时间：${new Date(result.value.fetchedAt).toLocaleString()}\n${result.warning}`.trim();
       details.hidden = false;
     } catch (error) {
-      status.textContent = request.signal.aborted ? "请求已取消，未保留本次数据。" : error instanceof Error ? error.message : "请求失败，请重新打开诊断。";
+      if (!document.hidden) status.textContent = request.signal.aborted ? "请求已取消，本次不显示结果。" : error instanceof Error ? error.message : "请求失败，请重新打开诊断。";
     } finally {
-      run.disabled = false; select.disabled = false; cancel.disabled = true; controller = undefined;
+      setBusy(false); controller = undefined;
     }
+  };
+  form.addEventListener("submit", event => { event.preventDefault(); void load(false); });
+  refresh.addEventListener("click", () => { void load(true); });
+  clear.addEventListener("click", async () => {
+    const request = new AbortController();
+    controller = request;
+    setBusy(true); cancel.disabled = true; resetResult();
+    status.textContent = "正在确认身份并清除此主页缓存…";
+    try {
+      await clearContributionCache(context, request.signal, currentContext);
+      if (!document.hidden && host.isConnected) status.textContent = "已清除此访问者在当前主页的年度缓存。";
+    } catch (error) {
+      if (!document.hidden) status.textContent = error instanceof Error ? error.message : "缓存清除失败。";
+    } finally { setBusy(false); controller = undefined; }
   });
   document.querySelector(".js-yearly-contributions")!.prepend(host);
   host.scrollIntoView({ block: "center" });
