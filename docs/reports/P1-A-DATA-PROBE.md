@@ -1,6 +1,6 @@
 # P1-A 数据诊断验证记录
 
-日期：2026-10-30。状态：原型已实现，编译与产物检查通过；用户从项目 `dist/` 加载后，Chrome 的本轮直接路径验证通过。Edge、其他语言与身份可见性矩阵仍待验收。
+日期：2026-10-30。状态：原型已实现；真实 Chrome 完整扩展路径验收仅对应 `74926d2`。后续日期、注入及生命周期修订已通过各自的构建与受控检查，当前 `32b6393` 尚待重新加载扩展后复验。Edge、其他语言与身份可见性矩阵仍待验收。
 
 ## 范围与环境
 
@@ -46,14 +46,14 @@ git diff --check
 ```
 
 - TypeScript 严格检查通过；主 popup 与单独 IIFE 注入脚本的 Vite 构建通过。
-- 当前产物 popup JS 约 3.53 kB、注入脚本 8,507 字节；不是正式产品完整包体积预算。
+- 初版 `74926d2` 产物 popup JS 约 3.53 kB、注入脚本 8,507 字节；不是当前修订的产物尺寸或正式产品完整包体积预算。
 - manifest 仅声明 `activeTab`、`scripting`，没有 `host_permissions`、自动 content script、后台服务或 web accessible resources。
 - `content.js` 为独立脚本，无 ESM import/export；产物未发现 Cookie 读取、持久缓存或 WebGL 入口。
 - 所有外部页面内容仅在离线 DOM 中解析，结果以 `textContent` 呈现；不将 GitHub 响应 HTML 注入活页面。
 
 ## 已执行：Chrome 扩展完整路径
 
-浏览器工具的安全策略禁止打开 `chrome://extensions`，本地加载由用户手动完成并明确确认。持续使用的构建位于 `/Volumes/MacSSD/develop/CodeYears/dist`，由 `.gitignore` 忽略。以下运行验证针对已推送的实现提交 `74926d2`，后续仅补充文档。
+浏览器工具的安全策略禁止打开 `chrome://extensions`，本地加载由用户手动完成并明确确认。持续使用的构建位于 `/Volumes/MacSSD/develop/CodeYears/dist`，由 `.gitignore` 忽略。以下完整扩展运行验证仅针对 `74926d2`；后续 `9b2e3a9`、`32b6393` 包含实现修订，尚待重新加载后复验，不能沿用本节结果作为当前版本验收。
 
 复现：打开对应 GitHub 个人主页，点击 CodeYears 扩展图标及“打开数据诊断”，选择年份后点击“获取并校验”。测试使用现有登录访问者 `wxy`，未复制凭证、退出登录或修改私有贡献显示设置。
 
