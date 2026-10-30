@@ -32,6 +32,7 @@ CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，�
 | [P1-B 任务](docs/tasks/P1-B.md) | 访问者隔离、年度缓存及本地/云端分工 |
 | [P1-B 验证记录](docs/reports/P1-B-VIEWER-CACHE.md) | 实际检查、输入规则与真实环境待验收范围 |
 | [P1-G 可行性进度](docs/reports/P1-G-READINESS.md) | 本机 Metal 负载、显示调度基线与剩余验收门槛 |
+| [60 Hz 补充验证](docs/reports/P1-G-60HZ.md) | 内建屏幕六组约 60 FPS 的原型证据 |
 
 ## 本地开发
 
@@ -67,6 +68,6 @@ Three.js 已列为依赖，但扩展诊断不导入它，扩展构建不包含 3
 
 ## 当前下一步
 
-本地 P1-B 缓存 [PR #5](https://github.com/wxy/CodeYears/pull/5) 与云端独立 Time Travel 时间轴 [PR #4](https://github.com/wxy/CodeYears/pull/4) 已合入。真实 Chrome 单账户缓存主流程通过；本机 Metal 六组 20 年负载的完整播放、暂停/静止与可观察释放有证据。当前主屏为 25 Hz，60 FPS、真实后台、身份矩阵和 Edge 仍待验收，详见 [P1-G 进度](docs/reports/P1-G-READINESS.md)。数据、隔离及性能门槛收敛后再正式集成 City，不用受控输入替代真实验收。
+P1-B 缓存、独立 Time Travel 与 [P1-G 进度 PR #6](https://github.com/wxy/CodeYears/pull/6) 已合入。真实 Chrome 单账户缓存主流程通过；本机 Metal 六组 20 年原型在 60 Hz 内建屏幕取得约 60 FPS 证据，暂停/静止与可观察释放有检查。真实后台、身份矩阵和 Edge 仍待验收；公开未登录补证、时间轴/渲染对接和年度历史组装已分别派发云端，见 [云端安排](docs/CLOUD_DEVELOPMENT.md)。P1-G 整体通过后再正式集成 City，不用原型或受控输入替代真实验收。
 
 GitHub 仓库 [wxy/CodeYears](https://github.com/wxy/CodeYears) 已于 2026-10-29 按用户决定公开；尚未选择开源许可证。扩展尚未发布，没有商店下载链接。独立网站仅是扩展成功后的后续设想，当前不建设。

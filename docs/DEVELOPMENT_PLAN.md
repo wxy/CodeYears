@@ -4,9 +4,9 @@
 
 ## 当前基线
 
-仓库 `wxy/CodeYears` 已公开。PR #1、#3、#2、#5、#4 均已获用户授权保留历史合入。当前起点为 `main` 的 `f9ea64f5ed77a5f887a4cbbf41128c02d26cff4b`（PR #5 合并提交 `e502e32`，PR #4 合并提交 `f9ea64f`）。后续状态以实际 GitHub 为准。
+仓库 `wxy/CodeYears` 已公开。PR #1、#3、#2、#5、#4、#6 均已获用户授权保留历史合入。当前起点为 `main` 的 `a626ab47458586a6dba226c587cbfe03c95d4111`（PR #6 合并提交），后续状态以实际 GitHub 为准。
 
-P1-A 早期真实 Chrome 完整路径对应 `74926d2`，修订范围见 [报告](reports/P1-A-DATA-PROBE.md)。P1-B 缓存与独立时间轴已合入：单账户 Chrome 读取/命中/刷新/清除/重开通过，跨年失效修复有 9 项针对性检查。P1-C 本机 Metal 六组完整播放、暂停/静止和可观察释放取得补充证据；主屏 25 Hz，与空白 RAF 的 40 ms 基线一致，60 FPS 不能在该条件下验收。当前进入 [P1-G 收敛任务](tasks/P1-G.md)，真实身份矩阵、Edge、后台与 60 Hz 屏幕复验仍待完成，见 [报告](reports/P1-G-READINESS.md)。正式 3D MVP 尚未集成；以下表格是范围，不承诺未经验证的工期。
+P1-A 早期真实 Chrome 完整路径对应 `74926d2`，修订范围见 [报告](reports/P1-A-DATA-PROBE.md)。P1-B 单账户 Chrome 缓存主流程及跨年修复检查通过，独立时间轴已合入。P1-C 本机 Metal 的暂停/静止与可观察释放已有证据；独立窗口移到 60 Hz 内建屏幕后，六组完整播放 P50 约 16.7 ms，见 [60 Hz 补充](reports/P1-G-60HZ.md)。当前 [P1-G](tasks/P1-G.md) 仍待真实身份矩阵、Edge 与后台证据。用户要求更多云端独立任务，公开匿名补证、时间轴/渲染前置对接和年度历史组装已分别启动，文件边界见 [云端安排](CLOUD_DEVELOPMENT.md)。正式 3D MVP 尚未集成；以下表格是范围，不承诺未经验证的工期。
 
 ## 工作包与 PR 切分
 
@@ -40,6 +40,8 @@ P1-A 早期真实 Chrome 完整路径对应 `74926d2`，修订范围见 [报告]
 2026-10-30 第二轮分工：本地 `codex/p1-viewer-cache` 负责数据、GitHub 适配、缓存、扩展入口/权限与全局文档；现有云端任务在 `codex/time-travel-probe` 只负责 `src/timeline/**`、`probes/timeline/**` 和时间轴自己的任务/报告。云端以 `12b00e2` 为起点，验证全量输入从历史起点播放、暂停/继续/跳过/重播，单独 PR 交付，不合入。该前置原型不表示跳过 P1-G 或正式 P2-B 已通过。
 
 2026-10-30 第二轮已结束：用户授权后合入 PR #5/#4。下一轮本地 `codex/p1-readiness` 从最新 main 收敛 P1-G，补充实际环境、负载和剩余门槛，通过新 PR 交付，不改原型为正式 MVP。云端完成原 PR #4 两项小修后没有新功能任务；后续可继续承担不依赖真实用户会话的明确子任务，不为保持并行而增加无关开发。
+
+2026-10-30 第三轮：PR #6 已合入。本地 `codex/p1-60hz-validation` 完成 60 Hz 六组原型补证并维护全局文档；用户明确授权后，新建三个独立云端任务 A/B/C，分别使用 `codex/p1-public-session-validation`、`codex/render-timeline-integration`、`codex/contribution-history-assembly`。具体职责与不可修改范围以 [当前并行安排](CLOUD_DEVELOPMENT.md#当前并行安排) 为准，各自独立 PR，未获新授权不合入。它们属于补证或 P2 集成前置能力，不能把 P1-G 尚未验收的真实会话/浏览器项目写成完成。
 
 - 初始化 PR 未合入时，云端从 `codex/project-bootstrap` 出发，为 P1-A 建议使用 `codex/p1-data-probe` 分支，创建以初始化分支为 base 的堆叠 PR；初始化合入后再把 base 调整为 `main`。
 - 如果云端启动时初始化已经合入，则从实际最新 `main` 开始。不更改仓库默认分支来绕开 PR，也不直接往 `main` 写功能。
