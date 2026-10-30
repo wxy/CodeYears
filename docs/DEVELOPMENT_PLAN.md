@@ -6,7 +6,7 @@
 
 仓库 `wxy/CodeYears` 已公开。PR #1、#3、#2 均已获用户授权保留历史合入；本轮起点为 `main` 的 `12b00e2c4ae74bb25156a96268bbed6a22f23159`（PR #3 合并提交 `2f3f2a9`，PR #2 合并提交 `12b00e2`）。后续状态以实际 GitHub 为准。
 
-P1-A 的真实 Chrome 完整路径验证仅对应 `74926d2`；后续修订的受控检查、实装待验收范围见 [报告](reports/P1-A-DATA-PROBE.md)。P1-C 原型及性能报告已合入，目标预算仍待验收。本地 P1-B 已实现缓存主线并交付 [PR #5](https://github.com/wxy/CodeYears/pull/5)，18 项受控检查通过、真实 MV3/身份矩阵待验收，见 [任务](tasks/P1-B.md) 与 [报告](reports/P1-B-VIEWER-CACHE.md)。云端时间轴前置原型已交付 [PR #4](https://github.com/wxy/CodeYears/pull/4)，两份新 PR 均未合入，正式 3D MVP 尚未集成。以下表格是范围，不承诺未经验证的工期。
+P1-A 早期真实 Chrome 完整路径验证对应 `74926d2`；修订范围见 [报告](reports/P1-A-DATA-PROBE.md)。P1-C 原型及性能报告已合入，目标预算仍待验收。本地 P1-B 已实现缓存主线并交付 [PR #5](https://github.com/wxy/CodeYears/pull/5)，18 项受控检查通过；`adb5eab` 通过真实 Chrome 已登录年度读取、命中、刷新、清除和面板重开，真实身份矩阵及 Edge 待验收，见 [任务](tasks/P1-B.md) 与 [报告](reports/P1-B-VIEWER-CACHE.md)。云端时间轴前置原型已交付 [PR #4](https://github.com/wxy/CodeYears/pull/4)，两份新 PR 均未合入，正式 3D MVP 尚未集成。以下表格是范围，不承诺未经验证的工期。
 
 ## 工作包与 PR 切分
 
