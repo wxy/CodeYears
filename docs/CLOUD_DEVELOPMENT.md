@@ -1,6 +1,6 @@
 # Codex 云端开发接续
 
-更新日期：2026-10-30。云端 P1-C 的 PR #2 和本地 P1-A 的 PR #3 均已合入。现有云端任务已接续独立 Time Travel 时间轴原型（`codex/time-travel-probe`），以 `12b00e2` 为起点；本地 P1-B 同时推进。实际任务与验收状态以对应报告、PR 和 Codex 结果为准。
+更新日期：2026-10-30。云端 P1-C 的 PR #2 和本地 P1-A 的 PR #3 均已合入。独立 Time Travel 时间轴原型（`codex/time-travel-probe`）以 `12b00e2` 为起点，已交付 [PR #4](https://github.com/wxy/CodeYears/pull/4)；本地 P1-B 交付 [PR #5](https://github.com/wxy/CodeYears/pull/5)。两者均未合入。实际验收状态以对应报告、PR 和 Codex 结果为准。
 
 ## 环境目标
 

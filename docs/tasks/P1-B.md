@@ -1,6 +1,6 @@
 # P1-B · 访问者隔离与年度缓存
 
-状态：原型已实现，构建与 18 项受控主线检查通过；真实扩展与身份矩阵待验收，详见 [报告](../reports/P1-B-VIEWER-CACHE.md)。分支 `codex/p1-viewer-cache`；从已合入 PR #3/#2 的 `main`（`12b00e2`）开始。
+状态：原型已通过 [PR #5](https://github.com/wxy/CodeYears/pull/5) 草稿交付，构建与 18 项受控主线检查通过；真实扩展与身份矩阵待验收，详见 [报告](../reports/P1-B-VIEWER-CACHE.md)。分支 `codex/p1-viewer-cache`；从已合入 PR #3/#2 的 `main`（`12b00e2`）开始。
 
 ## 主线范围
 

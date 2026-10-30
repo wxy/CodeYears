@@ -57,7 +57,7 @@ src/extension/              弹窗与按需注入的 Shadow DOM 数据诊断
 src/platform/github/        页面上下文、年度同源请求原型
 src/data/                   每日贡献数据契约与年度校验解析器
 src/cache/                  作用域年度缓存、版本与有效期校验
-src/timeline/               播放状态契约（云端独立原型推进中）
+src/timeline/               播放状态契约（云端独立原型已交付 PR #4，待合入）
 src/renderers/              City / Terrain、主题、生命周期契约
 docs/                       产品、架构、路线与验证记录
 ```
@@ -66,6 +66,6 @@ Three.js 已列为依赖，但扩展诊断不导入它，扩展构建不包含 3
 
 ## 当前下一步
 
-本地推进 P1-B 缓存主线，云端并行开发独立 Time Travel 时间轴原型；代码范围分开、各自 PR 交付。数据路径、身份隔离/年度缓存及性能预算通过后再正式集成 City。失败或不确定的结果按 [路线图](docs/ROADMAP.md) 记录，不能用受控输入代表真实身份或硬件验收。
+本地 P1-B 缓存通过 [PR #5](https://github.com/wxy/CodeYears/pull/5) 交付待实装验收；云端独立 Time Travel 时间轴已通过 [PR #4](https://github.com/wxy/CodeYears/pull/4) 交付待审查，两者均未合入。数据路径、身份隔离/年度缓存及性能预算通过后再正式集成 City。失败或不确定的结果按 [路线图](docs/ROADMAP.md) 记录，不能用受控输入代表真实身份或硬件验收。
 
 GitHub 仓库 [wxy/CodeYears](https://github.com/wxy/CodeYears) 已于 2026-10-29 按用户决定公开；尚未选择开源许可证。扩展尚未发布，没有商店下载链接。独立网站仅是扩展成功后的后续设想，当前不建设。
