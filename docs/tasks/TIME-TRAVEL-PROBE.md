@@ -1,6 +1,6 @@
 # Time Travel · 时间轴基础原型
 
-状态：[PR #4 已提交](https://github.com/wxy/CodeYears/pull/4)，未合入；独立原型主线路径验证通过。日期：2026-10-30。
+状态：[PR #4 已合入](https://github.com/wxy/CodeYears/pull/4)，合并提交 `f9ea64f`；独立原型主线路径验证通过，计数播报与构建目录两项小修已完成。日期：2026-10-30。
 
 本任务是 P2-B 的独立前置工作，不代表 P2-B、P1-G 或正式 3D MVP 通过。分支 `codex/time-travel-probe` 从 `origin/main` 的 `12b00e2c4ae74bb25156a96268bbed6a22f23159` 创建；已合并的 PR #2 渲染分支保持原样。
 
