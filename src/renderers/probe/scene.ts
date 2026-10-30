@@ -78,7 +78,7 @@ export function createScene(host: HTMLElement, days: readonly DailyContribution[
   const setupMs = performance.now() - started;
   return {
     snapshot: () => ({ ...info(), setupMs }),
-    pause() { if (!playing) return; playing = false; last = 0; cancelAnimationFrame(raf); raf = 0; },
+    pause() { if (!playing) return; playing = false; last = 0; },
     resume() { if (disposed || contextLost || visibleDays >= days.length) return; playing = true; last = 0; schedule(); },
     skip() { if (disposed || contextLost) return; playing = false; last = 0; visibleDays = days.length; setGeometry(); schedule(); },
     dispose() {

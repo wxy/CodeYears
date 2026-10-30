@@ -117,3 +117,25 @@ PROBE_PLAYWRIGHT_MODULE="$CY_PROBE_TMP/automation/node_modules/playwright-core" 
 命令：`npm run check`、`npx tsc --noEmit -p probes/rendering/tsconfig.json`、`node --check probes/rendering/verify-browser.cjs`、`git diff --check` 通过。两个独立 `--outDir` 的构建同时执行均通过，产物分别存在，没有共用清空目录；不传 `--outDir` 则明确报错且不写固定目录。动态场景包仍约 530.94 kB，500 kB 警告保留。共享入口和依赖未修改，不额外重建或覆盖项目中正在安装的 P1-A `dist/`。
 
 本次只保留本报告；临时服务、验证页、旧源码对照、样本、构建及日志结束后清理。云端首次的六组完整诊断脚本未在本轮重新运行；这里仅报告实际执行的针对性路径和三组本地 City 重测。Edge、真实后台、扩展集成、长期资源趋势和性能预算仍待验收。
+
+## 暂停补绘与输出目录保留 · 2026-10-30
+
+基于 `8d72533` 修正两项后续意见：
+
+- `pause()` 只停止时间轴并重置播放计时，不取消已排队的最后一帧；该帧不推进日期，只绘制当前状态且不续帧。隐藏、上下文丢失和关闭路径仍取消或拒绝绘制。浏览器诊断驱动同步为等待这次补绘完成，再开始统计暂停窗口，不将必要的一次补绘误判成连续帧。
+- `emptyOutDir` 改为 `false`，不清空调用者指定输出目录的其他资料；显式 `--outDir` 和每轮独立目录要求保持不变，不增加目录锁或额外所有权机制。
+
+修改前写明失败方式与针对性检查。暂停问题需要稳定命中“resize 回调后、下一帧之前暂停”，因此临时浏览器页直接导入实际 `createScene`，使用真实 WebGL 与 7,305 天 regular 输入，只控制 RAF 队列和 ResizeObserver 回调。推进两帧后改变宿主尺寸并触发真实 resize 处理，立即暂停，再推进一帧；检查画布像素、绘制帧数、日期和待提交帧。其他路径覆盖普通暂停/继续、skip→pause、人工隐藏/恢复、真实 `WEBGL_lose_context`、暂停后关闭。人工时序和隐藏条件不替代真实后台验收。
+
+本机 Chrome 的同一组检查：修复前 5 项通过 / 2 项失败，City 与 Terrain 均在 resize→pause 后未新增绘制，读取像素 `[0,0,0,0]`；修订后 7 项全部通过。两个模式均在新尺寸下补绘恰好 1 帧，像素 alpha=255，日期不前进，无待提交帧；继续推进队列不再绘制。关闭后 canvas、几何和程序计数归零，丢失上下文/隐藏时没有强行补绘。
+
+构建复现：在本轮系统临时目录创建两份一次性输入，一份以整轮目录为 `--outDir`，另一份使用其 `probe-dist` 子目录。每份预先放置 `npm-cache/keep.txt`、`automation/keep.txt`、`extension-dist/keep.txt` 及输出目录中的 `notes.txt`，内容为固定的 `retain <相对路径>`，构建前保存字节并在构建后比较。实际调用：
+
+```sh
+npx vite build --config probes/rendering/vite.config.ts --outDir <本轮临时目录>/case-whole
+npx vite build --config probes/rendering/vite.config.ts --outDir <本轮临时目录>/case-child/probe-dist
+```
+
+修复前整轮目录保留 0/4 个文件、子目录场景保留 3/4；修复后两种输出均构建成功、各 4/4 文件字节不变且新 `index.html` 存在。不传 `--outDir` 仍明确拒绝。测试仅使用任务自建的可删除输入，没有将真实缓存或依赖安装目录作为误删实验对象。
+
+`npm run check`、探针 `tsc --noEmit`、驱动 `node --check`、两次独立 Vite 构建及 `git diff --check` 通过。本次不改生长速度、矩阵或几何映射，未重跑三密度完整性能基准与云端六组驱动，也不更新已有 FPS 达标结论。正式 P1-A 安装用 `dist/` 保持原样；临时验证输入、脚本、构建和日志记录后清理，仅留本报告。真实 GitHub/Edge/后台及目标性能预算仍待验收。

@@ -13,7 +13,10 @@ const {chromium}=require(process.env.PROBE_PLAYWRIGHT_MODULE || 'playwright-core
  for(const mode of ['city','terrain'])for(const density of ['sparse','regular','dense']){
   await page.selectOption('#mode',mode);await page.selectOption('#density',density);await page.selectOption('#theme',density==='dense'?'Natural':'Signature');
   await page.click('#open');await page.waitForFunction(()=>window.renderProbe.snapshot().active?.frames>2);
-  await wait(400);await page.click('#pause'); const p=await snap();await wait(400);const p2=await snap();if(p.active.frames!==p2.active.frames)throw Error('pause frames');
+  await wait(400);await page.click('#pause');
+  // The final redraw may still be pending; measure the paused window after it settles.
+  await page.waitForFunction(()=>window.renderProbe.snapshot().active?.pendingFrame===false);
+  const p=await snap();await wait(400);const p2=await snap();if(p.active.frames!==p2.active.frames)throw Error('pause frames');
   await page.click('#resume');await wait(400);const r=await snap();if(r.active.visibleDays<=p.active.visibleDays)throw Error('resume');
   await page.click('#skip');await wait(150);const final=await snap();await wait(500);const idle=await snap();if(final.active.frames!==idle.active.frames||idle.active.pendingFrame||idle.active.visibleDays!==7305)throw Error('idle');
   console.log('case',mode,density,{pauseFrames:p2.active.frames-p.active.frames,resumeDays:r.active.visibleDays-p.active.visibleDays,final:idle});
