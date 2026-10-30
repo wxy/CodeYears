@@ -64,3 +64,20 @@ Playwright 仅安装到临时目录，没有改共享 package.json 或锁文件�
 本轮没有正式 City/Terrain 集成、真实贡献数据、缓存读写、身份隔离、部分数据到达、动态播放范围或扩展加载验收。减少动态效果偏好及正式交互样式也未实现。固定播放范围变化时应由后续集成明确产品行为，本控制器不自行推断获取完成或缓存状态。
 
 后续主线可由正式调用方持有已校验数据，以数组长度创建控制器；仅在 playing 时推进时间，以 revealedDays 驱动已有渲染器，并在暂停/关闭/导航时停止调用。仍须在 P1-G/P2-A 条件满足后完成真实 Chrome/Edge、后台恢复、数据状态和 3D 集成验证。本报告只交付其时间轴基础前置能力，不宣布这些阶段通过。
+
+## PR #4 小范围审核修订（2026-10-30）
+
+本轮在原 `codex/time-travel-probe` 分支、`7e8ac46` 基础上仅处理两条审核意见：将 `loaded-count`、`revealed-count` 从隐含 status 角色的 output 改为普通 span，保留独立 `#status`；参照现有渲染原型配置，在 build/preview 缺少显式 `--outDir` 时直接报错，继续保持 `emptyOutDir: false`。未改时间轴控制器、调度逻辑或共享文件，也未合入 PR。
+
+修改前确定的最小验证及实际结果如下：
+
+| 检查 | 实际执行与结果 |
+| --- | --- |
+| 元素引用静态核对 | 用 Python HTMLParser 确认两个计数 id 唯一且为 span，无 role/aria-live，main.ts 的元素引用保持有效；独立 p#status 的 role=status 保留，页面无 output。通过 |
+| 独立类型检查 | `npx --no-install tsc --noEmit -p probes/timeline/tsconfig.json`，退出码 0 |
+| build 缺少 outDir | `npx --no-install vite build --config probes/timeline/vite.config.ts`，退出码 1，提示先用 mktemp 创建临时目录并通过 --outDir 指定输出 |
+| preview 缺少 outDir | `npx --no-install vite preview --config probes/timeline/vite.config.ts`，退出码 1，出现同一明确提示 |
+| 显式目录构建 | `npx --no-install vite build --config probes/timeline/vite.config.ts --outDir /tmp/codeyears-time-travel-review.AuqPYn/timeline-dist`，退出码 0，HTML 约 1.74 kB，脚本约 3.20 kB |
+| 输出与 diff | 未生成 `probes/timeline/dist`；`git diff --check` 通过 |
+
+本轮目录单独由 `mktemp -d /tmp/codeyears-time-travel-review.XXXXXX` 创建，未复用或清空其他轮目录；错误日志与构建输出在报告后清理。不补写单元测试、不扩大时序矩阵，也未重跑此前已通过的完整动画。上述静态检查不代表真实读屏软件已验收；显式目录 preview 服务未另行启动，真实后台/导航、扩展及 3D 集成仍维持待验收状态。前文浏览器完整路径结果属于原实现轮次，不能当成本轮新跑的结果。
