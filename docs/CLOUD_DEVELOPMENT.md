@@ -4,13 +4,13 @@
 
 ## 当前并行安排
 
-三项从已合入 PR #6 的最新 main 分别建分支，独立 PR 交付，暂不合入。创建后已通过任务状态确认均已启动；实际完成度、提交和验收以各自报告/PR 为准。
+三项从已合入 PR #6 的最新 main 分别建分支，独立 PR 交付，暂不合入。创建后已通过任务状态确认均已启动；本轮结束时 A/C 已分别交付 PR #8/#7，尚未由根任务完整审查，B 仍在执行。实际完成度、提交和验收以各自报告/PR 为准。
 
 | 任务 | 分支 | 独占范围 | 核心交付与边界 |
 | --- | --- | --- | --- |
-| A · 公开未登录补证 | `codex/p1-public-session-validation` | 新增 `docs/tasks/P1-G-PUBLIC-SESSION.md`、`docs/reports/P1-G-PUBLIC-SESSION.md` | 仅 wxy/2024、torvalds/2025 两个公开样本。优先原始 MV3 真实匿名请求/解析/缓存主线；若无法运行主动入口，记录环境阻塞，只交付实际可验证的匿名页面/解析器证据。不改权限、manifest 或产品源码绕过限制，不冒充本机退出登录/A-B 验收 |
+| A · 公开未登录补证 | `codex/p1-public-session-validation` | 新增 `docs/tasks/P1-G-PUBLIC-SESSION.md`、`docs/reports/P1-G-PUBLIC-SESSION.md` | [PR #8](https://github.com/wxy/CodeYears/pull/8) 已交付待审，`e19b81d`。两个真实匿名样本为 wxy/2024 366 天/440、torvalds/2025 365 天/2925，原解析器合计与标题一致。Chromium TLS 信任阻塞，未取得完整 MV3/真实缓存证据；未改权限或源码绕过。不冒充本机退出登录/A-B 验收 |
 | B · 时间轴与渲染前置对接 | `codex/render-timeline-integration` | `src/renderers/probe/scene.ts`、必要的 `probes/rendering/main.ts`，自己的 `RENDER-TIMELINE-INTEGRATION` 任务/报告 | 独立 3D 原型复用已合入的 createTimeline，替换重复播放算法，保持生长/暂停/跳过/停帧与释放行为。不改视觉、DPR、正式扩展或共享时间轴；受影响路径直接验证，云端渲染证据不代替本机 GPU |
-| C · 年度历史组装 | `codex/contribution-history-assembly` | 新增 `src/data/history.ts`（或同名目录）、必要的 `probes/history/`，自己的 `HISTORY-ASSEMBLY` 任务/报告 | 将已校验年度记录组合为真实日期有序的历史，区分已提供/缺失年份，不填零、不改 count、不推进播放，拒绝跨主页或重复年度混入。不做网络、缓存或正式 UI，不提前搭通用 loader |
+| C · 年度历史组装 | `codex/contribution-history-assembly` | 新增 `src/data/history.ts`（或同名目录）、必要的 `probes/history/`，自己的 `HISTORY-ASSEMBLY` 任务/报告 | [PR #7](https://github.com/wxy/CodeYears/pull/7) 已交付待审，`bd2fd34`。将已校验年度记录组合为真实日期有序的只读历史，区分完整/部分与缺失年份，不填零、不改 count、不推进播放，拒绝跨主页或重复年度混入。不做网络、缓存或正式 UI |
 
 三个任务不修改 README、全局计划、共享类型、依赖/锁文件、manifest 或扩展入口，不互相修改对方报告。发现主线缺陷或共享接口需求先报告；功能/修复仍在对应分支通过 PR 交付。不为保持并发而增加范围外功能，不等待全部边界条件一致才交付原型。
 
