@@ -1,6 +1,6 @@
 # P1-G · 可行性收敛
 
-状态：进行中，尚未通过。日期：2026-10-30。分支 `codex/p1-readiness`，从合入 PR #4/#5 后的 `main` `f9ea64f` 开始。[本轮证据与剩余门槛](../reports/P1-G-READINESS.md)。
+状态：进行中，尚未通过；本轮进度通过 [PR #6](https://github.com/wxy/CodeYears/pull/6) 交付，未合入。日期：2026-10-30。分支 `codex/p1-readiness`，从合入 PR #4/#5 后的 `main` `f9ea64f` 开始。[本轮证据与剩余门槛](../reports/P1-G-READINESS.md)。
 
 ## 本轮交付
 
