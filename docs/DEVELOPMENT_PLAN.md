@@ -6,7 +6,7 @@
 
 仓库 `wxy/CodeYears` 已公开。初始化 PR #1 已获用户授权保留历史合入，`main` 合并提交为 `ae876a45d7cb93fbd30826a5fe0ba350400bc85c`，包含共同起点 `cde38e6`。后续状态以实际 GitHub 为准。
 
-P1-A 与 P1-C 原型分别实现和验收；正式缓存、时间轴与 3D MVP 尚未集成。以下表格是工作范围，不是完成声明，不承诺未经验证的工期。
+P1-A 已通过本轮 Chrome 直接路径验证，见 [报告](reports/P1-A-DATA-PROBE.md) 与 [PR #3](https://github.com/wxy/CodeYears/pull/3)；Edge、语言与身份可见性矩阵仍待验收。P1-C 已通过 [PR #2](https://github.com/wxy/CodeYears/pull/2) 提交独立性能原型及云端软件渲染报告，真实硬件性能仍待验收。两个 PR 均未合入；正式缓存、时间轴与 3D MVP 尚未集成。以下表格是工作范围，不承诺未经验证的工期。
 
 ## 工作包与 PR 切分
 
