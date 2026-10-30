@@ -1,0 +1,8 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CodeYears P1-C 渲染诊断</title>
+<style>body{font:16px system-ui;margin:24px;background:#eef1f5;color:#152033}button,select{font:inherit;margin:4px;padding:8px}#scene{height:55vh;min-height:260px;touch-action:none}pre{white-space:pre-wrap}canvas{display:block}</style>
+<h1>P1-C · 20 年渲染诊断</h1><p>确定性模拟负载，非真实贡献。拖动旋转，滚轮缩放。主题与高度映射仅用于原型。</p>
+<label>视图<select id="mode"><option value="city">City</option><option value="terrain">Terrain</option></select></label>
+<label>密度<select id="density"><option value="sparse">稀疏</option><option value="regular">常规</option><option value="dense">高密度</option></select></label>
+<label>主题<select id="theme"><option>Signature</option><option>Natural</option></select></label>
+<button id="open">激活 / 重开</button><button id="pause">暂停</button><button id="resume">继续</button><button id="skip">跳过</button><button id="close">关闭</button><button id="inspect">读取指标</button>
+<p id="status" role="status">未激活：尚未加载 Three.js 或创建 WebGL。</p><div id="scene"></div><pre id="metrics"></pre><script type="module" src="/main.ts"></script></html>
