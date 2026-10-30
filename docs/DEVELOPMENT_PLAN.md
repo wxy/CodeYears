@@ -4,9 +4,9 @@
 
 ## 当前基线
 
-仓库 `wxy/CodeYears` 已公开。PR #1、#3、#2 均已获用户授权保留历史合入；本轮起点为 `main` 的 `12b00e2c4ae74bb25156a96268bbed6a22f23159`（PR #3 合并提交 `2f3f2a9`，PR #2 合并提交 `12b00e2`）。后续状态以实际 GitHub 为准。
+仓库 `wxy/CodeYears` 已公开。PR #1、#3、#2、#5、#4 均已获用户授权保留历史合入。当前起点为 `main` 的 `f9ea64f5ed77a5f887a4cbbf41128c02d26cff4b`（PR #5 合并提交 `e502e32`，PR #4 合并提交 `f9ea64f`）。后续状态以实际 GitHub 为准。
 
-P1-A 早期真实 Chrome 完整路径验证对应 `74926d2`；修订范围见 [报告](reports/P1-A-DATA-PROBE.md)。P1-C 原型及性能报告已合入，目标预算仍待验收。本地 P1-B 已实现缓存主线并交付 [PR #5](https://github.com/wxy/CodeYears/pull/5)，18 项受控检查通过；`adb5eab` 通过真实 Chrome 已登录年度读取、命中、刷新、清除和面板重开，真实身份矩阵及 Edge 待验收，见 [任务](tasks/P1-B.md) 与 [报告](reports/P1-B-VIEWER-CACHE.md)。云端时间轴前置原型已交付 [PR #4](https://github.com/wxy/CodeYears/pull/4)，两份新 PR 均未合入，正式 3D MVP 尚未集成。以下表格是范围，不承诺未经验证的工期。
+P1-A 早期真实 Chrome 完整路径对应 `74926d2`，修订范围见 [报告](reports/P1-A-DATA-PROBE.md)。P1-B 缓存与独立时间轴已合入：单账户 Chrome 读取/命中/刷新/清除/重开通过，跨年失效修复有 9 项针对性检查。P1-C 本机 Metal 六组完整播放、暂停/静止和可观察释放取得补充证据；主屏 25 Hz，与空白 RAF 的 40 ms 基线一致，60 FPS 不能在该条件下验收。当前进入 [P1-G 收敛任务](tasks/P1-G.md)，真实身份矩阵、Edge、后台与 60 Hz 屏幕复验仍待完成，见 [报告](reports/P1-G-READINESS.md)。正式 3D MVP 尚未集成；以下表格是范围，不承诺未经验证的工期。
 
 ## 工作包与 PR 切分
 
@@ -38,6 +38,8 @@ P1-A 早期真实 Chrome 完整路径验证对应 `74926d2`；修订范围见 [�
 ## 分支与交付
 
 2026-10-30 第二轮分工：本地 `codex/p1-viewer-cache` 负责数据、GitHub 适配、缓存、扩展入口/权限与全局文档；现有云端任务在 `codex/time-travel-probe` 只负责 `src/timeline/**`、`probes/timeline/**` 和时间轴自己的任务/报告。云端以 `12b00e2` 为起点，验证全量输入从历史起点播放、暂停/继续/跳过/重播，单独 PR 交付，不合入。该前置原型不表示跳过 P1-G 或正式 P2-B 已通过。
+
+2026-10-30 第二轮已结束：用户授权后合入 PR #5/#4。下一轮本地 `codex/p1-readiness` 从最新 main 收敛 P1-G，补充实际环境、负载和剩余门槛，通过新 PR 交付，不改原型为正式 MVP。云端完成原 PR #4 两项小修后没有新功能任务；后续可继续承担不依赖真实用户会话的明确子任务，不为保持并行而增加无关开发。
 
 - 初始化 PR 未合入时，云端从 `codex/project-bootstrap` 出发，为 P1-A 建议使用 `codex/p1-data-probe` 分支，创建以初始化分支为 base 的堆叠 PR；初始化合入后再把 base 调整为 `main`。
 - 如果云端启动时初始化已经合入，则从实际最新 `main` 开始。不更改仓库默认分支来绕开 PR，也不直接往 `main` 写功能。

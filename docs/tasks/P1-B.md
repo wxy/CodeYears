@@ -1,6 +1,6 @@
 # P1-B · 访问者隔离与年度缓存
 
-状态：原型已通过 [PR #5](https://github.com/wxy/CodeYears/pull/5) 交付，构建与 18 项受控主线检查通过；修复 `adb5eab` 已通过真实 Chrome 已登录年度读取、缓存命中、刷新、清除和面板重开路径。真实身份矩阵及 Edge 待验收，详见 [报告](../reports/P1-B-VIEWER-CACHE.md)。分支 `codex/p1-viewer-cache`；从已合入 PR #3/#2 的 `main`（`12b00e2`）开始。
+状态：原型已通过 [PR #5](https://github.com/wxy/CodeYears/pull/5) 合入 `e502e32`，构建与 18 项受控主线检查通过；修复 `adb5eab` 已通过真实 Chrome 已登录缓存主流程，跨年有效期修复 `2220030` 的 9 项针对性检查通过。真实身份矩阵及 Edge 待验收，详见 [报告](../reports/P1-B-VIEWER-CACHE.md)。原分支 `codex/p1-viewer-cache`；从 `main`（`12b00e2`）开始，后续验收由 P1-G 收敛。
 
 ## 主线范围
 
