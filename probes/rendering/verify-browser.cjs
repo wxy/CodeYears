@@ -1,5 +1,5 @@
 // Full browser diagnostic, optional external Playwright; no application dependency.
-const {chromium}=require(process.env.PROBE_PLAYWRIGHT_MODULE || '/tmp/codeyears-p1-c/automation/node_modules/playwright-core');
+const {chromium}=require(process.env.PROBE_PLAYWRIGHT_MODULE || 'playwright-core');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.PROBE_CHROMIUM || '/usr/bin/chromium',headless:true,args:['--no-sandbox','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  const page=await browser.newPage({viewport:{width:1280,height:900},deviceScaleFactor:1});

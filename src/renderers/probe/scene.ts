@@ -17,6 +17,14 @@ export function createScene(host: HTMLElement, days: readonly DailyContribution[
   if (terrain) { terrain.rotation.x = -Math.PI / 2; terrain.frustumCulled = false; scene.add(terrain); }
   const matrix = new THREE.Matrix4();
   const heights = days.map(day => Math.log1p(day.count) * 3);
+  if (city) {
+    for (let i = 0; i < days.length; i++) {
+      const height = Math.max(0.05, heights[i]!);
+      matrix.makeScale(1, height, 1); matrix.setPosition(i % 90 - 44.5, height / 2, Math.floor(i / 90) - 40.5);
+      city.setMatrixAt(i, matrix);
+    }
+    city.instanceMatrix.needsUpdate = true;
+  }
   let disposed = false, raf = 0, playing = true, visibleDays = 0, last = 0;
   let frames = 0, updates = 0, updateMs = 0, renderMs = 0;
   const intervals: number[] = [];
@@ -24,12 +32,6 @@ export function createScene(host: HTMLElement, days: readonly DailyContribution[
     const start = performance.now();
     if (city) {
       city.count = visibleDays;
-      for (let i = 0; i < visibleDays; i++) {
-        const height = Math.max(0.05, heights[i]!);
-        matrix.makeScale(1, height, 1); matrix.setPosition(i % 90 - 44.5, height / 2, Math.floor(i / 90) - 40.5);
-        city.setMatrixAt(i, matrix);
-      }
-      city.instanceMatrix.needsUpdate = true;
     } else {
       const position = geometry.getAttribute('position');
       for (let i = 0; i < position.count; i++) position.setZ(i, i < visibleDays ? heights[i] ?? 0 : 0);
@@ -40,10 +42,10 @@ export function createScene(host: HTMLElement, days: readonly DailyContribution[
   const draw = () => {
     const start = performance.now(); renderer.render(scene, camera); renderMs += performance.now() - start; frames++;
   };
-  const schedule = () => { if (!disposed && !document.hidden && !raf) raf = requestAnimationFrame(tick); };
+  const schedule = () => { if (!disposed && !contextLost && !document.hidden && !raf) raf = requestAnimationFrame(tick); };
   const tick = (time: number) => {
     raf = 0;
-    if (disposed || document.hidden) return;
+    if (disposed || contextLost || document.hidden) return;
     if (playing && visibleDays < days.length) {
       if (last) intervals.push(time - last);
       visibleDays = Math.min(days.length, visibleDays + (last ? Math.max(0, time - last) : 0) * days.length / 8000);
@@ -76,7 +78,7 @@ export function createScene(host: HTMLElement, days: readonly DailyContribution[
   const setupMs = performance.now() - started;
   return {
     snapshot: () => ({ ...info(), setupMs }),
-    pause() { playing = false; last = 0; cancelAnimationFrame(raf); raf = 0; },
+    pause() { if (!playing) return; playing = false; last = 0; cancelAnimationFrame(raf); raf = 0; },
     resume() { if (disposed || contextLost || visibleDays >= days.length) return; playing = true; last = 0; schedule(); },
     skip() { if (disposed || contextLost) return; playing = false; last = 0; visibleDays = days.length; setGeometry(); schedule(); },
     dispose() {

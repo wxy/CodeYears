@@ -12,30 +12,30 @@ City 共享一个盒体、材质和 InstancedMesh；Terrain 复用一个高度�
 
 ## 运行
 
-仓库根目录（以下临时目录也用于配置默认输出）：
+仓库根目录。每轮建立独立系统临时目录；构建和 preview 必须显式提供 `--outDir`，配置不再默认写入或清空固定目录：
 
 ```sh
-mkdir -p /tmp/codeyears-p1-c
-npm ci --cache /tmp/codeyears-p1-c/npm-cache
+CY_PROBE_TMP="$(mktemp -d "${TMPDIR:-/tmp}/codeyears-p1-c.XXXXXX")"
+npm ci --cache "$CY_PROBE_TMP/npm-cache"
 npm run check
 npx tsc --noEmit -p probes/rendering/tsconfig.json
-npm run build -- --outDir /tmp/codeyears-p1-c/extension-dist
-npx vite build --config probes/rendering/vite.config.ts
+npm run build -- --outDir "$CY_PROBE_TMP/extension-dist"
+npx vite build --config probes/rendering/vite.config.ts --outDir "$CY_PROBE_TMP/probe-dist"
 npx vite --config probes/rendering/vite.config.ts
 ```
 
-打开 Vite 输出的本地地址。或以静态服务提供 `/tmp/codeyears-p1-c/probe-dist`，例如 `python -m http.server 4173 --bind 127.0.0.1 --directory /tmp/codeyears-p1-c/probe-dist`。开发入口不接入扩展状态页。
+打开 Vite 输出的本地地址。或以静态服务提供本轮构建，例如 `python3 -m http.server 4173 --bind 127.0.0.1 --directory "$CY_PROBE_TMP/probe-dist"`。开发入口不接入扩展状态页。
 
 点击“读取指标”更新显示；诊断本身没有轮询帧。控制台可调用 `window.renderProbe.snapshot()`，关闭后 `lastClosed` 保留释放后的纯数字快照。`setupMs` 是场景初始化耗时，不含动态下载；`renderMs` 是 CPU render 调用累计耗时，不是 GPU 时间；帧间隔分位数包含调度延迟，不能当作 GPU 耗时。资源计数不是显存字节。
 
 可选完整浏览器诊断（Playwright 仅安装到临时目录，不修改项目依赖）：
 
 ```sh
-npm install --prefix /tmp/codeyears-p1-c/automation --cache /tmp/codeyears-p1-c/npm-cache playwright-core
-node probes/rendering/verify-browser.cjs
+npm install --prefix "$CY_PROBE_TMP/automation" --cache "$CY_PROBE_TMP/npm-cache" playwright-core
+PROBE_PLAYWRIGHT_MODULE="$CY_PROBE_TMP/automation/node_modules/playwright-core" node probes/rendering/verify-browser.cjs
 ```
 
-脚本默认访问 `127.0.0.1:4173`，使用 `/usr/bin/chromium` 与 SwiftShader；可通过 `PROBE_URL`、`PROBE_CHROMIUM`、`PROBE_PLAYWRIGHT_MODULE` 设置路径。输出写到任务临时目录，结束后删除。脚本故意报告真实可见性结果；不支持的 CDP 命令不等于后台验收通过。
+脚本默认访问 `127.0.0.1:4173`，使用 `/usr/bin/chromium` 与 SwiftShader；可通过 `PROBE_URL`、`PROBE_CHROMIUM`、`PROBE_PLAYWRIGHT_MODULE` 设置路径。未设置模块路径时只按标准 Node 模块解析查找 `playwright-core`，不读取其他轮次的固定临时路径。输出写到任务临时目录；停止服务、记录报告后删除 `$CY_PROBE_TMP`。脚本故意报告真实可见性结果；不支持的 CDP 命令不等于后台验收通过。
 
 ## 验收状态
 

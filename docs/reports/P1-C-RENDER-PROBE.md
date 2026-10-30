@@ -1,6 +1,6 @@
 # P1-C · 20 年渲染性能原型报告
 
-日期：2026-10-30（Asia/Shanghai）。结论：原型已实现，云端软件渲染的主要交互与释放路径通过；目标硬件性能、真实标签后台行为和扩展集成未验收。不能以本报告宣布 P1-G 通过。
+日期：2026-10-30（Asia/Shanghai）。结论：原型已实现，云端软件渲染的主要交互与释放路径通过；审核修订另完成本机 Apple M1 的针对性检查及三组 City 重测（见文末）。目标性能预算、真实标签后台行为和扩展集成仍未验收，不能以本报告宣布 P1-G 通过。
 
 ## 版本与环境
 
@@ -30,17 +30,18 @@ Signature/Natural 仅背景变体，使用同一法线材质；没有最终配�
 
 ## 实际命令与操作
 
-从仓库根目录执行：
+以下为审核修订后的复现命令，从仓库根目录执行。首轮云端曾使用固定 `/tmp/codeyears-p1-c`，现取消该默认路径，避免清空并行诊断产物：
 
 ```sh
-npm ci --cache /tmp/codeyears-p1-c/npm-cache
+CY_PROBE_TMP="$(mktemp -d "${TMPDIR:-/tmp}/codeyears-p1-c.XXXXXX")"
+npm ci --cache "$CY_PROBE_TMP/npm-cache"
 npm run check
 npx tsc --noEmit -p probes/rendering/tsconfig.json
-npm run build -- --outDir /tmp/codeyears-p1-c/extension-dist
-npx vite build --config probes/rendering/vite.config.ts
-python -m http.server 4173 --bind 127.0.0.1 --directory /tmp/codeyears-p1-c/probe-dist
-npm install --prefix /tmp/codeyears-p1-c/automation --cache /tmp/codeyears-p1-c/npm-cache playwright-core
-node probes/rendering/verify-browser.cjs
+npm run build -- --outDir "$CY_PROBE_TMP/extension-dist"
+npx vite build --config probes/rendering/vite.config.ts --outDir "$CY_PROBE_TMP/probe-dist"
+python3 -m http.server 4173 --bind 127.0.0.1 --directory "$CY_PROBE_TMP/probe-dist"
+npm install --prefix "$CY_PROBE_TMP/automation" --cache "$CY_PROBE_TMP/npm-cache" playwright-core
+PROBE_PLAYWRIGHT_MODULE="$CY_PROBE_TMP/automation/node_modules/playwright-core" node probes/rendering/verify-browser.cjs
 ```
 
 浏览器诊断最初以临时脚本执行，等价的可复现驱动保存在 `verify-browser.cjs`；它是直接浏览器路径诊断，不是实现后补写的单元测试。没有新增隔离测试或修改 package.json。观察流程：记录未激活请求；生成三组输入摘要；依次选择两种视图 × 三种密度，等待出帧，播放约 400 ms 后暂停，观察 400 ms，继续约 400 ms，跳过，等待落帧后再观察 500 ms，关闭；最后检查完整生长、旋转缩放与导航。
@@ -51,7 +52,7 @@ node probes/rendering/verify-browser.cjs
 
 类型检查、扩展构建与独立原型构建通过。最终入口约 3.58 kB（gzip 1.90 kB），动态场景块约 530.91 kB（gzip 132.35 kB）。Vite 提示场景块超过 500 kB，未隐藏该警告。扩展状态页产物仍只有约 2.22 kB 的 popup 脚本，未加载探针。未激活浏览器请求只有 HTML 和入口脚本，canvas 数为 0；激活后才有 Three.js 场景块与 WebGL。
 
-下表是六组**短播放、暂停、继续、跳过**的同一轮数字，不是完整动画 FPS 基准。`setupMs` 不含模块下载；累计 renderMs 是 CPU 提交时间；帧间隔包括浏览器调度，不是 GPU 时间。
+下表保留审核修订前 `d7127d8` 的六组**短播放、暂停、继续、跳过**数字，不是完整动画 FPS 基准，也不代表 City 优化后的当前性能。`setupMs` 不含模块下载；累计 renderMs 是 CPU 提交时间；帧间隔包括浏览器调度，不是 GPU 时间。
 
 | 视图/密度 | setup ms | 总绘制帧 | 活跃帧间隔 P50/P95 ms | 累计几何更新 ms | 累计 render ms |
 | --- | --- | --- | --- | --- | --- |
@@ -86,4 +87,33 @@ node probes/rendering/verify-browser.cjs
 4. 旋转、缩放、调整窗口、高 DPI 下检查单帧调度。至少 20 次打开/关闭、导航离开，记录 canvas、几何、纹理、程序与浏览器可取得的上下文/内存趋势；不可将这些计数换算成显存。确认上下文丢失后可关闭重开。
 5. 后续集成扩展后，在同设备同 GitHub 页面比较未安装/未激活与播放时的滚动、点击和导航；本原型无法完成该项。减少动态效果偏好与产品失败反馈在 MVP 验收，不以本报告替代。
 
-报告写完后停止服务，删除 `/tmp/codeyears-p1-c` 内的日志、缓存、浏览器资料、生成产物与临时脚本；Git 仅保留正式原型源码、可复现诊断入口及本报告。
+报告写完后停止服务，删除本轮 `$CY_PROBE_TMP` 内的日志、缓存、浏览器资料、生成产物与临时脚本；Git 仅保留正式原型源码、可复现诊断入口及本报告。
+
+## PR 审核修订与复验
+
+针对 `d7127d8` 的四项意见：
+
+1. `schedule()` 和 `tick()` 都在上下文丢失时返回，滚轮、拖动、ResizeObserver 或可见性回调不再重启帧；即使旧回调已被取出也不计绘制帧。
+2. 构建/preview 必须通过 `--outDir` 指定本轮隔离目录；开发服务器不创建构建目录。诊断驱动不再从固定 `/tmp` 路径加载 Playwright，运行说明同步为 `mktemp -d` 和显式模块路径。
+3. City 初始化时写完所有实例矩阵，生长只改变实例显示数量，不逐帧重算矩阵或上传整个缓冲；Terrain 的高度场更新方式保持不变。
+4. 已停止播放时 `pause()` 不取消待绘制帧，保留 `skip()` 请求的最终一次绘制。
+
+验证范围在修改前确定并写入临时检查：真实交互难以可靠命中同一任务内 skip/pause 或已出队 RAF，因此使用受控调度隔离这些时序，再实际运行完整 City 动画。没有在实现后补写单元测试；临时检查和输入不入 Git。
+
+受控检查直接导入真实 `createScene`，使用真实 WebGL renderer 与 `WEBGL_lose_context`，将 RAF 放入可推进的队列。输入沿用三组 7,305 天生成规则；分别对 City/Terrain 发起丢失上下文后的 wheel、pointer、尺寸变化、visibilitychange 和旧帧回调，检查帧数/天数不变且无待排帧；另验证同任务 skip→pause 最终绘制、正常暂停/继续/静止/释放。City 在初始化后包裹同一个 Three.js 模块的 `setMatrixAt` 计数，推进生长时不得继续增加；构造器自己的单位矩阵写入不算重复生长更新。
+
+同一受控检查在原提交上为 2 项通过 / 13 项失败，包含 City 矩阵写入从 7,305 增至 8,674；修订后 15 项全部通过。人工事件仅验证处理路径，不代替真实后台/原生指针交互验收。验证页中最初混用了两份 Three.js 模块实例，修正导入后重新对照原提交与修订版，不把该验证计数问题误当作产品缺陷。
+
+本地完整生长环境：同日 Chrome 156.0.8078.76，macOS，本机后端实际报告 `ANGLE (Apple, ANGLE Metal Renderer: Apple M1, Unspecified Version)`；浏览器窗口 1920 × 905，场景 800 × 460，设备 DPR 2，原型内部上限 1.5，Signature；电源模式、精确显存与功耗未记录。该验证页使用同一真实 renderer，运行默认约 8 秒的完整生长，再观察 500 ms 静止，没有使用受控 RAF。结果：
+
+| City 密度 | 绘制帧数 | 帧间隔 P50 / P95 ms | 累计更新 ms | 累计 CPU render ms |
+| --- | --- | --- | --- | --- |
+| sparse | 202 | 40.0 / 40.7 | 0.3 | 42.7 |
+| regular | 203 | 40.0 / 41.0 | 0.2 | 43.2 |
+| dense | 203 | 40.0 / 40.9 | 0.6 | 34.6 |
+
+三组均达到 7,305 天、`playing=false`、`pendingFrame=false`，随后 500 ms 未新增绘制；全量均为 1 draw call、87,660 三角形、geometryBuilds=1。以上不是云端 SwiftShader 的同机前后对照，不能从两套数字计算优化幅度；约 40 ms 的观测间隔也未达到 60 FPS 目标。不扩大为目标硬件全矩阵通过。
+
+命令：`npm run check`、`npx tsc --noEmit -p probes/rendering/tsconfig.json`、`node --check probes/rendering/verify-browser.cjs`、`git diff --check` 通过。两个独立 `--outDir` 的构建同时执行均通过，产物分别存在，没有共用清空目录；不传 `--outDir` 则明确报错且不写固定目录。动态场景包仍约 530.94 kB，500 kB 警告保留。共享入口和依赖未修改，不额外重建或覆盖项目中正在安装的 P1-A `dist/`。
+
+本次只保留本报告；临时服务、验证页、旧源码对照、样本、构建及日志结束后清理。云端首次的六组完整诊断脚本未在本轮重新运行；这里仅报告实际执行的针对性路径和三组本地 City 重测。Edge、真实后台、扩展集成、长期资源趋势和性能预算仍待验收。
