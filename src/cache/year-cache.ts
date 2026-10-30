@@ -33,9 +33,9 @@ function decode(raw: unknown, scope: YearCacheScope, now: Date): ContributionYea
 
   const fetchedAt = new Date(value.fetchedAt);
   const age = now.getTime() - fetchedAt.getTime();
-  const currentYear = value.year === now.getFullYear();
-  if (!Number.isFinite(age) || age < 0 || age > (currentYear ? 3_600_000 : 30 * DAY_MS) ||
-      (currentYear && browserCalendarDate(fetchedAt) !== browserCalendarDate(now))) return;
+  const fetchedDuringYear = value.year === fetchedAt.getFullYear();
+  if (!Number.isFinite(age) || age < 0 || age > (fetchedDuringYear ? 3_600_000 : 30 * DAY_MS) ||
+      (fetchedDuringYear && browserCalendarDate(fetchedAt) !== browserCalendarDate(now))) return;
   const start = Date.UTC(value.year, 0, 1);
   for (let index = 0; index < value.days.length; index++) {
     const day = value.days[index];
@@ -43,7 +43,7 @@ function decode(raw: unknown, scope: YearCacheScope, now: Date): ContributionYea
         !Number.isSafeInteger(day.count) || day.count < 0) return;
   }
   const end = value.days.at(-1)!.date;
-  const minimumEnd = currentYear ? browserCalendarDate(fetchedAt) : `${value.year}-12-31`;
+  const minimumEnd = fetchedDuringYear ? browserCalendarDate(fetchedAt) : `${value.year}-12-31`;
   if (end < minimumEnd || end > `${value.year}-12-31`) return;
   return value;
 }
