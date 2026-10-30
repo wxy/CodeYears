@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CodeYears · Time Travel 时间轴原型</title>
+    <style>
+      body { max-width: 780px; margin: 48px auto; padding: 0 24px; font: 16px/1.6 system-ui; color: #192738; background: #f4f6f8; }
+      button { font: inherit; padding: 8px 14px; margin: 4px; cursor: pointer; }
+      button:disabled { cursor: default; }
+      progress { display: block; width: 100%; height: 24px; accent-color: #306ad5; }
+      section { margin: 24px 0; }
+      pre { white-space: pre-wrap; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <h1>Time Travel · 时间轴原型</h1>
+    <p>模拟日历已全部加载。播放仍从起点生长，约 8 秒走完 20 年。此入口只演示时间轴，不获取 GitHub 数据。</p>
+    <section aria-label="数据进度">
+      <label for="loaded">已加载：<span id="loaded-count"></span> 天</label>
+      <progress id="loaded"></progress>
+    </section>
+    <section aria-label="播放进度">
+      <label for="revealed">已呈现：<span id="revealed-count"></span> 天</label>
+      <progress id="revealed"></progress>
+      <p id="date"></p>
+    </section>
+    <div aria-label="时间轴控制">
+      <button id="play">播放</button>
+      <button id="pause">暂停</button>
+      <button id="resume">继续</button>
+      <button id="skip">跳过</button>
+      <button id="replay">重播</button>
+      <button id="close">关闭演示</button>
+      <button id="open">重新打开</button>
+    </div>
+    <p id="status" role="status"></p>
+    <details open>
+      <summary>调度指标</summary>
+      <pre id="metrics"></pre>
+    </details>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>
