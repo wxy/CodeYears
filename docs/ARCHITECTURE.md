@@ -4,9 +4,9 @@
 
 ## 当前骨架
 
-目前仅有 MV3 manifest、Vite 构建、TypeScript 严格类型检查和 Shadow DOM 扩展状态页。状态页使用固定本地文案，不读页面、不发贡献请求、不持久化数据、不加载 Three.js。
+P1-A 在原骨架上增加主动点击注入的 Shadow DOM 年度数据诊断：单年同源请求、tooltip 数量解析、日期覆盖与年度合计校验。使用 `activeTab` 与 `scripting`；不注册自动 content script、不持久化数据、不加载 Three.js。浏览器实装与数据验收以任务报告为准。
 
-`src/data`、`cache`、`timeline`、`renderers`、`platform/github` 中的类型是最小设计契约，不是运行实现，也不代表安全校验已经完成。不提前填充假数据、伪成功返回值或通用服务层。
+`src/cache`、`timeline` 和共享 `renderers` 类型仍是最小设计契约。P1-C 的独立渲染原型通过另一个 PR 交付，不代表正式 MVP 或硬件验收完成。不提前填充假数据、伪成功返回值或通用服务层。
 
 ## 目标模块
 
@@ -41,7 +41,7 @@
 - Three.js 随扩展安装包分发，激活视图时再使用动态 `import()` 加载；不执行 CDN 远程代码。当前未有 viewer，Three.js 仅作为依赖，不进入状态页构建。
 - UI 使用 Shadow DOM 隔离样式；它不是身份或数据的安全边界。
 - 首版计划在 GitHub 页面上下文可用的位置完成同源数据请求；不能假设后台服务可以自动复用完全相同的会话语义。
-- 是否需要 service worker、content script 的注册范围和资源公开清单由 P1 结果决定。当前 manifest 不包含这些能力。
+- P1-A 由 popup 通过 `scripting.executeScript` 注入本地 IIFE，不需要常驻 service worker、自动 content script 或 web accessible resources。主 popup 与注入脚本分两次构建到同一目录，避免将 ESM 导入语句交给普通 content script。
 - content script、扩展页面与页面脚本的执行环境不同；若实测确需桥接，再针对真实数据边界设计消息协议，不预先增加 MAIN world 注入。
 
 Chrome 官方说明了内容脚本的隔离执行环境和可用能力，不能由此推导 GitHub 会话请求已经通过：[Content scripts](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts)。

@@ -2,9 +2,10 @@
   "manifest_version": 3,
   "name": "CodeYears",
   "version": "0.0.0",
-  "description": "免费的 GitHub 贡献历史可视化扩展。当前为开发骨架，City 与 Terrain 尚未实现。",
+  "description": "免费的 GitHub 贡献历史可视化扩展。当前提供年度数据诊断原型，City 与 Terrain 尚未实现。",
+  "permissions": ["activeTab", "scripting"],
   "action": {
-    "default_title": "CodeYears · 项目初始化",
+    "default_title": "CodeYears · 数据诊断",
     "default_popup": "popup.html"
   },
   "content_security_policy": {
