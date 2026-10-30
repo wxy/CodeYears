@@ -1,6 +1,6 @@
 # P1-C · 20 年渲染原型
 
-状态：已实现待目标硬件与真实后台验收；独立 PR 交付，不合入。2026-10-30。
+状态：[PR #2 已提交](https://github.com/wxy/CodeYears/pull/2)，未合入；实现完成，目标硬件与真实后台待验收。2026-10-30。
 
 起点：`cde38e6fdb723471743041116df8d2e9f346a78f`。分支 `codex/p1-render-probe`；初始化 PR #1 已合入，PR base 为 `main`（核实合并提交 `ae876a45d7cb93fbd30826a5fe0ba350400bc85c`）。
 
