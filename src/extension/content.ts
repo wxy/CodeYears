@@ -2,7 +2,8 @@ import { fetchContributionYear, readPageContext } from "../platform/github/probe
 
 (() => {
   const existing = document.getElementById("codeyears-data-probe");
-  if (existing) { existing.scrollIntoView({ block: "center" }); return; }
+  if (existing?.shadowRoot?.querySelector("form")) { existing.scrollIntoView({ block: "center" }); return; }
+  existing?.remove();
 
   const context = readPageContext(document, new URL(location.href));
   const years = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
@@ -48,10 +49,12 @@ import { fetchContributionYear, readPageContext } from "../platform/github/probe
     controller?.abort();
     host.remove();
     window.removeEventListener("pagehide", close);
+    document.removeEventListener("turbo:before-cache", close);
     document.removeEventListener("turbo:before-render", close);
   };
   shadow.querySelector("#close")!.addEventListener("click", close);
   window.addEventListener("pagehide", close);
+  document.addEventListener("turbo:before-cache", close);
   document.addEventListener("turbo:before-render", close);
   cancel.addEventListener("click", () => controller?.abort());
   form.addEventListener("submit", async event => {
