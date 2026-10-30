@@ -18,6 +18,8 @@ shadow.innerHTML = `
     .status { border-top: 1px solid #dce3dc; padding-top: 18px; }
     h2 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
     p { margin: 0; font-size: 12px; line-height: 1.7; color: #59665e; }
+    button { width:100%; margin-top:14px; padding:10px; border:0; border-radius:10px; background:#245b3c; color:white; font:inherit; cursor:pointer; }
+    button:disabled { opacity:.5; } output { display:block; margin-top:10px; font-size:12px; line-height:1.6; }
   </style>
   <main>
     <p class="eyebrow">GitHub contribution history</p>
@@ -27,8 +29,26 @@ shadow.innerHTML = `
       <span>City · 贡献之城</span><span>Terrain · 时光山脉</span>
     </div>
     <section class="status" aria-labelledby="status-title">
-      <h2 id="status-title">项目初始化 · 功能尚未实现</h2>
-      <p>下一步验证无 Token 数据获取、身份隔离与缓存，以及 20 年数据的 3D 性能。</p>
+      <h2 id="status-title">P1-A · 年度数据诊断</h2>
+      <p>在 GitHub 个人主页主动获取一个年份，检查真实数量与年度合计。City / Terrain 尚未实现。</p>
+      <button type="button">打开数据诊断</button>
+      <output role="status" aria-live="polite"></output>
     </section>
   </main>
 `;
+
+const button = shadow.querySelector("button")!;
+const popupStatus = shadow.querySelector("output")!;
+button.addEventListener("click", async () => {
+  button.disabled = true;
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab.id || !tab.url || new URL(tab.url).origin !== "https://github.com") throw new Error("请先打开 GitHub 个人主页，再点击扩展。");
+    const [page] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => /^\/[a-zA-Z0-9-]{1,39}\/?$/.test(location.pathname) && Boolean(document.querySelector("table.ContributionCalendar-grid")) && Boolean(document.querySelector('a[id^="year-link-"]')) });
+    if (page.result !== true) throw new Error("请在 GitHub 个人主页的贡献日历加载完成后重试。");
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content.js"] });
+    popupStatus.textContent = "诊断面板已打开，请回到 GitHub 页面选择年份。";
+  } catch (error) {
+    popupStatus.textContent = error instanceof Error ? error.message : "无法打开诊断，请重新加载扩展。";
+  } finally { button.disabled = false; }
+});
