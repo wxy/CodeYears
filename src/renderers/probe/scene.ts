@@ -3,6 +3,9 @@ import type { DailyContribution } from '../../data/types';
 export function createScene(host: HTMLElement, days: readonly DailyContribution[], mode: 'city' | 'terrain', natural: boolean) {
   const started = performance.now();
   const renderer = new THREE.WebGLRenderer({ antialias: true });
+  const gl = renderer.getContext();
+  const rendererInfo = gl.getExtension('WEBGL_debug_renderer_info');
+  const backend = String(gl.getParameter(rendererInfo ? rendererInfo.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.setClearColor(natural ? 0xe8ede5 : 0x101827);
   host.append(renderer.domElement);
@@ -71,7 +74,8 @@ export function createScene(host: HTMLElement, days: readonly DailyContribution[
   document.addEventListener('visibilitychange', visibility);
   const observer = new ResizeObserver(resize); observer.observe(host);
   positionCamera(); setGeometry(); resize();
-  const info = () => ({ mode, vertices: geometry.getAttribute('position').count, capacity: days.length, frames, visibleDays: Math.floor(visibleDays), playing, hidden: document.hidden, pendingFrame: !!raf, contextLost, disposed, geometryBuilds: 1, updates, updateMs, renderMs,
+  const info = () => ({ mode, backend, devicePixelRatio, pixelRatio: renderer.getPixelRatio(), canvasWidth: renderer.domElement.width, canvasHeight: renderer.domElement.height,
+    vertices: geometry.getAttribute('position').count, capacity: days.length, frames, visibleDays: Math.floor(visibleDays), playing, hidden: document.hidden, pendingFrame: !!raf, contextLost, disposed, geometryBuilds: 1, updates, updateMs, renderMs,
     frameIntervalP50: percentile(0.5), frameIntervalP95: percentile(0.95), samples: intervals.length,
     calls: renderer.info.render.calls, triangles: renderer.info.render.triangles, geometries: renderer.info.memory.geometries, textures: renderer.info.memory.textures, programs: renderer.info.programs?.length ?? 0 });
   function percentile(fraction: number) { const sorted = [...intervals].sort((a, b) => a - b); return sorted[Math.floor((sorted.length - 1) * fraction)] ?? null; }
