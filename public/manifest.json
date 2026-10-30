@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "CodeYears",
   "version": "0.0.0",
-  "description": "免费的 GitHub 贡献历史可视化扩展。当前提供年度数据诊断原型，City 与 Terrain 尚未实现。",
-  "permissions": ["activeTab", "scripting"],
+  "description": "免费的 GitHub 贡献历史可视化扩展。当前提供按访问者隔离的年度数据与缓存诊断，3D 视图尚未集成。",
+  "permissions": ["activeTab", "scripting", "storage"],
   "action": {
     "default_title": "CodeYears · 数据诊断",
     "default_popup": "popup.html"

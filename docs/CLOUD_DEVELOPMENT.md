@@ -1,6 +1,6 @@
 # Codex 云端开发接续
 
-更新日期：2026-10-30。已通过环境列表确认 CodeYears 为 ready / runnable；云端 P1-C 已启动并交付独立 PR #2。实际任务和验收状态以对应报告、PR 与 Codex 结果为准。
+更新日期：2026-10-30。云端 P1-C 的 PR #2 和本地 P1-A 的 PR #3 均已合入。现有云端任务已接续独立 Time Travel 时间轴原型（`codex/time-travel-probe`），以 `12b00e2` 为起点；本地 P1-B 同时推进。实际任务与验收状态以对应报告、PR 和 Codex 结果为准。
 
 ## 环境目标
 
@@ -37,7 +37,7 @@ npm run build -- --outDir "$task_tmp/dist"
 
 安装失败先保留报错并定位 Node、锁文件或网络原因，不绕过锁文件更新全部依赖；若确实需要修改依赖，按 PR 流程单独说明原因。
 
-## 云端 P1-C 任务指令
+## 首轮云端 P1-C 任务指令（历史）
 
 ```text
 继续开发 wxy/CodeYears 的 P1-C 20 年渲染原型，先读 AGENTS.md、docs/PERFORMANCE.md 和 docs/DEVELOPMENT_PLAN.md。
@@ -54,6 +54,8 @@ npm run build -- --outDir "$task_tmp/dist"
 ```
 
 ## 云端与本地证据
+
+第二轮只允许云端修改 `src/timeline/**`、`probes/timeline/**` 和自己的时间轴任务/报告；不改缓存、GitHub 请求、主扩展入口、权限、共享依赖或全局计划。目标是 7,305 天全量输入从零生长、暂停/继续/跳过/重播，暂停和完成后不续帧。核心控制器由调用者推进时间，不常驻 RAF，不耦合 WebGL 或数据请求。它是 P2-B 前置原型，不代表 P1-G/正式集成通过；仍通过独立 PR 交付并等待用户合入授权。
 
 | 云端可推进 | 仍需真实目标环境验证 |
 | --- | --- |

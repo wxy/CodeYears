@@ -1,6 +1,8 @@
 import type { ContributionYear, DailyContribution } from "./types";
 import { browserCalendarDate } from "./calendar-date";
 
+export const PARSER_VERSION = 2;
+
 export interface ParsedYear {
   readonly value: ContributionYear;
   readonly total: number;
@@ -55,5 +57,5 @@ export function parseContributionYear(doc: Document, profileLogin: string, year:
   const total = days.reduce((sum, day) => sum + day.count, 0);
   if (total !== displayedTotal) throw new Error(`逐日合计 ${total} 与页面年度总数 ${displayedTotal} 不一致，尚不能确认为准确数据。`);
 
-  return { value: { profileLogin, year, days, fetchedAt: fetchedAt.toISOString(), parserVersion: 2 }, total, displayedTotal };
+  return { value: { profileLogin, year, days, fetchedAt: fetchedAt.toISOString(), parserVersion: PARSER_VERSION }, total, displayedTotal };
 }

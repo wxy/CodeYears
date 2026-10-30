@@ -29,8 +29,8 @@ shadow.innerHTML = `
       <span>City · 贡献之城</span><span>Terrain · 时光山脉</span>
     </div>
     <section class="status" aria-labelledby="status-title">
-      <h2 id="status-title">P1-A · 年度数据诊断</h2>
-      <p>在 GitHub 个人主页主动获取一个年份，检查真实数量与年度合计。City / Terrain 尚未实现。</p>
+      <h2 id="status-title">P1-B · 年度数据与缓存诊断</h2>
+      <p>在个人主页读取单年数据，缓存按访问者隔离，可刷新或清除。City / Terrain 尚未集成。</p>
       <button type="button">打开数据诊断</button>
       <output role="status" aria-live="polite"></output>
     </section>
