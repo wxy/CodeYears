@@ -8,10 +8,12 @@ const project = (x: number, z: number): [number, number] => [(x - z) * 0.5, (x +
 /** 固定视角图片城市：真实日期按工作周布置，建筑和合并在创建时固定。 */
 export function createCityView(days: readonly DailyContribution[], images: CityImages): LandscapeView {
   const canvas = document.createElement("canvas"), context = canvas.getContext("2d")!;
-  const fine = planWeeklyCity(days), gap = 1.6, parkWidth = 4, parkRow = Math.ceil(fine.rows / 2);
-  const width = fine.columns, depth = fine.rows * (7 + gap) - gap + parkWidth;
-  const parkStart = parkRow * (7 + gap) - gap / 2;
-  const origin = (block: number): [number, number] => [0, block * (7 + gap) + (block >= parkRow ? parkWidth : 0)];
+  const fine = planWeeklyCity(days), gap = 1.6, parkWidth = 4;
+  // 从所选历史起点起每五年一组；只在两组之间留景观带，不在末尾补空带。
+  const parkStarts = Array.from({ length: Math.floor((fine.rows - 1) / 5) }, (_, index) =>
+    (index + 1) * 5 * (7 + gap) + index * parkWidth - gap / 2);
+  const width = fine.columns, depth = fine.rows * (7 + gap) - gap + parkStarts.length * parkWidth;
+  const origin = (block: number): [number, number] => [0, block * (7 + gap) + Math.floor(block / 5) * parkWidth];
   type Item = { x: number; y: number; width: number; height: number; top: number; parcel: CityParcel; model?: BuildingType };
   const makeItems = (parcels: CityParcel[]): Item[] => parcels.map(parcel => {
     const [bx, bz] = origin(parcel.block), [x, y] = project(bx + parcel.x + parcel.w / 2, bz + parcel.z + parcel.d / 2);
@@ -63,14 +65,16 @@ export function createCityView(days: readonly DailyContribution[], images: CityI
     const [bx,bz] = origin(cell.block);
     if (cell.kind !== "building") polygon(bx+cell.x,bz+cell.z,cell.w,1,cell.kind === "grass" ? "#7b9e67" : "#6b915a");
   }
-  polygon(0,parkStart,width,parkWidth,"#759765");
-  g.strokeStyle = "#d5c9a6"; g.lineWidth = .13; g.beginPath();
-  g.moveTo(...project(0,parkStart+parkWidth*.36));
-  g.bezierCurveTo(...project(width*.3,parkStart+parkWidth*.85),...project(width*.65,parkStart+parkWidth*.12),...project(width,parkStart+parkWidth*.65));g.stroke();
-  g.fillStyle = "#76a7b1";g.beginPath();
-  for(let i=0;i<=40;i++){const a=i/40*Math.PI*2;const p=project(width*.61+Math.cos(a)*Math.min(3,width*.09),parkStart+parkWidth*.5+Math.sin(a)*1.35);i?g.lineTo(...p):g.moveTo(...p)}g.closePath();g.fill();
   const parkTrees: { x: number; y: number; seed: number }[] = [];
-  for (let x=1;x<width;x+=2.6) for (const z of [parkStart+.4,parkStart+parkWidth-.4]) { const p=project(x,z);parkTrees.push({x:p[0],y:p[1],seed:Math.round(x)}) }
+  for (const parkStart of parkStarts) {
+    polygon(0,parkStart,width,parkWidth,"#759765");
+    g.strokeStyle = "#d5c9a6"; g.lineWidth = .13; g.beginPath();
+    g.moveTo(...project(0,parkStart+parkWidth*.36));
+    g.bezierCurveTo(...project(width*.3,parkStart+parkWidth*.85),...project(width*.65,parkStart+parkWidth*.12),...project(width,parkStart+parkWidth*.65));g.stroke();
+    g.fillStyle = "#76a7b1";g.beginPath();
+    for(let i=0;i<=40;i++){const a=i/40*Math.PI*2;const p=project(width*.61+Math.cos(a)*Math.min(3,width*.09),parkStart+parkWidth*.5+Math.sin(a)*1.35);i?g.lineTo(...p):g.moveTo(...p)}g.closePath();g.fill();
+    for (let x=1;x<width;x+=2.6) for (const z of [parkStart+.4,parkStart+parkWidth-.4]) { const p=project(x,z);parkTrees.push({x:p[0],y:p[1],seed:Math.round(x)}) }
+  }
   parkTrees.sort((a,b)=>a.y-b.y);
   const items = fineItems;
   const resize = (viewport: LandscapeViewport) => {
@@ -91,7 +95,7 @@ export function createCityView(days: readonly DailyContribution[], images: CityI
   }
   return {
     canvas,
-    description:()=>"固定视角 · 年度街区，周为列/周一至周日为行 · 缩放不改变合并和建筑 · 拖动平移",
+    description:()=>"固定视角 · 年度街区，周为列/周一至周日为行 · 每五年一组景观带 · 缩放不改变合并和建筑 · 拖动平移",
     draw(progress,viewport){
       resize(viewport);context.clearRect(0,0,viewport.width,viewport.height);
       const fit=Math.min((viewport.width-32)/(maxX-minX),(viewport.height-24)/(maxY-minY)),scale=fit*viewport.zoom;
