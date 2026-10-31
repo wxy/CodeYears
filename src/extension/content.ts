@@ -2,7 +2,8 @@ import { readPageContext } from "../platform/github/probe";
 import { clearContributionCache } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
 import type { DailyContribution } from "../data/types";
-import type { CityPreview } from "../renderers/city-preview";
+import type { ContributionLandscape } from "../renderers/landscape";
+import type { ViewMode } from "../renderers/types";
 import type { TimelineState } from "../timeline/types";
 
 (() => {
@@ -35,26 +36,27 @@ import type { TimelineState } from "../timeline/types";
       .city[hidden] { display:none; } .city-head { padding:20px 22px 0; } h3 { margin:0; font-size:18px; letter-spacing:-.02em; }
       #loading-progress { width:100%; accent-color:#268f80; } #loading-progress[hidden] { display:none; }
       #year-summary { display:flex; flex-wrap:wrap; gap:6px 16px; padding:0 22px; color:#52665c; font-size:12px; }
-      #scene { height:360px; min-height:260px; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
+      #scene { height:440px; min-height:320px; max-height:65vh; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
       #progress { flex:1 1 190px; color:#52665c; font-size:12px; font-variant-numeric:tabular-nums; }
     </style>
     <div class="panel">
       <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
       <p id="identity"></p>
-      <p class="note">选择起止年份，将这段岁月生成一座城市。默认最近三年，可选择更早起点；逐年读取，完整缓存也从历史起点重播。</p>
-      <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
+      <p class="note">每一年，一片新的风景。选择起止年份，生成城市或山脉；切换视图保留播放位置，不重新读取数据。</p>
+      <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><label>视图 <select id="view" aria-label="贡献视图"><option value="city">City · 贡献之城</option><option value="terrain">Terrain · 时光山脉</option></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
       <output id="status" role="status" aria-live="polite">选择年份范围，开始呈现你的代码岁月。</output>
       <progress id="loading-progress" value="0" max="1" hidden aria-label="年度加载进度"></progress>
-      <section class="city" id="city" hidden aria-label="贡献之城">
+      <section class="city" id="city" hidden aria-label="贡献风景">
         <div class="city-head"><h3 id="city-title">贡献之城</h3><p class="note" id="city-summary"></p></div>
         <div id="year-summary" aria-label="各年贡献概览"></div>
         <div id="scene"></div>
-        <div class="city-controls"><span id="progress"></span><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭城市</button></div>
+        <div class="city-controls"><span id="progress"></span><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭风景</button></div>
       </section>
       <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
     </div>`;
   const select = shadow.querySelector<HTMLSelectElement>("#year")!;
   const startSelect = shadow.querySelector<HTMLSelectElement>("#start-year")!;
+  const viewSelect = shadow.querySelector<HTMLSelectElement>("#view")!;
   for (const year of years) {
     select.add(new Option(String(year), String(year)));
     startSelect.add(new Option(String(year), String(year)));
@@ -76,7 +78,16 @@ import type { TimelineState } from "../timeline/types";
   const cityHost = shadow.querySelector<HTMLElement>("#scene")!;
   const progress = shadow.querySelector<HTMLElement>("#progress")!;
   const pause = shadow.querySelector<HTMLButtonElement>("#pause")!;
-  let city: CityPreview | undefined;
+  let city: ContributionLandscape | undefined;
+  let displayedRange = "";
+  const viewName = () => viewSelect.value === "city" ? "贡献之城" : "时光山脉";
+  viewSelect.addEventListener("change", () => {
+    run.textContent = `生成${viewName()}`;
+    if (city) {
+      city.setView(viewSelect.value as ViewMode);
+      shadow.querySelector("#city-title")!.textContent = `${displayedRange} · ${viewName()}`;
+    }
+  });
   let timelineState: TimelineState | undefined;
   let visibleDays: readonly DailyContribution[] = [];
   const disposeCity = () => { city?.dispose(); city = undefined; timelineState = undefined; cityBox.hidden = true; cityHost.replaceChildren(); };
@@ -141,7 +152,7 @@ import type { TimelineState } from "../timeline/types";
         if (progress.source === "network") networkYears++; else cacheYears++;
         if (progress.warning) warnings.add(progress.warning);
         loadingProgress.value = progress.history.providedYears.length;
-        status.textContent = `${range} · 已读取 ${loadingProgress.value} / ${requestedYears.length} 年\n最近完成 ${progress.year} 年（${progress.source === "cache" ? "本地缓存" : "网络"}）；全部完成后生成城市。\n${[...warnings].join(" ")}`.trim();
+        status.textContent = `${range} · 已读取 ${loadingProgress.value} / ${requestedYears.length} 年\n最近完成 ${progress.year} 年（${progress.source === "cache" ? "本地缓存" : "网络"}）；全部完成后生成风景。\n${[...warnings].join(" ")}`.trim();
       });
       request.signal.throwIfAborted();
       if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
@@ -150,11 +161,12 @@ import type { TimelineState } from "../timeline/types";
       status.textContent = `${range} · ${requestedYears.length} 年 · ${history.days.length} 天\n${history.days[0].date} 至 ${history.days.at(-1)!.date}\n逐日合计 ${total}。年度来源：${networkYears} 年网络 / ${cacheYears} 年本地缓存。\n网络年度已核对逐日合计；缓存年度沿用快照，本次仍确认访问者身份。\n${[...warnings].join(" ")}`.trim();
       details.hidden = false;
       if (showCity) {
-        const module = await import(/* @vite-ignore */ chrome.runtime.getURL("city-preview.js")) as typeof import("../renderers/city-preview");
+        const module = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
         request.signal.throwIfAborted();
         if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
         cityBox.hidden = false;
-        shadow.querySelector("#city-title")!.textContent = `${range} · 贡献之城`;
+        displayedRange = range;
+        shadow.querySelector("#city-title")!.textContent = `${range} · ${viewName()}`;
         shadow.querySelector("#city-summary")!.textContent = `${total.toLocaleString()} 次真实贡献 · ${requestedYears.length} 年 / ${history.days.length} 天 · 拖动旋转，滚轮缩放`;
         const yearlyTotals = new Map<number, number>(requestedYears.map(year => [year, 0]));
         for (const day of history.days) { const year = Number(day.date.slice(0, 4)); yearlyTotals.set(year, yearlyTotals.get(year)! + day.count); }
@@ -162,18 +174,18 @@ import type { TimelineState } from "../timeline/types";
         summary.replaceChildren();
         for (const [year, count] of yearlyTotals) { const item = document.createElement("span"); item.textContent = `${year} · ${count.toLocaleString()} 次`; summary.append(item); }
         try {
-          city = module.createCityPreview(cityHost, history.days, (state, error) => {
+          city = module.createLandscape(cityHost, history.days, (state, error) => {
             if (error) status.textContent = error;
             timelineState = state;
             const date = history.days[state.revealedDays - 1]?.date;
             progress.textContent = state.revealedDays === 0 ? `历史起点 · 0 / ${state.totalDays} 天` : `${date} · ${state.revealedDays} / ${state.totalDays} 天`;
             pause.textContent = state.status === "paused" ? "继续" : "暂停";
             pause.disabled = state.status === "completed";
-          });
+          }, viewSelect.value as ViewMode);
         } catch (error) { disposeCity(); throw error; }
       }
     } catch (error) {
-      if (!document.hidden) status.textContent = `${request.signal.aborted ? "请求已取消。" : error instanceof Error ? error.message : "请求失败，请重新打开 CodeYears。"}\n已读取 ${networkYears + cacheYears} / ${requestedYears.length} 年，本次未生成城市；已验证的年度缓存可供下次继续使用。`;
+      if (!document.hidden) status.textContent = `${request.signal.aborted ? "请求已取消。" : error instanceof Error ? error.message : "请求失败，请重新打开 CodeYears。"}\n已读取 ${networkYears + cacheYears} / ${requestedYears.length} 年，本次未生成风景；下次会重新确认身份并复用可用的年度缓存。`;
     } finally {
       loadingProgress.hidden = true; setBusy(false); controller = undefined;
     }

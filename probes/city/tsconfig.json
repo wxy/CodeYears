@@ -1,1 +1,1 @@
-{ "extends": "../../tsconfig.json", "include": ["../../src/renderers/city-preview.ts", "../../src/renderers/probe/data.ts", "./*.ts"] }
+{ "extends": "../../tsconfig.json", "include": ["../../src/renderers/landscape.ts", "../../src/renderers/probe/data.ts", "./*.ts"] }
