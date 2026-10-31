@@ -1,12 +1,14 @@
 # 技术架构
 
-状态：已连接多年份顺序加载、年度缓存、时间轴与 City 体验渲染器；完整 MVP 和 P1-G 门槛待验收。更新日期：2026-10-31。
+状态：已连接多年份顺序加载、年度缓存、时间轴与按年份组织的 City / Terrain 渲染器；新版实装、完整 MVP 和 P1-G 门槛待验收。更新日期：2026-10-31。
 
 ## 当前骨架
 
 P1-A 提供主动点击注入的 Shadow DOM 年度数据诊断。P1-B 通过 `load-year.ts` 连接页面身份确认、缓存与年度请求；`year-cache.ts` 使用 `chrome.storage.local`，在读取边界校验作用域、版本、日期覆盖和有效期。已知身份在读缓存前、使用/写入结果前通过禁止浏览器缓存的同源主页请求再次确认；身份不明仅联网获取，不读写缓存。浏览器真实会话与跨标签页验收仍以报告为准。
 
-扩展使用 `activeTab`、`scripting` 与 `storage`，不注册自动 content script。Shadow DOM 面板选择起止年份，通过 `loadContributionHistory` 升序复用年度加载器和历史组装；加载进度与网络/缓存来源独立显示，全部成功后才把完整可信日期/数量交给 City 与时间轴。失败或取消停止后续年份，不把部分结果生成完整城市。生成时才动态导入 `city-preview.js`；仅查看每日数据不会创建 WebGL。每日表格在展开时建立。缓存、强制刷新及清除继续使用原身份隔离路径；数据获取完成与动画完成分别维护。
+扩展使用 `activeTab`、`scripting` 与 `storage`，不注册自动 content script。Shadow DOM 面板选择起止年份，通过 `loadContributionHistory` 升序复用年度加载器和历史组装；加载进度与网络/缓存来源独立显示，全部成功后才把完整可信日期/数量交给风景与时间轴。失败或取消停止后续年份，不把部分结果生成完整风景。生成时才动态导入 `landscape.js`；仅查看每日数据不会创建 WebGL。每日表格在展开时建立。缓存、强制刷新及清除继续使用原身份隔离路径；数据获取完成与动画完成分别维护。
+
+`createLandscape` 拥有单个 renderer、相机和时间轴；年度分区、底座和年份标签共用。City 使用实例化建筑；Terrain 预计算高度/法线，每个真实日期对应四个三角面，动画只改变绘制范围。`setView` 释放旧视图几何/材质并创建新视图，保留播放头、相机、年份底座与标签，不访问网络或缓存。销毁时清理视图、底座、标签纹理/材质、观察器与事件，并取消帧、销毁上下文。
 
 ## 目标模块
 
@@ -38,10 +40,10 @@ P1-A 提供主动点击注入的 Shadow DOM 年度数据诊断。P1-B 通过 `lo
 ## 平台与构建
 
 - TypeScript 定义数据、缓存作用域与播放状态；Vite 生成本地 MV3 资源。
-- Three.js 与 City 渲染器随扩展安装包独立打包；注入脚本仅类型引用，用户生成城市时通过 `chrome.runtime.getURL()` 动态 `import()` 本地模块，不执行 CDN 远程代码。
+- Three.js 与风景渲染器随扩展安装包独立打包；注入脚本仅类型引用，用户生成风景时通过 `chrome.runtime.getURL()` 动态 `import()` 本地模块，不执行 CDN 远程代码。
 - UI 使用 Shadow DOM 隔离样式；它不是身份或数据的安全边界。
 - 首版计划在 GitHub 页面上下文可用的位置完成同源数据请求；不能假设后台服务可以自动复用完全相同的会话语义。
-- popup 通过 `scripting.executeScript` 注入本地 IIFE，不需要常驻 service worker 或自动 content script。popup、注入 IIFE、City ES 模块三次构建到同一目录；manifest 只将 `city-preview.js` 向 `https://github.com/*` 声明为 web accessible resource，供隔离环境动态加载。
+- popup 通过 `scripting.executeScript` 注入本地 IIFE，不需要常驻 service worker 或自动 content script。popup、注入 IIFE、风景 ES 模块三次构建到同一目录；manifest 只将 `landscape.js` 向 `https://github.com/*` 声明为 web accessible resource，供隔离环境动态加载。
 - content script、扩展页面与页面脚本的执行环境不同；若实测确需桥接，再针对真实数据边界设计消息协议，不预先增加 MAIN world 注入。
 
 Chrome 官方说明了内容脚本的隔离执行环境和可用能力，不能由此推导 GitHub 会话请求已经通过：[Content scripts](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts)。
@@ -67,4 +69,4 @@ GitHub 的页内导航、浏览器后退、主页切换和重复激活必须实�
 
 ## 仍需决定
 
-当前缓存选择 schema 1、解析器版本 2、当年 1 小时且跨日失效、历史年 30 天；这些是可调整的原型策略。City 暂用按日期排列的实例化方块，数量通过 `log1p` 映射高度，只影响表现，不改原始数量。身份源长期可靠性、真实账户/SSO 变化、容量预算、多年份布局和正式主题映射仍需验证。Chrome 单年模块加载已通过，不据此声称 Edge 或完整权限通过；结论见 [体验报告](reports/CITY-EXPERIENCE-PREVIEW.md)。
+当前缓存选择 schema 1、解析器版本 2、当年 1 小时且跨日失效、历史年 30 天；这些是可调整的原型策略。City / Terrain 按年度独立布局，每年最多 20×19 个日期位置，缺失/未来位置不建立建筑或地形面；数量通过 `log1p` 映射高度，只改变表现。身份源长期可靠性、真实账户/SSO 变化、容量预算和正式主题映射仍需验证。旧版 Chrome 模块加载证据不代替新 `landscape.js` 的 MV3 资源验收；见 [年份风景报告](reports/YEAR-LANDSCAPES.md)。

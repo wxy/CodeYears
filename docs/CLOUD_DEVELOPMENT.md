@@ -1,6 +1,6 @@
 # Codex 云端开发接续
 
-更新日期：2026-10-31。PR #1–#13 均已合入，当前多年份 City 分支基线为 main 的 `18cf036`。云端多年份顺序加载 PR #12 已合入，并在本地 `codex/multi-year-city` 接入真实城市；见 [多年份报告](reports/MULTI-YEAR-CITY.md)。P1-G 尚未整体通过，提前试用不代表正式 MVP / 发布验收通过。
+更新日期：2026-10-31。PR #1–#14 均已合入，当前年份风景分支基线为 main 的 `f1fa1c5`。云端顺序加载已在 #14 接入城市，本轮本地 `codex/year-landscapes` 完善 City 年份布局并接入 Terrain，见 [年份风景报告](reports/YEAR-LANDSCAPES.md)。当前没有新派发的云端实现任务。P1-G 尚未整体通过，提前试用不代表正式 MVP / 发布验收通过。
 
 ## 当前并行安排
 

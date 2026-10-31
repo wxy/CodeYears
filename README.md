@@ -4,7 +4,7 @@
 
 CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，计划把 GitHub 多年的真实每日贡献数量呈现为 **City（贡献之城）**与 **Terrain（时光山脉）**。
 
-> 已有可试用的多年份 City 体验：在 GitHub 个人主页选择起止年份，用真实每日数量生成一座城市，支持逐年加载、生长、暂停、跳过和完整缓存重播。真实 Chrome 三年主路径已验证；Terrain、两种主题与完整发布验收仍待完成，见 [多年份体验报告](docs/reports/MULTI-YEAR-CITY.md)。
+> City 已按年份分成独立城区，Terrain 已接入同一份历史与时间轴，切换时保留相机、播放位置和暂停状态。两种视图的本地预览与受控完整 UI 检查通过；此前真实 Chrome 三年数据主路径已验证，新版 MV3 重载后的实装与完整发布验收仍待完成，见 [年份风景报告](docs/reports/YEAR-LANDSCAPES.md)。
 
 ## 已确认的方向
 
@@ -36,6 +36,7 @@ CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，�
 | [主线审查与对接复核](docs/reports/MAINLINE-2026-10-31.md) | 年度组装/匿名报告合入、时间轴对接候选验证与下一步 |
 | [City 体验报告](docs/reports/CITY-EXPERIENCE-PREVIEW.md) | 单年份真实贡献之城、缓存重播与本地交互预览 |
 | [多年份体验报告](docs/reports/MULTI-YEAR-CITY.md) | PR #12/#13 合入、三年真实城市与二十年示例展示 |
+| [年份风景报告](docs/reports/YEAR-LANDSCAPES.md) | PR #14 合入、City 年份城区、Terrain、切换与释放 |
 
 ## 本地开发
 
@@ -47,33 +48,33 @@ npm run check
 npm run build
 ```
 
-在 Chrome 的 `chrome://extensions` 或 Edge 的 `edge://extensions` 开启开发者模式，选择“加载已解压的扩展”，选择本项目的 `dist/` 目录。在 GitHub 个人主页贡献日历加载完成后，点击扩展图标，再选择“打开 CodeYears”。选择起止年份（默认最近三年，也可选择更早起点或相同年份），点击“生成贡献之城”。逐年读取时显示进度，全部完成后生成同一座城市，可拖动旋转、滚轮缩放、暂停/继续、跳过或重播；同时显示各年概览。还可仅查看每日数量、强制刷新整个范围、清除此访问者在当前主页的缓存、取消或关闭。每日明细在展开时才建立，避免预先插入数千行。使用缓存前仍会联网确认身份；后台隐藏时清空显示、销毁城市并取消请求，返回后需重新生成。
+在 Chrome 的 `chrome://extensions` 或 Edge 的 `edge://extensions` 开启开发者模式，选择“加载已解压的扩展”，选择本项目的 `dist/` 目录。在 GitHub 个人主页贡献日历加载完成后，点击扩展图标，再选择“打开 CodeYears”。选择起止年份（默认最近三年，也可选择更早起点或相同年份）及 City / Terrain，点击生成。逐年读取时显示进度，全部完成后展示风景，可拖动旋转、滚轮缩放、暂停/继续、跳过或重播；同时显示各年概览。切换视图不重新请求，保留播放位置与相机。还可仅查看每日数量、强制刷新整个范围、清除此访问者在当前主页的缓存、取消或关闭风景。每日明细在展开时才建立，避免预先插入数千行。使用缓存前仍会联网确认身份；后台隐藏时清空显示、销毁风景并取消请求，返回后需重新生成。
 
-不安装扩展也可先体验画面：运行 `npm run preview:city`，打开 <http://127.0.0.1:4175/>，可切换一年、三年或二十年。这个本地预览使用明确标记的确定性示例数据，复用同一 City 渲染器；它不是独立产品网站，也不读取 GitHub 会话。
+不安装扩展也可先体验画面：运行 `npm run preview:city`，打开 <http://127.0.0.1:4175/>，可切换 City / Terrain 以及一年、三年或二十年。这个本地预览使用明确标记的确定性示例数据，复用同一风景渲染器；它不是独立产品网站，也不读取 GitHub 会话。
 
 `npm run dev` 监听源文件并重新构建；修改后在扩展管理页重新加载。它不向扩展注入开发服务器代码。
 
-当前 manifest 使用 `activeTab`、`scripting` 与 `storage`：主动点击后临时注入，本地保存按访问者隔离的年度数量；没有持久网站访问、Cookie 权限、自动 content script 或后台服务。生成城市时才动态加载本地 `city-preview.js` 并创建 WebGL；该模块仅向 GitHub 页面声明为可访问资源。升级后需在扩展管理页重新加载；真实 Chrome 已实装验证，Edge 与完整产品权限验收仍待完成。
+当前 manifest 使用 `activeTab`、`scripting` 与 `storage`：主动点击后临时注入，本地保存按访问者隔离的年度数量；没有持久网站访问、Cookie 权限、自动 content script 或后台服务。生成风景时才动态加载本地 `landscape.js` 并创建 WebGL；该模块仅向 GitHub 页面声明为可访问资源。新版替换了原 City 资源声明，升级后需在扩展管理页重新加载并刷新主页；此前单一 City 的实装证据不代替新版资源/视图验收。
 
 ## 目录
 
 ```text
 public/manifest.json        MV3 清单
 popup.html                  扩展状态页入口
-src/extension/              弹窗与按需注入的 Shadow DOM City / 数据面板
+src/extension/              弹窗与按需注入的 Shadow DOM 风景 / 数据面板
 src/platform/github/        页面上下文、年度同源请求原型
 src/data/                   每日贡献数据契约与年度校验解析器
 src/cache/                  作用域年度缓存、版本与有效期校验
 src/timeline/               与数据加载解耦的播放控制器
-src/renderers/              City 体验渲染器、City / Terrain 工程原型与契约
-probes/city/                复用 City 渲染器的本地示例体验
+src/renderers/              按年份组织的 City / Terrain 渲染器及工程原型
+probes/city/                复用风景渲染器的本地示例体验
 docs/                       产品、架构、路线与验证记录
 ```
 
-Three.js 随安装包独立打包，弹窗和注入脚本不静态导入它。`probes/rendering` 仍用于 20 年 City / Terrain 工程负载检查，与当前单年体验的验收结论分开。
+Three.js 随安装包独立打包，弹窗和注入脚本不静态导入它。`probes/rendering` 仍用于旧版 20 年 City / Terrain 工程负载检查，与当前风景实现的验收结论分开。
 
 ## 当前下一步
 
-PR #12/#13 已按用户授权合入，多年份历史已接入城市并完成真实 Chrome 三年网络/缓存主路径。下一步完善 City 年份布局与画面，再推进 Terrain / 主题。P1-G 的真实身份矩阵、Edge、后台与正式集成性能门槛并行收敛；二十年示例能显示不等于性能预算已通过，不继承旧工程原型约 60 FPS 的结论。
+PR #14 已按用户授权合入；本轮已完善 City 年份布局并接入 Terrain。下一步先完成新版 MV3 真实主页验收，再完善主题与日期探索。P1-G 的真实身份矩阵、Edge、后台与正式集成性能门槛并行收敛；二十年示例能显示不等于性能预算已通过，不继承旧工程原型约 60 FPS 的结论。
 
 GitHub 仓库 [wxy/CodeYears](https://github.com/wxy/CodeYears) 已于 2026-10-29 按用户决定公开；尚未选择开源许可证。扩展尚未发布，没有商店下载链接。独立网站仅是扩展成功后的后续设想，当前不建设。
