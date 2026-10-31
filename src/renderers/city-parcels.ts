@@ -46,8 +46,9 @@ export function planWeeklyCity(days: readonly DailyContribution[]): WeeklyCity {
   const used = new Set<CityParcel>(), parcels: CityParcel[] = [];
   for (const cell of cells) {
     if (used.has(cell)) continue;
+    // 当前中高层只有原生 1×1；2/4 档可等比复用为 2×2，长条占地暂不合并。
     const sizes: [number, number][] = cell.kind === "building"
-      ? cell.band === 1 ? [[3, 3], [2, 1], [1, 1]] : cell.band === 2 || cell.band === 4 ? [[2, 2], [2, 1], [1, 2], [1, 1]] : [[2, 1], [1, 2], [1, 1]]
+      ? cell.band === 1 ? [[3, 3], [2, 1], [1, 1]] : cell.band === 2 || cell.band === 4 ? [[2, 2], [1, 1]] : [[1, 1]]
       : cell.kind === "tree" ? [[2, 2], [2, 1], [1, 2], [1, 1]]
       : cell.kind === "grass" ? [[2, 2], [1, 1]] : [[1, 1]];
     let w = 1, d = 1, members = [cell];
