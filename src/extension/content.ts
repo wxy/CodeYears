@@ -1,3 +1,4 @@
+import { cityLegendStyles, createCityLegend } from "./city-legend";
 import { readPageContext } from "../platform/github/probe";
 import { clearContributionCache } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
@@ -23,6 +24,7 @@ import type { TimelineState } from "../timeline/types";
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = `
     <style>
+      ${cityLegendStyles}
       :host { display:block; margin:16px 0; font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fgColor-default,#1f2328); }
       * { box-sizing:border-box; } .panel { padding:20px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:16px; background:var(--bgColor-default,#fff); }
       header, form { display:flex; align-items:center; flex-wrap:wrap; gap:10px; } header { justify-content:space-between; }
@@ -56,6 +58,9 @@ import type { TimelineState } from "../timeline/types";
       </section>
       <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
     </div>`;
+  const cityLegend = createCityLegend();
+  cityLegend.style.marginInline = "22px";
+  shadow.querySelector("#city")!.append(cityLegend);
   const select = shadow.querySelector<HTMLSelectElement>("#year")!;
   const startSelect = shadow.querySelector<HTMLSelectElement>("#start-year")!;
   const viewSelect = shadow.querySelector<HTMLSelectElement>("#view")!;
@@ -86,6 +91,7 @@ import type { TimelineState } from "../timeline/types";
   const viewName = () => viewSelect.value === "city" ? "贡献之城" : "时光山脉";
   viewSelect.addEventListener("change", () => {
     run.textContent = `生成${viewName()}`;
+    cityLegend.hidden = viewSelect.value !== "city";
     if (city) {
       city.setView(viewSelect.value as ViewMode);
       shadow.querySelector("#city-title")!.textContent = `${displayedRange} · ${viewName()}`;
@@ -167,6 +173,7 @@ import type { TimelineState } from "../timeline/types";
         const module = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
         request.signal.throwIfAborted();
         if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
+        cityLegend.hidden = viewSelect.value !== "city";
         cityBox.hidden = false;
         displayedRange = range;
         shadow.querySelector("#city-title")!.textContent = `${range} · ${viewName()}`;
