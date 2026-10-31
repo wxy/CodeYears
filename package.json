@@ -10,7 +10,8 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "npm run check && node scripts/build.mjs",
-    "dev": "node scripts/build.mjs --watch"
+    "dev": "node scripts/build.mjs --watch",
+    "preview:city": "vite --config probes/city/vite.config.ts"
   },
   "dependencies": {
     "three": "0.186.1"
