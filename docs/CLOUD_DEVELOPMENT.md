@@ -1,21 +1,21 @@
 # Codex 云端开发接续
 
-更新日期：2026-10-31。原型及年度历史组装、公开匿名补证、60 Hz 进度 PR #7/#8/#9 均已合入，当前 main 为 `a74f059`。时间轴/渲染对接已交付 [PR #10](https://github.com/wxy/CodeYears/pull/10)，本地限定复核通过、待合入；新的多年份顺序加载任务已启动。本地 `codex/mainline-validation` 维护本机验收与全局文档，云端继续通过独立分支/PR 交付。P1-G 尚未整体通过，不提前把前置模块当作正式 MVP。
+更新日期：2026-10-31。PR #1–#11 均已合入，当前 City 分支基线为 main 的 `d08bbf1`。云端多年份顺序加载已交付 [PR #12](https://github.com/wxy/CodeYears/pull/12)，待审查；本地 `codex/city-experience-preview` 已连接单年真实数据与可见城市，通过独立 PR 交付。P1-G 尚未整体通过，提前试用不代表正式 MVP / 发布验收通过。
 
 ## 当前并行安排
 
-前三项从 PR #6 基线分别建分支。A/C 的 PR #8/#7 已核对改动、审核和证据范围，均已合入；B 转交后已实际交付 PR #10，原实例代理失败不再是这项任务的当前阻塞。新任务 D 从实际最新 main 创建独立分支，已确认运行中。各自完成度与验收只以对应提交/报告为准，不把实例在线当作网络可用，也不把云端结果当作用户真实会话验收。
+前三项从 PR #6 基线分别建分支。A/B/C 均已合入；D 已完成并交付 PR #12，当前等待本地审查，没有继续占用 UI 或共享文件。各自完成度与验收只以对应提交/报告为准，不把实例在线当作网络可用，也不把云端结果当作用户真实会话验收。
 
 | 任务 | 分支 | 独占范围 | 核心交付与边界 |
 | --- | --- | --- | --- |
 | A · 公开未登录补证 | `codex/p1-public-session-validation` | 新增 `docs/tasks/P1-G-PUBLIC-SESSION.md`、`docs/reports/P1-G-PUBLIC-SESSION.md` | [PR #8](https://github.com/wxy/CodeYears/pull/8) 已合入 `0240d63`。两个真实匿名样本为 wxy/2024 366 天/440、torvalds/2025 365 天/2925，原解析器合计与标题一致。Chromium TLS 信任阻塞，未取得完整 MV3/真实缓存证据；未改权限或源码绕过。不冒充本机退出登录/A-B 验收 |
-| B · 时间轴与渲染前置对接 | `codex/render-timeline-integration` | `src/renderers/probe/scene.ts`、必要的 `probes/rendering/main.ts`，自己的 `RENDER-TIMELINE-INTEGRATION` 任务/报告 | [PR #10](https://github.com/wxy/CodeYears/pull/10) 已交付待合入，`84adaf1`，源码 `b398830`。云端新旧路径对照通过；本地 City regular / Terrain dense 的暂停/跳过/自然完成与释放复核通过，约 16.7 ms P50。不改视觉、DPR、正式扩展或共享时间轴 |
+| B · 时间轴与渲染前置对接 | `codex/render-timeline-integration` | `src/renderers/probe/scene.ts`、必要的 `probes/rendering/main.ts`，自己的 `RENDER-TIMELINE-INTEGRATION` 任务/报告 | [PR #10](https://github.com/wxy/CodeYears/pull/10) 已合入 `bbdc299`，交付 `84adaf1`，源码 `b398830`。云端新旧路径对照通过；本地 City regular / Terrain dense 的暂停/跳过/自然完成与释放复核通过，约 16.7 ms P50。不改视觉、DPR、正式扩展或共享时间轴 |
 | C · 年度历史组装 | `codex/contribution-history-assembly` | 新增 `src/data/history.ts`，自己的 `HISTORY-ASSEMBLY` 任务/报告 | [PR #7](https://github.com/wxy/CodeYears/pull/7) 已合入 `c82625b`，本地复跑原报告检查通过。组合真实日期有序的只读历史，区分完整/部分与缺失年份，不填零、不改 count、不推进播放，拒绝跨主页或重复年度混入 |
-| D · 多年份顺序加载 | `codex/year-history-loader` | 新增 `src/platform/github/load-history.ts` 及自己的 `YEAR-HISTORY-LOADER` 任务/报告 | 已派发并确认运行中。复用 loadContributionYear 与 assembleContributionHistory，按年顺序加载并报告部分进度，失败/取消/身份变化即停止；不改已有身份/缓存/解析，不加并发、预取、正式 UI 或通用框架 |
+| D · 多年份顺序加载 | `codex/year-history-loader` | 新增 `src/platform/github/load-history.ts` 及自己的 `YEAR-HISTORY-LOADER` 任务/报告 | [PR #12](https://github.com/wxy/CodeYears/pull/12) 已交付，head `27bb516`、源码 `216c9a8`，尚未审查/合入。云端报告 9 项受控浏览器检查及类型/构建通过；不等于真实登录会话。复用年度加载与历史组装，顺序加载、失败/取消/身份变化停止；不含正式 UI |
 
 各任务不修改 README、全局计划、共享类型、依赖/锁文件、manifest 或扩展入口，不互相修改对方报告。发现主线缺陷或共享接口需求先报告；功能/修复仍在对应分支通过 PR 交付。不为保持并发而增加范围外功能，不等待全部边界条件一致才交付原型。
 
-本地负责真实用户会话、Edge、实际显示器与后台验收。[60 Hz 原始补充](reports/P1-G-60HZ.md) 的六组证据与 [PR #10 本机复核](reports/MAINLINE-2026-10-31.md) 的两个组合分开绑定提交，不直接继承旧版本 PASS。云端前置工作可独立于这些本地条件推进，正式 City 集成仍依赖 P1-G 收敛。
+本地负责真实用户会话、Edge、实际显示器与后台验收。[60 Hz 原始补充](reports/P1-G-60HZ.md) 的六组证据与 [PR #10 本机复核](reports/MAINLINE-2026-10-31.md) 的两个组合分开绑定提交，不直接继承旧版本 PASS。当前先完成可见 City 体验及 PR，再审查/接入多年份；不为保持并发重复派发数据组织任务。正式验收仍依赖 P1-G 收敛。
 
 ## 环境目标
 

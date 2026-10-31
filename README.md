@@ -4,7 +4,7 @@
 
 CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，计划把 GitHub 多年的真实每日贡献数量呈现为 **City（贡献之城）**与 **Terrain（时光山脉）**。
 
-> 当前处于 P1 可行性验证阶段。年度数据与独立渲染原型已合入；本分支增加按访问者隔离的年度缓存、刷新和清除。正式 Time Travel / 3D 视图尚未集成，修订版扩展实装、身份切换与硬件验收按报告分别记录。
+> 已有可试用的单年份 City 体验原型：在 GitHub 个人主页选择年份，用真实每日数量生成城市，支持生长、暂停、跳过和完整缓存重播。真实 Chrome 单账户路径已验证；多年份 UI、Terrain、两种主题与完整发布验收仍待完成，见 [体验报告](docs/reports/CITY-EXPERIENCE-PREVIEW.md)。
 
 ## 已确认的方向
 
@@ -34,6 +34,7 @@ CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，�
 | [P1-G 可行性进度](docs/reports/P1-G-READINESS.md) | 本机 Metal 负载、显示调度基线与剩余验收门槛 |
 | [60 Hz 补充验证](docs/reports/P1-G-60HZ.md) | 内建屏幕六组约 60 FPS 的原型证据 |
 | [主线审查与对接复核](docs/reports/MAINLINE-2026-10-31.md) | 年度组装/匿名报告合入、时间轴对接候选验证与下一步 |
+| [City 体验报告](docs/reports/CITY-EXPERIENCE-PREVIEW.md) | 单年份真实贡献之城、缓存重播与本地交互预览 |
 
 ## 本地开发
 
@@ -45,30 +46,33 @@ npm run check
 npm run build
 ```
 
-在 Chrome 的 `chrome://extensions` 或 Edge 的 `edge://extensions` 开启开发者模式，选择“加载已解压的扩展”，选择本项目的 `dist/` 目录。在 GitHub 个人主页贡献日历加载完成后，点击扩展图标，再选择“打开数据诊断”。面板中选择年份后读取缓存或联网获取，可强制刷新、清除此访问者在当前主页的缓存、取消或关闭。使用缓存前仍会联网确认身份；后台隐藏时清空显示并取消请求。
+在 Chrome 的 `chrome://extensions` 或 Edge 的 `edge://extensions` 开启开发者模式，选择“加载已解压的扩展”，选择本项目的 `dist/` 目录。在 GitHub 个人主页贡献日历加载完成后，点击扩展图标，再选择“打开 CodeYears”。选择年份并点击“生成贡献之城”，可拖动旋转、滚轮缩放、暂停/继续、跳过或重播。还可仅查看每日数量、强制刷新、清除此访问者在当前主页的缓存、取消或关闭。使用缓存前仍会联网确认身份；后台隐藏时清空显示、销毁城市并取消请求，返回后需重新生成。
+
+不安装扩展也可先体验画面：运行 `npm run preview:city`，打开 <http://127.0.0.1:4175/>。这个本地预览使用明确标记的确定性示例数据，复用同一 City 渲染器；它不是独立产品网站，也不读取 GitHub 会话。
 
 `npm run dev` 监听源文件并重新构建；修改后在扩展管理页重新加载。它不向扩展注入开发服务器代码。
 
-当前 manifest 使用 `activeTab`、`scripting` 与 `storage`：主动点击后临时注入诊断，本地保存按访问者隔离的年度数量；没有持久网站访问、Cookie 权限、自动 content script 或后台服务，未加载 WebGL。升级到此分支后需在扩展管理页重新加载；完整产品权限及 Chrome/Edge 实装仍需验证。
+当前 manifest 使用 `activeTab`、`scripting` 与 `storage`：主动点击后临时注入，本地保存按访问者隔离的年度数量；没有持久网站访问、Cookie 权限、自动 content script 或后台服务。生成城市时才动态加载本地 `city-preview.js` 并创建 WebGL；该模块仅向 GitHub 页面声明为可访问资源。升级后需在扩展管理页重新加载；真实 Chrome 已实装验证，Edge 与完整产品权限验收仍待完成。
 
 ## 目录
 
 ```text
 public/manifest.json        MV3 清单
 popup.html                  扩展状态页入口
-src/extension/              弹窗与按需注入的 Shadow DOM 数据诊断
+src/extension/              弹窗与按需注入的 Shadow DOM City / 数据面板
 src/platform/github/        页面上下文、年度同源请求原型
 src/data/                   每日贡献数据契约与年度校验解析器
 src/cache/                  作用域年度缓存、版本与有效期校验
-src/timeline/               播放状态契约（云端独立原型已交付 PR #4，待合入）
-src/renderers/              City / Terrain、主题、生命周期契约
+src/timeline/               与数据加载解耦的播放控制器
+src/renderers/              City 体验渲染器、City / Terrain 工程原型与契约
+probes/city/                复用 City 渲染器的本地示例体验
 docs/                       产品、架构、路线与验证记录
 ```
 
-Three.js 已列为依赖，但扩展诊断不导入它，扩展构建不包含 3D 引擎。已合入的独立 `probes/rendering` 通过按需 `import()` 加载场景；它不是正式扩展集成。
+Three.js 随安装包独立打包，弹窗和注入脚本不静态导入它。`probes/rendering` 仍用于 20 年 City / Terrain 工程负载检查，与当前单年体验的验收结论分开。
 
 ## 当前下一步
 
-P1-B 缓存、独立 Time Travel 与 [P1-G 进度 PR #6](https://github.com/wxy/CodeYears/pull/6) 已合入。真实 Chrome 单账户缓存主流程通过；本机 Metal 六组 20 年原型在 60 Hz 内建屏幕取得约 60 FPS 证据，暂停/静止与可观察释放有检查。真实后台、身份矩阵和 Edge 仍待验收；公开未登录补证、时间轴/渲染对接和年度历史组装已分别派发云端，见 [云端安排](docs/CLOUD_DEVELOPMENT.md)。P1-G 整体通过后再正式集成 City，不用原型或受控输入替代真实验收。
+PR #10/#11 已合入；云端多年份顺序加载已交付 [PR #12](https://github.com/wxy/CodeYears/pull/12)，待审查。当前先提供可见的单年 City 体验，再接入多年份并完善视觉。P1-G 的真实身份矩阵、Edge、后台与正式集成性能门槛并行收敛；已有 20 年工程原型约 60 FPS 的证据不直接继承给新渲染器，也不以体验原型代替完整 MVP / 发布验收。
 
 GitHub 仓库 [wxy/CodeYears](https://github.com/wxy/CodeYears) 已于 2026-10-29 按用户决定公开；尚未选择开源许可证。扩展尚未发布，没有商店下载链接。独立网站仅是扩展成功后的后续设想，当前不建设。
