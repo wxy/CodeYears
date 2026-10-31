@@ -1,11 +1,11 @@
 import type { DailyContribution } from "../data/types";
-import { CITY_SPRITES, type BuildingType, type CityImages } from "./city-assets";
+import { CITY_SPRITES, CITY_PROJECTIONS, type BuildingType, type CityImages } from "./city-assets";
 import { planWeeklyCity, type CityParcel } from "./city-parcels";
 import type { LandscapeView, LandscapeViewport } from "./types";
 
 const project = (x: number, z: number): [number, number] => [(x - z) * 0.5, (x + z) * 0.25];
 
-/** 固定视角图片城市：真实日期按工作周布置，图片保持比例，按落地点远近绘制。 */
+/** 固定视角图片城市：真实日期按工作周布置，建筑和合并在创建时固定。 */
 export function createCityView(days: readonly DailyContribution[], images: CityImages): LandscapeView {
   const canvas = document.createElement("canvas"), context = canvas.getContext("2d")!;
   const fine = planWeeklyCity(days), gap = 1.6, parkWidth = 4, parkRow = Math.ceil(fine.rows / 2);
@@ -27,15 +27,16 @@ export function createCityView(days: readonly DailyContribution[], images: CityI
     }
     const spriteWidth = Math.min((parcel.w + parcel.d) * 0.5 * 0.88, 4.4);
     const spec = model ? CITY_SPRITES[model] : undefined;
-    const height = spec ? spriteWidth * spec.crop[3] / spec.crop[2] : parcel.kind === "tree" ? 0.95 : 0.35;
-    const top = spec ? spriteWidth * spec.anchor[1] / spec.crop[2] : height;
+    const projection = model ? CITY_PROJECTIONS[model] : undefined;
+    const height = spec && projection ? spriteWidth * (projection.scaleY * spec.crop[3] / spec.crop[2] + Math.abs(projection.shear)) : parcel.kind === "tree" ? 0.95 : 0.35;
+    const top = spec && projection ? spriteWidth * (projection.scaleY * spec.anchor[1] / spec.crop[2] + Math.max(projection.shear * spec.anchor[0] / spec.crop[2], -projection.shear * (1 - spec.anchor[0] / spec.crop[2]))) : height;
     return { x, y, width: spriteWidth, height, top, parcel, model };
   }).sort((a, b) => a.y - b.y || a.x - b.x);
   const fineItems = makeItems(fine.parcels);
   const minX = -depth / 2 - 2, maxX = width / 2 + 2;
   const minY = Math.min(-5.5, ...fineItems.map(item => item.y - item.top)) - .5, maxY = (width + depth) / 4 + 2;
   const centerX = (minX + maxX) / 2, centerY = (minY + maxY) / 2;
-  let tallest = Math.max(...fineItems.map(item => item.top), 1);
+  const tallest = Math.max(...fineItems.map(item => item.top), 1);
   const ground = document.createElement("canvas"), unit = Math.min(28, 1800 / (maxX - minX));
   ground.width = Math.ceil((maxX - minX) * unit); ground.height = Math.ceil((maxY - minY) * unit);
   const g = ground.getContext("2d")!; g.setTransform(unit, 0, 0, unit, -minX * unit, -minY * unit);
@@ -71,7 +72,7 @@ export function createCityView(days: readonly DailyContribution[], images: CityI
   const parkTrees: { x: number; y: number; seed: number }[] = [];
   for (let x=1;x<width;x+=2.6) for (const z of [parkStart+.4,parkStart+parkWidth-.4]) { const p=project(x,z);parkTrees.push({x:p[0],y:p[1],seed:Math.round(x)}) }
   parkTrees.sort((a,b)=>a.y-b.y);
-  let step: 1 | 2 | 4 = 1, items = fineItems;
+  const items = fineItems;
   const resize = (viewport: LandscapeViewport) => {
     const w=Math.round(viewport.width*viewport.dpr),h=Math.round(viewport.height*viewport.dpr);
     if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h}
@@ -90,14 +91,13 @@ export function createCityView(days: readonly DailyContribution[], images: CityI
   }
   return {
     canvas,
-    description:()=>`固定视角 · 每年一条横向街区，周次为列/周一至周日为行 · ${step===1?"逐日草木与跨周建筑":"按同星期几的组内日均量呈现"} · 拖动平移`,
+    description:()=>"固定视角 · 年度街区，周为列/周一至周日为行 · 缩放不改变合并和建筑 · 拖动平移",
     draw(progress,viewport){
       resize(viewport);context.clearRect(0,0,viewport.width,viewport.height);
       const fit=Math.min((viewport.width-32)/(maxX-minX),(viewport.height-24)/(maxY-minY)),scale=fit*viewport.zoom;
-      const next:1|2|4=scale>=17?1:scale>=8?2:4;
-      if(next!==step){step=next;items=step===1?fineItems:makeItems(planWeeklyCity(days,step).parcels);tallest=Math.max(...items.map(item=>item.top),1)}
       const sx=(x:number)=>viewport.width/2+viewport.panX+(x-centerX)*scale,sy=(y:number)=>viewport.height/2+viewport.panY+(y-centerY)*scale;
       context.drawImage(ground,sx(minX),sy(minY),(maxX-minX)*scale,(maxY-minY)*scale);
+      context.imageSmoothingQuality=scale<10?"medium":"high";
       const level=(1-Math.pow(1-progress,1.4))*tallest;
       let parkIndex=0;
       const paintPark=(before:number)=>{while(parkIndex<parkTrees.length&&parkTrees[parkIndex].y<=before){const p=parkTrees[parkIndex++];plant(sx(p.x),sy(p.y),scale*.75,Math.min(1,progress*3),false,p.seed)}};
@@ -108,10 +108,12 @@ export function createCityView(days: readonly DailyContribution[], images: CityI
         if(!item.model){plant(x,y,scale*.8,growth,item.parcel.kind==="shrub",item.parcel.block+item.parcel.x);continue}
         if(growth<=0)continue;
         const spec=CITY_SPRITES[item.model],bitmap=images[item.model],factor=bitmap.width/1254;
-        const w=item.width*scale,h=item.height*scale,dx=x-spec.anchor[0]/spec.crop[2]*w,dy=y-spec.anchor[1]/spec.crop[2]*w;
+        const w=item.width*scale,h=item.height*scale,dx=x-spec.anchor[0]/spec.crop[2]*w,dy=y-item.top*scale;
         if(dx+w<0||dx>viewport.width||dy+h<0||dy>viewport.height)continue;
         context.save();context.beginPath();context.rect(dx-1,y-item.top*scale*growth,w+2,h+2);context.clip();context.globalAlpha=Math.min(1,growth*4);
-        context.drawImage(bitmap,spec.crop[0]*factor,spec.crop[1]*factor,spec.crop[2]*factor,spec.crop[3]*factor,dx,dy,w,h);context.restore();
+        const projection=CITY_PROJECTIONS[item.model];
+        context.translate(x,y);context.transform(1,projection.shear,0,projection.scaleY,0,0);
+        context.drawImage(bitmap,spec.crop[0]*factor,spec.crop[1]*factor,spec.crop[2]*factor,spec.crop[3]*factor,-spec.anchor[0]/spec.crop[2]*w,-spec.anchor[1]/spec.crop[2]*w,w,spec.crop[3]/spec.crop[2]*w);context.restore();
       }
       paintPark(Infinity);
       context.font="11px -apple-system,BlinkMacSystemFont,sans-serif";context.textAlign="right";context.fillStyle=viewport.dark?"#aab7ac":"#536451";

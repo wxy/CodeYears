@@ -1,6 +1,6 @@
 export type BuildingType = "house" | "apartment" | "office" | "tower" | "hall" | "stadium";
-export interface SpriteSpec { file: string; crop: readonly [number, number, number, number]; anchor: readonly [number, number]; }
-/** 原图保留不变；裁切框/落地点在绘制时使用，同一地面单位且保持宽高比。 */
+export interface SpriteSpec { file: string; crop: readonly [number, number, number, number]; anchor: readonly [number, number]; floorAngles: readonly [number, number]; }
+/** 原图保留不变；绘制时应用裁切框、落地点与底边投影标定。 */
 export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
   "house": {
     "file": "house.png",
@@ -13,7 +13,8 @@ export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
     "anchor": [
       582.0,
       889.0
-    ]
+    ],
+    "floorAngles": [17.75, 36.25]
   },
   "apartment": {
     "file": "apartment.png",
@@ -26,7 +27,8 @@ export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
     "anchor": [
       562.0,
       818.0
-    ]
+    ],
+    "floorAngles": [23, 26]
   },
   "office": {
     "file": "office.png",
@@ -39,7 +41,8 @@ export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
     "anchor": [
       578.0,
       738.0
-    ]
+    ],
+    "floorAngles": [27.5, 30]
   },
   "tower": {
     "file": "tower.png",
@@ -52,7 +55,8 @@ export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
     "anchor": [
       446.0,
       982.0
-    ]
+    ],
+    "floorAngles": [22, 32.5]
   },
   "hall": {
     "file": "hall.png",
@@ -65,7 +69,8 @@ export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
     "anchor": [
       618.5,
       377.75
-    ]
+    ],
+    "floorAngles": [20.75, 28.75]
   },
   "stadium": {
     "file": "stadium.png",
@@ -78,9 +83,16 @@ export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
     "anchor": [
       617.5,
       595.25
-    ]
+    ],
+    "floorAngles": [27.75, 29]
   }
 };
+
+/** 量测主底边；在绘制时统一为地图 ±atan(1/2)，竖直边保持竖直。 */
+export const CITY_PROJECTIONS = Object.fromEntries(Object.entries(CITY_SPRITES).map(([id, spec]) => {
+  const left = Math.tan(spec.floorAngles[0] * Math.PI / 180), right = Math.tan(spec.floorAngles[1] * Math.PI / 180);
+  return [id, { shear: (right - left) / (2 * (left + right)), scaleY: 1 / (left + right) }];
+})) as Record<BuildingType, { shear: number; scaleY: number }>;
 
 export type CityImages = Record<BuildingType, ImageBitmap>;
 export async function loadCityImages(base: string): Promise<CityImages> {

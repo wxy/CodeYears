@@ -13,7 +13,7 @@ export interface WeeklyCity {
 }
 
 /** 每年一条横向街区：周为列，周一至周日为行。年首尾不足周不丢日期。 */
-export function planWeeklyCity(days: readonly DailyContribution[], step: 1 | 2 | 4 = 1): WeeklyCity {
+export function planWeeklyCity(days: readonly DailyContribution[]): WeeklyCity {
   const years = [...new Set(days.map(day => Number(day.date.slice(0, 4))))];
   const districts = years.map(year => {
     const first = Date.UTC(year, 0, 1), weekday = (new Date(first).getUTCDay() + 6) % 7, monday = first - weekday * 86400000;
@@ -26,11 +26,9 @@ export function planWeeklyCity(days: readonly DailyContribution[], step: 1 | 2 |
   days.forEach((day, index) => {
     const block = byYear.get(Number(day.date.slice(0, 4)))!, district = districts[block];
     const offset = Math.round((Date.parse(`${day.date}T00:00:00Z`) - district.monday) / 86400000);
-    const week = Math.floor(offset / 7), x = Math.floor(week / step) * step, z = offset % 7;
+    const x = Math.floor(offset / 7), z = offset % 7;
     const key = `${block},${x},${z}`;
-    let cell = groups.get(key);
-    if (!cell) { cell = { x, z, w: Math.min(step, district.weeks - x), d: 1, block, band: 0, kind: "grass", indices: [], count: 0, mean: 0 }; groups.set(key, cell); }
-    cell.indices.push(index); cell.count += day.count;
+    groups.set(key, { x, z, w: 1, d: 1, block, band: 0, kind: "grass", indices: [index], count: day.count, mean: day.count });
   });
   const cells = [...groups.values()].sort((a, b) => a.block - b.block || a.z - b.z || a.x - b.x);
   for (const cell of cells) {
@@ -52,12 +50,12 @@ export function planWeeklyCity(days: readonly DailyContribution[], step: 1 | 2 |
       }
       while (cell.z + d < 7 && d < 4) {
         const row: CityParcel[] = [];
-        for (let x = cell.x; x < cell.x + w; x += step) {
+        for (let x = cell.x; x < cell.x + w; x++) {
           const next = groups.get(`${cell.block},${x},${cell.z + d}`);
           if (!matches(next)) break;
           row.push(next);
         }
-        if (row.length !== Math.ceil(w / step)) break;
+        if (row.length !== w) break;
         members.push(...row); d++;
       }
     }
