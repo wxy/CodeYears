@@ -28,6 +28,7 @@ await build({
   publicDir: false,
   build: {
     target: "es2022", outDir: values.outDir, emptyOutDir: false, watch,
-    lib: { entry: "src/renderers/city-preview.ts", formats: ["es"], fileName: () => "city-preview.js" },
+    lib: { entry: "src/renderers/landscape.ts", formats: ["es"], fileName: () => "landscape.js" },
+    rollupOptions: { output: { chunkFileNames: "chunks/[name]-[hash].js" } },
   },
 });

@@ -1,16 +1,41 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>CodeYears · 贡献之城体验预览</title>
-<style>
-  *{box-sizing:border-box}body{margin:0;background:#f7faf8;color:#233e33;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1120px;margin:50px auto;padding:0 28px}.eyebrow{color:#6c8477;font-size:12px;letter-spacing:.12em}h1{font-size:clamp(36px,5vw,58px);line-height:1.08;letter-spacing:-.05em;margin:12px 0 14px;font-weight:650}.intro{font-size:18px;color:#62776c;margin:0 0 28px}.city{overflow:hidden;border:1px solid #dce8e1;border-radius:26px;background:#eef4f2;box-shadow:0 18px 60px #203a2b09}.heading{padding:24px 28px 0;display:flex;justify-content:space-between;gap:12px;align-items:center}h2{font-size:20px;letter-spacing:-.025em;margin:0}.note{color:#6b8174;font-size:12px;margin:5px 0}.scene{height:clamp(320px,52vh,480px)}.controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:14px 24px 24px}.progress{flex:1 1 220px;font-size:13px;color:#536e60;font-variant-numeric:tabular-nums}button,select{font:inherit;border:1px solid #cbdcd1;border-radius:12px;background:#fff;color:#294838;padding:9px 15px;cursor:pointer}button:active{transform:scale(.97)}button:disabled{opacity:.5;cursor:default}button:focus-visible,select:focus-visible{outline:2px solid #268f80;outline-offset:3px}.primary{background:#285c47;color:white;border-color:#285c47}.foot{margin:18px 4px;color:#75897d;font-size:12px}label{font-size:12px;color:#61786b}select{margin-left:8px;padding:7px 10px}
-</style></head>
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CodeYears · 城与山的岁月</title>
+  <style>
+    :root{color-scheme:light;--bgColor-default:#fff;--bgColor-muted:#f6f8fa;--fgColor-default:#1f2328;--fgColor-muted:#66736b;--borderColor-default:#d1d9e0}
+    :root[data-preview-theme="dark"]{color-scheme:dark;--bgColor-default:#0d1117;--bgColor-muted:#161b22;--fgColor-default:#e6edf3;--fgColor-muted:#9daaa4;--borderColor-default:#30363d}
+    @media(prefers-color-scheme:dark){:root:not([data-preview-theme="light"]){color-scheme:dark;--bgColor-default:#0d1117;--bgColor-muted:#161b22;--fgColor-default:#e6edf3;--fgColor-muted:#9daaa4;--borderColor-default:#30363d}}
+    *{box-sizing:border-box}body{margin:0;background:var(--bgColor-default);color:var(--fgColor-default);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{max-width:1220px;margin:34px auto 20px;padding:0 32px}.eyebrow{color:var(--fgColor-muted);font-size:11px;letter-spacing:.14em}
+    h1{font-size:clamp(32px,4vw,50px);line-height:1.12;letter-spacing:-.045em;margin:10px 0 12px;font-weight:650}.intro{font-size:17px;color:var(--fgColor-muted);margin:0 0 28px}
+    .city{background:transparent}.heading{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}h2{font-size:19px;letter-spacing:-.025em;margin:0}
+    .note{color:var(--fgColor-muted);font-size:12px;margin:4px 0}.settings{display:flex;flex-wrap:wrap;gap:12px}.view-picker{display:flex;align-items:center;flex-wrap:wrap;gap:14px;padding-top:18px}
+    .view-picker span{font-size:12px;color:var(--fgColor-muted)}.scene{height:clamp(380px,62vh,650px);background:transparent}
+    .controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:4px 0 16px}.progress{flex:1 1 220px;font-size:13px;color:var(--fgColor-muted);font-variant-numeric:tabular-nums}
+    button,select{font:inherit;border:1px solid var(--borderColor-default);border-radius:10px;background:var(--bgColor-muted);color:var(--fgColor-default);padding:8px 13px;cursor:pointer}
+    button:active{transform:scale(.97)}button:disabled{opacity:.45;cursor:default}button:focus-visible,select:focus-visible{outline:2px solid #429c80;outline-offset:3px}.primary{background:#285c47;color:#fff;border-color:#285c47}
+    label{font-size:12px;color:var(--fgColor-muted)}select{margin-left:7px;padding:6px 9px}.foot{margin:8px 0;color:var(--fgColor-muted);font-size:12px}
+    .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-size:12px;color:var(--fgColor-muted)}.legend[hidden]{display:none}.legend span{border-left:3px solid;padding-left:7px}
+  </style>
+</head>
 <body><main>
   <div class="eyebrow">CODEYEARS · 本地交互预览</div><h1>代码岁月，自成风景。</h1>
-  <p class="intro">让每一天的积累，长成一座属于你的城市。</p>
-  <section class="city" aria-label="贡献之城示例">
-    <div class="heading"><div><h2 id="year-title">贡献之城</h2><p class="note" id="summary"></p></div><div><label>时间范围<select id="range"><option value="1">2024 · 一年</option><option value="3" selected>2023–2025 · 三年</option><option value="20">2006–2025 · 二十年</option></select></label><label>示例密度<select id="density"><option value="regular">常规</option><option value="dense">高密度</option><option value="sparse">稀疏</option></select></label></div></div>
+  <p class="intro">一座连通的城市，一片绵延的山脉。从平地，看岁月生长。</p>
+  <section class="city" aria-label="贡献风景示例">
+    <div class="heading">
+      <div><h2 id="year-title">贡献之城</h2><p class="note" id="summary"></p></div>
+      <div class="settings">
+        <label>时间范围<select id="range"><option value="1">2024 · 一年</option><option value="3" selected>2023–2025 · 三年</option><option value="20">2006–2025 · 二十年</option></select></label>
+        <label>示例密度<select id="density"><option value="regular">常规</option><option value="dense">高密度</option><option value="sparse">稀疏</option></select></label>
+        <label>页面外观<select id="appearance"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label>
+      </div>
+    </div>
+    <div class="view-picker"><label>贡献视图<select id="view"><option value="city">City · 贡献之城</option><option value="terrain">Terrain · 时光山脉</option></select></label><span id="scene-detail">整片风景从平地生长</span></div>
+    <div class="legend" id="year-legend" aria-label="年度街区"></div>
     <div class="scene" id="scene"></div>
-    <div class="controls"><span class="progress" id="progress"></span><button class="primary" id="replay">重播生长</button><button id="pause">暂停</button><button id="skip">跳过动画</button></div>
+    <div class="controls"><span class="progress" id="progress"></span><button id="zoom-out" aria-label="缩小景观">−</button><button id="zoom-in" aria-label="放大景观">＋</button><button id="reset-view">重置视图</button><button class="primary" id="replay">重播生长</button><button id="pause">暂停</button><button id="skip">跳过动画</button></div>
   </section>
-  <p class="foot">此页使用确定性示例数据，不是真实 GitHub 贡献。真实数据请从扩展打开 GitHub 个人主页。拖动旋转 · 滚轮缩放</p>
+  <p class="foot">确定性示例数据，非真实 GitHub 贡献。地块的平地、草木与建筑表示贡献强度；景观带内的树木、水体与道路仅作装饰。年度街区按周排列，季度交叉路分段，单元居中留距。拖动平移 · 滚轮缩放</p>
 </main><script type="module" src="/main.ts"></script></body></html>

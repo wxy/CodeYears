@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1040" viewBox="0 0 1440 1040" role="img" aria-labelledby="title desc">
+<title id="title">CodeYears 统一地面投影模板</title>
+<desc id="desc">地面基向量为 48,24 和 -48,24，所有占地使用同一比例，竖直方向为 0,-48。包括1乘1、2乘1、1乘2、2乘2、3乘2、2乘3和3乘3。</desc>
+<rect width="1440" height="1040" fill="#faf9f5"/>
+<g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" fill="#24382f">
+<text x="54" y="59" font-size="30" font-weight="650">CodeYears · 统一地面投影</text>
+<text x="54" y="91" font-size="17" fill="#64756b">所有单元共用同一地面基向量；占地扩展不改变边的方向，竖直边不倾斜。</text>
+<polygon points="264,246 360,294 264,342 168,294" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<path d="M312 270L216 318" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M216 270L312 318" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<polygon points="264,150 360,198 264,246 168,198" fill="#dbe7e8" fill-opacity=".55" stroke="#608790" stroke-width="1.6"/>
+<path d="M264 246L264 150" fill="none" stroke="#608790" stroke-width="1.5"/>
+<path d="M360 294L360 198" fill="none" stroke="#608790" stroke-width="1.5"/>
+<path d="M264 342L264 246" fill="none" stroke="#608790" stroke-width="1.5"/>
+<path d="M168 294L168 198" fill="none" stroke="#608790" stroke-width="1.5"/>
+<text x="70" y="132" font-size="17" fill="#64756b">示例：2×2×2，地面与屋顶的平行边方向相同</text>
+<text x="125" y="370" font-size="14" fill="#64756b">竖边只沿 H 轴；屋顶可退台，方向仍由同一投影决定。</text>
+<text x="650" y="164" font-size="24" fill="#285c47">P(W,D,H) = (48(W−D), 24(W+D)−48H)</text>
+<text x="650" y="205" font-size="20" fill="#64756b">W 轴：(+48, +24)    D 轴：(−48, +24)</text>
+<text x="650" y="241" font-size="20" fill="#64756b">地面边斜率：+0.5 / −0.5，约 ±26.565°</text>
+<text x="650" y="278" font-size="18" fill="#64756b">H 轴：(0, −48)，竖直向上；所有尺寸统一等比变化</text>
+<text x="650" y="319" font-size="17" fill="#64756b">地面四角决定占地，落地点决定位置，结构顶部决定高度。</text>
+<text x="650" y="350" font-size="17" fill="#64756b">下方七种占地共用同一个地面格尺寸，未逐项放大填框。</text>
+<rect x="40" y="410" width="320" height="253" rx="16" fill="#fff" stroke="#dce2d9"/>
+<text x="62" y="446" font-size="22" fill="#285c47">1×1</text>
+<polygon points="200,521 248,545 200,569 152,545" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<circle cx="200" cy="521" r="3" fill="#285c47"/>
+<text x="205" y="515" font-size="11" fill="#64756b">O</text>
+<circle cx="248" cy="545" r="3" fill="#285c47"/>
+<text x="253" y="539" font-size="11" fill="#64756b">W</text>
+<circle cx="200" cy="569" r="3" fill="#285c47"/>
+<text x="205" y="563" font-size="11" fill="#64756b">W+D</text>
+<circle cx="152" cy="545" r="3" fill="#285c47"/>
+<text x="157" y="539" font-size="11" fill="#64756b">D</text>
+<text x="62" y="640" font-size="14" fill="#64756b">占地 1 格 · 两组平行边始终同向</text>
+<rect x="390" y="410" width="320" height="253" rx="16" fill="#fff" stroke="#dce2d9"/>
+<text x="412" y="446" font-size="22" fill="#285c47">2×1</text>
+<polygon points="526,509 622,557 574,581 478,533" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<path d="M574 533L526 557" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<circle cx="526" cy="509" r="3" fill="#285c47"/>
+<text x="531" y="503" font-size="11" fill="#64756b">O</text>
+<circle cx="622" cy="557" r="3" fill="#285c47"/>
+<text x="627" y="551" font-size="11" fill="#64756b">W</text>
+<circle cx="574" cy="581" r="3" fill="#285c47"/>
+<text x="579" y="575" font-size="11" fill="#64756b">W+D</text>
+<circle cx="478" cy="533" r="3" fill="#285c47"/>
+<text x="483" y="527" font-size="11" fill="#64756b">D</text>
+<text x="412" y="640" font-size="14" fill="#64756b">占地 2 格 · 两组平行边始终同向</text>
+<rect x="740" y="410" width="320" height="253" rx="16" fill="#fff" stroke="#dce2d9"/>
+<text x="762" y="446" font-size="22" fill="#285c47">1×2</text>
+<polygon points="924,509 972,533 876,581 828,557" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<path d="M876 533L924 557" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<circle cx="924" cy="509" r="3" fill="#285c47"/>
+<text x="929" y="503" font-size="11" fill="#64756b">O</text>
+<circle cx="972" cy="533" r="3" fill="#285c47"/>
+<text x="977" y="527" font-size="11" fill="#64756b">W</text>
+<circle cx="876" cy="581" r="3" fill="#285c47"/>
+<text x="881" y="575" font-size="11" fill="#64756b">W+D</text>
+<circle cx="828" cy="557" r="3" fill="#285c47"/>
+<text x="833" y="551" font-size="11" fill="#64756b">D</text>
+<text x="762" y="640" font-size="14" fill="#64756b">占地 2 格 · 两组平行边始终同向</text>
+<rect x="1090" y="410" width="320" height="253" rx="16" fill="#fff" stroke="#dce2d9"/>
+<text x="1112" y="446" font-size="22" fill="#285c47">2×2</text>
+<polygon points="1250,497 1346,545 1250,593 1154,545" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<path d="M1298 521L1202 569" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M1202 521L1298 569" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<circle cx="1250" cy="497" r="3" fill="#285c47"/>
+<text x="1255" y="491" font-size="11" fill="#64756b">O</text>
+<circle cx="1346" cy="545" r="3" fill="#285c47"/>
+<text x="1351" y="539" font-size="11" fill="#64756b">W</text>
+<circle cx="1250" cy="593" r="3" fill="#285c47"/>
+<text x="1255" y="587" font-size="11" fill="#64756b">W+D</text>
+<circle cx="1154" cy="545" r="3" fill="#285c47"/>
+<text x="1159" y="539" font-size="11" fill="#64756b">D</text>
+<text x="1112" y="640" font-size="14" fill="#64756b">占地 4 格 · 两组平行边始终同向</text>
+<rect x="40" y="695" width="320" height="253" rx="16" fill="#fff" stroke="#dce2d9"/>
+<text x="62" y="731" font-size="22" fill="#285c47">3×2</text>
+<polygon points="176,770 320,842 224,890 80,818" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<path d="M224 794L128 842" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M272 818L176 866" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M128 794L272 866" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<circle cx="176" cy="770" r="3" fill="#285c47"/>
+<text x="181" y="764" font-size="11" fill="#64756b">O</text>
+<circle cx="320" cy="842" r="3" fill="#285c47"/>
+<text x="325" y="836" font-size="11" fill="#64756b">W</text>
+<circle cx="224" cy="890" r="3" fill="#285c47"/>
+<text x="229" y="884" font-size="11" fill="#64756b">W+D</text>
+<circle cx="80" cy="818" r="3" fill="#285c47"/>
+<text x="85" y="812" font-size="11" fill="#64756b">D</text>
+<text x="62" y="925" font-size="14" fill="#64756b">占地 6 格 · 两组平行边始终同向</text>
+<rect x="390" y="695" width="320" height="253" rx="16" fill="#fff" stroke="#dce2d9"/>
+<text x="412" y="731" font-size="22" fill="#285c47">2×3</text>
+<polygon points="574,770 670,818 526,890 430,842" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<path d="M622 794L478 866" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M526 794L622 842" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M478 818L574 866" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<circle cx="574" cy="770" r="3" fill="#285c47"/>
+<text x="579" y="764" font-size="11" fill="#64756b">O</text>
+<circle cx="670" cy="818" r="3" fill="#285c47"/>
+<text x="675" y="812" font-size="11" fill="#64756b">W</text>
+<circle cx="526" cy="890" r="3" fill="#285c47"/>
+<text x="531" y="884" font-size="11" fill="#64756b">W+D</text>
+<circle cx="430" cy="842" r="3" fill="#285c47"/>
+<text x="435" y="836" font-size="11" fill="#64756b">D</text>
+<text x="412" y="925" font-size="14" fill="#64756b">占地 6 格 · 两组平行边始终同向</text>
+<rect x="740" y="695" width="320" height="253" rx="16" fill="#fff" stroke="#dce2d9"/>
+<text x="762" y="731" font-size="22" fill="#285c47">3×3</text>
+<polygon points="900,758 1044,830 900,902 756,830" fill="#e5eddf" stroke="#527a60" stroke-width="2"/>
+<path d="M948 782L804 854" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M996 806L852 878" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M852 782L996 854" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<path d="M804 806L948 878" fill="none" stroke="#9ea99e" stroke-width="0.9"/>
+<circle cx="900" cy="758" r="3" fill="#285c47"/>
+<text x="905" y="752" font-size="11" fill="#64756b">O</text>
+<circle cx="1044" cy="830" r="3" fill="#285c47"/>
+<text x="1049" y="824" font-size="11" fill="#64756b">W</text>
+<circle cx="900" cy="902" r="3" fill="#285c47"/>
+<text x="905" y="896" font-size="11" fill="#64756b">W+D</text>
+<circle cx="756" cy="830" r="3" fill="#285c47"/>
+<text x="761" y="824" font-size="11" fill="#64756b">D</text>
+<text x="762" y="925" font-size="14" fill="#64756b">占地 9 格 · 两组平行边始终同向</text>
+<text x="54" y="1014" font-size="15" fill="#64756b">这是精确几何模板；AI 造型设计板未经过四角/高度标定前，不视为已符合此模板。</text>
+</g></svg>
