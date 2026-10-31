@@ -30,7 +30,7 @@ shadow.innerHTML = `
     </div>
     <section class="status" aria-labelledby="status-title">
       <h2 id="status-title">City / Terrain · 真实贡献风景</h2>
-      <p>按年份展开你的城市与山脉。两种视图共享真实历史与播放位置，支持暂停、跳过和完整缓存重播。</p>
+      <p>让多年的贡献连成城市与山脉。缩远看全貌，放大探索细节；两种视图共享真实历史与播放位置。</p>
       <button type="button">打开 CodeYears</button>
       <output role="status" aria-live="polite"></output>
     </section>

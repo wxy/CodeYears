@@ -42,15 +42,16 @@ import type { TimelineState } from "../timeline/types";
     <div class="panel">
       <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
       <p id="identity"></p>
-      <p class="note">每一年，一片新的风景。选择起止年份，生成城市或山脉；切换视图保留播放位置，不重新读取数据。</p>
+      <p class="note">让多年的贡献连成一片风景。缩远看全貌，放大探索细节；年份仅作时间索引，切换视图保留播放位置。</p>
       <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><label>视图 <select id="view" aria-label="贡献视图"><option value="city">City · 贡献之城</option><option value="terrain">Terrain · 时光山脉</option></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
       <output id="status" role="status" aria-live="polite">选择年份范围，开始呈现你的代码岁月。</output>
       <progress id="loading-progress" value="0" max="1" hidden aria-label="年度加载进度"></progress>
       <section class="city" id="city" hidden aria-label="贡献风景">
         <div class="city-head"><h3 id="city-title">贡献之城</h3><p class="note" id="city-summary"></p></div>
         <div id="year-summary" aria-label="各年贡献概览"></div>
+        <p class="note" id="scene-detail" style="padding:0 22px"></p>
         <div id="scene"></div>
-        <div class="city-controls"><span id="progress"></span><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭风景</button></div>
+        <div class="city-controls"><span id="progress"></span><button id="zoom-out" type="button" aria-label="缩小景观">−</button><button id="zoom-in" type="button" aria-label="放大景观">＋</button><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭风景</button></div>
       </section>
       <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
     </div>`;
@@ -174,8 +175,9 @@ import type { TimelineState } from "../timeline/types";
         summary.replaceChildren();
         for (const [year, count] of yearlyTotals) { const item = document.createElement("span"); item.textContent = `${year} · ${count.toLocaleString()} 次`; summary.append(item); }
         try {
-          city = module.createLandscape(cityHost, history.days, (state, error) => {
+          city = module.createLandscape(cityHost, history.days, (state, error, detail) => {
             if (error) status.textContent = error;
+            shadow.querySelector("#scene-detail")!.textContent = detail ?? "";
             timelineState = state;
             const date = history.days[state.revealedDays - 1]?.date;
             progress.textContent = state.revealedDays === 0 ? `历史起点 · 0 / ${state.totalDays} 天` : `${date} · ${state.revealedDays} / ${state.totalDays} 天`;
@@ -196,6 +198,8 @@ import type { TimelineState } from "../timeline/types";
   pause.addEventListener("click", () => timelineState?.status === "paused" ? city?.resume() : city?.pause());
   shadow.querySelector("#skip")!.addEventListener("click", () => city?.skip());
   shadow.querySelector("#replay")!.addEventListener("click", () => city?.replay());
+  shadow.querySelector("#zoom-out")!.addEventListener("click", () => city?.zoomBy(0.8));
+  shadow.querySelector("#zoom-in")!.addEventListener("click", () => city?.zoomBy(1.25));
   shadow.querySelector("#close-city")!.addEventListener("click", disposeCity);
   clear.addEventListener("click", async () => {
     const request = new AbortController();
