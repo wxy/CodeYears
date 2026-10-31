@@ -4,6 +4,7 @@ import { loadContributionHistory } from "../platform/github/load-history";
 import type { DailyContribution } from "../data/types";
 import type { ContributionLandscape } from "../renderers/landscape";
 import type { ViewMode } from "../renderers/types";
+import { yearTone } from "../renderers/palette";
 import type { TimelineState } from "../timeline/types";
 
 (() => {
@@ -23,26 +24,27 @@ import type { TimelineState } from "../timeline/types";
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = `
     <style>
-      :host { display:block; margin:16px 0; font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:#22312a; }
-      * { box-sizing:border-box; } .panel { padding:20px; border:1px solid #cbd9cf; border-radius:16px; background:#f6f9f5; }
+      :host { display:block; margin:16px 0; font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fgColor-default,#1f2328); }
+      * { box-sizing:border-box; } .panel { padding:20px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:16px; background:var(--bgColor-default,#fff); }
       header, form { display:flex; align-items:center; flex-wrap:wrap; gap:10px; } header { justify-content:space-between; }
-      h2 { margin:0; font-size:22px; letter-spacing:-.03em; } p { margin:8px 0; } .note { color:#586b5d; font-size:12px; }
-      select, button { font:inherit; padding:6px 12px; border-radius:8px; border:1px solid #bdcdbf; background:white; color:#22312a; }
+      h2 { margin:0; font-size:22px; letter-spacing:-.03em; } p { margin:8px 0; } .note { color:var(--fgColor-muted,#59636e); font-size:12px; }
+      select, button { font:inherit; padding:6px 12px; border-radius:8px; border:1px solid var(--borderColor-default,#d1d9e0); background:var(--bgColor-muted,#f6f8fa); color:var(--fgColor-default,#1f2328); }
       button { cursor:pointer; } button:disabled { cursor:default; opacity:.5; } button.primary { background:#245b3c; color:white; }
       output { display:block; margin:12px 0; white-space:pre-line; } table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
-      td,th { padding:3px 10px; text-align:left; border-bottom:1px solid #dce6de; } .days { max-height:280px; overflow:auto; }
+      td,th { padding:3px 10px; text-align:left; border-bottom:1px solid var(--borderColor-default,#d1d9e0); } .days { max-height:280px; overflow:auto; }
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
-      .city { margin:18px 0; border:1px solid #dce8e1; border-radius:18px; overflow:hidden; background:#eef4f2; }
+      .city { margin:22px 0 8px; overflow:hidden; background:transparent; }
       .city[hidden] { display:none; } .city-head { padding:20px 22px 0; } h3 { margin:0; font-size:18px; letter-spacing:-.02em; }
       #loading-progress { width:100%; accent-color:#268f80; } #loading-progress[hidden] { display:none; }
-      #year-summary { display:flex; flex-wrap:wrap; gap:6px 16px; padding:0 22px; color:#52665c; font-size:12px; }
-      #scene { height:440px; min-height:320px; max-height:65vh; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
-      #progress { flex:1 1 190px; color:#52665c; font-size:12px; font-variant-numeric:tabular-nums; }
+      #year-summary { display:flex; flex-wrap:wrap; gap:6px 16px; padding:0 22px; color:var(--fgColor-muted,#59636e); font-size:12px; }
+      #year-summary span { padding-left:8px; border-left:3px solid; }
+      #scene { height:490px; min-height:340px; max-height:68vh; background:transparent; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
+      #progress { flex:1 1 190px; color:var(--fgColor-muted,#59636e); font-size:12px; font-variant-numeric:tabular-nums; }
     </style>
     <div class="panel">
       <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
       <p id="identity"></p>
-      <p class="note">让多年的贡献连成一片风景。缩远看全貌，放大探索细节；年份仅作时间索引，切换视图保留播放位置。</p>
+      <p class="note">从一片平地，长出你的城市与山脉。城市以年份配色辨识街区，山脉保持连续；切换视图保留生长进度。</p>
       <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><label>视图 <select id="view" aria-label="贡献视图"><option value="city">City · 贡献之城</option><option value="terrain">Terrain · 时光山脉</option></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
       <output id="status" role="status" aria-live="polite">选择年份范围，开始呈现你的代码岁月。</output>
       <progress id="loading-progress" value="0" max="1" hidden aria-label="年度加载进度"></progress>
@@ -173,14 +175,13 @@ import type { TimelineState } from "../timeline/types";
         for (const day of history.days) { const year = Number(day.date.slice(0, 4)); yearlyTotals.set(year, yearlyTotals.get(year)! + day.count); }
         const summary = shadow.querySelector("#year-summary")!;
         summary.replaceChildren();
-        for (const [year, count] of yearlyTotals) { const item = document.createElement("span"); item.textContent = `${year} · ${count.toLocaleString()} 次`; summary.append(item); }
+        for (const [year, count] of yearlyTotals) { const item = document.createElement("span"); item.textContent = `${year} · ${count.toLocaleString()} 次`; item.style.borderColor = yearTone(year); summary.append(item); }
         try {
           city = module.createLandscape(cityHost, history.days, (state, error, detail) => {
             if (error) status.textContent = error;
             shadow.querySelector("#scene-detail")!.textContent = detail ?? "";
             timelineState = state;
-            const date = history.days[state.revealedDays - 1]?.date;
-            progress.textContent = state.revealedDays === 0 ? `历史起点 · 0 / ${state.totalDays} 天` : `${date} · ${state.revealedDays} / ${state.totalDays} 天`;
+            progress.textContent = `景观生长 · ${Math.round(state.revealedDays / state.totalDays * 100)}%`;
             pause.textContent = state.status === "paused" ? "继续" : "暂停";
             pause.disabled = state.status === "completed";
           }, viewSelect.value as ViewMode);
