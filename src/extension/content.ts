@@ -1,5 +1,7 @@
 import { readPageContext } from "../platform/github/probe";
-import { clearContributionCache, loadContributionYear } from "../platform/github/load-year";
+import { clearContributionCache } from "../platform/github/load-year";
+import { loadContributionHistory } from "../platform/github/load-history";
+import type { DailyContribution } from "../data/types";
 import type { CityPreview } from "../renderers/city-preview";
 import type { TimelineState } from "../timeline/types";
 
@@ -11,7 +13,8 @@ import type { TimelineState } from "../timeline/types";
   const context = readPageContext(document, new URL(location.href));
   const years = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
     .map(link => Number(link.id.slice("year-link-".length)))
-    .filter(year => Number.isInteger(year) && year >= 2008 && year <= new Date().getFullYear());
+    .filter(year => Number.isInteger(year) && year >= 2008 && year <= new Date().getFullYear())
+    .sort((a, b) => b - a);
   if (!years.length) throw new Error("当前页面没有可识别的年度入口。");
 
   const host = document.createElement("section");
@@ -30,24 +33,33 @@ import type { TimelineState } from "../timeline/types";
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
       .city { margin:18px 0; border:1px solid #dce8e1; border-radius:18px; overflow:hidden; background:#eef4f2; }
       .city[hidden] { display:none; } .city-head { padding:20px 22px 0; } h3 { margin:0; font-size:18px; letter-spacing:-.02em; }
+      #loading-progress { width:100%; accent-color:#268f80; } #loading-progress[hidden] { display:none; }
+      #year-summary { display:flex; flex-wrap:wrap; gap:6px 16px; padding:0 22px; color:#52665c; font-size:12px; }
       #scene { height:360px; min-height:260px; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
       #progress { flex:1 1 190px; color:#52665c; font-size:12px; font-variant-numeric:tabular-nums; }
     </style>
     <div class="panel">
       <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
       <p id="identity"></p>
-      <p class="note">选择一年，用当前访问者可见的真实贡献生成城市。已有完整缓存，也可以从历史起点重播。</p>
-      <form><label>年份 <select id="year" aria-label="贡献年份"></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
-      <output id="status" role="status" aria-live="polite">选择年份，开始呈现你的代码岁月。</output>
+      <p class="note">选择起止年份，将这段岁月生成一座城市。默认最近三年，可选择更早起点；逐年读取，完整缓存也从历史起点重播。</p>
+      <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
+      <output id="status" role="status" aria-live="polite">选择年份范围，开始呈现你的代码岁月。</output>
+      <progress id="loading-progress" value="0" max="1" hidden aria-label="年度加载进度"></progress>
       <section class="city" id="city" hidden aria-label="贡献之城">
         <div class="city-head"><h3 id="city-title">贡献之城</h3><p class="note" id="city-summary"></p></div>
+        <div id="year-summary" aria-label="各年贡献概览"></div>
         <div id="scene"></div>
         <div class="city-controls"><span id="progress"></span><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭城市</button></div>
       </section>
       <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
     </div>`;
   const select = shadow.querySelector<HTMLSelectElement>("#year")!;
-  for (const year of years) select.add(new Option(String(year), String(year)));
+  const startSelect = shadow.querySelector<HTMLSelectElement>("#start-year")!;
+  for (const year of years) {
+    select.add(new Option(String(year), String(year)));
+    startSelect.add(new Option(String(year), String(year)));
+  }
+  startSelect.value = String(years[Math.min(2, years.length - 1)]);
   const identity = context.viewer.state === "unknown" ? "身份未识别" : context.viewer.identity.kind === "signed-out" ? "未登录" : `已登录访问者 ${context.viewer.identity.login}`;
   shadow.querySelector("#identity")!.textContent = `主页 ${context.profileLogin} · ${identity}`;
   const form = shadow.querySelector("form")!;
@@ -57,6 +69,7 @@ import type { TimelineState } from "../timeline/types";
   const clear = shadow.querySelector<HTMLButtonElement>("#clear")!;
   const cancel = shadow.querySelector<HTMLButtonElement>("#cancel")!;
   const status = shadow.querySelector<HTMLOutputElement>("#status")!;
+  const loadingProgress = shadow.querySelector<HTMLProgressElement>("#loading-progress")!;
   const details = shadow.querySelector<HTMLDetailsElement>("#details")!;
   const body = shadow.querySelector("tbody")!;
   const cityBox = shadow.querySelector<HTMLElement>("#city")!;
@@ -65,12 +78,24 @@ import type { TimelineState } from "../timeline/types";
   const pause = shadow.querySelector<HTMLButtonElement>("#pause")!;
   let city: CityPreview | undefined;
   let timelineState: TimelineState | undefined;
+  let visibleDays: readonly DailyContribution[] = [];
   const disposeCity = () => { city?.dispose(); city = undefined; timelineState = undefined; cityBox.hidden = true; cityHost.replaceChildren(); };
   let controller: AbortController | undefined;
   const currentContext = () => readPageContext(document, new URL(location.href));
-  const resetResult = () => { disposeCity(); details.hidden = true; body.replaceChildren(); };
+  const resetResult = () => { disposeCity(); details.hidden = true; details.open = false; visibleDays = []; body.replaceChildren(); };
+  // 多年份可能有数千天，仅在用户展开时建立明细 DOM。
+  details.addEventListener("toggle", () => {
+    if (!details.open || body.childElementCount) return;
+    const fragment = document.createDocumentFragment();
+    for (const day of visibleDays) {
+      const row = document.createElement("tr");
+      for (const value of [day.date, String(day.count)]) { const cell = document.createElement("td"); cell.textContent = value; row.append(cell); }
+      fragment.append(row);
+    }
+    body.append(fragment);
+  });
   const setBusy = (busy: boolean) => {
-    run.disabled = refresh.disabled = inspect.disabled = select.disabled = busy;
+    run.disabled = refresh.disabled = inspect.disabled = select.disabled = startSelect.disabled = busy;
     clear.disabled = busy || context.viewer.state === "unknown";
     cancel.disabled = !busy;
   };
@@ -89,6 +114,7 @@ import type { TimelineState } from "../timeline/types";
     if (!document.hidden) return;
     controller?.abort();
     resetResult();
+    loadingProgress.hidden = true;
     status.textContent = "页面进入后台，结果已清除；返回后重新读取时会核对当前身份。";
   };
   shadow.querySelector("#close")!.addEventListener("click", close);
@@ -98,34 +124,48 @@ import type { TimelineState } from "../timeline/types";
   document.addEventListener("visibilitychange", visibility);
   cancel.addEventListener("click", () => controller?.abort());
   const load = async (forceRefresh: boolean, showCity: boolean) => {
+    const start = Number(startSelect.value), end = Number(select.value);
+    if (start > end) { status.textContent = "起始年份不能晚于结束年份。"; return; }
+    const requestedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
+    const range = start === end ? String(start) : `${start}–${end}`;
     const request = new AbortController();
     controller = request;
     setBusy(true);
     resetResult();
+    loadingProgress.max = requestedYears.length; loadingProgress.value = 0; loadingProgress.hidden = false;
     status.textContent = "正在确认身份并读取所选年度…";
+    let networkYears = 0, cacheYears = 0;
+    const warnings = new Set<string>();
     try {
-      const result = await loadContributionYear(context, Number(select.value), forceRefresh, request.signal, currentContext);
-      for (const day of result.value.days) {
-        const row = document.createElement("tr");
-        for (const value of [day.date, String(day.count)]) { const cell = document.createElement("td"); cell.textContent = value; row.append(cell); }
-        body.append(row);
-      }
-      const total = result.value.days.reduce((sum, day) => sum + day.count, 0);
-      const source = result.source === "cache" ? "来源：本地缓存；本次未重新核对年度标题。" : `来源：网络；逐日合计与页面年度总数 ${result.displayedTotal} 一致。`;
-      status.textContent = `${result.value.year} 年 · ${result.value.days.length} 天\n${result.value.days[0].date} 至 ${result.value.days.at(-1)!.date}\n逐日合计 ${total}。${source}\n抓取时间：${new Date(result.value.fetchedAt).toLocaleString()}\n${result.warning}`.trim();
+      const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, progress => {
+        if (progress.source === "network") networkYears++; else cacheYears++;
+        if (progress.warning) warnings.add(progress.warning);
+        loadingProgress.value = progress.history.providedYears.length;
+        status.textContent = `${range} · 已读取 ${loadingProgress.value} / ${requestedYears.length} 年\n最近完成 ${progress.year} 年（${progress.source === "cache" ? "本地缓存" : "网络"}）；全部完成后生成城市。\n${[...warnings].join(" ")}`.trim();
+      });
+      request.signal.throwIfAborted();
+      if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
+      visibleDays = history.days;
+      const total = history.days.reduce((sum, day) => sum + day.count, 0);
+      status.textContent = `${range} · ${requestedYears.length} 年 · ${history.days.length} 天\n${history.days[0].date} 至 ${history.days.at(-1)!.date}\n逐日合计 ${total}。年度来源：${networkYears} 年网络 / ${cacheYears} 年本地缓存。\n网络年度已核对逐日合计；缓存年度沿用快照，本次仍确认访问者身份。\n${[...warnings].join(" ")}`.trim();
       details.hidden = false;
       if (showCity) {
         const module = await import(/* @vite-ignore */ chrome.runtime.getURL("city-preview.js")) as typeof import("../renderers/city-preview");
         request.signal.throwIfAborted();
         if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
         cityBox.hidden = false;
-        shadow.querySelector("#city-title")!.textContent = `${result.value.year} · 贡献之城`;
-        shadow.querySelector("#city-summary")!.textContent = `${total.toLocaleString()} 次真实贡献 · ${result.value.days.length} 天 · 拖动旋转，滚轮缩放`;
+        shadow.querySelector("#city-title")!.textContent = `${range} · 贡献之城`;
+        shadow.querySelector("#city-summary")!.textContent = `${total.toLocaleString()} 次真实贡献 · ${requestedYears.length} 年 / ${history.days.length} 天 · 拖动旋转，滚轮缩放`;
+        const yearlyTotals = new Map<number, number>(requestedYears.map(year => [year, 0]));
+        for (const day of history.days) { const year = Number(day.date.slice(0, 4)); yearlyTotals.set(year, yearlyTotals.get(year)! + day.count); }
+        const summary = shadow.querySelector("#year-summary")!;
+        summary.replaceChildren();
+        for (const [year, count] of yearlyTotals) { const item = document.createElement("span"); item.textContent = `${year} · ${count.toLocaleString()} 次`; summary.append(item); }
         try {
-          city = module.createCityPreview(cityHost, result.value.days, (state, error) => {
+          city = module.createCityPreview(cityHost, history.days, (state, error) => {
             if (error) status.textContent = error;
             timelineState = state;
-            const date = result.value.days[state.revealedDays - 1]?.date;
+            const date = history.days[state.revealedDays - 1]?.date;
             progress.textContent = state.revealedDays === 0 ? `历史起点 · 0 / ${state.totalDays} 天` : `${date} · ${state.revealedDays} / ${state.totalDays} 天`;
             pause.textContent = state.status === "paused" ? "继续" : "暂停";
             pause.disabled = state.status === "completed";
@@ -133,9 +173,9 @@ import type { TimelineState } from "../timeline/types";
         } catch (error) { disposeCity(); throw error; }
       }
     } catch (error) {
-      if (!document.hidden) status.textContent = request.signal.aborted ? "请求已取消，本次不显示结果。" : error instanceof Error ? error.message : "请求失败，请重新打开诊断。";
+      if (!document.hidden) status.textContent = `${request.signal.aborted ? "请求已取消。" : error instanceof Error ? error.message : "请求失败，请重新打开 CodeYears。"}\n已读取 ${networkYears + cacheYears} / ${requestedYears.length} 年，本次未生成城市；已验证的年度缓存可供下次继续使用。`;
     } finally {
-      setBusy(false); controller = undefined;
+      loadingProgress.hidden = true; setBusy(false); controller = undefined;
     }
   };
   form.addEventListener("submit", event => { event.preventDefault(); void load(false, true); });
