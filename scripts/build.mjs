@@ -29,5 +29,6 @@ await build({
   build: {
     target: "es2022", outDir: values.outDir, emptyOutDir: false, watch,
     lib: { entry: "src/renderers/landscape.ts", formats: ["es"], fileName: () => "landscape.js" },
+    rollupOptions: { output: { chunkFileNames: "chunks/[name]-[hash].js" } },
   },
 });

@@ -1,64 +1,69 @@
 import type { DailyContribution } from "../data/types";
 
-/** 已由景观层按空间聚合的可信数据，不在内部重复校验。 */
-export interface ContributionCell {
+export type CityKind = "grass" | "shrub" | "tree" | "building";
+export interface CityParcel {
   x: number; z: number; w: number; d: number;
-  end: number; count: number; mean: number;
+  block: number; band: number; kind: CityKind;
+  indices: number[]; count: number; mean: number;
 }
-export interface CityParcel extends ContributionCell {
-  year: number;
-  kind: "grass" | "shrub" | "tree" | "building";
-  floors: number;
-  cells: number;
-  form: "garden" | "house" | "office" | "tower" | "hall" | "stadium";
+export interface WeeklyCity {
+  columns: number; rows: number; blocks: number;
+  districts: { year: number; weeks: number; monday: number }[];
+  cells: CityParcel[]; parcels: CityParcel[];
 }
 
-/** 草木按日均量分层；建筑只在同年、同楼层且同一个 4×4 街区内合并。 */
-export function planCityParcels(cells: readonly ContributionCell[], days: readonly DailyContribution[], columns: number, rows: number, strongest: number): CityParcel[] {
-  const candidates = cells.map(cell => {
-    const year = Number(days[cell.end - 1].date.slice(0, 4));
-    const kind: CityParcel["kind"] = cell.mean === 0 ? "grass" : cell.mean <= 2 ? "shrub" : cell.mean <= 5 ? "tree" : "building";
-    const nx = (cell.x + cell.w / 2) / columns, nz = (cell.z + cell.d / 2) / rows;
-    const downtown = Math.exp(-((nx - 0.68) ** 2 + (nz - 0.43) ** 2) / 0.07);
-    const floors = kind === "building" ? 2 + Math.round(Math.pow(Math.log1p(cell.mean) / strongest, 1.3) * (2.5 + downtown * 11)) : 0;
-    return { ...cell, year, kind, floors, cells: 1, form: "garden" as CityParcel["form"] };
-  }).sort((a, b) => a.z - b.z || a.x - b.x);
-  const at = new Map(candidates.map(cell => [`${cell.x},${cell.z}`, cell]));
+/** 每年一条横向街区：周为列，周一至周日为行。年首尾不足周不丢日期。 */
+export function planWeeklyCity(days: readonly DailyContribution[], step: 1 | 2 | 4 = 1): WeeklyCity {
+  const years = [...new Set(days.map(day => Number(day.date.slice(0, 4))))];
+  const districts = years.map(year => {
+    const first = Date.UTC(year, 0, 1), weekday = (new Date(first).getUTCDay() + 6) % 7, monday = first - weekday * 86400000;
+    return { year, monday, weeks: Math.ceil((Date.UTC(year + 1, 0, 1) - monday) / 604800000) };
+  });
+  const byYear = new Map(districts.map((district, index) => [district.year, index]));
+  const columns = Math.max(...districts.map(district => district.weeks)), rows = years.length, blocks = rows;
+  const strongest = Math.max(...days.map(day => Math.log1p(Math.max(0, day.count - 5))), 1);
+  const groups = new Map<string, CityParcel>();
+  days.forEach((day, index) => {
+    const block = byYear.get(Number(day.date.slice(0, 4)))!, district = districts[block];
+    const offset = Math.round((Date.parse(`${day.date}T00:00:00Z`) - district.monday) / 86400000);
+    const week = Math.floor(offset / 7), x = Math.floor(week / step) * step, z = offset % 7;
+    const key = `${block},${x},${z}`;
+    let cell = groups.get(key);
+    if (!cell) { cell = { x, z, w: Math.min(step, district.weeks - x), d: 1, block, band: 0, kind: "grass", indices: [], count: 0, mean: 0 }; groups.set(key, cell); }
+    cell.indices.push(index); cell.count += day.count;
+  });
+  const cells = [...groups.values()].sort((a, b) => a.block - b.block || a.z - b.z || a.x - b.x);
+  for (const cell of cells) {
+    cell.mean = cell.count / cell.indices.length;
+    cell.kind = cell.mean === 0 ? "grass" : cell.mean <= 2 ? "shrub" : cell.mean <= 5 ? "tree" : "building";
+    cell.band = cell.kind === "building" ? Math.max(1, Math.ceil(Math.log1p(cell.mean - 5) / strongest * 4)) : 0;
+  }
   const used = new Set<CityParcel>(), parcels: CityParcel[] = [];
-  for (const cell of candidates) {
+  for (const cell of cells) {
     if (used.has(cell)) continue;
-    const members = [cell]; let w = cell.w, d = cell.d;
-    // 跨年的宏观组可显示，但不能继续吞并别的年份地块。
-    const singleYear = (candidate: CityParcel) => Number(days[candidate.z * columns + candidate.x].date.slice(0, 4)) === candidate.year;
-    const compatible = (other: CityParcel | undefined): other is CityParcel => !!other && !used.has(other) && other.kind === "building" && other.year === cell.year && other.floors === cell.floors && singleYear(other);
-    if (cell.kind === "building" && singleYear(cell)) {
-      const right = (Math.floor(cell.x / 4) + 1) * 4, bottom = (Math.floor(cell.z / 4) + 1) * 4;
-      while (cell.x + w < right) {
-        const next = at.get(`${cell.x + w},${cell.z}`);
-        if (!compatible(next) || next.d !== cell.d || cell.x + w + next.w > right) break;
+    let w = cell.w, d = 1;
+    const members = [cell];
+    const matches = (other: CityParcel | undefined): other is CityParcel => !!other && !used.has(other) && other.kind === "building" && other.band === cell.band;
+    if (cell.kind === "building") {
+      while (cell.x + w < districts[cell.block].weeks && w < 8) {
+        const next = groups.get(`${cell.block},${cell.x + w},${cell.z}`);
+        if (!matches(next)) break;
         members.push(next); w += next.w;
       }
-      while (cell.z + d < bottom) {
-        const row: CityParcel[] = []; let x = cell.x, rowDepth = 0;
-        while (x < cell.x + w) {
-          const next = at.get(`${x},${cell.z + d}`);
-          if (!compatible(next) || next.x + next.w > cell.x + w || (rowDepth && next.d !== rowDepth)) break;
-          row.push(next); rowDepth = next.d; x += next.w;
+      while (cell.z + d < 7 && d < 4) {
+        const row: CityParcel[] = [];
+        for (let x = cell.x; x < cell.x + w; x += step) {
+          const next = groups.get(`${cell.block},${x},${cell.z + d}`);
+          if (!matches(next)) break;
+          row.push(next);
         }
-        if (x !== cell.x + w || cell.z + d + rowDepth > bottom) break;
-        members.push(...row); d += rowDepth;
+        if (row.length !== Math.ceil(w / step)) break;
+        members.push(...row); d++;
       }
     }
     members.forEach(member => used.add(member));
-    const count = members.reduce((sum, member) => sum + member.count, 0), end = Math.max(...members.map(member => member.end));
-    const signature = cell.x * 13 + cell.z * 7 + cell.year;
-    let form: CityParcel["form"] = "garden";
-    if (cell.kind === "building") {
-      if (members.length > 1 && w >= 2 && d >= 2 && cell.floors <= 9 && signature % 3 === 0) form = "stadium";
-      else if (members.length > 1 && cell.floors <= 8) form = "hall";
-      else form = cell.floors <= 5 ? "house" : cell.floors <= 10 ? "office" : "tower";
-    }
-    parcels.push({ ...cell, w, d, count, end, mean: count / (w * d), cells: members.length, form });
+    const indices = members.flatMap(member => member.indices), count = members.reduce((sum, member) => sum + member.count, 0);
+    parcels.push({ ...cell, w, d, indices, count, mean: count / indices.length });
   }
-  return parcels;
+  return { columns, rows, blocks, districts, cells, parcels };
 }

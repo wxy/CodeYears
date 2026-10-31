@@ -4,7 +4,6 @@ import { loadContributionHistory } from "../platform/github/load-history";
 import type { DailyContribution } from "../data/types";
 import type { ContributionLandscape } from "../renderers/landscape";
 import type { ViewMode } from "../renderers/types";
-import { yearTone } from "../renderers/palette";
 import type { TimelineState } from "../timeline/types";
 
 (() => {
@@ -38,13 +37,13 @@ import type { TimelineState } from "../timeline/types";
       #loading-progress { width:100%; accent-color:#268f80; } #loading-progress[hidden] { display:none; }
       #year-summary { display:flex; flex-wrap:wrap; gap:6px 16px; padding:0 22px; color:var(--fgColor-muted,#59636e); font-size:12px; }
       #year-summary span { padding-left:8px; border-left:3px solid; }
-      #scene { height:490px; min-height:340px; max-height:68vh; background:transparent; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
+      #scene { height:580px; min-height:340px; max-height:68vh; background:transparent; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
       #progress { flex:1 1 190px; color:var(--fgColor-muted,#59636e); font-size:12px; font-variant-numeric:tabular-nums; }
     </style>
     <div class="panel">
       <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
       <p id="identity"></p>
-      <p class="note">从一片平地，长出你的城市与山脉。城市地块从草木到建筑表达贡献强度；建筑按材质配色、年份轻度调色。公园树木仅作景观，山脉保持连续。</p>
+      <p class="note">从一片平地，长出你的城市与山脉。城市地块从草木到建筑表达贡献强度；固定视角预绘建筑，一年为一条横向大街区，同星期几横向相邻。公园树木仅作景观，山脉保持连续。</p>
       <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><label>视图 <select id="view" aria-label="贡献视图"><option value="city">City · 贡献之城</option><option value="terrain">Terrain · 时光山脉</option></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
       <output id="status" role="status" aria-live="polite">选择年份范围，开始呈现你的代码岁月。</output>
       <progress id="loading-progress" value="0" max="1" hidden aria-label="年度加载进度"></progress>
@@ -53,7 +52,7 @@ import type { TimelineState } from "../timeline/types";
         <div id="year-summary" aria-label="各年贡献概览"></div>
         <p class="note" id="scene-detail" style="padding:0 22px"></p>
         <div id="scene"></div>
-        <div class="city-controls"><span id="progress"></span><button id="zoom-out" type="button" aria-label="缩小景观">−</button><button id="zoom-in" type="button" aria-label="放大景观">＋</button><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭风景</button></div>
+        <div class="city-controls"><span id="progress"></span><button id="zoom-out" type="button" aria-label="缩小景观">−</button><button id="zoom-in" type="button" aria-label="放大景观">＋</button><button id="reset-view" type="button">重置视图</button><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭风景</button></div>
       </section>
       <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
     </div>`;
@@ -81,6 +80,7 @@ import type { TimelineState } from "../timeline/types";
   const cityHost = shadow.querySelector<HTMLElement>("#scene")!;
   const progress = shadow.querySelector<HTMLElement>("#progress")!;
   const pause = shadow.querySelector<HTMLButtonElement>("#pause")!;
+  shadow.querySelector<HTMLButtonElement>("#reset-view")!.onclick = () => city?.resetView();
   let city: ContributionLandscape | undefined;
   let displayedRange = "";
   const viewName = () => viewSelect.value === "city" ? "贡献之城" : "时光山脉";
@@ -170,12 +170,12 @@ import type { TimelineState } from "../timeline/types";
         cityBox.hidden = false;
         displayedRange = range;
         shadow.querySelector("#city-title")!.textContent = `${range} · ${viewName()}`;
-        shadow.querySelector("#city-summary")!.textContent = `${total.toLocaleString()} 次真实贡献 · ${requestedYears.length} 年 / ${history.days.length} 天 · 拖动旋转，滚轮缩放`;
+        shadow.querySelector("#city-summary")!.textContent = `${total.toLocaleString()} 次真实贡献 · ${requestedYears.length} 年 / ${history.days.length} 天 · 拖动平移，滚轮缩放`;
         const yearlyTotals = new Map<number, number>(requestedYears.map(year => [year, 0]));
         for (const day of history.days) { const year = Number(day.date.slice(0, 4)); yearlyTotals.set(year, yearlyTotals.get(year)! + day.count); }
         const summary = shadow.querySelector("#year-summary")!;
         summary.replaceChildren();
-        for (const [year, count] of yearlyTotals) { const item = document.createElement("span"); item.textContent = `${year} · ${count.toLocaleString()} 次`; item.style.borderColor = yearTone(year); summary.append(item); }
+        for (const [year, count] of yearlyTotals) { const item = document.createElement("span"); item.textContent = `${year} · ${count.toLocaleString()} 次`; item.style.borderColor = "#809484"; summary.append(item); }
         try {
           city = module.createLandscape(cityHost, history.days, (state, error, detail) => {
             if (error) status.textContent = error;
