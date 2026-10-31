@@ -4,6 +4,7 @@ import { createTimeline } from "../timeline/controller";
 import type { TimelineState } from "../timeline/types";
 import type { ViewMode } from "./types";
 import { yearTone } from "./palette";
+import { planCityParcels, type ContributionCell } from "./city-parcels";
 
 export interface ContributionLandscape {
   setView(view: ViewMode): void;
@@ -101,12 +102,17 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     facades = [0, 1, 2].map(style => {
       const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 256;
       const context = canvas.getContext("2d")!;
-      context.fillStyle = ["#e0d8cd", "#b6c8d3", "#e8d8bb"][style]; context.fillRect(0, 0, 128, 256);
-      const columns = style === 1 ? 4 : 6;
-      for (let r = 0; r < 12; r++) for (let c = 0; c < columns; c++) {
-        context.fillStyle = (r * 7 + c) % 13 === 0 ? "#d2bd91" : ["#4d5962", "#527185", "#637272"][style];
-        context.fillRect(c * 128 / columns + 5, r * 21 + 5, 128 / columns - 9, style === 2 ? 11 : 14);
-        context.fillStyle = "#e5e4d9"; context.fillRect(c * 128 / columns + 3, r * 21 + 19, 128 / columns - 5, 1);
+      context.fillStyle = ["#ece3d4", "#c5d9e2", "#e5e9e5"][style]; context.fillRect(0, 0, 128, 256);
+      const columns = style === 1 ? 4 : 5;
+      for (let r = 0; r < 12; r++) {
+        context.fillStyle = style === 1 ? "#9bb2be" : "#c9c0ad"; context.fillRect(0, r * 21 + 20, 128, 1);
+        for (let c = 0; c < columns; c++) {
+          context.fillStyle = (r * 7 + c) % 17 === 0 ? "#d8caa5" : ["#526374", "#7194a7", "#6b8d9c"][style];
+          const inset = style === 1 ? 1 : 5;
+          context.fillRect(c * 128 / columns + inset, r * 21 + 4, 128 / columns - inset * 2, style === 1 ? 16 : 12);
+          if (style === 1 && c === 1) { context.fillStyle = "#b4ceda"; context.fillRect(c * 32 + 1, r * 21 + 4, 11, 16); }
+          if (style === 0) { context.fillStyle = "#f4eee2"; context.fillRect(c * 128 / columns + 3, r * 21 + 17, 128 / columns - 6, 2); }
+        }
       }
       return texture(canvas);
     });
@@ -121,16 +127,35 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     for (let r = 0; r < rows; r += 4) for (let c = 0; c < columns; c += 4) {
       const x = cityX(c) - width / 2, z = cityZ(r) - depth / 2;
       const w = cityX(Math.min(c + 3, columns - 1)) + pitch - cityX(c), d = cityZ(Math.min(r + 3, rows - 1)) + pitch - cityZ(r);
-      context.fillStyle = "#d1d3c5"; context.fillRect(px(x - 0.3), py(z - 0.3), (w + 0.6) / landWidth * 1024, (d + 0.6) / landDepth * 1024);
+      context.fillStyle = "#d4d2c8"; context.fillRect(px(x - 0.3), py(z - 0.3), (w + 0.6) / landWidth * 1024, (d + 0.6) / landDepth * 1024);
     }
-    context.fillStyle = "#64747c";
+    // 零贡献是草地，低贡献植被也有自己的绿色地块；不再铺一个矮方块。
+    for (let index = 0; index < days.length; index++) if (days[index].count <= 5) {
+      const x = cityX(index % columns) - width / 2, z = cityZ(Math.floor(index / columns)) - depth / 2;
+      context.fillStyle = days[index].count === 0 ? "#73995e" : "#638953";
+      context.fillRect(px(x), py(z), pitch / landWidth * 1024, pitch / landDepth * 1024);
+    }
+    const roadXs: number[] = [], roadZs: { start: number; size: number }[] = [];
+    context.strokeStyle = "#414b52"; context.lineWidth = street * 0.75 / landWidth * 1024;
+    context.strokeRect(px(-width / 2 - street * 0.65), py(-depth / 2 - street * 0.65), (width + street * 1.3) / landWidth * 1024, (depth + street * 1.3) / landDepth * 1024);
+    context.fillStyle = "#414b52";
     for (let c = 4; c < columns; c += 4) {
-      const x = cityX(c) - width / 2 - street;
-      context.fillRect(px(x), py(-depth / 2 - 1), street / landWidth * 1024, (depth + 2) / landDepth * 1024);
+      const x = cityX(c) - width / 2 - street; roadXs.push(x);
+      context.fillRect(px(x), py(-depth / 2 - street), street / landWidth * 1024, (depth + street * 2) / landDepth * 1024);
     }
     for (let r = 4; r < rows; r += 4) {
-      const z = cityZ(r) - depth / 2 - street - (r % 16 === 0 ? 1.2 : 0);
-      context.fillRect(px(-width / 2 - 1), py(z), (width + 2) / landWidth * 1024, (street + (r % 16 === 0 ? 1.2 : 0)) / landDepth * 1024);
+      const size = street + (r % 16 === 0 ? 1.2 : 0), z = cityZ(r) - depth / 2 - size; roadZs.push({ start: z, size });
+      context.fillRect(px(-width / 2 - street), py(z), (width + street * 2) / landWidth * 1024, size / landDepth * 1024);
+    }
+    context.strokeStyle = "#c6bb91"; context.lineWidth = Math.max(0.7, 0.06 / landWidth * 1024); context.setLineDash([0.8 / landWidth * 1024, 0.9 / landWidth * 1024]);
+    for (const x of roadXs) { context.beginPath(); context.moveTo(px(x + street / 2), py(-depth / 2 - street)); context.lineTo(px(x + street / 2), py(depth / 2 + street)); context.stroke(); }
+    for (const road of roadZs) { context.beginPath(); context.moveTo(px(-width / 2 - street), py(road.start + road.size / 2)); context.lineTo(px(width / 2 + street), py(road.start + road.size / 2)); context.stroke(); }
+    context.setLineDash([]); context.fillStyle = "#e3e2d5";
+    for (const x of roadXs) for (const road of roadZs) for (let stripe = 0; stripe < 5; stripe++) {
+      for (const sign of [-1, 1]) {
+        context.fillRect(px(x + 0.28 + stripe * (street - 0.56) / 5), py(road.start + road.size / 2 + sign * (road.size / 2 + 0.45)), 0.2 / landWidth * 1024, 0.7 / landDepth * 1024);
+        context.fillRect(px(x + street / 2 + sign * (street / 2 + 0.45)), py(road.start + 0.28 + stripe * (road.size - 0.56) / 5), 0.7 / landWidth * 1024, 0.2 / landDepth * 1024);
+      }
     }
     const parkStart = cityX(parkColumn) - width / 2 - parkWidth - street;
     context.fillStyle = "#799c64"; context.fillRect(px(parkStart), py(-depth / 2), (parkWidth + street) / landWidth * 1024, depth / landDepth * 1024);
@@ -147,6 +172,15 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     const canvas = document.createElement("canvas"); canvas.width = canvas.height = 512;
     const context = canvas.getContext("2d")!; context.fillStyle = context.createPattern(grain, "repeat")!; context.fillRect(0, 0, 512, 512);
     softEdge(canvas); surfaceMap = texture(canvas); return surfaceMap;
+  }
+  let stadiumFieldMap: THREE.Texture | undefined;
+  function fieldMap() {
+    if (stadiumFieldMap) return stadiumFieldMap;
+    const canvas = document.createElement("canvas"); canvas.width = 128; canvas.height = 256;
+    const context = canvas.getContext("2d")!; context.fillStyle = "#61945c"; context.fillRect(0,0,128,256);
+    context.fillStyle = "#73a367"; for (let stripe=0;stripe<8;stripe++) context.fillRect(0,stripe*32,128,16);
+    context.strokeStyle = "#dce8d0"; context.lineWidth = 2; context.strokeRect(10,10,108,236); context.beginPath(); context.moveTo(10,128); context.lineTo(118,128); context.stroke(); context.beginPath(); context.arc(64,128,22,0,Math.PI*2); context.stroke();
+    stadiumFieldMap = texture(canvas); return stadiumFieldMap;
   }
   // 沿用时间轴作为归一化生长时钟；播放头不再表示逐日显隐。
   const timeline = createTimeline(days.length), lift = { value: 0 }, altitudeScale = { value: terrainScale };
@@ -166,7 +200,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     };
     material.customProgramCacheKey = () => `codeyears-global-lift-${instanced}-${terrainColor}`;
   }
-  type Group = { x: number; z: number; w: number; d: number; end: number; count: number; mean: number };
+  type Group = ContributionCell;
   function groupsFor(step: number): Group[] {
     const groups: Group[] = [];
     const add = (x: number, z: number, w: number, d: number) => {
@@ -202,39 +236,90 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       const groundGeometry = new THREE.PlaneGeometry(landWidth, landDepth); geometries.add(groundGeometry);
       const groundMaterial = ownMaterial(new THREE.MeshStandardMaterial({ map: groundMap(), roughness: 1, transparent: true, depthWrite: false, alphaTest: 0.01 }));
       const ground = new THREE.Mesh(groundGeometry, groundMaterial); ground.rotation.x = -Math.PI / 2; ground.position.y = -0.04; ground.receiveShadow = true; ground.renderOrder = 0; root.add(ground);
-      const base: Placement[][] = [[], [], []], upper: Placement[][] = [[], [], []], roofs: Placement[] = [];
-      for (const group of groups) {
-        const year = Number(days[group.end - 1].date.slice(0, 4)), style = year % 3;
-        const x0 = cityX(group.x), x1 = cityX(group.x + group.w - 1) + pitch, z0 = cityZ(group.z), z1 = cityZ(group.z + group.d - 1) + pitch;
-        const nx = (x0 + x1) / 2 / width, nz = (z0 + z1) / 2 / depth;
-        const downtown = Math.exp(-((nx - 0.68) ** 2 + (nz - 0.43) ** 2) / 0.07);
-        const height = group.count === 0 ? 0.045 : 0.7 + Math.pow(Math.log1p(group.mean) / strongest, 1.6) * radius * 0.20 * (0.26 + downtown);
-        const tall = height > radius * 0.085 && group.end % 3 !== 0, sx = (x1 - x0) * (0.52 + group.end % 7 * 0.035), sz = (z1 - z0) * (0.52 + group.end % 5 * 0.045);
-        const color = group.count === 0 ? new THREE.Color(0x739560) : new THREE.Color(yearTone(year)).lerp(new THREE.Color(0xffffff), 0.08 + group.end % 7 * 0.025);
-        const target = height + 0.13, x = (x0 + x1) / 2 - width / 2, z = (z0 + z1) / 2 - depth / 2;
-        base[style].push({ x, z, y: height * (tall ? 0.35 : 0.5), sx, sy: height * (tall ? 0.7 : 1), sz, top: target, color });
-        if (tall) upper[style].push({ x, z, y: height * 0.85, sx: sx * 0.68, sy: height * 0.3, sz: sz * 0.68, top: target, color });
-        if (group.count) roofs.push({ x, z, y: height + 0.055, sx: sx * (tall ? 0.7 : 1.03), sy: 0.11, sz: sz * (tall ? 0.7 : 1.03), top: target, color: new THREE.Color(style === 1 ? 0x647d86 : 0xa9a597) });
-      }
-      for (let style = 0; style < 3; style++) {
-        const wall = ownMaterial(new THREE.MeshStandardMaterial({ map: step === 1 ? facadeMaps()[style] : null, roughness: style === 1 ? 0.55 : 0.86, metalness: style === 1 ? 0.12 : 0.02 })); grow(wall, true);
-        const top = ownMaterial(new THREE.MeshStandardMaterial({ color: 0xe1e2dc, roughness: 0.9 })); grow(top, true);
-        const faces = [wall, wall, top, top, wall, wall];
-        addInstances(new THREE.BoxGeometry(1, 1, 1), faces, base[style]); addInstances(new THREE.BoxGeometry(1, 1, 1), faces, upper[style]);
-      }
-      const roofMaterial = ownMaterial(new THREE.MeshStandardMaterial({ roughness: 0.9 })); grow(roofMaterial, true); addInstances(new THREE.BoxGeometry(1, 1, 1), roofMaterial, roofs);
-      const trunks: Placement[] = [], crowns: Placement[] = [];
-      const addTree = (x: number, z: number, index: number) => {
-        const h = 1.4 + index % 9 * 0.1, trunk = h * 0.42, canopy = h * 0.9, top = trunk + canopy;
-        trunks.push({ x, z, y: trunk / 2, sx: 0.12, sy: trunk, sz: 0.12, top, color: new THREE.Color(0x78664c) });
-        crowns.push({ x, z, y: trunk + canopy / 2, sx: h * 0.32, sy: canopy / 2, sz: h * 0.3, top, color: new THREE.Color().setHSL(0.26 + index % 7 * 0.013, 0.28, 0.3 + index % 5 * 0.025) });
+      const parcels = planCityParcels(groups, days, columns, rows, strongest);
+      const brick: Placement[] = [], glass: Placement[] = [], stone: Placement[] = [], roofs: Placement[] = [], gables: Placement[] = [], vaults: Placement[] = [];
+      const roundTowers: Placement[] = [], roundRoofs: Placement[] = [], stands: Placement[] = [], stadiumRoofs: Placement[] = [], fields: Placement[] = [];
+      const trunks: Placement[] = [], crowns: Placement[] = [], shrubs: Placement[] = [];
+      const floorHeight = Math.max(0.5, radius * 0.009);
+      const addTree = (x: number, z: number, h: number, spread: number, index: number) => {
+        const trunk = h * 0.4, top = h;
+        trunks.push({ x, z, y: trunk / 2, sx: spread * 0.16, sy: trunk, sz: spread * 0.16, top, color: new THREE.Color(0x80694d) });
+        crowns.push({ x, z, y: trunk + h * 0.28, sx: spread, sy: h * 0.32, sz: spread * 0.9, top, color: new THREE.Color().setHSL(0.27 + index % 5 * 0.012, 0.3, 0.34 + index % 4 * 0.025) });
       };
-      for (let c = 4; c < columns; c += 4) for (let r = 1; r < rows; r += 2 * step) addTree(cityX(c) - width / 2 - street * 0.23, cityZ(r) + pitch / 2 - depth / 2, c * 17 + r);
-      for (let r = 4; r < rows; r += 4) for (let c = 1; c < columns; c += 2 * step) addTree(cityX(c) + pitch / 2 - width / 2, cityZ(r) - depth / 2 - street * 0.23, r * 23 + c);
+      for (const parcel of parcels) {
+        const x0 = cityX(parcel.x), x1 = cityX(parcel.x + parcel.w - 1) + pitch, z0 = cityZ(parcel.z), z1 = cityZ(parcel.z + parcel.d - 1) + pitch;
+        const x = (x0 + x1) / 2 - width / 2, z = (z0 + z1) / 2 - depth / 2, w = (x1 - x0) * 0.78, d = (z1 - z0) * 0.78;
+        const signature = parcel.x * 13 + parcel.z * 7 + parcel.year;
+        if (parcel.kind === "grass") continue;
+        if (parcel.kind === "shrub") {
+          const h = pitch * 0.38, spread = Math.min(w, d) * 0.3;
+          for (const offset of [-0.2, 0.2]) shrubs.push({ x: x + w * offset, z, y: h * 0.45, sx: spread, sy: h * 0.55, sz: spread, top: h, color: new THREE.Color(signature % 2 ? 0x78975b : 0x4f815e) });
+          continue;
+        }
+        if (parcel.kind === "tree") { addTree(x, z, pitch * (1.1 + parcel.mean * 0.07) * Math.sqrt(parcel.w * parcel.d), Math.min(w, d) * 0.42, signature); continue; }
+        const height = parcel.floors * floorHeight;
+        const tint = new THREE.Color(yearTone(parcel.year));
+        const brickColor = new THREE.Color([0xc99678, 0xd4b797, 0xb18c75][signature % 3]).lerp(tint, 0.18);
+        const glassColor = new THREE.Color([0x88b3c8, 0x5e869d, 0xa3c2ca][signature % 3]).lerp(tint, 0.12);
+        const limestone = new THREE.Color(0xe7dfca), roofColor = new THREE.Color(signature % 2 ? 0x727e83 : 0xb6b6aa);
+        const h = parcel.form === "stadium" ? floorHeight * 2 : parcel.form === "hall" ? Math.min(height, floorHeight * 4) : height;
+        const cap = parcel.form === "house" ? floorHeight * 0.9 : parcel.form === "hall" ? h * 0.5 : floorHeight * 0.28, target = h + cap;
+        const part = (bucket: Placement[], color: THREE.Color, dx: number, y: number, dz: number, sx: number, sy: number, sz: number) => bucket.push({ x: x + dx, y, z: z + dz, sx, sy, sz, top: target, color });
+        if (parcel.form === "house") {
+          part(brick, brickColor, 0, h / 2, 0, w, h, d);
+          part(gables, new THREE.Color(signature % 2 ? 0x9e6653 : 0x596c77), 0, h + cap / 2, 0, w * 1.06, cap, d * 1.06);
+          if (step === 1) part(stone, limestone, 0, floorHeight * 0.45, d * 0.52, w * 0.7, floorHeight * 0.18, d * 0.18);
+        } else if (parcel.form === "office") {
+          part(brick, brickColor, 0, h * 0.12, 0, w, h * 0.24, d);
+          part(glass, glassColor, -w * 0.16, h * 0.57, 0, w * 0.68, h * 0.86, d * 0.9);
+          part(stone, limestone, w * 0.29, h * 0.36, d * 0.1, w * 0.38, h * 0.72, d * 0.72);
+          part(roofs, roofColor, -w * 0.16, h + cap / 2, 0, w * 0.71, cap, d * 0.93);
+          part(roofs, roofColor, w * 0.29, h * 0.72 + cap / 2, d * 0.1, w * 0.4, cap, d * 0.74);
+        } else if (parcel.form === "tower") {
+          part(stone, limestone, 0, h * 0.09, 0, w, h * 0.18, d);
+          if (signature % 2) {
+            part(roundTowers, glassColor, 0, h * 0.53, 0, w * 0.83, h * 0.94, d * 0.83);
+            part(roundRoofs, roofColor, 0, h + cap / 2, 0, w * 0.85, cap, d * 0.85);
+          } else {
+            part(glass, glassColor, 0, h * 0.39, 0, w * 0.86, h * 0.78, d * 0.86);
+            part(glass, glassColor.clone().lerp(limestone, 0.15), 0, h * 0.86, 0, w * 0.62, h * 0.28, d * 0.62);
+            part(roofs, roofColor, 0, h + cap / 2, 0, w * 0.65, cap, d * 0.65);
+          }
+          if (step === 1) part(roofs, limestone, 0, h + cap * 0.65, 0, w * 0.22, cap * 0.7, d * 0.22);
+        } else if (parcel.form === "hall") {
+          part(glass, glassColor, 0, h * 0.4, 0, w, h * 0.8, d);
+          part(vaults, new THREE.Color(0xc8d2d3), 0, h * 0.8 + cap / 2, 0, w * 1.04, cap, d * 1.04);
+          part(stone, limestone, 0, h * 0.34, d * 0.54, w * 0.75, h * 0.12, d * 0.2);
+        } else {
+          part(stands, new THREE.Color(0xa7b7bd), 0, h * 0.35, 0, w, h * 0.7, d);
+          part(stadiumRoofs, limestone, 0, h * 0.74, 0, w * 1.05, h * 0.18, d * 1.05);
+          part(fields, new THREE.Color(0xffffff), 0, 0.04, 0, w * 0.65, 0.05, d * 0.61);
+        }
+      }
+      // 公园树木保留为景观；其余地块植被才按贡献量分层。
       const parkStart = cityX(parkColumn) - width / 2 - parkWidth;
-      for (let r = 0; r < rows; r += step) for (let c = 0; c < 3; c++) addTree(parkStart + parkWidth * (0.18 + c * 0.29) + Math.sin(r * 1.7 + c) * 0.5, cityZ(r) - depth / 2 + pitch / 2, r * 37 + c);
-      const bark = ownMaterial(new THREE.MeshStandardMaterial({ roughness: 1 })), leaves = ownMaterial(new THREE.MeshStandardMaterial({ roughness: 0.95 })); grow(bark, true); grow(leaves, true);
-      addInstances(new THREE.BoxGeometry(1, 1, 1), bark, trunks); addInstances(new THREE.SphereGeometry(1, 7, 5), leaves, crowns);
+      for (let r = 0; r < rows; r += 2 * step) for (const offset of [0.16, 0.85]) addTree(parkStart + parkWidth * offset + Math.sin(r * 1.7) * 0.3, cityZ(r) - depth / 2 + pitch / 2, 2 + r % 5 * 0.12, 0.68, r);
+      const wallMaterials = [0, 1, 2].map(style => { const m = ownMaterial(new THREE.MeshStandardMaterial({ map: step < 4 ? facadeMaps()[style] : null, roughness: style === 1 ? 0.45 : 0.87, metalness: style === 1 ? 0.18 : 0.02 })); grow(m, true); return m; });
+      const solid = ownMaterial(new THREE.MeshStandardMaterial({ roughness: 0.85 })); grow(solid, true);
+      const leafMaterial = ownMaterial(new THREE.MeshStandardMaterial({ roughness: 1 })); grow(leafMaterial, true);
+      addInstances(new THREE.BoxGeometry(1, 1, 1), wallMaterials[0], brick); addInstances(new THREE.BoxGeometry(1, 1, 1), wallMaterials[1], glass); addInstances(new THREE.BoxGeometry(1, 1, 1), wallMaterials[2], stone);
+      addInstances(new THREE.BoxGeometry(1, 1, 1), solid, roofs);
+      const gable = new THREE.BufferGeometry();
+      gable.setAttribute("position", new THREE.Float32BufferAttribute([-.5,-.5,-.5, .5,-.5,-.5, 0,.5,-.5, -.5,-.5,.5, .5,-.5,.5, 0,.5,.5],3));
+      gable.setIndex([0,2,1,3,4,5,0,3,5,0,5,2,2,5,4,2,4,1,0,1,4,0,4,3]);
+      const flatGable = gable.toNonIndexed(); gable.dispose(); flatGable.computeVertexNormals(); addInstances(flatGable, solid, gables);
+      const arch = new THREE.Shape(); arch.moveTo(-.5,-.5); arch.quadraticCurveTo(0,1.5,.5,-.5); arch.lineTo(-.5,-.5);
+      const vault = new THREE.ExtrudeGeometry(arch,{depth:1,bevelEnabled:false,curveSegments:8}); vault.translate(0,0,-.5); addInstances(vault, solid, vaults);
+      const ringShape = new THREE.Shape(); ringShape.absellipse(0,0,.5,.5,0,Math.PI*2,false,0);
+      const hole = new THREE.Path(); hole.absellipse(0,0,.34,.32,0,Math.PI*2,true,0); ringShape.holes.push(hole);
+      const ring = new THREE.ExtrudeGeometry(ringShape,{depth:1,bevelEnabled:false,curveSegments:16}); ring.rotateX(-Math.PI/2); ring.translate(0,-.5,0);
+      addInstances(ring.clone(), solid, stands); addInstances(ring, solid, stadiumRoofs);
+      addInstances(new THREE.CylinderGeometry(.5,.5,1,12), wallMaterials[1], roundTowers); addInstances(new THREE.CylinderGeometry(.5,.5,1,12), solid, roundRoofs);
+      if (fields.length) {
+        const fieldMaterial = ownMaterial(new THREE.MeshStandardMaterial({ map: fieldMap(), roughness: 1 })); grow(fieldMaterial, true);
+        addInstances(new THREE.BoxGeometry(1,1,1), fieldMaterial, fields);
+      }
+      addInstances(new THREE.BoxGeometry(1,1,1),solid,trunks); addInstances(new THREE.SphereGeometry(1,8,6),leafMaterial,crowns); addInstances(new THREE.SphereGeometry(1,7,5),leafMaterial,shrubs);
     } else {
       const positions: number[] = [], normals: number[] = [], uvs: number[] = [], indices: number[] = [], normal = new THREE.Vector3();
       const sample = (x: number, z: number) => {
@@ -274,7 +359,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const positionCamera = () => { camera.position.set(Math.sin(angle) * distance, distance * 0.72, Math.cos(angle) * distance); camera.lookAt(0, 2, 0); };
   positionCamera();
   let disposed = false, contextLost = false, raf = 0, playing = true, last = 0;
-  const detail = () => `${view === "city" ? "年份街区 · 树木与公园仅作景观" : "连续山脉 · 颜色随当前高度变化"} · ${step === 1 ? "精细视图" : `宏观视图，最多 ${step * step} 日/组`} · 整体生长`;
+  const detail = () => `${view === "city" ? (step === 1 ? "0 草地 · 1–2 灌木 · 3–5 树木 · 6+ 建筑（每日贡献）" : "草地 / 灌木 / 树木 / 建筑 · 按组内日均贡献分层") : "连续山脉 · 颜色随当前高度变化"} · ${step === 1 ? "精细视图" : (view === "city" ? "宏观视图 · 同高地块可合并" : `宏观视图，最多 ${step * step} 日/组`)} · 整体生长`;
   const notify = () => onChange(timeline.getState(), undefined, detail());
   const updateDetail = (force = false) => {
     const pixels = host.clientHeight * (width / columns) * camera.zoom / (camera.top - camera.bottom), next = pixels >= 8 ? 1 : pixels >= 3.5 ? 2 : 4;
