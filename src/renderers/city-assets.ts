@@ -1,111 +1,76 @@
-export type BuildingType = "house" | "apartment" | "office" | "tower" | "hall" | "stadium";
-export interface SpriteSpec { file: string; crop: readonly [number, number, number, number]; anchor: readonly [number, number]; floorAngles: readonly [number, number]; }
-/** 原图保留不变；绘制时应用裁切框、落地点与底边投影标定。 */
-export const CITY_SPRITES: Record<BuildingType, SpriteSpec> = {
-  "house": {
-    "file": "house.png",
-    "crop": [
-      53,
-      58,
-      1164,
-      1180
-    ],
-    "anchor": [
-      582.0,
-      889.0
-    ],
-    "floorAngles": [17.75, 36.25]
-  },
-  "apartment": {
-    "file": "apartment.png",
-    "crop": [
-      75,
-      110,
-      1124,
-      1099
-    ],
-    "anchor": [
-      562.0,
-      818.0
-    ],
-    "floorAngles": [23, 26]
-  },
-  "office": {
-    "file": "office.png",
-    "crop": [
-      67,
-      135,
-      1156,
-      1027
-    ],
-    "anchor": [
-      578.0,
-      738.0
-    ],
-    "floorAngles": [27.5, 30]
-  },
-  "tower": {
-    "file": "tower.png",
-    "crop": [
-      188,
-      32,
-      892,
-      1205
-    ],
-    "anchor": [
-      446.0,
-      982.0
-    ],
-    "floorAngles": [22, 32.5]
-  },
-  "hall": {
-    "file": "hall.png",
-    "crop": [
-      10,
-      340,
-      1237,
-      687
-    ],
-    "anchor": [
-      618.5,
-      377.75
-    ],
-    "floorAngles": [20.75, 28.75]
-  },
-  "stadium": {
-    "file": "stadium.png",
-    "crop": [
-      11,
-      213,
-      1235,
-      904
-    ],
-    "anchor": [
-      617.5,
-      595.25
-    ],
-    "floorAngles": [27.75, 29]
-  }
-};
+import { CITY_UNIT_CATALOG } from './city-unit-catalog';
+import { calibrate, drawUnit, loadUnit, project, type Point, type UnitImage, type UnitSample } from './unit-calibration';
 
-/** 量测主底边；在绘制时统一为地图 ±atan(1/2)，竖直边保持竖直。 */
-export const CITY_PROJECTIONS = Object.fromEntries(Object.entries(CITY_SPRITES).map(([id, spec]) => {
-  const left = Math.tan(spec.floorAngles[0] * Math.PI / 180), right = Math.tan(spec.floorAngles[1] * Math.PI / 180);
-  return [id, { shear: (right - left) / (2 * (left + right)), scaleY: 1 / (left + right) }];
-})) as Record<BuildingType, { shear: number; scaleY: number }>;
-
-export type CityImages = Record<BuildingType, ImageBitmap>;
-export async function loadCityImages(base: string): Promise<CityImages> {
-  const ids = Object.keys(CITY_SPRITES) as BuildingType[];
-  const results = await Promise.allSettled(ids.map(async id => {
-    const response = await fetch(new URL(CITY_SPRITES[id].file, base));
-    if (!response.ok) throw new Error(`建筑素材读取失败（${response.status}），请重新生成。`);
-    return createImageBitmap(await response.blob(), { resizeWidth: 640, resizeHeight: 640, resizeQuality: "high" });
-  }));
-  if (results.some(result => result.status === "rejected")) {
-    for (const result of results) if (result.status === "fulfilled") result.value.close();
-    throw new Error("建筑素材加载失败，请重新生成风景。");
-  }
-  return Object.fromEntries(results.map((result, index) => [ids[index], (result as PromiseFulfilledResult<ImageBitmap>).value])) as CityImages;
+export interface CitySprite {
+  canvas: HTMLCanvasElement;
+  left: number; top: number; width: number; height: number;
+  nativeWidth: number; nativeDepth: number;
+  baselineHeight: number;
+  sampleId: string;
 }
-export const closeCityImages = (images: CityImages) => Object.values(images).forEach(bitmap => bitmap.close());
+export type CityImages = Record<string, CitySprite>;
+
+/** 三角地表映射与方向校正在加载时只画一次；逐帧仅复用透明画布。 */
+function bakeUnit(sample: UnitSample, image: UnitImage): CitySprite {
+  const calibration = calibrate(sample), [w, d] = sample.footprint, [x0, y0, x1, y1] = sample.crop;
+  const points: Point[] = sample.kind === 'ground'
+    ? [-.25, 1.25].flatMap(u => [-.25, 1.25].map(v => project(u * w, v * d)))
+    : ([[x0, y0], [x1, y0], [x1, y1], [x0, y1]] as Point[]).map(calibration.point);
+  const minX = Math.min(...points.map(p => p[0])), maxX = Math.max(...points.map(p => p[0]));
+  const minY = Math.min(...points.map(p => p[1])), maxY = Math.max(...points.map(p => p[1]));
+  const padding = 2, ratio = Math.min(4, (384 - padding * 2) / Math.max(maxX - minX, maxY - minY));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.min(384, Math.ceil((maxX - minX) * ratio) + padding * 2);
+  canvas.height = Math.min(384, Math.ceil((maxY - minY) * ratio) + padding * 2);
+  try {
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('无法创建城市素材画布。');
+    context.setTransform(ratio, 0, 0, ratio, padding - minX * ratio, padding - minY * ratio);
+    context.imageSmoothingQuality = 'high';
+    drawUnit(context, sample, image, true, true);
+    // 标定投影 W=(48,24)、D=(-48,24)；City 的同一地块为 (.5,.25)。
+    return {
+      canvas, left: (minX - padding / ratio) / 96, top: (minY - padding / ratio) / 96,
+      width: canvas.width / ratio / 96, height: canvas.height / ratio / 96,
+      nativeWidth: w, nativeDepth: d, baselineHeight: calibration.actualHeight, sampleId: sample.id,
+    };
+  } catch (error) {
+    canvas.width = canvas.height = 0;
+    throw error;
+  }
+}
+
+export async function loadCityImages(base: string, ids: readonly string[], signal?: AbortSignal): Promise<CityImages> {
+  const files = new Map<string, { id: string; sample: UnitSample }[]>();
+  for (const id of new Set(ids)) {
+    const entry = CITY_UNIT_CATALOG[id];
+    if (!entry) throw new Error(`未找到城市素材：${id}`);
+    const variants = files.get(entry.file) ?? [];
+    variants.push({ id, sample: entry.sample }); files.set(entry.file, variants);
+  }
+  const results = await Promise.allSettled([...files].map(async ([file, variants]) => {
+    const image = await loadUnit(new URL(file, base).href, signal), sprites: CityImages = {};
+    try {
+      signal?.throwIfAborted();
+      for (const { id, sample } of variants) sprites[id] = bakeUnit(sample, image);
+      return sprites;
+    } catch (error) {
+      closeCityImages(sprites);
+      throw error;
+    } finally {
+      image.close();
+    }
+  }));
+  const images: CityImages = {};
+  for (const result of results) if (result.status === 'fulfilled') Object.assign(images, result.value);
+  const failed = results.find(result => result.status === 'rejected');
+  if (failed) {
+    closeCityImages(images);
+    throw new Error('城市素材加载失败，请重新生成风景。', { cause: failed.reason });
+  }
+  return images;
+}
+
+export const closeCityImages = (images: CityImages) => Object.values(images).forEach(sprite => {
+  sprite.canvas.width = sprite.canvas.height = 0;
+});

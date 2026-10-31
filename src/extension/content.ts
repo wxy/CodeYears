@@ -43,7 +43,7 @@ import type { TimelineState } from "../timeline/types";
     <div class="panel">
       <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
       <p id="identity"></p>
-      <p class="note">从一片平地，长出你的城市与山脉。城市地块从草木到建筑表达贡献强度；固定视角预绘建筑，一年为一条横向大街区，同星期几横向相邻。公园树木仅作景观，山脉保持连续。</p>
+      <p class="note">从一片平地，长出你的城市与山脉。城市地块从平地、草木到建筑表达贡献强度；标定单元居中留距，年度街区按季度道路分段，同星期几横向相邻。五年景观带仅作装饰，山脉保持连续。</p>
       <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><label>视图 <select id="view" aria-label="贡献视图"><option value="city">City · 贡献之城</option><option value="terrain">Terrain · 时光山脉</option></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="inspect" type="button">仅查看每日数据</button><button id="refresh" type="button">强制刷新</button><button id="clear" type="button">清除此主页缓存</button><button id="cancel" type="button" disabled>取消请求</button></form>
       <output id="status" role="status" aria-live="polite">选择年份范围，开始呈现你的代码岁月。</output>
       <progress id="loading-progress" value="0" max="1" hidden aria-label="年度加载进度"></progress>

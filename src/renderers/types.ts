@@ -14,6 +14,7 @@ export interface LandscapeViewport {
 }
 export interface LandscapeView {
   canvas: HTMLCanvasElement;
+  maxZoom?(viewport: LandscapeViewport): number;
   draw(progress: number, viewport: LandscapeViewport): void;
   description(): string;
   dispose(): void;
