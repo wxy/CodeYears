@@ -1,6 +1,20 @@
 # Codex 云端开发接续
 
-更新日期：2026-10-30。P1-C 的 PR #2、P1-A 的 PR #3、独立时间轴 [PR #4](https://github.com/wxy/CodeYears/pull/4) 与 P1-B 缓存 [PR #5](https://github.com/wxy/CodeYears/pull/5) 均已合入。当前 main 为 `f9ea64f`。本地 `codex/p1-readiness` 收敛 [P1-G](tasks/P1-G.md)，尚未宣布通过；云端时间轴任务及两项审核小修已完成，当前没有新派发的功能任务。后续云端任务应从实际最新 main 建立独立分支，沿用清楚的文件边界；真实会话、显示器和浏览器证据仍需对应环境取得。
+更新日期：2026-10-30。P1-C、P1-A、时间轴、缓存及 [P1-G 进度 PR #6](https://github.com/wxy/CodeYears/pull/6) 均已合入，当前 main 起点为 `a626ab4`。用户明确要求增加可独立进行的云端任务，已在现有可运行 CodeYears 环境启动下列三项；本地 `codex/p1-60hz-validation` 独占本机验收与全局状态文档。P1-G 尚未整体通过，不提前把云端前置模块当作正式 MVP。
+
+## 当前并行安排
+
+三项从已合入 PR #6 的最新 main 分别建分支，独立 PR 交付，暂不合入。A/C 已分别交付 PR #8/#7，尚未由根任务完整审查。B 的新实例遇 GitHub 代理连接失败且基线仍旧，未开始实现；已转交此前成功交付时间轴的现有云端会话，先核实 GitHub/main 可用性，再继续同一任务。实际完成度、提交和验收以各自报告/PR 为准，不把实例在线当作网络可用或代码已推进。
+
+| 任务 | 分支 | 独占范围 | 核心交付与边界 |
+| --- | --- | --- | --- |
+| A · 公开未登录补证 | `codex/p1-public-session-validation` | 新增 `docs/tasks/P1-G-PUBLIC-SESSION.md`、`docs/reports/P1-G-PUBLIC-SESSION.md` | [PR #8](https://github.com/wxy/CodeYears/pull/8) 已交付待审，`e19b81d`。两个真实匿名样本为 wxy/2024 366 天/440、torvalds/2025 365 天/2925，原解析器合计与标题一致。Chromium TLS 信任阻塞，未取得完整 MV3/真实缓存证据；未改权限或源码绕过。不冒充本机退出登录/A-B 验收 |
+| B · 时间轴与渲染前置对接 | `codex/render-timeline-integration` | `src/renderers/probe/scene.ts`、必要的 `probes/rendering/main.ts`，自己的 `RENDER-TIMELINE-INTEGRATION` 任务/报告 | 独立 3D 原型复用已合入的 createTimeline，替换重复播放算法，保持生长/暂停/跳过/停帧与释放行为。不改视觉、DPR、正式扩展或共享时间轴；受影响路径直接验证，云端渲染证据不代替本机 GPU |
+| C · 年度历史组装 | `codex/contribution-history-assembly` | 新增 `src/data/history.ts`（或同名目录）、必要的 `probes/history/`，自己的 `HISTORY-ASSEMBLY` 任务/报告 | [PR #7](https://github.com/wxy/CodeYears/pull/7) 已交付待审，`bd2fd34`。将已校验年度记录组合为真实日期有序的只读历史，区分完整/部分与缺失年份，不填零、不改 count、不推进播放，拒绝跨主页或重复年度混入。不做网络、缓存或正式 UI |
+
+三个任务不修改 README、全局计划、共享类型、依赖/锁文件、manifest 或扩展入口，不互相修改对方报告。发现主线缺陷或共享接口需求先报告；功能/修复仍在对应分支通过 PR 交付。不为保持并发而增加范围外功能，不等待全部边界条件一致才交付原型。
+
+本地负责真实用户会话、Edge、实际显示器与后台验收。[60 Hz 本机补充](reports/P1-G-60HZ.md) 已取得六组约 60 FPS 证据，云端后续渲染改动须按影响面另行复验，不能直接继承旧提交的 PASS。三项前置工作可独立于这些本地条件推进，正式 City 集成仍依赖 P1-G 收敛。
 
 ## 环境目标
 
