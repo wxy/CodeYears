@@ -6,7 +6,7 @@ CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，�
 
 > 当前已接入**六款透明预绘建筑**：每年一条横向街区，周为列、周一至周日为行。固定视角，支持缩放、平移与重置；缩放不改变建筑和合并结果。见 [素材说明](docs/design/city-buildings/v1/README.md) 与 [本轮验证](docs/reports/PREPAINTED-CITY.md)。整体视觉仍待用户验收，PR #15 未合入。
 
-已完成 [第二轮单元设计](docs/design/city-units/v2/README.md)：含3×3的13种建筑组合、树木/树林和平地 A/B 设计，以及统一投影模板；透明候选尚待标定接入。运行景观带已改为每五年一组，季度交叉道路仍待实施。
+已完成 [第二轮单元设计](docs/design/city-units/v2/README.md)：含3×3的13种建筑组合、树木/树林和平地 A/B 设计，以及统一投影模板；22款透明候选已完成 [首轮标定](docs/design/city-units/v2/calibration/README.md)，可运行 `npm run preview:units` 打开 <http://127.0.0.1:4176/> 对照；建筑按地面包络居中留距，部分比例/美术仍待验收，尚未接入扩展。运行景观带已改为每五年一组，季度交叉道路仍待实施。
 
 ![City 六款建筑设计参考（已分别生成透明素材接入）](docs/design/city-buildings/v1/building-studies.png)
 
