@@ -1,12 +1,12 @@
 # 技术架构
 
-状态：P1-A/B/C 与独立时间轴原型已合入；P1-B 已通过真实 Chrome 单账户缓存主流程，P1-G 正在收敛真实身份、浏览器和性能门槛，正式 3D 尚未集成。更新日期：2026-10-30。
+状态：已连接年度数据/缓存、时间轴与单年份 City 体验渲染器；完整 MVP 和 P1-G 门槛待验收。更新日期：2026-10-31。
 
 ## 当前骨架
 
 P1-A 提供主动点击注入的 Shadow DOM 年度数据诊断。P1-B 通过 `load-year.ts` 连接页面身份确认、缓存与年度请求；`year-cache.ts` 使用 `chrome.storage.local`，在读取边界校验作用域、版本、日期覆盖和有效期。已知身份在读缓存前、使用/写入结果前通过禁止浏览器缓存的同源主页请求再次确认；身份不明仅联网获取，不读写缓存。浏览器真实会话与跨标签页验收仍以报告为准。
 
-扩展使用 `activeTab`、`scripting` 与 `storage`，不注册自动 content script、不加载 Three.js。缓存按读取、强制刷新、当前作用域清除提供诊断入口。时间轴基础在云端独立推进；已合入的 P1-C 渲染原型不代表正式 MVP 或硬件预算达标。
+扩展使用 `activeTab`、`scripting` 与 `storage`，不注册自动 content script。Shadow DOM 面板选择单年并复用原年度加载器；生成 City 时才动态导入 `city-preview.js`，再把可信日期/数量交给渲染器与已合入的时间轴。仅查看每日数据不会创建 WebGL。缓存、强制刷新及清除继续使用原身份隔离路径；数据获取完成与动画完成分别维护。
 
 ## 目标模块
 
@@ -38,10 +38,10 @@ P1-A 提供主动点击注入的 Shadow DOM 年度数据诊断。P1-B 通过 `lo
 ## 平台与构建
 
 - TypeScript 定义数据、缓存作用域与播放状态；Vite 生成本地 MV3 资源。
-- Three.js 随扩展安装包分发，激活视图时再使用动态 `import()` 加载；不执行 CDN 远程代码。当前未有 viewer，Three.js 仅作为依赖，不进入状态页构建。
+- Three.js 与 City 渲染器随扩展安装包独立打包；注入脚本仅类型引用，用户生成城市时通过 `chrome.runtime.getURL()` 动态 `import()` 本地模块，不执行 CDN 远程代码。
 - UI 使用 Shadow DOM 隔离样式；它不是身份或数据的安全边界。
 - 首版计划在 GitHub 页面上下文可用的位置完成同源数据请求；不能假设后台服务可以自动复用完全相同的会话语义。
-- P1-A 由 popup 通过 `scripting.executeScript` 注入本地 IIFE，不需要常驻 service worker、自动 content script 或 web accessible resources。主 popup 与注入脚本分两次构建到同一目录，避免将 ESM 导入语句交给普通 content script。
+- popup 通过 `scripting.executeScript` 注入本地 IIFE，不需要常驻 service worker 或自动 content script。popup、注入 IIFE、City ES 模块三次构建到同一目录；manifest 只将 `city-preview.js` 向 `https://github.com/*` 声明为 web accessible resource，供隔离环境动态加载。
 - content script、扩展页面与页面脚本的执行环境不同；若实测确需桥接，再针对真实数据边界设计消息协议，不预先增加 MAIN world 注入。
 
 Chrome 官方说明了内容脚本的隔离执行环境和可用能力，不能由此推导 GitHub 会话请求已经通过：[Content scripts](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts)。
@@ -54,7 +54,7 @@ Chrome 官方说明了内容脚本的隔离执行环境和可用能力，不能�
 | 激活/加载 | 识别身份、可取消请求、加载本地渲染模块 |
 | 播放/交互 | 仅在有视觉变化时申请帧；日期数量不逐帧重建 |
 | 暂停/静止 | 无连续帧；必要的单帧更新由 invalidate 触发 |
-| 标签隐藏 | 暂停播放与渲染，返回时保持合理播放位置 |
+| 标签隐藏 | 当前扩展为身份保护而清空结果、取消请求并释放城市，返回后重新确认身份再生成；独立本地预览仅暂停 |
 | 关闭/导航离开 | 取消请求和待执行帧，移除监听，释放几何/材质/纹理/renderer/context |
 
 GitHub 的页内导航、浏览器后退、主页切换和重复激活必须实测。不能只处理整页刷新，也不默认使用全页面高频 DOM 轮询。
@@ -67,4 +67,4 @@ GitHub 的页内导航、浏览器后退、主页切换和重复激活必须实�
 
 ## 仍需决定
 
-当前缓存选择 schema 1、解析器版本 2、当年 1 小时且跨日失效、历史年 30 天；这些是可调整的原型策略。身份源长期可靠性、真实账户/SSO 变化、容量预算、年份布局、数量映射和正式动态资源声明仍需验证。结论必须附依据，不能写成稳定私有 API 合同。
+当前缓存选择 schema 1、解析器版本 2、当年 1 小时且跨日失效、历史年 30 天；这些是可调整的原型策略。City 暂用按日期排列的实例化方块，数量通过 `log1p` 映射高度，只影响表现，不改原始数量。身份源长期可靠性、真实账户/SSO 变化、容量预算、多年份布局和正式主题映射仍需验证。Chrome 单年模块加载已通过，不据此声称 Edge 或完整权限通过；结论见 [体验报告](reports/CITY-EXPERIENCE-PREVIEW.md)。

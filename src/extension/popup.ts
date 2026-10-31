@@ -29,9 +29,9 @@ shadow.innerHTML = `
       <span>City · 贡献之城</span><span>Terrain · 时光山脉</span>
     </div>
     <section class="status" aria-labelledby="status-title">
-      <h2 id="status-title">P1-B · 年度数据与缓存诊断</h2>
-      <p>在个人主页读取单年数据，缓存按访问者隔离，可刷新或清除。City / Terrain 尚未集成。</p>
-      <button type="button">打开数据诊断</button>
+      <h2 id="status-title">City · 真实贡献体验原型</h2>
+      <p>选择年份，将真实每日贡献变成一座城市。支持暂停、跳过与缓存重播；Terrain 稍后接入。</p>
+      <button type="button">打开 CodeYears</button>
       <output role="status" aria-live="polite"></output>
     </section>
   </main>
@@ -52,7 +52,7 @@ button.addEventListener("click", async () => {
       return Boolean(panel?.isConnected && panel.shadowRoot?.querySelector("form #year") && panel.shadowRoot.querySelector('form #run[type="submit"]'));
     } });
     if (mounted.result !== true) throw new Error("诊断面板未能完整打开，请等待主页加载完成后重试。");
-    popupStatus.textContent = "诊断面板已打开，请回到 GitHub 页面选择年份。";
+    popupStatus.textContent = "CodeYears 已打开，请选择年份并生成贡献之城。";
   } catch (error) {
     popupStatus.textContent = error instanceof Error ? error.message : "无法打开诊断，请重新加载扩展。";
   } finally { button.disabled = false; }
