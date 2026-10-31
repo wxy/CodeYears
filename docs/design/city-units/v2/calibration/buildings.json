@@ -1,0 +1,487 @@
+{
+  "assets": [
+    {
+      "id": "townhouse-a",
+      "file": "candidates/residential/townhouse-a.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 1,
+      "crop": [
+        216,
+        90,
+        1064,
+        1174
+      ],
+      "anchor": [
+        540,
+        1169
+      ],
+      "supportEnvelope": {
+        "L": [
+          240,
+          971
+        ],
+        "F": [
+          540,
+          1168
+        ],
+        "R": [
+          1060,
+          1072
+        ],
+        "basis": "manually selected visible ground-support extremities: left masonry footing, frontmost left entrance-step tip, right entrance-step outer footing. Includes both entrance stairs. These points are an asymmetric logical placement envelope, not three proven rectangle corners; the unexposed wall-front corner and rear corner remain unmeasured. About +/-10px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              880,
+              222
+            ],
+            [
+              970,
+              265
+            ]
+          ],
+          "basis": "visible W-parallel rear roof silhouette; first alpha>=220 pixel per x, x=880..970; source SOURCES.md fit slope +0.47331, RMSE 0.303px"
+        },
+        "D": {
+          "points": [
+            [
+              450,
+              236
+            ],
+            [
+              630,
+              186
+            ]
+          ],
+          "basis": "visible D-parallel rear roof silhouette; first alpha>=220 pixel per x, x=450..630; source SOURCES.md fit slope -0.28052, RMSE 0.299px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          480,
+          1124
+        ],
+        "top": [
+          480,
+          410
+        ],
+        "basis": "visible front-left main masonry corner, manually selected ground footing and roof cornice on the same vertical; approximate visual H1 ruler, excludes chimney and front steps; about +/-10px"
+      },
+      "notes": [
+        "crop is the half-open absolute source-pixel bbox of alpha>8; PNG is 1254x1254 and is unchanged.",
+        "anchor is the manually selected frontmost entrance-step ground contact, about +/-5px; it is not a claim that the staircase tip is a footprint corner.",
+        "axes are keyed W and D, both with increasing source x; D is reported toward upper-right. Endpoint slope can differ slightly from the least-squares fit.",
+        "Ground rear corner is hidden; no visible four-corner footprint is asserted. The unequal roof axes do not prove a physical 1x1 ground square.",
+        "Calibration is a render-time coordinate mapping, not a modification of the PNG. targetHeight=1 is a visual unit, not a measured storey height."
+      ]
+    },
+    {
+      "id": "mixed-use-b",
+      "file": "candidates/residential/mixed-use-b.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 1,
+      "crop": [
+        215,
+        104,
+        1038,
+        1160
+      ],
+      "anchor": [
+        627,
+        1158
+      ],
+      "supportEnvelope": {
+        "L": [
+          231,
+          984
+        ],
+        "F": [
+          627,
+          1158
+        ],
+        "R": [
+          1008,
+          997
+        ],
+        "basis": "manually selected visible left shop-wall footing, foremost central entrance step and right shop-wall footing. Includes the doorway landing; excludes awnings, flower baskets and roof overhang. The bevelled entrance makes this a logical support envelope, not an asserted physical square. About +/-10px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              720,
+              146
+            ],
+            [
+              960,
+              255
+            ]
+          ],
+          "basis": "visible W-parallel rear roof silhouette; first alpha>=220 pixel per x, x=720..960; source SOURCES.md fit slope +0.45294, RMSE 0.338px"
+        },
+        "D": {
+          "points": [
+            [
+              300,
+              250
+            ],
+            [
+              380,
+              215
+            ]
+          ],
+          "basis": "visible D-parallel rear roof silhouette; first alpha>=220 pixel per x, x=300..380; source SOURCES.md fit slope -0.43950, RMSE 0.315px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          625,
+          1130
+        ],
+        "top": [
+          625,
+          471
+        ],
+        "basis": "visible central bevelled masonry corner, manually selected shop-floor footing and main cornice on the same vertical; approximate visual H1 ruler, excludes entrance step and roof equipment; about +/-10px"
+      },
+      "notes": [
+        "crop is the half-open absolute source-pixel bbox of alpha>8; PNG is 1254x1254 and is unchanged.",
+        "anchor is the frontmost entrance-step contact, manually selected within about +/-5px; the structural footprint corner is bevelled and is not separately asserted.",
+        "axes are keyed W and D with increasing source x; D points toward upper-right. Ground rear corner is hidden; no four visible corners are asserted.",
+        "Calibration is a render-time coordinate mapping, not a modification of the PNG. targetHeight=1 is a visual unit; footprint assignment is a design target, not a proof of hidden geometry."
+      ]
+    },
+    {
+      "id": "police-a",
+      "file": "candidates/services/police-a.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 1,
+      "crop": [
+        77,
+        82,
+        1502,
+        981
+      ],
+      "anchor": [
+        1103,
+        966
+      ],
+      "supportEnvelope": {
+        "L": [
+          89,
+          539
+        ],
+        "F": [
+          1103,
+          968
+        ],
+        "R": [
+          1481,
+          788
+        ],
+        "basis": "manually selected left stone footing, front-right near-corner footing and far-right ground planting-trough footing. Includes entrance steps and ground troughs in the logical support region; unequal details mean L/F/R are not proven rectangle corners. Rear corner is occluded and remains unspecified. About +/-10px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              650,
+              184
+            ],
+            [
+              1250,
+              438
+            ]
+          ],
+          "basis": "visible W-parallel rear roof silhouette; first alpha>=220 pixel per x, x=650..1250; source SOURCES.md fit slope +0.42344, RMSE 1.398px"
+        },
+        "D": {
+          "points": [
+            [
+              200,
+              192
+            ],
+            [
+              340,
+              117
+            ]
+          ],
+          "basis": "visible D-parallel rear roof silhouette; first alpha>=220 pixel per x, x=200..340; source SOURCES.md fit slope -0.53778, RMSE 0.301px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          1103,
+          966
+        ],
+        "top": [
+          1103,
+          631
+        ],
+        "basis": "visible near-corner stone pier, manually selected bottom of footing and main roof-cornice cap on the same vertical; approximate visual H1 ruler, excludes the entrance pediment and equipment; about +/-10px"
+      },
+      "notes": [
+        "crop is the half-open absolute source-pixel bbox of alpha>8; PNG is 1536x1024 and is unchanged. Very low-alpha broad glow lies outside crop and is not cleaned from the source.",
+        "anchor is a visible near-corner footing contact, manually selected within about +/-5px. The outer planting trough extends beyond that wall corner.",
+        "axes are keyed W and D with increasing source x; D points toward upper-right. Rear ground corners are hidden; roof measurements prove directions only, not the full 2x1 physical footprint.",
+        "Calibration is a render-time coordinate mapping, not a modification of the PNG. targetHeight=1 is a visual unit."
+      ]
+    },
+    {
+      "id": "fire-b",
+      "file": "candidates/services/fire-b.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 1,
+      "crop": [
+        110,
+        78,
+        1430,
+        971
+      ],
+      "anchor": [
+        1105,
+        953
+      ],
+      "supportEnvelope": {
+        "L": [
+          123,
+          550
+        ],
+        "F": [
+          1105,
+          955
+        ],
+        "R": [
+          1399,
+          772
+        ],
+        "basis": "manually selected left entrance-planter plinth contact, near-corner stone footing and right wall footing. Includes the necessary entrance landing and ground planter; excludes bollard tops, roof equipment and glow. This is a logical support envelope with local protrusions, not a measured rectangular footprint. About +/-10px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              700,
+              166
+            ],
+            [
+              1250,
+              418
+            ]
+          ],
+          "basis": "visible W-parallel rear roof silhouette; first alpha>=220 pixel per x, x=700..1250; source SOURCES.md fit slope +0.46098, RMSE 0.696px"
+        },
+        "D": {
+          "points": [
+            [
+              270,
+              201
+            ],
+            [
+              450,
+              106
+            ]
+          ],
+          "basis": "visible D-parallel rear roof silhouette; first alpha>=220 pixel per x, x=270..450; source SOURCES.md fit slope -0.53081, RMSE 0.290px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          1105,
+          953
+        ],
+        "top": [
+          1105,
+          649
+        ],
+        "basis": "visible near-corner brick and stone pier, manually selected footing and main cornice on the same vertical; approximate visual H1 ruler, excludes emblem parapet and equipment; about +/-10px"
+      },
+      "notes": [
+        "crop is the half-open absolute source-pixel bbox of alpha>8; PNG is 1536x1024 and is unchanged. Very low-alpha broad glow lies outside crop and is not cleaned from the source.",
+        "anchor is a visible near-corner stone footing contact, manually selected within about +/-5px; entry steps and bollards are not footprint corners.",
+        "axes are keyed W and D with increasing source x; D points toward upper-right. Rear ground corners are hidden; roof measurements prove directions only, not the full 2x1 physical footprint.",
+        "Calibration is a render-time coordinate mapping, not a modification of the PNG. targetHeight=1 is a visual unit."
+      ]
+    },
+    {
+      "id": "stadium-a",
+      "file": "candidates/large-3x3/stadium-a.png",
+      "kind": "building",
+      "footprint": [
+        3,
+        3
+      ],
+      "targetHeight": 1,
+      "crop": [
+        9,
+        231,
+        1247,
+        1087
+      ],
+      "anchor": [
+        628,
+        1085
+      ],
+      "supportEnvelope": {
+        "L": [
+          11,
+          711
+        ],
+        "F": [
+          628,
+          1085
+        ],
+        "R": [
+          1245,
+          711
+        ],
+        "basis": "manually selected left and right outer entrance-paving/plinth contacts and front central planter-plinth tip. Includes immediate entry paving and contained ground planters; excludes tree foliage, canopies and lights. L/F/R describe a logical placement envelope; a continuous diamond and its hidden rear corner would be inferred. About +/-10px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              410,
+              960
+            ],
+            [
+              510,
+              1021
+            ]
+          ],
+          "basis": "visible W-parallel front-left entry paving outer edge; last alpha>128 pixel per x, x=410..510; least-squares slope +0.60701, RMSE 0.31px; excludes the protruding corner planters"
+        },
+        "D": {
+          "points": [
+            [
+              730,
+              1030
+            ],
+            [
+              830,
+              969
+            ]
+          ],
+          "basis": "visible D-parallel front-right entry paving outer edge; last alpha>128 pixel per x, x=730..830; least-squares slope -0.61166, RMSE 0.30px; excludes the protruding corner planters"
+        }
+      },
+      "heightReference": {
+        "base": [
+          418,
+          950
+        ],
+        "top": [
+          418,
+          758
+        ],
+        "basis": "visible stone entrance pier on the front-left facade, manually selected paving-level base and pier cap on the same vertical; approximate visual H1 ruler, excludes canopy trusses and lights; about +/-10px"
+      },
+      "notes": [
+        "crop is the half-open absolute source-pixel bbox of alpha>8; PNG is 1254x1254 and is unchanged.",
+        "anchor is the frontmost central planter/plinth ground contact, manually selected within about +/-5px; this is a stable visible contact point, not proof of the stadium wall footprint corner.",
+        "axes are keyed W and D with increasing source x; D points toward upper-right. The paving segments give ground directions but do not expose rear ground corners.",
+        "No four-corner footprint is asserted. A symmetric 3x3 rear corner reconstructed from these directions would be inferred, not visible evidence.",
+        "Calibration is a render-time coordinate mapping, not a modification of the PNG. targetHeight=1 is a facade visual unit, not the height of the floodlights."
+      ]
+    },
+    {
+      "id": "terminal-b",
+      "file": "candidates/large-3x3/terminal-b.png",
+      "kind": "building",
+      "footprint": [
+        3,
+        3
+      ],
+      "targetHeight": 1,
+      "crop": [
+        20,
+        192,
+        1241,
+        1129
+      ],
+      "anchor": [
+        668,
+        1126
+      ],
+      "supportEnvelope": {
+        "L": [
+          22,
+          744
+        ],
+        "F": [
+          668,
+          1127
+        ],
+        "R": [
+          1239,
+          789
+        ],
+        "basis": "manually selected left outer entry planter-plinth contact, foremost entry-paving tip and right outer planter-plinth contact. Includes entry paving and ground planters; excludes tree crowns, roofs and facade overhang. The visible front paving is asymmetric, so these are support-envelope points, not proven three corners of a physical 3x3 square; any rear corner is inferred. About +/-10px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              340,
+              930
+            ],
+            [
+              440,
+              990
+            ]
+          ],
+          "basis": "visible W-parallel front entry paving outer edge; last alpha>128 pixel per x, x=340..440; least-squares slope +0.60277, RMSE 0.31px; avoids protruding planters"
+        },
+        "D": {
+          "points": [
+            [
+              450,
+              615
+            ],
+            [
+              700,
+              452
+            ]
+          ],
+          "basis": "visible straight D-parallel longitudinal metal edge on a glass barrel roof, not the curved arch; grayscale vertical contrast abs(L[x,y+2]-L[x,y-2]) locally maximized within +/-3px of y=614-0.652*(x-450), x=450..700; least-squares slope -0.651589, RMSE 0.378px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          819,
+          1082
+        ],
+        "top": [
+          819,
+          846
+        ],
+        "basis": "visible front-right stone corner tower, manually selected low footing and main cap on the same vertical; approximate visual H1 facade ruler, excludes tall rear tower and arched-roof apex; about +/-10px"
+      },
+      "notes": [
+        "crop is the half-open absolute source-pixel bbox of alpha>8; PNG is 1254x1254 and is unchanged.",
+        "anchor is the frontmost entry-paving ground contact, manually selected within about +/-5px; the actual wall corner is offset from this paving tip.",
+        "axes are keyed W and D with increasing source x; D points toward upper-right. D uses a straight roof edge because the right ground edge is repeatedly interrupted by planters and piers.",
+        "No four-corner footprint is asserted. Hidden platforms, rear ground corners and a physical 3x3 square cannot be confirmed by this 2D mapping.",
+        "Calibration is a render-time coordinate mapping, not a modification of the PNG. targetHeight=1 is a facade visual unit; the curved roof and taller rear tower remain separate silhouette features."
+      ]
+    }
+  ]
+}
