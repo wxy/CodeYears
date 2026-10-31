@@ -30,7 +30,7 @@ shadow.innerHTML = `
     </div>
     <section class="status" aria-labelledby="status-title">
       <h2 id="status-title">City · 真实贡献体验原型</h2>
-      <p>选择年份，将真实每日贡献变成一座城市。支持暂停、跳过与缓存重播；Terrain 稍后接入。</p>
+      <p>选择起止年份，将多年的真实每日贡献连成一座城市。支持暂停、跳过与完整缓存重播；Terrain 稍后接入。</p>
       <button type="button">打开 CodeYears</button>
       <output role="status" aria-live="polite"></output>
     </section>
@@ -52,7 +52,7 @@ button.addEventListener("click", async () => {
       return Boolean(panel?.isConnected && panel.shadowRoot?.querySelector("form #year") && panel.shadowRoot.querySelector('form #run[type="submit"]'));
     } });
     if (mounted.result !== true) throw new Error("诊断面板未能完整打开，请等待主页加载完成后重试。");
-    popupStatus.textContent = "CodeYears 已打开，请选择年份并生成贡献之城。";
+    popupStatus.textContent = "CodeYears 已打开，请选择年份范围并生成贡献之城。";
   } catch (error) {
     popupStatus.textContent = error instanceof Error ? error.message : "无法打开诊断，请重新加载扩展。";
   } finally { button.disabled = false; }
