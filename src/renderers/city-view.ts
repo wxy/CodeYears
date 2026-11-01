@@ -216,22 +216,6 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
         context.drawImage(source,x,y,w,h);context.restore();
       }
     },
-    async exportImage(dark){
-      const spanX=maxX-minX,spanY=maxY-minY;
-      const scale=Math.min(8192/Math.max(spanX,spanY),Math.sqrt(32_000_000/(spanX*spanY)));
-      const output=document.createElement('canvas');output.width=Math.floor(spanX*scale);output.height=Math.floor(spanY*scale);
-      const width=output.width,height=output.height;
-      try{
-        const target=output.getContext('2d')!;
-        target.fillStyle=dark?'#0d1117':'#ffffff';target.fillRect(0,0,width,height);
-        target.setTransform(scale,0,0,scale,-minX*scale,-minY*scale);target.imageSmoothingQuality='high';
-        // 独立重画完整最终城市，不放大屏幕截图，不改变镜头或Time Travel进度。
-        paintGround(target);
-        for(const p of placed)if(!p.item.flat)target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height);
-        const blob=await new Promise<Blob>((resolve,reject)=>output.toBlob(blob=>blob?resolve(blob):reject(new Error('图片编码失败。')),'image/png'));
-        return {blob,width,height};
-      }finally{output.width=output.height=0}
-    },
     dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
   };
 }

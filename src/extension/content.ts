@@ -1,5 +1,4 @@
 import { cityLegendStyles, createCityLegend } from "./city-legend";
-import { createCityShare } from "./city-share";
 import { readPageContext } from "../platform/github/probe";
 import { clearContributionCache } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
@@ -50,7 +49,8 @@ import type { TimelineState } from "../timeline/types";
       <section class="city" id="city" hidden aria-label="贡献之城">
         <div class="city-head"><h3 id="city-title">贡献之城</h3><p class="note" id="city-summary"></p></div>
         <div id="scene"></div>
-        <div class="city-controls"><span id="progress"></span><button id="zoom-out" type="button" aria-label="缩小景观">−</button><button id="zoom-in" type="button" aria-label="放大景观">＋</button><button id="reset-view" type="button">重置视图</button><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="export" type="button" disabled>导出与分享</button><button id="close-city" type="button">关闭城市</button></div>
+        <p class="note">调整缩放和平移后，在图上点右键，选择“图片存储为…”保存当前画面；也可选择“复制图片”。</p>
+        <div class="city-controls"><span id="progress"></span><button id="zoom-out" type="button" aria-label="缩小景观">−</button><button id="zoom-in" type="button" aria-label="放大景观">＋</button><button id="reset-view" type="button">重置视图</button><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭城市</button></div>
       </section>
       <details id="data-settings"><summary>设置与数据说明</summary>
         <p id="identity" class="note"></p>
@@ -84,13 +84,11 @@ import type { TimelineState } from "../timeline/types";
   const cityHost = shadow.querySelector<HTMLElement>("#scene")!;
   const progress = shadow.querySelector<HTMLElement>("#progress")!;
   const pause = shadow.querySelector<HTMLButtonElement>("#pause")!;
-  const exportButton = shadow.querySelector<HTMLButtonElement>("#export")!;
   shadow.querySelector<HTMLButtonElement>("#reset-view")!.onclick = () => city?.resetView();
   let city: ContributionLandscape | undefined;
-  let share: ReturnType<typeof createCityShare> | undefined;
   let timelineState: TimelineState | undefined;
   let visibleDays: readonly DailyContribution[] = [];
-  const disposeCity = () => { share?.dispose(); share = undefined; exportButton.disabled = true; city?.dispose(); city = undefined; timelineState = undefined; cityBox.hidden = true; cityHost.replaceChildren(); };
+  const disposeCity = () => { city?.dispose(); city = undefined; timelineState = undefined; cityBox.hidden = true; cityHost.replaceChildren(); };
   let controller: AbortController | undefined;
   const currentContext = () => readPageContext(document, new URL(location.href));
   const resetResult = () => { disposeCity(); details.hidden = true; details.open = false; visibleDays = []; body.replaceChildren(); };
@@ -194,11 +192,7 @@ import type { TimelineState } from "../timeline/types";
               ? `城市生长 · ${Math.round(state.revealedDays / state.totalDays * 100)}%` : "正在准备城市…";
             pause.textContent = state.status === "paused" ? "继续" : "暂停";
             pause.disabled = state.status === "completed";
-            exportButton.disabled = !cityHost.querySelector("canvas");
           }, "city");
-          const landscape = city;
-          share = createCityShare(shadow, { prepare: () => landscape.exportImage(), range,
-            filename: `CodeYears-${start === end ? start : `${start}-${end}`}.png` });
         } catch (error) { disposeCity(); throw error; }
       }
     } catch (error) {
@@ -215,7 +209,6 @@ import type { TimelineState } from "../timeline/types";
   shadow.querySelector("#zoom-out")!.addEventListener("click", () => city?.zoomBy(0.8));
   shadow.querySelector("#zoom-in")!.addEventListener("click", () => city?.zoomBy(1.25));
   shadow.querySelector("#close-city")!.addEventListener("click", disposeCity);
-  exportButton.onclick = () => { void share?.open(); };
   clear.addEventListener("click", async () => {
     const request = new AbortController();
     controller = request;
