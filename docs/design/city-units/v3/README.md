@@ -1,6 +1,6 @@
 # City 中高层透明单元 · v3
 
-日期：2026-11-01。六款正式 PNG 与共享格式标定已生成，本地分支接入；云端选择逻辑见 [PR #22](https://github.com/wxy/CodeYears/pull/22)，街区地面见 [PR #23](https://github.com/wxy/CodeYears/pull/23)。本轮各项仍待合入，最终美术接受由用户判断。独立目录保留原图，不覆盖 v2 或旧中高层。
+日期：2026-11-01。六款正式 PNG 与共享格式标定已生成，通过本地 [PR #24](https://github.com/wxy/CodeYears/pull/24) 接入；云端选择逻辑见 [PR #22](https://github.com/wxy/CodeYears/pull/22)，街区地面见 [PR #23](https://github.com/wxy/CodeYears/pull/23)。本轮各项仍待合入，最终美术接受由用户判断。独立目录保留原图，不覆盖 v2 或旧中高层。
 
 | 档位 | A | B | 实际楼身参考高度 |
 | --- | --- | --- | --- |
