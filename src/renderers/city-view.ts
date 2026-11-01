@@ -75,7 +75,7 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
     // 连续暖石人行道与细路缘包住年度街区，庭院不再逐格铺深色底。
     polygon(-.16,z-.16,span+.32,7.32,'#b6b5a4');
     polygon(-.12,z-.12,span+.24,7.24,'#d2cbb6');
-    polygon(0,z,span,7,'#98a486');
+    polygon(0,z,span,7,'#b3b4a2');
     line(-.4,z-.4,span+.4,z-.4,'#c6c3aa',.022,[.25,.3]);
     line(-.4,z+7.4,span+.4,z+7.4,'#c6c3aa',.022,[.25,.3]);
     district.breaks.forEach((week,index)=>{
@@ -106,13 +106,52 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   for(const [x,z,x2,z2]of edges.values())line(x,z,x2,z2,'#d0c9b4',.055);
   // 平地/水岸贴图覆盖自身庭院；树木与楼体在地面之后按深度绘制。
   for(const p of placed)if(p.item.flat)image(p);
-  for(const start of parkStarts){
-    polygon(0,start,width,PARK,'#8fa17c');
-    const path=new Path2D();path.moveTo(...project(0,start+PARK*.36));path.bezierCurveTo(...project(width*.3,start+PARK*.85),...project(width*.65,start+PARK*.12),...project(width,start+PARK*.65));
-    stroke(path,'#c8bea3',.16);stroke(path,'#ddd1b6',.1);
-    const pond=images['pond-a'],factor=1.4,[x,y]=project(width*.61-1.4,start+.6);
-    image({sprite:pond,left:x+pond.left*factor,top:y+pond.top*factor,width:pond.width*factor,height:pond.height*factor});
+  for(const [band,start]of parkStarts.entries()){
+    // 河道在既有四格景观带内起伏；两岸保留既有树木落地所需的草坡。
+    polygon(0,start,width,PARK,'#98a88a');
+    const samples=Array.from({length:Math.ceil(width*2)+1},(_,i)=>{
+      const x=width*i/Math.ceil(width*2);
+      const center=start+PARK*.5+.12*Math.sin(x*.22+band*.7);
+      const half=.82+.09*Math.sin(x*.31+1.2);
+      return {x,near:center-half,far:center+half};
+    });
+    const bankPath=(side:'near'|'far',offset:number)=>{
+      const path=new Path2D();samples.forEach((p,i)=>{const point=project(p.x,p[side]+offset);if(i)path.lineTo(...point);else path.moveTo(...point)});return path;
+    };
+    const water=new Path2D();
+    samples.forEach((p,i)=>{const point=project(p.x,p.near);if(i)water.lineTo(...point);else water.moveTo(...point)});
+    for(const p of [...samples].reverse())water.lineTo(...project(p.x,p.far));water.closePath();
+    stroke(bankPath('near',-.12),'#839578',.22);stroke(bankPath('far',.12),'#839578',.22);
+    groundPaint.push(target=>{target.fillStyle='#699c9c';target.fill(water)});
+    stroke(bankPath('near',0),'#b0c3ac',.055);stroke(bankPath('far',0),'#b0c3ac',.055);
+    // 沿岸步道与水面轮廓共用采样，不出现独立池塘或穿水黄线。
+    stroke(bankPath('near',-.3),'#b4b5a0',.18);stroke(bankPath('near',-.3),'#d8d1bb',.12);
+    stroke(bankPath('far',.3),'#b4b5a0',.18);stroke(bankPath('far',.3),'#d8d1bb',.12);
+    // 每带一座桥对齐前一年度中间季度路，桥头仅在年间道路内衔接。
+    const before=weekly.districts[(band+1)*5-1],after=weekly.districts[(band+1)*5];
+    const index=Math.floor(before.breaks.length/2),week=before.breaks[index];
+    if(week!==undefined){
+      const roadX=week+index*ROAD;
+      // 桥从既有岸树之间的空隙通过，避免把保留的场景树画在桥面上。
+      const bankTrees=items.filter(item=>!item.parcel&&item.z>=start&&item.z<start+PARK).sort((a,b)=>a.x-b.x);
+      const gaps=bankTrees.flatMap((tree,i)=>{
+        const next=bankTrees[i+1];return next&&next.x-(tree.x+tree.w)>ROAD+.6?[(tree.x+tree.w+next.x-ROAD)/2]:[];
+      });
+      const x=gaps.sort((a,b)=>Math.abs(a-roadX)-Math.abs(b-roadX))[0]??roadX;
+      const bridgeZ=start-.4,bridgeDepth=PARK+.8;
+      polygon(x-.14,bridgeZ,ROAD+.28,bridgeDepth,'#a7afa3');
+      polygon(x,bridgeZ,ROAD,bridgeDepth,'#747e79');
+      line(x+ROAD/2,bridgeZ+.1,x+ROAD/2,bridgeZ+bridgeDepth-.1,'#d4d0b7',.02,[.18,.25]);
+      for(const railX of [x-.1,x+ROAD+.1])line(railX,start+.15,railX,start+PARK-.15,'#e0ddcd',.035);
+      polygon(Math.min(x,roadX),start-.6,Math.abs(x-roadX)+ROAD,.4,'#747e79');
+      const nextWeek=after?.breaks[index];
+      if(nextWeek!==undefined){
+        const nextX=nextWeek+index*ROAD;
+        polygon(Math.min(x,nextX),start+PARK+.2,Math.abs(nextX-x)+ROAD,.4,'#747e79');
+      }
+    }
   }
+  // 二十年细节平移已在同环境对照；保留统一顺序，本轮不扩建剔除框架。
   const paintGround=(target:CanvasRenderingContext2D)=>{for(const paint of groundPaint)paint(target)};
   const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);
   const detailGround=document.createElement('canvas');let detailKey='';
@@ -120,7 +159,7 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   return {
     canvas,
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
-    description:()=> '固定视角 · 标定单元居中留距 · 连续庭院步道 / 季度交叉路 / 每五年景观带 · 可放大查看建筑细节 · 拖动平移',
+    description:()=> '固定视角 · 标定单元居中留距 · 连续庭院步道 / 季度交叉路 / 每五年滨河带 · 可放大查看建筑细节 · 拖动平移',
     draw(progress,viewport:LandscapeViewport){
       const pw=Math.round(viewport.width*viewport.dpr),ph=Math.round(viewport.height*viewport.dpr);
       if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph}
