@@ -13,13 +13,14 @@ const districtX=(weekly:WeeklyCity,block:number,x:number)=>x+weekly.districts[bl
 const districtZ=(block:number)=>block*(7+YEAR_GAP)+Math.floor(block/5)*PARK;
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
-export function planCityScene(days:readonly DailyContribution[]):CityScene {
-  const weekly=planWeeklyCity(days,true),selectGround=createGroundSelector(weekly);
+export function planCityScene(days:readonly DailyContribution[],wonders=true):CityScene {
+  const weekly=planWeeklyCity(days,true,wonders),selectGround=createGroundSelector(weekly);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
     const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
     const seed=(hash^(hash>>>16))>>>0,variant=seed%2?'b':'a';
     let id:string,factor=1;
-    if(kind==='grass')({id,factor}=selectGround(parcel,seed));
+    if(parcel.wonder)id=parcel.wonder;
+    else if(kind==='grass')({id,factor}=selectGround(parcel,seed));
     else if(kind==='shrub')id=`sapling-${variant}`;
     else if(kind==='tree')id=w===2&&d===2?`forest-2x2-${variant}`:w===2?`small-grove-2x1-${variant}`:d===2?`small-grove-1x2-${variant}`:variant==='a'?'broadleaf-a':'conifer-b';
     else ({id,factor}=selectCityBuilding(parcel,seed));
@@ -43,12 +44,13 @@ export function planCityScene(days:readonly DailyContribution[]):CityScene {
       }
     });
   });
-  const keys=[...new Set([...items.map(i=>i.id),...(parkStarts.length?['pond-a']:[])])];
+  const keys=[...new Set(items.map(i=>i.id))];
   return {weekly,items,keys,parkStarts,width,depth:weekly.rows*(7+YEAR_GAP)-YEAR_GAP+parkStarts.length*PARK};
 }
 
 export function createCityView(scene:CityScene,images:CityImages):LandscapeView {
   const {weekly,items,parkStarts,width,depth}=scene;
+  const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
   const placed=items.map(item=>{
     const sprite=images[item.id];
@@ -219,7 +221,7 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   return {
     canvas,
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
-    description:()=> '固定视角 · 标定单元居中留距 · 连续庭院步道 / 季度交叉路 / 每五年滨河带 · 可放大查看建筑细节 · 拖动平移',
+    description:()=> `固定视角 · ${wonderCount} 处奇观 · 连续庭院步道 / 季度交叉路 / 每五年滨河带 · 拖动平移`,
     draw(progress,viewport:LandscapeViewport){
       const pw=Math.round(viewport.width*viewport.dpr),ph=Math.round(viewport.height*viewport.dpr);
       if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph}

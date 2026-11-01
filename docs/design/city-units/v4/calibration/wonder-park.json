@@ -1,0 +1,85 @@
+{
+  "assets": [
+    {
+      "id": "wonder-park",
+      "file": "candidates/wonders/wonder-park.png",
+      "kind": "building",
+      "footprint": [
+        4,
+        3
+      ],
+      "targetHeight": 1.5,
+      "crop": [
+        4,
+        90,
+        1446,
+        1017
+      ],
+      "anchor": [
+        900,
+        1014
+      ],
+      "supportEnvelope": {
+        "L": [
+          10,
+          540
+        ],
+        "F": [
+          900,
+          1014
+        ],
+        "R": [
+          1441,
+          668
+        ],
+        "basis": "Manually selected planted garden ground-support extrema, including close garden beds and paths. L/F/R form the logical composite placement envelope rather than exact corners of the conservatory. Rear envelope point is hidden and inferred by parallelogram closure; approximately +/-10 source px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              10,
+              540
+            ],
+            [
+              900,
+              1014
+            ]
+          ],
+          "basis": "Visible long foreground garden-boundary direction from leftmost support to foreground garden corner; hand-selected source endpoints, approximately +/-10 px. Averages the planted edge, not every path or dome rib."
+        },
+        "D": {
+          "points": [
+            [
+              900,
+              1014
+            ],
+            [
+              1441,
+              668
+            ]
+          ],
+          "basis": "Visible shorter right foreground garden-boundary direction, reported with increasing source x. Hand-selected source endpoints, approximately +/-10 px. Internal garden/roof details may have local AI perspective differences."
+        }
+      },
+      "heightReference": {
+        "base": [
+          710,
+          580
+        ],
+        "top": [
+          710,
+          156
+        ],
+        "basis": "Approximate composite vertical ruler for the central conservatory cupola dome, excluding the slender finial. Upper point is visible; the corresponding ground contact below the cupola is occluded and projected near the front conservatory footing. It is a visual height reference, not a measured single visible wall edge or physical camera recovery; about +/-20 px."
+      },
+      "notes": [
+        "Original generated RGBA PNG and runtime copy are byte-identical; no pixel editing, recoloring, masking, mirroring, crop or image warp was applied to either source file.",
+        "Half-open alpha>8 crop is [4,90,1446,1017] in the 1448x1086 original. Outer-edge alpha maxima are left=3,right=2,top=0,bottom=1; all four corner alpha values are zero. Existing display-cache low-alpha treatment suppresses the very faint exterior residue.",
+        "The broad formal planted garden, axial paths, fountain and conservatory together represent one landmark wonder. It must only be used by the dense-contribution wonder planner; it is not a no-contribution grass/pond alternative.",
+        "The source's high cupola would make the footprint undersized if forced to a 1H reference. targetHeight=1.5 retains an approximately 3.691x2.243-cell support envelope inside the 4x3 parcel, with per-side W/D clearance approximately 0.155/0.378 cells. The thin finial extends above that main-feature ruler.",
+        "Calibration maps selected garden axes to +0.5/-0.5 and centers the support envelope. Hidden points, circular roof ribs and every fine path are not claimed to share an exactly recovered orthographic physical camera."
+      ]
+    }
+  ]
+}

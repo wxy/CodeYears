@@ -1,0 +1,85 @@
+{
+  "assets": [
+    {
+      "id": "wonder-stadium",
+      "file": "candidates/wonders/wonder-stadium.png",
+      "kind": "building",
+      "footprint": [
+        4,
+        3
+      ],
+      "targetHeight": 1.1,
+      "crop": [
+        70,
+        136,
+        1486,
+        912
+      ],
+      "anchor": [
+        887,
+        915
+      ],
+      "supportEnvelope": {
+        "L": [
+          70,
+          510
+        ],
+        "F": [
+          887,
+          915
+        ],
+        "R": [
+          1486,
+          612
+        ],
+        "basis": "Conservative logical ground-support rectangle around visible stadium footing and compact entry steps. L/R are outer ground-support extremities, F is a virtual front corner enclosing the rounded facade, not a measured physical sharp corner. Rear corner [669,207] is hidden and inferred by parallelogram closure. Approximate +/-12 px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              195,
+              561
+            ],
+            [
+              733,
+              847
+            ]
+          ],
+          "basis": "Manually selected visible long ground-support/entry-step edge along left facade toward lower right, approximately +/-8 px. Rounded corners excluded; local roof edges are not asserted to share an exact physical camera."
+        },
+        "D": {
+          "points": [
+            [
+              1075,
+              867
+            ],
+            [
+              1392,
+              704
+            ]
+          ],
+          "basis": "Manually selected straight ground-support edge along right facade toward upper right, approximately +/-8 px. This is the short D direction with increasing source x."
+        }
+      },
+      "heightReference": {
+        "base": [
+          902,
+          897
+        ],
+        "top": [
+          902,
+          709
+        ],
+        "basis": "Approximate main front facade/canopy vertical ruler, same source x. Base follows front entrance footing, top follows outer canopy lip above the central entrance. Rounded facade and lighting make exact correspondence uncertain; about +/-12 px. Excludes rear roof ribs and pitch bowl."
+      },
+      "notes": [
+        "Original RGBA generated image and runtime copy are byte-identical; no pixel edits, crop, alpha modification, recoloring or mirroring.",
+        "Crop is the half-open alpha>8 bounding box; PNG 1536x1024; all four corner alpha values are zero. Some RGB values outside visible architecture are nonzero with alpha=0 and are not visible floor haze.",
+        "Nominal targetHeight=1.1H is capped by ground clearance, yielding actual reference height approximately0.808921H, not strict1.1H. Actual W/D support spans approximately3.571734/2.8; per-side clearance approximately0.214133/0.1.",
+        "The inferred logical rectangle is centered by shared calibrate(); supports are not four measured physical corners of a rounded stadium. Unmeasured canopy/ellipse details and hidden geometry retain image-generation approximation.",
+        "Native4x3 landmark arena; not a scaled existing3x3 stadium. Orthographic ground-axis correction is applied at render time without changing source art."
+      ]
+    }
+  ]
+}

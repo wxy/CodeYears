@@ -6,12 +6,16 @@ import h3 from '../../docs/design/city-units/v3/calibration/h3.json';
 import h4 from '../../docs/design/city-units/v3/calibration/h4.json';
 import h3Rect from '../../docs/design/city-units/v3/calibration/h3-rect.json';
 import h4Rect from '../../docs/design/city-units/v3/calibration/h4-rect.json';
+import wonderStadium from '../../docs/design/city-units/v4/calibration/wonder-stadium.json';
+import wonderTheater from '../../docs/design/city-units/v4/calibration/wonder-theater.json';
+import wonderPark from '../../docs/design/city-units/v4/calibration/wonder-park.json';
 import {calibrate,drawUnit,loadUnit,project,slope,type Point,type UnitImage,type UnitSample} from './calibration';
 
-const samples=[...buildings.assets,...ground.assets,...vegetation.assets,...h2.assets,...h3.assets,...h4.assets,...h3Rect.assets,...h4Rect.assets] as UnitSample[];
-const urls=import.meta.glob<string>('../../docs/design/city-units/v{2,3}/candidates/**/*.png',{eager:true,query:'?url',import:'default'});
-const sourceFolder=(s:UnitSample)=>s.id.includes('-h2-')||s.id.includes('-h3-')||s.id.includes('-h4-')?'v3':'v2';
+const samples=[...buildings.assets,...ground.assets,...vegetation.assets,...h2.assets,...h3.assets,...h4.assets,...h3Rect.assets,...h4Rect.assets,...wonderStadium.assets,...wonderTheater.assets,...wonderPark.assets] as UnitSample[];
+const urls=import.meta.glob<string>('../../docs/design/city-units/v{2,3,4}/candidates/**/*.png',{eager:true,query:'?url',import:'default'});
+const sourceFolder=(s:UnitSample)=>s.id.startsWith('wonder-')?'v4':s.id.includes('-h2-')||s.id.includes('-h3-')||s.id.includes('-h4-')?'v3':'v2';
 const labels:Record<string,string>={
+ 'wonder-stadium':'奇观 · 体育馆','wonder-theater':'奇观 · 剧院','wonder-park':'奇观 · 地标公园',
  'townhouse-a':'砖石住宅 A','mixed-use-b':'石材商住 B','police-a':'警局 A','fire-b':'消防局 B','stadium-a':'体育场 A','terminal-b':'铁路总站 B',
  'apartment-h2-a':'赤陶公寓 A · H2','apartment-h2-b':'浅石住宅 B · H2','office-h3-a':'棕铜退台办公 A · H3','office-h3-b':'蓝灰办公 B · H3','tower-h4-a':'蓝玻璃直塔 A · H4','tower-h4-b':'青绿退台塔 B · H4',
  'office-wide-h3-a':'横向铜色办公 A · H3','office-wide-h3-b':'横向蓝灰办公 B · H3','office-deep-h3-a':'纵深铜色办公 A · H3','office-deep-h3-b':'纵深蓝灰办公 B · H3',

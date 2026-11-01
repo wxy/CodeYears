@@ -1,0 +1,86 @@
+{
+  "assets": [
+    {
+      "id": "wonder-theater",
+      "file": "candidates/wonders/wonder-theater.png",
+      "kind": "building",
+      "footprint": [
+        3,
+        3
+      ],
+      "targetHeight": 2,
+      "crop": [
+        38,
+        58,
+        1502,
+        963
+      ],
+      "anchor": [
+        791,
+        960
+      ],
+      "supportEnvelope": {
+        "L": [
+          39,
+          644
+        ],
+        "F": [
+          791,
+          960
+        ],
+        "R": [
+          1498,
+          683
+        ],
+        "basis": "Manually selected outer entrance-step/attached-planter stone-footing support envelope. Visible lower silhouette extrema include the compact entrance forecourt. This is a logical placement envelope, not three exact physical square corners. Rear point is hidden and inferred by parallelogram closure. Approximately +/-10 px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              55,
+              650
+            ],
+            [
+              780,
+              957
+            ]
+          ],
+          "basis": "Visible straight outer limestone footing/forecourt edge running right-down; points approximate +/-8 px. Minor planter cut-ins do not establish a recovered physical camera."
+        },
+        "D": {
+          "points": [
+            [
+              800,
+              956
+            ],
+            [
+              1480,
+              690
+            ]
+          ],
+          "basis": "Visible lower stone planter/footing envelope running right-up. Points approximate +/-8 px. Hidden rear edges and all curved roofs are not claimed to be geometrically exact."
+        }
+      },
+      "heightReference": {
+        "base": [
+          716,
+          788
+        ],
+        "top": [
+          716,
+          277
+        ],
+        "basis": "Approximate same-x vertical main entrance-side stone pier, from ground-facing contact to the pier cornice, +/-15 px. The higher curved vault/crown extends above this visual ruler; this is not a roof-height or physical-storey measurement."
+      },
+      "notes": [
+        "Original built-in imagegen RGBA PNG preserved byte-for-byte in formal source and runtime copy. No programmatic masking, cropping, recoloring or stretching.",
+        "crop is the half-open alpha>8 source bounding box. All four source corner alpha values are zero; render-time low-alpha cleanup remains existing behavior.",
+        "Native 3x3 footprint. Main pier targetHeight is 2H to retain a broad landmark footprint; the first suggested 1.5H would reduce the visible support to approximately 1.8x1.7 cells and was not adopted.",
+        "Ground support is centered by the existing calibration algorithm, with at least 0.1 cell clearance on each side. Hidden rear support is inferred.",
+        "Curved bronze roof is deliberately distinct from plain office blocks. Roof/crown is above the selected main-pier ruler and is not asserted to be exactly 2H overall.",
+        "Affine image calibration maps the measured ground axes to +/-0.5 while preserving verticals; this is an approximation and does not recover physical 3D geometry."
+      ]
+    }
+  ]
+}
