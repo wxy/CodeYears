@@ -49,25 +49,29 @@ export function createCityOutskirtsPainter(width:number,depth:number,ringOuter:n
     }
   }
   const noise=(i:number)=>{const n=Math.sin(i*127.1+31.7)*43758.5453;return n-Math.floor(n)};
-  for(let side=0;side<4;side++)for(let group=0;group<9;group++){
-    const seed=side*101+group*13,t=(group+.5+(noise(seed+6)-.5)*.4)/9;
+  for(let side=0;side<4;side++)for(const low of [true,false]){
     const along=(side%2?depth:width)+ringOuter*2;
-    const center=-ringOuter+t*along,offset=ringOuter+5.8+noise(seed)*.3;
-    const x=side===0?center:side===1?width+offset:side===2?center:-offset;
-    const z=side===0?-offset:side===1?center:side===2?depth+offset:center;
-    const factor=.65+noise(seed+3)*.1;
-    // 在廊道附近直接留白，避免仅靠clip把完整树冠/山体切成两半。
-    const nearExit=exits.some(route=>route.points.some((a,i)=>{
-      if(i===route.points.length-1&&!route.closed)return false;
-      const b=route.points[(i+1)%route.points.length],dx=b[0]-a[0],dz=b[1]-a[1],length=dx*dx+dz*dz;
-      const u=length?Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/length)):0;
-      return Math.hypot(x-a[0]-u*dx,z-a[1]-u*dz)<route.lanes*.4/2+7.5*factor;
-    }));
-    if(nearExit)continue;
-    const id=CITY_OUTSKIRT_IDS[(group+side*2)%3],sprite=images[id];
-    if(!sprite)throw new Error(`未加载外围图片：${id}`);
-    const [px,py]=project(x,z);
-    commands.push({canvas:sprite.canvas,left:px+(sprite.left-.5)*factor,top:py+(sprite.top-1.75)*factor,width:sprite.width*factor,height:sprite.height*factor,order:x+z});
+    // 内层连续低草甸、外层立体林丘，总上限4×(40+10)=200张。
+    const count=Math.min(low?40:10,Math.max(2,Math.ceil(along/(low?4.2:8.5))));
+    for(let group=0;group<count;group++){
+      const seed=side*101+group*13,t=(group+.5+(noise(seed+6)-.5)*.16)/count;
+      const center=-ringOuter+t*along,offset=ringOuter+(low?1.8+noise(seed)*.4:5.2+noise(seed)*.3);
+      const x=side===0?center:side===1?width+offset:side===2?center:-offset;
+      const z=side===0?-offset:side===1?center:side===2?depth+offset:center;
+      const factor=low?1.05+noise(seed+3)*.15:.7+noise(seed+3)*.08;
+      // 高地景主动避开廊道；低草甸靠近路肩，由共享clip留出出口。
+      const nearExit=!low&&exits.some(route=>route.points.some((a,i)=>{
+        if(i===route.points.length-1&&!route.closed)return false;
+        const b=route.points[(i+1)%route.points.length],dx=b[0]-a[0],dz=b[1]-a[1],length=dx*dx+dz*dz;
+        const u=length?Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/length)):0;
+        return Math.hypot(x-a[0]-u*dx,z-a[1]-u*dz)<route.lanes*.4/2+7.5*factor;
+      }));
+      if(nearExit)continue;
+      const id=low?'outskirts-meadow':(group+side)%2?'outskirts-forest':'outskirts-hills',sprite=images[id];
+      if(!sprite)throw new Error(`未加载外围图片：${id}`);
+      const [px,py]=project(x,z);
+      commands.push({canvas:sprite.canvas,left:px+(sprite.left-.5)*factor,top:py+(sprite.top-1.75)*factor,width:sprite.width*factor,height:sprite.height*factor,order:low?-Infinity:x+z});
+    }
   }
   commands.sort((a,b)=>a.order-b.order);
   return context=>{
