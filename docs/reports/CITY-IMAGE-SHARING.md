@@ -2,6 +2,14 @@
 
 日期：2026-11-01。起点 `fcaf594398be9161a7bb7d52817a10effff6efe8`，分支 `codex/city-image-sharing`；PR base 为 `codex/city-connected-landscape`（依赖 #33），不向 main 重复交付、不合入。仅新增 `src/extension/city-share.ts` 和本报告；content、renderer、manifest、依赖及全局文档未改。
 
+## 分享重试状态修正 · 2026-11-01
+
+本地反馈先失败后重试打开系统面板、取消时仍残留失败文字。本轮仅在 share.onclick 的有效新尝试开始处清空 status，不改 AbortError 判断或跨 realm 行为，不扩大分享能力/生命周期。原生面板显示实际 PNG 的本地证据由组合报告维护，本云端不冒领。
+
+针对性 Chromium 154 受控路径：先模拟 NotAllowedError，确认失败提示；再次点击时让 share Promise 保持 pending，立即确认旧文字已为空；随后以同 realm DOMException AbortError 取消，最终 status 仍为空、按钮恢复。`npm run check` 与 `git diff --check` 通过；未重跑首轮完整矩阵/构建，未补单测，过程脚本清理。跨 realm AbortError 是否需要另行处理保留给后续独立判断，本次不变更。
+
+复现：按下方原有外部 Playwright 路径与浏览器参数，在 root 内创建本组件；share 第一次 reject NotAllowedError，第二次保存 reject 回调并等待，检查点击后 output 已为空，再 reject(new DOMException('user cancelled','AbortError'))，等待按钮恢复后核对 output 为空。prepare 使用本地 16×16 PNG，无真实贡献数据或远程上传。
+
 ## 接口与已实现行为
 
 ```ts

@@ -67,6 +67,7 @@ export function createCityShare(root: ShadowRoot, options: {
   };
   share.onclick = async () => {
     if (disposed || !file || !dialog.open) return;
+    status.textContent = '';
     const token = generation; share.disabled = true;
     try {
       // 此前没有异步等待，直接使用按钮点击的用户手势。
