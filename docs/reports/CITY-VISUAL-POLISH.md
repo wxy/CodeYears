@@ -1,5 +1,7 @@
 # City 中高层与街区画面 · 本地组合验收
 
+本文件保留首轮六款单格与原地面版本的证据；后续八款长条、环境地面、连续河道和信号灯以 [最新反馈修正报告](CITY-RECTANGLES-AND-ENVIRONMENT.md) 为准，不直接迁移本页的数量/哈希为新版通过。
+
 日期：2026-11-01。共同主线起点 `ac87635`；云端建筑选择 [PR #22](https://github.com/wxy/CodeYears/pull/22)，最终依赖提交 `0a10a65`；地面 [PR #23](https://github.com/wxy/CodeYears/pull/23)，提交 `d20040e`。本地 `codex/city-visual-integration` 从 #22 建立堆叠 [PR #24](https://github.com/wxy/CodeYears/pull/24)，素材/接入源码提交 `178e016`，只交付六张素材、标定、目录/选择接入、预览和本报告，不重复提交 #23 的地面实现。验收时临时组合 #23 的 `createCityView`，结束后恢复本地独占差异；未合入任何新 PR。
 
 ## 实际实现与比例核对

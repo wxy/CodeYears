@@ -1,0 +1,328 @@
+{
+  "assets": [
+    {
+      "id": "office-wide-h3-a",
+      "file": "candidates/h3-rect/office-wide-h3-a.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 3,
+      "crop": [
+        208,
+        30,
+        818,
+        1502
+      ],
+      "anchor": [
+        648,
+        1494
+      ],
+      "supportEnvelope": {
+        "L": [
+          210,
+          1191
+        ],
+        "F": [
+          648,
+          1494
+        ],
+        "R": [
+          815,
+          1386
+        ],
+        "basis": "Manually selected visible outer ground-support masonry/metal footing extrema. Includes compact entrance threshold. These are the placement-envelope support points, not claims of four visible physical rectangle corners. Rear point is hidden and inferred by parallelogram closure. Approximately +/-6 px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              210,
+              1191
+            ],
+            [
+              648,
+              1494
+            ]
+          ],
+          "basis": "Visible straight ground-support edge running toward lower-right. Endpoints follow the outer building footing; approximate visual selection +/-6 px. Local roof details may differ and are not claimed to share a perfect physical camera."
+        },
+        "D": {
+          "points": [
+            [
+              648,
+              1494
+            ],
+            [
+              815,
+              1386
+            ]
+          ],
+          "basis": "Visible ground-support edge running toward upper-right (D reported with increasing source x). Approximate endpoints +/-6 px; ground direction is calibrated rather than treating source prompt as measurement."
+        }
+      },
+      "heightReference": {
+        "base": [
+          649,
+          1488
+        ],
+        "top": [
+          649,
+          324
+        ],
+        "basis": "Same-source-x architectural main-wall ruler from ground support to main cornice, excluding HVAC/crown machinery. Visible architectural top; base may be locally occluded and projected onto the adjacent visible footing. Approximate +/-10 px; visual height reference, not physical storey count."
+      },
+      "notes": [
+        "Original RGBA PNG is copied byte-for-byte to source and runtime paths; no pixel edit, recoloring, alpha threshold, crop or mirroring was applied.",
+        "Crop is the half-open alpha>8 bounding box. Existing render-time low-alpha cache treatment may suppress fringe pixels; source alpha is preserved.",
+        "This is a native two-cell rectangular architecture, with a continuous joined body and separately generated wide/deep orientation. It is not a single-cell image stretched to a rectangular parcel.",
+        "Ground envelope drives centering and >=0.1-cell per-side clearance. Both actual support spans and their ratio must be checked, not merely footprint labels.",
+        "Direction/scale mapping is an image calibration approximation. Unmeasured roofs, hidden geometry and source perspective variation are not claimed to be a recovered exact orthographic camera."
+      ]
+    },
+    {
+      "id": "office-wide-h3-b",
+      "file": "candidates/h3-rect/office-wide-h3-b.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 3,
+      "crop": [
+        212,
+        15,
+        811,
+        1495
+      ],
+      "anchor": [
+        655,
+        1490
+      ],
+      "supportEnvelope": {
+        "L": [
+          215,
+          1248
+        ],
+        "F": [
+          655,
+          1490
+        ],
+        "R": [
+          808,
+          1400
+        ],
+        "basis": "Manually selected visible outer ground-support masonry/metal footing extrema. Includes compact entrance threshold. These are the placement-envelope support points, not claims of four visible physical rectangle corners. Rear point is hidden and inferred by parallelogram closure. Approximately +/-6 px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              215,
+              1248
+            ],
+            [
+              655,
+              1490
+            ]
+          ],
+          "basis": "Visible straight ground-support edge running toward lower-right. Endpoints follow the outer building footing; approximate visual selection +/-6 px. Local roof details may differ and are not claimed to share a perfect physical camera."
+        },
+        "D": {
+          "points": [
+            [
+              655,
+              1490
+            ],
+            [
+              808,
+              1400
+            ]
+          ],
+          "basis": "Visible ground-support edge running toward upper-right (D reported with increasing source x). Approximate endpoints +/-6 px; ground direction is calibrated rather than treating source prompt as measurement."
+        }
+      },
+      "heightReference": {
+        "base": [
+          615,
+          1465
+        ],
+        "top": [
+          615,
+          338
+        ],
+        "basis": "Same-source-x architectural main-wall ruler from ground support to main cornice, excluding HVAC/crown machinery. Visible architectural top; base may be locally occluded and projected onto the adjacent visible footing. Approximate +/-10 px; visual height reference, not physical storey count."
+      },
+      "notes": [
+        "Original RGBA PNG is copied byte-for-byte to source and runtime paths; no pixel edit, recoloring, alpha threshold, crop or mirroring was applied.",
+        "Crop is the half-open alpha>8 bounding box. Existing render-time low-alpha cache treatment may suppress fringe pixels; source alpha is preserved.",
+        "This is a native two-cell rectangular architecture, with a continuous joined body and separately generated wide/deep orientation. It is not a single-cell image stretched to a rectangular parcel.",
+        "Ground envelope drives centering and >=0.1-cell per-side clearance. Both actual support spans and their ratio must be checked, not merely footprint labels.",
+        "Direction/scale mapping is an image calibration approximation. Unmeasured roofs, hidden geometry and source perspective variation are not claimed to be a recovered exact orthographic camera."
+      ]
+    },
+    {
+      "id": "office-deep-h3-a",
+      "file": "candidates/h3-rect/office-deep-h3-a.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        2
+      ],
+      "targetHeight": 3,
+      "crop": [
+        253,
+        66,
+        804,
+        1466
+      ],
+      "anchor": [
+        403,
+        1463
+      ],
+      "supportEnvelope": {
+        "L": [
+          270,
+          1390
+        ],
+        "F": [
+          403,
+          1463
+        ],
+        "R": [
+          800,
+          1255
+        ],
+        "basis": "Manually selected visible outer ground-support masonry/metal footing extrema. Includes compact entrance threshold. These are the placement-envelope support points, not claims of four visible physical rectangle corners. Rear point is hidden and inferred by parallelogram closure. Approximately +/-6 px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              270,
+              1390
+            ],
+            [
+              403,
+              1463
+            ]
+          ],
+          "basis": "Visible straight ground-support edge running toward lower-right. Endpoints follow the outer building footing; approximate visual selection +/-6 px. Local roof details may differ and are not claimed to share a perfect physical camera."
+        },
+        "D": {
+          "points": [
+            [
+              403,
+              1463
+            ],
+            [
+              800,
+              1255
+            ]
+          ],
+          "basis": "Visible ground-support edge running toward upper-right (D reported with increasing source x). Approximate endpoints +/-6 px; ground direction is calibrated rather than treating source prompt as measurement."
+        }
+      },
+      "heightReference": {
+        "base": [
+          403,
+          1457
+        ],
+        "top": [
+          403,
+          358
+        ],
+        "basis": "Same-source-x architectural main-wall ruler from ground support to main cornice, excluding HVAC/crown machinery. Visible architectural top; base may be locally occluded and projected onto the adjacent visible footing. Approximate +/-10 px; visual height reference, not physical storey count."
+      },
+      "notes": [
+        "Original RGBA PNG is copied byte-for-byte to source and runtime paths; no pixel edit, recoloring, alpha threshold, crop or mirroring was applied.",
+        "Crop is the half-open alpha>8 bounding box. Existing render-time low-alpha cache treatment may suppress fringe pixels; source alpha is preserved.",
+        "This is a native two-cell rectangular architecture, with a continuous joined body and separately generated wide/deep orientation. It is not a single-cell image stretched to a rectangular parcel.",
+        "Ground envelope drives centering and >=0.1-cell per-side clearance. Both actual support spans and their ratio must be checked, not merely footprint labels.",
+        "Direction/scale mapping is an image calibration approximation. Unmeasured roofs, hidden geometry and source perspective variation are not claimed to be a recovered exact orthographic camera."
+      ]
+    },
+    {
+      "id": "office-deep-h3-b",
+      "file": "candidates/h3-rect/office-deep-h3-b.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        2
+      ],
+      "targetHeight": 3,
+      "crop": [
+        177,
+        42,
+        900,
+        1484
+      ],
+      "anchor": [
+        383,
+        1480
+      ],
+      "supportEnvelope": {
+        "L": [
+          180,
+          1414
+        ],
+        "F": [
+          383,
+          1480
+        ],
+        "R": [
+          897,
+          1071
+        ],
+        "basis": "Manually selected visible outer ground-support masonry/metal footing extrema. Includes compact entrance threshold. These are the placement-envelope support points, not claims of four visible physical rectangle corners. Rear point is hidden and inferred by parallelogram closure. Approximately +/-6 px."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              180,
+              1414
+            ],
+            [
+              383,
+              1480
+            ]
+          ],
+          "basis": "Visible straight ground-support edge running toward lower-right. Endpoints follow the outer building footing; approximate visual selection +/-6 px. Local roof details may differ and are not claimed to share a perfect physical camera."
+        },
+        "D": {
+          "points": [
+            [
+              383,
+              1480
+            ],
+            [
+              897,
+              1071
+            ]
+          ],
+          "basis": "Visible ground-support edge running toward upper-right (D reported with increasing source x). Approximate endpoints +/-6 px; ground direction is calibrated rather than treating source prompt as measurement."
+        }
+      },
+      "heightReference": {
+        "base": [
+          889,
+          1084
+        ],
+        "top": [
+          889,
+          123
+        ],
+        "basis": "Same-source-x architectural main-wall ruler from ground support to main cornice, excluding HVAC/crown machinery. Visible architectural top; base may be locally occluded and projected onto the adjacent visible footing. Approximate +/-10 px; visual height reference, not physical storey count."
+      },
+      "notes": [
+        "Original RGBA PNG is copied byte-for-byte to source and runtime paths; no pixel edit, recoloring, alpha threshold, crop or mirroring was applied.",
+        "Crop is the half-open alpha>8 bounding box. Existing render-time low-alpha cache treatment may suppress fringe pixels; source alpha is preserved.",
+        "This is a native two-cell rectangular architecture, with a continuous joined body and separately generated wide/deep orientation. It is not a single-cell image stretched to a rectangular parcel.",
+        "Ground envelope drives centering and >=0.1-cell per-side clearance. Both actual support spans and their ratio must be checked, not merely footprint labels.",
+        "Direction/scale mapping is an image calibration approximation. Unmeasured roofs, hidden geometry and source perspective variation are not claimed to be a recovered exact orthographic camera."
+      ]
+    }
+  ]
+}

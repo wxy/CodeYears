@@ -1,4 +1,5 @@
 import { CITY_UNIT_CATALOG } from './city-unit-catalog';
+import { createCityDecoration } from './city-decorations';
 import { calibrate, drawUnit, loadUnit, project, type Point, type UnitImage, type UnitSample } from './unit-calibration';
 
 export interface CitySprite {
@@ -41,34 +42,40 @@ function bakeUnit(sample: UnitSample, image: UnitImage): CitySprite {
 }
 
 export async function loadCityImages(base: string, ids: readonly string[], signal?: AbortSignal): Promise<CityImages> {
-  const files = new Map<string, { id: string; sample: UnitSample }[]>();
-  for (const id of new Set(ids)) {
-    const entry = CITY_UNIT_CATALOG[id];
-    if (!entry) throw new Error(`未找到城市素材：${id}`);
-    const variants = files.get(entry.file) ?? [];
-    variants.push({ id, sample: entry.sample }); files.set(entry.file, variants);
-  }
-  const results = await Promise.allSettled([...files].map(async ([file, variants]) => {
-    const image = await loadUnit(new URL(file, base).href, signal), sprites: CityImages = {};
-    try {
-      signal?.throwIfAborted();
-      for (const { id, sample } of variants) sprites[id] = bakeUnit(sample, image);
-      return sprites;
-    } catch (error) {
-      closeCityImages(sprites);
-      throw error;
-    } finally {
-      image.close();
-    }
-  }));
   const images: CityImages = {};
-  for (const result of results) if (result.status === 'fulfilled') Object.assign(images, result.value);
-  const failed = results.find(result => result.status === 'rejected');
-  if (failed) {
+  const files = new Map<string, { id: string; sample: UnitSample }[]>();
+  try {
+    signal?.throwIfAborted();
+    for (const id of new Set(ids)) {
+      const decoration = createCityDecoration(id);
+      if (decoration) { images[id] = decoration; continue; }
+      const entry = CITY_UNIT_CATALOG[id];
+      if (!entry) throw new Error(`未找到城市素材：${id}`);
+      const variants = files.get(entry.file) ?? [];
+      variants.push({ id, sample: entry.sample }); files.set(entry.file, variants);
+    }
+    const results = await Promise.allSettled([...files].map(async ([file, variants]) => {
+      const image = await loadUnit(new URL(file, base).href, signal), sprites: CityImages = {};
+      try {
+        signal?.throwIfAborted();
+        for (const { id, sample } of variants) sprites[id] = bakeUnit(sample, image);
+        return sprites;
+      } catch (error) {
+        closeCityImages(sprites);
+        throw error;
+      } finally {
+        image.close();
+      }
+    }));
+    for (const result of results) if (result.status === 'fulfilled') Object.assign(images, result.value);
+    const failed = results.find(result => result.status === 'rejected');
+    if (failed) throw new Error('城市素材加载失败，请重新生成风景。', { cause: failed.reason });
+    signal?.throwIfAborted();
+    return images;
+  } catch (error) {
     closeCityImages(images);
-    throw new Error('城市素材加载失败，请重新生成风景。', { cause: failed.reason });
+    throw error;
   }
-  return images;
 }
 
 export const closeCityImages = (images: CityImages) => Object.values(images).forEach(sprite => {

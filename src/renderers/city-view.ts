@@ -2,6 +2,7 @@ import type { DailyContribution } from '../data/types';
 import { planWeeklyCity, type CityParcel, type WeeklyCity } from './city-parcels';
 import type { CityImages } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
+import { createGroundSelector } from './city-ground-style';
 import type { LandscapeView, LandscapeViewport } from './types';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
@@ -13,12 +14,12 @@ const districtZ=(block:number)=>block*(7+YEAR_GAP)+Math.floor(block/5)*PARK;
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
 export function planCityScene(days:readonly DailyContribution[]):CityScene {
-  const weekly=planWeeklyCity(days);
+  const weekly=planWeeklyCity(days,true),selectGround=createGroundSelector(weekly);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
     const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
     const seed=(hash^(hash>>>16))>>>0,variant=seed%2?'b':'a';
     let id:string,factor=1;
-    if(kind==='grass')id=w===2?(seed%12===0?'pond-a':seed%12===1?'pond-b':seed%12===2?'plaza-a':seed%12===3?'plaza-b':`grass-2x2-${variant}`):`grass-1x1-${variant}`;
+    if(kind==='grass')({id,factor}=selectGround(parcel,seed));
     else if(kind==='shrub')id=`sapling-${variant}`;
     else if(kind==='tree')id=w===2&&d===2?`forest-2x2-${variant}`:w===2?`small-grove-2x1-${variant}`:d===2?`small-grove-1x2-${variant}`:variant==='a'?'broadleaf-a':'conifer-b';
     else ({id,factor}=selectCityBuilding(parcel,seed));
@@ -29,6 +30,19 @@ export function planCityScene(days:readonly DailyContribution[]):CityScene {
   for(const start of parkStarts)for(let x=1;x<width;x+=2.6)for(const z of [start+.2,start+PARK-1]){
     items.push({id:Math.round(x)%2?'broadleaf-a':'conifer-b',factor:.75,x,z,w:.75,d:.75,flat:false});
   }
+  // 信号灯仅装饰有建筑相邻的季度路口，摆在路缘，不占贡献日期格。
+  weekly.districts.forEach((district,block)=>{
+    const buildings=weekly.cells.filter(cell=>cell.block===block&&cell.kind==='building'),z=districtZ(block);
+    district.breaks.forEach((week,index)=>{
+      const x=week+index*ROAD;
+      for(const north of [true,false]){
+        if(!buildings.some(cell=>Math.abs(cell.x-week)<=2&&(north?cell.z<=2:cell.z>=4)))continue;
+        const curbZ=north?z-.3:z+7.05;
+        items.push({id:'traffic-signal-w',factor:1,x:x-.3,z:curbZ,w:.25,d:.25,flat:false});
+        items.push({id:north?'traffic-signal-d-reverse':'traffic-signal-d',factor:1,x:x+ROAD+.05,z:curbZ,w:.25,d:.25,flat:false});
+      }
+    });
+  });
   const keys=[...new Set([...items.map(i=>i.id),...(parkStarts.length?['pond-a']:[])])];
   return {weekly,items,keys,parkStarts,width,depth:weekly.rows*(7+YEAR_GAP)-YEAR_GAP+parkStarts.length*PARK};
 }
