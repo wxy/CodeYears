@@ -5,7 +5,6 @@ import { loadContributionHistory } from "../platform/github/load-history";
 import { isoYearStart } from "../data/iso-week";
 import type { DailyContribution } from "../data/types";
 import type { ContributionLandscape } from "../renderers/landscape";
-import type { TimelineState } from "../timeline/types";
 
 export interface CityPanel {
   activate(): Promise<void>;
@@ -34,14 +33,11 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
       .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { display:none; margin:0 12px; } .expanded .summary { display:block; }
       .status { display:flex; align-items:center; gap:8px; padding:0 12px; } output { white-space:pre-line; } output:empty { display:none; }
-      #loading-progress { width:100%; accent-color:#268f80; } .loading { padding:0 12px; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { width:100%; height:100%; background:transparent; }
       #preparing { position:absolute; inset:0; display:grid; place-items:center; color:var(--fgColor-muted,#59636e); pointer-events:none; }
       .view-tools { position:absolute; right:10px; bottom:10px; display:flex; gap:4px; padding:4px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:var(--bgColor-default,#fff); }
       .view-tools button { border:0; min-width:30px; }
-      .playback { display:flex; align-items:center; gap:8px; padding:4px 12px 10px; min-height:40px; }
-      #progress { color:var(--fgColor-muted,#59636e); font-size:12px; margin-right:auto; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       .more-panel { position:absolute; z-index:3; right:0; top:100%; width:min(390px,calc(100vw - 64px)); max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
       .more-panel p { margin:0 0 10px; } .data-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
@@ -57,7 +53,7 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
         <form aria-label="城市年份范围"><select id="start-year" aria-label="起始年份"></select><span>—</span><select id="year" aria-label="结束年份"></select><button id="run" type="submit">应用</button></form>
         <button id="expand" type="button" aria-expanded="false" disabled>展开</button>
         <details id="more"><summary aria-label="更多与数据说明">更多</summary><div class="more-panel">
-          <p class="note">拖动平移，滚轮缩放。“全景”恢复完整取景，不改变数据或生长进度。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。</p>
+          <p class="note">拖动平移，滚轮缩放。“全景”恢复完整取景。场地随已读取的数据逐步填入，未返回的区域保持待填充。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。</p>
           <p id="identity" class="note"></p>
           <p class="note">数据只缓存在本机，按访问者与主页隔离。年份按完整周划分（ISO 周规则）：周一至周日归周四所在年；边界会读取相邻公历年，因此合计可能与 GitHub 公历年度不同。缺失或未来日期不会补零。</p>
           <div class="data-actions"><button id="refresh" type="button">刷新所选年份</button><button id="clear" type="button">清除此主页缓存</button></div>
@@ -66,10 +62,8 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
         </div></details>
       </div>
       <p id="city-summary" class="summary"></p>
-      <div class="status"><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" hidden>重试</button></div>
-      <div class="loading" hidden><progress id="loading-progress" value="0" max="1" aria-label="年度加载进度"></progress></div>
+      <div class="status"><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" hidden>重试</button><button id="cancel" type="button" hidden>取消</button></div>
       <div class="scene-wrap"><div id="scene"></div><span id="preparing">正在准备城市…</span><div class="view-tools" hidden><button id="zoom-out" type="button" aria-label="缩小城市">−</button><button id="zoom-in" type="button" aria-label="放大城市">＋</button><button id="reset-view" type="button">全景</button></div></div>
-      <div class="playback"><span id="progress" role="status"></span><button id="cancel" type="button" hidden>取消</button><button id="pause" type="button" hidden>暂停</button><button id="skip" type="button" hidden>直接查看</button><button id="replay" type="button" hidden>重播生长</button></div>
     </section><dialog aria-label="展开的贡献之城"></dialog>`;
   shadow.querySelector("#legend")!.append(createCityLegend());
   const get = <T extends Element>(selector: string) => shadow.querySelector<T>(selector)!;
@@ -79,13 +73,11 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
   startSelect.value = String(years[Math.min(2, years.length - 1)]);
   const run = get<HTMLButtonElement>("#run"), refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
   const cancel = get<HTMLButtonElement>("#cancel"), retry = get<HTMLButtonElement>("#retry"), expand = get<HTMLButtonElement>("#expand");
-  const pause = get<HTMLButtonElement>("#pause"), skip = get<HTMLButtonElement>("#skip"), replay = get<HTMLButtonElement>("#replay");
-  const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary"), progress = get<HTMLElement>("#progress");
-  const loading = get<HTMLElement>(".loading"), loadingProgress = get<HTMLProgressElement>("#loading-progress");
+  const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
   const more = get<HTMLDetailsElement>("#more"), details = get<HTMLDetailsElement>("#details"), body = get<HTMLTableSectionElement>("tbody");
   const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), preparing = get<HTMLElement>("#preparing");
-  let active = false, disposed = false, busy = false, hasPresented = false;
-  let controller: AbortController | undefined, city: ContributionLandscape | undefined, timelineState: TimelineState | undefined;
+  let active = false, disposed = false, busy = false;
+  let controller: AbortController | undefined, city: ContributionLandscape | undefined;
   let visibleDays: readonly DailyContribution[] = [];
   const currentContext = () => readPageContext(document, new URL(location.href));
   const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
@@ -104,20 +96,16 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
   dialog.addEventListener("cancel", event => { event.preventDefault(); collapse(); });
   const updateControls = () => {
     const ready = Boolean(cityHost.querySelector("canvas"));
-    const growing = ready && timelineState?.status !== "completed";
     expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
-    cancel.hidden = !busy; pause.hidden = skip.hidden = !growing;
-    replay.hidden = !ready || growing;
-    pause.textContent = timelineState?.status === "paused" ? "继续" : "暂停";
+    cancel.hidden = !busy;
     preparing.hidden = ready;
-    progress.textContent = growing ? timelineState?.status === "paused" ? "生长已暂停" : "城市生长中" : "";
   };
   const setBusy = (value: boolean) => {
     busy = value; run.disabled = refresh.disabled = select.disabled = startSelect.disabled = busy;
     clear.disabled = busy || context.viewer.state === "unknown"; updateControls();
   };
   const resetResult = () => {
-    city?.dispose(); city = undefined; timelineState = undefined; cityHost.replaceChildren();
+    city?.dispose(); city = undefined; cityHost.replaceChildren();
     visibleDays = []; body.replaceChildren(); details.open = false; details.hidden = true; summary.textContent = "";
     updateControls();
   };
@@ -131,7 +119,7 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
     }
     body.append(fragment);
   });
-  const load = async (forceRefresh: boolean, showCompleted = false) => {
+  const load = async (forceRefresh: boolean) => {
     if (!active || disposed || busy) return;
     const start = Number(startSelect.value), end = Number(select.value);
     if (start > end) { status.textContent = "起始年份不能晚于结束年份。"; return; }
@@ -144,9 +132,21 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
     const range = selectedRange();
     const request = new AbortController(); controller = request;
     resetResult(); summary.textContent = `${range} · 正在读取…`; setBusy(true); more.open = false; retry.hidden = true;
-    loadingProgress.max = requestedYears.length; loadingProgress.value = 0; loading.hidden = false;
-    preparing.textContent = "正在读取贡献数据…"; status.textContent = "正在确认身份…";
-    let completedYears = 0;
+    preparing.textContent = "正在准备场地…"; status.textContent = "正在读取贡献数据…";
+    const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
+    let renderer: typeof import("../renderers/landscape") | undefined;
+    let renderFailure: Error | undefined;
+    let fieldCreated = false;
+    let painting = Promise.resolve();
+    const mountEmptyField = () => {
+      city = renderer!.createLandscape(cityHost, [], (_state, error) => {
+        if (!active || controller !== request) return;
+        if (error) { renderFailure = new Error(error); request.abort(); }
+        updateControls();
+      }, "city", undefined, true, reservedYears);
+      fieldCreated = true;
+      return city;
+    };
     const warnings = new Set<string>();
     if (firstSource > firstNeeded || (lastSource < lastNeeded && lastNeeded <= calendarYear)) warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
     if (windowEnd > Date.UTC(calendarYear, now.getMonth(), now.getDate()) + 86400000) warnings.add("所选年份尚未结束，仅显示已提供的日期。");
@@ -155,13 +155,27 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       const identity = context.viewer.state === "unknown" ? "身份未识别，本次不读写缓存" : context.viewer.identity.kind === "signed-out" ? "未登录访问者" : `访问者 ${context.viewer.identity.login}`;
       get<HTMLElement>("#identity").textContent = `主页 ${context.profileLogin} · ${identity}`;
       if (context.viewer.state === "unknown") warnings.add("访问者身份未识别，本次不读取或写入缓存。");
+      renderer = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
+      request.signal.throwIfAborted();
+      if (!active || !host.isConnected) return;
+      const field = mountEmptyField();
+      request.signal.addEventListener("abort", () => field.dispose(), { once: true });
       const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
         if (request.signal.aborted) return;
-        completedYears = result.history.providedYears.length;
         if (result.warning) warnings.add(result.warning);
-        loadingProgress.value = completedYears;
-        status.textContent = `正在读取 ${range} · ${completedYears} / ${requestedYears.length} 个源年`;
+        const available = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
+        status.textContent = `正在读取 ${range} 的贡献数据，场地随数据填入…`;
+        painting = painting.then(async () => {
+          if (!active || controller !== request || request.signal.aborted) return;
+          await field.updateDays(available);
+        }).catch(error => {
+          if (request.signal.aborted) return;
+          renderFailure = error instanceof Error ? error : new Error("城市素材加载失败，请重试。");
+          request.abort();
+        });
       });
+      await painting;
+      if (renderFailure) throw renderFailure;
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
       visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
@@ -169,35 +183,25 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       status.textContent = [...warnings].join(" "); details.hidden = false;
       summary.textContent = `${range} · ${total.toLocaleString()} 次贡献`;
-      preparing.textContent = "正在准备城市素材…";
-      const module = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
-      request.signal.throwIfAborted();
-      if (!active || !host.isConnected) return;
-      city = module.createLandscape(cityHost, visibleDays, (state, error) => {
-        if (!active) return;
-        timelineState = state;
-        if (error) { summary.textContent = `${range} · 城市未能加载`; status.textContent = error; preparing.textContent = "城市未能加载"; retry.hidden = false; }
-        if (cityHost.querySelector("canvas")) hasPresented = true;
-        updateControls();
-      }, "city");
-      if (showCompleted) city.skip();
     } catch (error) {
       if (!active || controller !== request) return;
+      const cancelled = request.signal.aborted && !renderFailure;
+      request.abort();
       resetResult();
-      summary.textContent = `${range} · ${request.signal.aborted ? "已取消读取" : "读取失败"}`;
-      status.textContent = request.signal.aborted ? "请求已取消。" : error instanceof Error ? error.message : "读取失败，请重试。";
-      preparing.textContent = request.signal.aborted ? "已取消读取" : "城市未能加载"; retry.hidden = false;
+      if (renderer && fieldCreated) mountEmptyField();
+      summary.textContent = `${range} · ${cancelled ? "已取消读取" : "读取失败"}`;
+      const failure = renderFailure ?? error;
+      status.textContent = cancelled ? "读取已取消，场地尚未完成。" : failure instanceof Error ? failure.message : "读取失败，请重试。";
+      preparing.textContent = cancelled ? "已取消读取" : "城市未能加载"; retry.hidden = false;
     } finally {
       // 切回城市会开始新请求，旧请求不能撤销新一轮的忙碌状态。
-      if (controller === request) { loading.hidden = true; controller = undefined; setBusy(false); }
+      if (controller === request) { controller = undefined; setBusy(false); }
     }
   };
   get<HTMLFormElement>("form").addEventListener("submit", event => { event.preventDefault(); void load(false); });
-  refresh.onclick = () => { void load(true, true); };
-  retry.onclick = () => { void load(false, hasPresented); };
+  refresh.onclick = () => { void load(true); };
+  retry.onclick = () => { void load(false); };
   cancel.onclick = () => controller?.abort();
-  pause.onclick = () => timelineState?.status === "paused" ? city?.resume() : city?.pause();
-  skip.onclick = () => city?.skip(); replay.onclick = () => city?.replay();
   get<HTMLButtonElement>("#zoom-out").onclick = () => city?.zoomBy(.8);
   get<HTMLButtonElement>("#zoom-in").onclick = () => city?.zoomBy(1.25);
   get<HTMLButtonElement>("#reset-view").onclick = () => city?.resetView();
@@ -215,11 +219,11 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
   };
   const deactivate = () => {
     active = false; controller?.abort(); controller = undefined; collapse(false);
-    resetResult(); loading.hidden = true; more.open = false; status.textContent = ""; retry.hidden = true;
+    resetResult(); more.open = false; status.textContent = ""; retry.hidden = true;
     get<HTMLElement>("#identity").textContent = ""; setBusy(false);
   };
   return {
-    async activate() { if (disposed || active) return; active = true; await load(false, hasPresented); },
+    async activate() { if (disposed || active) return; active = true; await load(false); },
     deactivate,
     dispose() { if (disposed) return; deactivate(); disposed = true; shadow.replaceChildren(); },
   };
