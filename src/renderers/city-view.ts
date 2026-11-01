@@ -57,8 +57,8 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
     const left=x+sprite.left*item.factor,top=y+sprite.top*item.factor;
     return {item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1]};
   }).sort((a,b)=>a.groundY-b.groundY||a.left-b.left);
-  const minX=Math.min(-depth/2-2,...placed.map(p=>p.left))-.3,maxX=Math.max(width/2+2,...placed.map(p=>p.left+p.width))+.3;
-  const minY=Math.min(-2,...placed.map(p=>p.top))-.5,maxY=Math.max((width+depth)/4+2,...placed.map(p=>p.top+p.height));
+  const minX=Math.min(-depth/2-2.9,...placed.map(p=>p.left))-.3,maxX=Math.max(width/2+2.9,...placed.map(p=>p.left+p.width))+.3;
+  const minY=Math.min(-2.9,...placed.map(p=>p.top))-.5,maxY=Math.max((width+depth)/4+2.9,...placed.map(p=>p.top+p.height));
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
   const ground=document.createElement('canvas'),unit=Math.min(48,3072/(maxX-minX));
   ground.width=Math.ceil((maxX-minX)*unit);ground.height=Math.ceil((maxY-minY)*unit);
@@ -79,8 +79,28 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   const image=(p:{sprite:CityImages[string];left:number;top:number;width:number;height:number})=>{
     groundPaint.push(target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height));
   };
-  // 低透明度的外围层逐步淡出，两个缓存使用相同世界坐标，不依赖像素模糊。
-  for(let edge=6;edge>0;edge--)polygon(-edge*.12,-edge*.12,width+edge*.24,depth+edge*.24,'rgba(130,152,117,0.035)');
+  // 环路全在贡献地块外，四边统一宽 1.6 格；包络同时计入视图适配与缓存。
+  for(let edge=6;edge>0;edge--)polygon(-2.5-edge*.05,-2.5-edge*.05,width+5+edge*.1,depth+5+edge*.1,'rgba(130,152,117,0.025)');
+  const ring=(offset:number)=>{
+    const path=new Path2D();
+    [project(-offset,-offset),project(width+offset,-offset),project(width+offset,depth+offset),project(-offset,depth+offset)].forEach((p,i)=>i?path.lineTo(...p):path.moveTo(...p));path.closePath();return path;
+  };
+  // 底层路缘、路面、双向中心线共用闭合四边，转角无缺口。
+  stroke(ring(1.7),'#b9b9a8',.88);
+  // 投影线宽不能代表世界道路宽度，路面以四个世界矩形铺成。
+  polygon(-2.5,-2.5,width+5,1.6,'#59635f');polygon(-2.5,depth+.9,width+5,1.6,'#59635f');
+  polygon(-2.5,-.9,1.6,depth+1.8,'#59635f');polygon(width+.9,-.9,1.6,depth+1.8,'#59635f');
+  stroke(ring(2.5),'#c6c8b7',.035);stroke(ring(.9),'#b9bca9',.035);
+  stroke(ring(1.65),'#d3cbb0',.022);stroke(ring(1.75),'#d3cbb0',.022);
+  weekly.districts.forEach((district,block)=>{
+    const z=districtZ(block),span=district.weeks+district.breaks.length*ROAD;
+    for(const roadZ of [z-.8,z+7]){
+      polygon(-1.8,roadZ,1.8,.8,'#606967');polygon(span,roadZ,width+1.8-span,.8,'#606967');
+    }
+    if(block===0||block===weekly.rows-1)district.breaks.forEach((week,index)=>{
+      polygon(week+index*ROAD,block===0?-1.8:z+7,ROAD,1.8,'#6c7470');
+    });
+  });
   weekly.districts.forEach((district,block)=>{
     const z=districtZ(block),span=district.weeks+district.breaks.length*ROAD;
     polygon(-YEAR_GAP/2,z-YEAR_GAP/2,span+YEAR_GAP,7+YEAR_GAP,'#606967');
@@ -139,30 +159,57 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
     // 沿岸步道与水面轮廓共用采样，不出现独立池塘或穿水黄线。
     stroke(bankPath('near',-.3),'#b4b5a0',.18);stroke(bankPath('near',-.3),'#d8d1bb',.12);
     stroke(bankPath('far',.3),'#b4b5a0',.18);stroke(bankPath('far',.3),'#d8d1bb',.12);
-    // 每带一座桥对齐前一年度中间季度路，桥头仅在年间道路内衔接。
+    // 完整相邻年份每条季度路各设一桥；部分年份只连接双方实际存在的路口。
     const before=weekly.districts[(band+1)*5-1],after=weekly.districts[(band+1)*5];
-    const index=Math.floor(before.breaks.length/2),week=before.breaks[index];
-    if(week!==undefined){
-      const roadX=week+index*ROAD;
-      // 桥从既有岸树之间的空隙通过，避免把保留的场景树画在桥面上。
-      const bankTrees=items.filter(item=>!item.parcel&&item.z>=start&&item.z<start+PARK).sort((a,b)=>a.x-b.x);
-      const gaps=bankTrees.flatMap((tree,i)=>{
-        const next=bankTrees[i+1];return next&&next.x-(tree.x+tree.w)>ROAD+.6?[(tree.x+tree.w+next.x-ROAD)/2]:[];
-      });
-      const x=gaps.sort((a,b)=>Math.abs(a-roadX)-Math.abs(b-roadX))[0]??roadX;
-      const bridgeZ=start-.4,bridgeDepth=PARK+.8;
-      polygon(x-.14,bridgeZ,ROAD+.28,bridgeDepth,'#a7afa3');
-      polygon(x,bridgeZ,ROAD,bridgeDepth,'#747e79');
-      line(x+ROAD/2,bridgeZ+.1,x+ROAD/2,bridgeZ+bridgeDepth-.1,'#d4d0b7',.02,[.18,.25]);
-      for(const railX of [x-.1,x+ROAD+.1])line(railX,start+.15,railX,start+PARK-.15,'#e0ddcd',.035);
+    const bankTrees=items.filter(item=>!item.parcel&&item.z>=start&&item.z<start+PARK).sort((a,b)=>a.x-b.x);
+    const gaps=bankTrees.flatMap((tree,i)=>{
+      const next=bankTrees[i+1];return next&&next.x-(tree.x+tree.w)>ROAD+.6?[(tree.x+tree.w+next.x-ROAD)/2]:[];
+    });
+    before.breaks.forEach((week,index)=>{
+      const nextWeek=after?.breaks[index];if(nextWeek===undefined)return;
+      const roadX=week+index*ROAD,nextX=nextWeek+index*ROAD;
+      const x=[...gaps].sort((a,b)=>Math.abs(a-roadX)-Math.abs(b-roadX))[0];
+      if(x===undefined)return; // 不以覆盖岸树换取桥数。
+      const left=x-.13,right=x+ROAD+.13,north=start+.65,south=start+PARK-.65,lift=.09;
+      const face=(points:[number,number,number][],color:string)=>{
+        const path=new Path2D();points.forEach(([px,pz,h],i)=>{const [u,v]=project(px,pz);if(i)path.lineTo(u,v-h);else path.moveTo(u,v-h)});path.closePath();
+        groundPaint.push(target=>{target.fillStyle=color;target.fill(path)});
+      };
+      const raisedLine=(x1:number,z1:number,h1:number,x2:number,z2:number,h2:number,color:string,size:number)=>{
+        const path=new Path2D(),a=project(x1,z1),b=project(x2,z2);path.moveTo(a[0],a[1]-h1);path.lineTo(b[0],b[1]-h2);stroke(path,color,size);
+      };
+      // 桥头只在年间路上转接，石桥台、落水阴影和桥墩先于桥面。
       polygon(Math.min(x,roadX),start-.6,Math.abs(x-roadX)+ROAD,.4,'#747e79');
-      const nextWeek=after?.breaks[index];
-      if(nextWeek!==undefined){
-        const nextX=nextWeek+index*ROAD;
-        polygon(Math.min(x,nextX),start+PARK+.2,Math.abs(nextX-x)+ROAD,.4,'#747e79');
+      polygon(Math.min(x,nextX),start+PARK+.2,Math.abs(x-nextX)+ROAD,.4,'#747e79');
+      polygon(left,start-.4,right-left,PARK+.8,'#aab2a5');
+      polygon(x,start-.4,ROAD,PARK+.8,'#747e79');
+      polygon(left+.1,north+.12,right-left+.12,south-north+.15,'rgba(47,75,73,.22)');
+      for(const pierZ of [north+.35,south-.35]){
+        polygon(left-.04,pierZ-.09,right-left+.08,.18,'#8b9d94');
+        face([[right,pierZ-.09,0],[right,pierZ+.09,0],[right,pierZ+.09,lift],[right,pierZ-.09,lift]],'#788a81');
       }
-    }
+      // 后侧栏杆在桥面前，近侧栏杆最后绘制；竖直高度不改变固定投影。
+      const railing=(railX:number)=>{
+        raisedLine(railX,north,lift+.12,railX,south,lift+.12,'#dddccd',.022);
+        for(let z=north;z<=south+.001;z+=(south-north)/6)raisedLine(railX,z,lift,railX,z,lift+.12,'#b5bdb0',.022);
+      };
+      railing(left+.035);
+      face([[left,north,lift],[right,north,lift],[right,south,lift],[left,south,lift]],'#bfc4b5');
+      face([[right,north,0],[right,south,0],[right,south,lift],[right,north,lift]],'#7a8b83');
+      face([[left,south,0],[right,south,0],[right,south,lift],[left,south,lift]],'#8d9b8f');
+      face([[x,north,lift],[x+ROAD,north,lift],[x+ROAD,south,lift],[x,south,lift]],'#707d77');
+      // 低坡桥头让路面连续抬升到桥面，不以裸露高台截断道路。
+      for(const [endZ,bankZ]of [[north,start+.2],[south,start+PARK-.2]])face([[x,bankZ,0],[x+ROAD,bankZ,0],[x+ROAD,endZ,lift],[x,endZ,lift]],'#747e79');
+      for(let z=north+.15;z<south-.1;z+=.45)raisedLine(x+ROAD/2,z,lift+.002,x+ROAD/2,Math.min(z+.22,south-.1),lift+.002,'#d7d1ba',.022);
+      railing(right-.035);
+      // 两端矮石灯柱，不发光、不生成动画。
+      for(const z of [north+.08,south-.08])for(const px of [left+.035,right-.035]){
+        raisedLine(px,z,lift,px,z,lift+.19,'#8b9a8e',.04);
+        raisedLine(px,z,lift+.18,px,z,lift+.22,'#e2d4a9',.055);
+      }
+    });
   }
+
   // 二十年细节平移已在同环境对照；保留统一顺序，本轮不扩建剔除框架。
   const paintGround=(target:CanvasRenderingContext2D)=>{for(const paint of groundPaint)paint(target)};
   const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);
