@@ -1,12 +1,21 @@
 import buildings from '../../docs/design/city-units/v2/calibration/buildings.json';
 import ground from '../../docs/design/city-units/v2/calibration/ground.json';
 import vegetation from '../../docs/design/city-units/v2/calibration/vegetation.json';
+import h2 from '../../docs/design/city-units/v3/calibration/h2.json';
+import h3 from '../../docs/design/city-units/v3/calibration/h3.json';
+import h4 from '../../docs/design/city-units/v3/calibration/h4.json';
+import h3Rect from '../../docs/design/city-units/v3/calibration/h3-rect.json';
+import h4Rect from '../../docs/design/city-units/v3/calibration/h4-rect.json';
 import {calibrate,drawUnit,loadUnit,project,slope,type Point,type UnitImage,type UnitSample} from './calibration';
 
-const samples=[...buildings.assets,...ground.assets,...vegetation.assets] as UnitSample[];
-const urls=import.meta.glob<string>('../../docs/design/city-units/v2/candidates/**/*.png',{eager:true,query:'?url',import:'default'});
+const samples=[...buildings.assets,...ground.assets,...vegetation.assets,...h2.assets,...h3.assets,...h4.assets,...h3Rect.assets,...h4Rect.assets] as UnitSample[];
+const urls=import.meta.glob<string>('../../docs/design/city-units/v{2,3}/candidates/**/*.png',{eager:true,query:'?url',import:'default'});
+const sourceFolder=(s:UnitSample)=>s.id.includes('-h2-')||s.id.includes('-h3-')||s.id.includes('-h4-')?'v3':'v2';
 const labels:Record<string,string>={
  'townhouse-a':'砖石住宅 A','mixed-use-b':'石材商住 B','police-a':'警局 A','fire-b':'消防局 B','stadium-a':'体育场 A','terminal-b':'铁路总站 B',
+ 'apartment-h2-a':'赤陶公寓 A · H2','apartment-h2-b':'浅石住宅 B · H2','office-h3-a':'棕铜退台办公 A · H3','office-h3-b':'蓝灰办公 B · H3','tower-h4-a':'蓝玻璃直塔 A · H4','tower-h4-b':'青绿退台塔 B · H4',
+ 'office-wide-h3-a':'横向铜色办公 A · H3','office-wide-h3-b':'横向蓝灰办公 B · H3','office-deep-h3-a':'纵深铜色办公 A · H3','office-deep-h3-b':'纵深蓝灰办公 B · H3',
+ 'tower-wide-h4-a':'横向蓝玻璃塔 A · H4','tower-wide-h4-b':'横向青绿退台 B · H4','tower-deep-h4-a':'纵深蓝玻璃塔 A · H4','tower-deep-h4-b':'纵深青绿退台 B · H4',
  'pond-a':'池塘 A','pond-b':'浅湖 B','plaza-a':'暖石广场 A','plaza-b':'灰石广场 B',
  'grass-1x1-a':'单格草坪 A','grass-1x1-b':'单格野草 B','grass-2x2-a':'四格草坪 A','grass-2x2-b':'四格野草 B',
  'broadleaf-a':'阔叶单树 A','conifer-b':'针叶单树 B','small-grove-2x1-a':'横向树丛 A','small-grove-2x1-b':'横向林带 B',
@@ -61,15 +70,16 @@ function compare(canvas:HTMLCanvasElement,after:boolean){
  }
 }
 function montage(){
- const {ctx,w,h}=canvasContext(scene),cols=6,rows=Math.ceil(samples.length/cols),worldW=cols*4,worldD=rows*4;
+ const buildingWidth=samples.filter(s=>s.kind==='building').reduce((sum,s)=>sum+s.footprint[0],0);
+ const {ctx,w,h}=canvasContext(scene),cols=Math.max(6,Math.ceil((buildingWidth+2)/4)),rows=1+Math.ceil(samples.filter(s=>s.kind!=='building').length/cols),worldW=cols*4,worldD=rows*4;
  const fit=Math.min((w-30)/(48*(worldW+worldD)),(h-80)/(24*(worldW+worldD)+100))*Number(zoom.value);
  ctx.translate(w/2,h*.49);ctx.scale(fit,fit);ctx.translate(-24*(worldW-worldD),-12*(worldW+worldD)+20);
  const dark=document.documentElement.dataset.appearance==='dark';
  polygon(ctx,0,0,worldW,worldD,dark?'#2c3a32':'#e4eadb');
  for(let col=1;col<cols;col++)polygon(ctx,col*4-.65,4,.65,worldD-4,dark?'#4d5559':'#738078');
  for(let row=1;row<rows;row++)polygon(ctx,0,row*4-.65,worldW,.65,dark?'#4d5559':'#738078');
- const buildingWidth=samples.filter(s=>s.kind==='building').reduce((sum,s)=>sum+s.footprint[0],0);let buildingX=(worldW-buildingWidth)/2;
- const positions=samples.map((s,i)=>{if(s.kind==='building'){const p={s,x:buildingX,z:.15};buildingX+=s.footprint[0];return p}return {s,x:i%cols*4+.15,z:Math.floor(i/cols)*4+.15}});
+ let buildingX=(worldW-buildingWidth)/2,natural=0;
+ const positions=samples.map(s=>{if(s.kind==='building'){const p={s,x:buildingX,z:.15};buildingX+=s.footprint[0];return p}const i=natural++;return {s,x:i%cols*4+.15,z:(1+Math.floor(i/cols))*4+.15}});
  positions.sort((a,b)=>(a.s.kind==='ground'?0:1)-(b.s.kind==='ground'?0:1)||(a.x+a.z)-(b.x+b.z));
  for(const {s,x,z}of positions){
   const image=images.get(s.id);if(!image)continue;
@@ -99,9 +109,9 @@ $<HTMLSelectElement>('#appearance').onchange=e=>{document.documentElement.datase
 for(const el of [guides,edge,zoom])el.addEventListener('change',schedule);
 const observer=new ResizeObserver(schedule);for(const el of [scene,raw,corrected])observer.observe(el);
 window.addEventListener('pagehide',()=>{disposed=true;abort.abort();cancelAnimationFrame(frame);observer.disconnect();for(const image of images.values())image.close();images.clear();for(const canvas of [scene,raw,corrected])canvas.width=canvas.height=0},{once:true});
-updateDetail();summary.textContent='正在读取二十二款本地候选…';
+updateDetail();summary.textContent=`正在读取 ${samples.length} 款本地候选…`;
 void(async()=>{
- const results=await Promise.allSettled(samples.map(async s=>[s.id,await loadUnit(urls[`../../docs/design/city-units/v2/${s.file}`],abort.signal)] as const));
+ const results=await Promise.allSettled(samples.map(async s=>[s.id,await loadUnit(urls[`../../docs/design/city-units/${sourceFolder(s)}/${s.file}`],abort.signal)] as const));
  for(const r of results)if(r.status==='fulfilled'){if(disposed)r.value[1].close();else images.set(...r.value)}
  if(disposed)return;
  const failed=results.filter(r=>r.status==='rejected').length;

@@ -16,13 +16,13 @@ export function createCityLegend(): HTMLElement {
   legend.innerHTML = `
     <h4>读懂这座城 <span>· 每日贡献</span></h4>
     <ul>
-      <li><strong>0</strong> 平地 · 草地、池塘或广场</li>
+      <li><strong>0</strong> 平地 · 草地、水塘、铺装或广场</li>
       <li><strong>1–2</strong> 幼树</li>
       <li><strong>3–5</strong> 树木 / 树林</li>
       <li><strong>6+</strong> 建筑</li>
     </ul>
     <p>建筑高度表示相对贡献强度；同档相邻格可融合，一座建筑可包含多个源日期。精确数量以每日明细为准。</p>
-    <p>颜色仅为素材材质差异；五年景观带内的水体、树木及道路只作装饰。</p>
+    <p>零值地块按周边环境选材：空旷处为自然地块，建筑密集处可出现广场。颜色仅为材质差异；五年河道、岸边树木、道路和信号灯只作装饰。</p>
     <p>景观生长百分比表示动画进度，不表示真实日期播放进度。以上为当前规则，阈值尚未冻结。</p>`;
   return legend;
 }

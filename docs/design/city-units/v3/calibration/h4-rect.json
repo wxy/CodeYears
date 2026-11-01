@@ -1,0 +1,325 @@
+{
+  "assets": [
+    {
+      "id": "tower-wide-h4-a",
+      "file": "candidates/h4-rect/tower-wide-h4-a.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 4,
+      "crop": [
+        273,
+        16,
+        759,
+        1501
+      ],
+      "anchor": [
+        600,
+        1500
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              460,
+              22
+            ],
+            [
+              540,
+              69
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, selected using the first alpha>=180 pixel profile in this interval; manually confirmed as one W-parallel edge. About +/-2px."
+        },
+        "D": {
+          "points": [
+            [
+              400,
+              49
+            ],
+            [
+              440,
+              27
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, increasing image x toward upper-right; first alpha>=180 pixel profile in this interval. About +/-2px, reported in the D-parallel direction."
+        }
+      },
+      "heightReference": {
+        "base": [
+          570,
+          1480
+        ],
+        "top": [
+          570,
+          187
+        ],
+        "basis": "Highest main roof-front structural corner at x=570; ground reference at the same x is inferred from the adjoining visible front footing, because the continuous rib is hidden by the recessed entrance. Excludes rooftop equipment; about +/-10px."
+      },
+      "supportEnvelope": {
+        "L": [
+          274,
+          1266
+        ],
+        "F": [
+          600,
+          1500
+        ],
+        "R": [
+          758,
+          1383
+        ],
+        "basis": "Manually selected full visible left/front/right ground-contact extents, including compact entrance footing. A logical support envelope, not three proven corners of a perfect physical rectangle; the hidden fourth point is only inferred by parallelogram closure for placement. About +/-5px."
+      },
+      "notes": [
+        "Straight long blue-glass shaft with a shallow dark crown. Ground body uses the longer W axis; selected roof-back edges are visible silhouette segments.",
+        "Original RGBA PNG and runtime copy are byte-for-byte identical; no programmatic pixel editing, recoloring, alpha removal, mirroring or nonuniform scaling. crop is the half-open alpha>8 bounding box.",
+        "Calibration maps the recorded main axes to +0.5/-0.5 while keeping vertical edges upright. The source has local AI geometry inconsistencies; all unmeasured roof/window edges and hidden geometry are not asserted physically exact.",
+        "Ground support center controls placement and minimum .1-cell setback; actual occupied spans must be read from calibration clearance rather than equating the footprint tag to a full building width."
+      ]
+    },
+    {
+      "id": "tower-wide-h4-b",
+      "file": "candidates/h4-rect/tower-wide-h4-b.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 4,
+      "crop": [
+        253,
+        25,
+        772,
+        1520
+      ],
+      "anchor": [
+        620,
+        1517
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              600,
+              39
+            ],
+            [
+              660,
+              72
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, selected using the first alpha>=180 pixel profile in this interval; manually confirmed as one W-parallel edge. About +/-2px."
+        },
+        "D": {
+          "points": [
+            [
+              520,
+              58
+            ],
+            [
+              580,
+              27
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, increasing image x toward upper-right; first alpha>=180 pixel profile in this interval. About +/-2px, reported in the D-parallel direction."
+        }
+      },
+      "heightReference": {
+        "base": [
+          598,
+          1500
+        ],
+        "top": [
+          598,
+          145
+        ],
+        "basis": "Tallest upper-crown front corner at x=598; ground-level base inferred from the adjacent front footing plane at the same x, hidden locally by the lower terraced body/entrance. About +/-10px; does not treat antenna/equipment as height."
+      },
+      "supportEnvelope": {
+        "L": [
+          255,
+          1215
+        ],
+        "F": [
+          620,
+          1517
+        ],
+        "R": [
+          770,
+          1417
+        ],
+        "basis": "Manually selected full visible left/front/right ground-contact extents, including compact entrance footing. A logical support envelope, not three proven corners of a perfect physical rectangle; the hidden fourth point is only inferred by parallelogram closure for placement. About +/-5px."
+      },
+      "notes": [
+        "Teal/gold connected terraced tower elongated in W. An initial square-like draft and a direction correction were rejected; final short-axis correction was approved by the parent because H4 was a mainline gap.",
+        "Original RGBA PNG and runtime copy are byte-for-byte identical; no programmatic pixel editing, recoloring, alpha removal, mirroring or nonuniform scaling. crop is the half-open alpha>8 bounding box.",
+        "Calibration maps the recorded main axes to +0.5/-0.5 while keeping vertical edges upright. The source has local AI geometry inconsistencies; all unmeasured roof/window edges and hidden geometry are not asserted physically exact.",
+        "Ground support center controls placement and minimum .1-cell setback; actual occupied spans must be read from calibration clearance rather than equating the footprint tag to a full building width.",
+        "Short-axis clearance limits actual reference height to about3.820H; targetHeight4 remains an upper design reference, not a claim of exact4H. Preserved as a roughly4.5 percent lower H4 variant."
+      ]
+    },
+    {
+      "id": "tower-deep-h4-a",
+      "file": "candidates/h4-rect/tower-deep-h4-a.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        2
+      ],
+      "targetHeight": 4,
+      "crop": [
+        291,
+        48,
+        777,
+        1465
+      ],
+      "anchor": [
+        434,
+        1464
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              640,
+              50
+            ],
+            [
+              720,
+              97
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, selected using the first alpha>=180 pixel profile in this interval; manually confirmed as one W-parallel edge. About +/-2px."
+        },
+        "D": {
+          "points": [
+            [
+              440,
+              170
+            ],
+            [
+              600,
+              76
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, increasing image x toward upper-right; first alpha>=180 pixel profile in this interval. About +/-2px, reported in the D-parallel direction."
+        }
+      },
+      "heightReference": {
+        "base": [
+          470,
+          1438
+        ],
+        "top": [
+          470,
+          240
+        ],
+        "basis": "Highest main roof-front edge at x=470; same-x ground base inferred along the visible front footing behind the compact entrance. Approximate +/-10px; roof equipment excluded."
+      },
+      "supportEnvelope": {
+        "L": [
+          292,
+          1383
+        ],
+        "F": [
+          434,
+          1464
+        ],
+        "R": [
+          776,
+          1264
+        ],
+        "basis": "Manually selected full visible left/front/right ground-contact extents, including compact entrance footing. A logical support envelope, not three proven corners of a perfect physical rectangle; the hidden fourth point is only inferred by parallelogram closure for placement. About +/-5px."
+      },
+      "notes": [
+        "Long blue-glass office slab, shallow upper crown and distinctly short image-left / long image-right facades. Independently generated orientation, not a flipped 2x1 image.",
+        "Original RGBA PNG and runtime copy are byte-for-byte identical; no programmatic pixel editing, recoloring, alpha removal, mirroring or nonuniform scaling. crop is the half-open alpha>8 bounding box.",
+        "Calibration maps the recorded main axes to +0.5/-0.5 while keeping vertical edges upright. The source has local AI geometry inconsistencies; all unmeasured roof/window edges and hidden geometry are not asserted physically exact.",
+        "Ground support center controls placement and minimum .1-cell setback; actual occupied spans must be read from calibration clearance rather than equating the footprint tag to a full building width."
+      ]
+    },
+    {
+      "id": "tower-deep-h4-b",
+      "file": "candidates/h4-rect/tower-deep-h4-b.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        2
+      ],
+      "targetHeight": 4,
+      "crop": [
+        325,
+        43,
+        743,
+        1481
+      ],
+      "anchor": [
+        449,
+        1478
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              520,
+              56
+            ],
+            [
+              560,
+              79
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, selected using the first alpha>=180 pixel profile in this interval; manually confirmed as one W-parallel edge. About +/-2px."
+        },
+        "D": {
+          "points": [
+            [
+              400,
+              111
+            ],
+            [
+              480,
+              58
+            ]
+          ],
+          "basis": "Visible straight back roof/parapet silhouette, increasing image x toward upper-right; first alpha>=180 pixel profile in this interval. About +/-2px, reported in the D-parallel direction."
+        }
+      },
+      "heightReference": {
+        "base": [
+          456,
+          1460
+        ],
+        "top": [
+          456,
+          172
+        ],
+        "basis": "Tallest roof-front corner at x=456 to same-x main footing plane below it, inferred behind the recessed ground entrance; about +/-10px. Full crown is visible; equipment excluded."
+      },
+      "supportEnvelope": {
+        "L": [
+          328,
+          1403
+        ],
+        "F": [
+          449,
+          1478
+        ],
+        "R": [
+          742,
+          1283
+        ],
+        "basis": "Manually selected full visible left/front/right ground-contact extents, including compact entrance footing. A logical support envelope, not three proven corners of a perfect physical rectangle; the hidden fourth point is only inferred by parallelogram closure for placement. About +/-5px."
+      },
+      "notes": [
+        "Teal/gold deep slab with asymmetric upper setbacks and compact wall footing. Two broad-footprint drafts were rejected; final correction removes ground planters/aprons and narrows W while retaining the long D facade.",
+        "Original RGBA PNG and runtime copy are byte-for-byte identical; no programmatic pixel editing, recoloring, alpha removal, mirroring or nonuniform scaling. crop is the half-open alpha>8 bounding box.",
+        "Calibration maps the recorded main axes to +0.5/-0.5 while keeping vertical edges upright. The source has local AI geometry inconsistencies; all unmeasured roof/window edges and hidden geometry are not asserted physically exact.",
+        "Ground support center controls placement and minimum .1-cell setback; actual occupied spans must be read from calibration clearance rather than equating the footprint tag to a full building width."
+      ]
+    }
+  ]
+}
