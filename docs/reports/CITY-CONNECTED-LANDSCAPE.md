@@ -1,5 +1,7 @@
 # City贯通道路、图片外围与首发界面组合验收
 
+后续更正：下方14列/公历季度方案已被用户要求的ISO整周归年替代；当前实现与验收以 [整周集成报告](CITY-ISO-INTEGRATION.md) 为准，旧数值仅属于当时版本。
+
 当前追加：季度余量已按用户后续反馈改为拓宽路面；下方首轮“景观留白”与构建哈希对应`59ff31c`历史版本，最新范围/结果见文末追加记录。
 
 日期：2026-11-01。基线main `510e523`；本地`codex/city-connected-landscape`组合云端[#31](https://github.com/wxy/CodeYears/pull/31)图片外围（`7afb84d`）与[#32](https://github.com/wxy/CodeYears/pull/32)首发UI（`d59eb32`）。本轮新PR暂不合入、未执行商店发布。

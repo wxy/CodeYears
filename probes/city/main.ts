@@ -2,6 +2,7 @@ import { cityLegendStyles, createCityLegend } from "../../src/extension/city-leg
 import { createLandscape, type ContributionLandscape } from "../../src/renderers/landscape";
 import type { ViewMode } from "../../src/renderers/types";
 import { generateDays, type Density } from "../../src/renderers/probe/data";
+import { isoYearStart } from "../../src/data/iso-week";
 
 const legendStyle = document.createElement("style");
 legendStyle.textContent = cityLegendStyles;
@@ -27,8 +28,10 @@ function show() {
   city?.dispose();
   const start = range.value === "1" ? 2024 : range.value === "3" ? 2023 : 2006;
   const end = range.value === "1" ? 2024 : 2025;
-  const days = generateDays(density.value as Density).filter(day => Number(day.date.slice(0, 4)) >= start && Number(day.date.slice(0, 4)) <= end);
-  displayedRange = String(start === end ? start : `${start}–${end}`);
+  const first = new Date(isoYearStart(start)).toISOString().slice(0, 10);
+  const after = new Date(isoYearStart(end + 1)).toISOString().slice(0, 10);
+  const days = generateDays(density.value as Density).filter(day => first <= day.date && day.date < after);
+  displayedRange = `${start === end ? start : `${start}–${end}`} ISO 周年`;
   document.querySelector("#year-title")!.textContent = `${displayedRange} · ${viewName()}`;
   document.querySelector("#summary")!.textContent = `${days.length} 天 · ${days.reduce((sum, day) => sum + day.count, 0).toLocaleString()} 次示例贡献`;
   legend.replaceChildren();
