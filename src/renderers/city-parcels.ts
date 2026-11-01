@@ -1,4 +1,5 @@
 import type { DailyContribution } from "../data/types";
+import { isoWeekDate, isoYearStart, isoYearWeeks } from "../data/iso-week";
 import { planCityWonders } from './city-wonders';
 
 export type CityKind = "grass" | "shrub" | "tree" | "building";
@@ -14,32 +15,22 @@ export interface WeeklyCity {
   cells: CityParcel[]; parcels: CityParcel[];
 }
 
-/** 每年一条横向街区：周为列，周一至周日为行。年首尾不足周不丢日期。 */
+/** ISO周年一条街区，完整周一至周日同属一个block；只使用实际输入日期。 */
 export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false, wonders = false): WeeklyCity {
-  const years = [...new Set(days.map(day => Number(day.date.slice(0, 4))))];
-  const districts = years.map(year => {
-    const first = Date.UTC(year, 0, 1), weekday = (new Date(first).getUTCDay() + 6) % 7, monday = first - weekday * 86400000;
-    return { year, monday, weeks: Math.ceil((Date.UTC(year + 1, 0, 1) - monday) / 604800000), breaks: [] as number[] };
-  });
+  const dates = days.map(day => isoWeekDate(day.date));
+  const years = [...new Set(dates.map(date => date.year))].sort((a,b)=>a-b);
+  const districts = years.map(year => ({ year, monday: isoYearStart(year), weeks: isoYearWeeks(year), breaks: [13,26,39] }));
   const byYear = new Map(districts.map((district, index) => [district.year, index]));
-  const columns = Math.max(...districts.map(district => district.weeks)), rows = years.length, blocks = rows;
+  const columns = Math.max(0,...districts.map(district => district.weeks)), rows = years.length, blocks = rows;
   const strongest = Math.max(...days.map(day => Math.log1p(Math.max(0, day.count - 5))), 1);
   const groups = new Map<string, CityParcel>();
   days.forEach((day, index) => {
-    const block = byYear.get(Number(day.date.slice(0, 4)))!, district = districts[block];
-    const offset = Math.round((Date.parse(`${day.date}T00:00:00Z`) - district.monday) / 86400000);
-    const x = Math.floor(offset / 7), z = offset % 7;
+    const date = dates[index], block = byYear.get(date.year)!;
+    const x = date.week - 1, z = date.weekday - 1;
     const key = `${block},${x},${z}`;
     groups.set(key, { x, z, w: 1, d: 1, block, band: 0, kind: "grass", indices: [index], count: day.count, mean: day.count });
   });
   const cells = [...groups.values()].sort((a, b) => a.block - b.block || a.z - b.z || a.x - b.x);
-  districts.forEach((district, block) => {
-    const weeks = cells.filter(cell => cell.block === block).map(cell => cell.x);
-    const firstWeek = Math.min(...weeks), lastWeek = Math.max(...weeks);
-    district.breaks = [3, 6, 9]
-      .map(month => Math.round((Date.UTC(district.year, month, 1) - district.monday) / 604800000))
-      .filter(week => firstWeek < week && week <= lastWeek);
-  });
   for (const cell of cells) {
     cell.mean = cell.count / cell.indices.length;
     cell.kind = cell.mean === 0 ? "grass" : cell.mean <= 2 ? "shrub" : cell.mean <= 5 ? "tree" : "building";

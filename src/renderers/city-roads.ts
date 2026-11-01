@@ -1,5 +1,5 @@
 export type RoadPoint=[number,number];
-export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;closed?:boolean}
+export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;closed?:boolean;leftShoulder?:number}
 export interface CityRoadJunction {x:number;z:number;radius:number}
 export const CITY_LANE_WIDTH=.4;
 
@@ -15,11 +15,18 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
       const a=points[i],b=points[(i+1)%points.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
       return {x:(b[0]-a[0])/length,z:(b[1]-a[1])/length};
     });
-    const path=new Path2D();points.forEach(([x,z],i)=>i?path.lineTo(x,z):path.moveTo(x,z));if(route.closed)path.closePath();
-    const half=route.lanes*CITY_LANE_WIDTH/2;surfaces.push({path,width:half*2});
-    const offsets=[-.05,.05,...Array.from({length:route.lanes/2-1},(_,i)=>(i+1)*CITY_LANE_WIDTH).flatMap(d=>[-d,d]),-half+.055,half-.055];
-    for(let marking=0;marking<offsets.length;marking++){
-      const offset=offsets[marking],central=marking<2,edge=marking>=offsets.length-2;
+    // 单侧拓宽只用于当前两点直线支路；行车中心与贯通轴保持原位。
+    const shoulder=route.leftShoulder??0,shift=shoulder/2,first=directions[0];
+    const path=new Path2D();points.forEach(([x,z],i)=>{
+      const px=x-first.z*shift,pz=z+first.x*shift;i?path.lineTo(px,pz):path.moveTo(px,pz);
+    });if(route.closed)path.closePath();
+    const half=route.lanes*CITY_LANE_WIDTH/2;surfaces.push({path,width:half*2+shoulder});
+    const offsets=[{offset:-.05,kind:'central'},{offset:.05,kind:'central'},
+      ...Array.from({length:route.lanes/2-1},(_,i)=>(i+1)*CITY_LANE_WIDTH).flatMap(d=>[{offset:-d,kind:'lane'},{offset:d,kind:'lane'}]),
+      ...(shoulder>0?[{offset:half-.055,kind:'edge'}]:[]),
+      {offset:-half+.055,kind:'edge'},{offset:half+shoulder-.055,kind:'edge'}];
+    for(const {offset,kind}of offsets){
+      const central=kind==='central',edge=kind==='edge';
       const color=central?'#d6b96d':edge?'#bcc5bb':'#c9d0c3',width=central?.035:edge?.018:.02,dash=central||edge?[]:[.24,.22];
       // 相邻轴向段的平行线在转角相交，闭环四角不会把线留在道路中心。
       const parallel:RoadPoint[]=points.map(([x,z],i)=>{
@@ -50,6 +57,18 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
           markings.push({path:segment,color,width,dash,phase:distance+start*length});
         }
         distance+=length;
+      }
+    }
+    // 稀疏导流斜线把拓宽区读成硬路肩，不伪装成新的贡献地块或行车道。
+    if(shoulder>.25){
+      const a=points[0],b=points[1],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+      for(let distance=.6;distance<length-.6;distance+=.8){
+        const x=a[0]+first.x*distance-first.z*(half+shoulder/2),z=a[1]+first.z*distance+first.x*(half+shoulder/2);
+        if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+shoulder/2))continue;
+        const hatch=new Path2D();
+        hatch.moveTo(a[0]+first.x*(distance-.2)-first.z*(half+.1),a[1]+first.z*(distance-.2)+first.x*(half+.1));
+        hatch.lineTo(a[0]+first.x*(distance+.2)-first.z*(half+shoulder-.1),a[1]+first.z*(distance+.2)+first.x*(half+shoulder-.1));
+        markings.push({path:hatch,color:'#aeb9ad',width:.02,dash:[],phase:0});
       }
     }
   }

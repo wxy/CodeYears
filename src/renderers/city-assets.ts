@@ -1,5 +1,6 @@
 import { CITY_UNIT_CATALOG } from './city-unit-catalog';
 import { createCityDecoration } from './city-decorations';
+import { CITY_OUTSKIRT_IDS, loadCityOutskirtsImages } from './city-outskirts';
 import { calibrate, drawUnit, loadUnit, project, type Point, type UnitImage, type UnitSample } from './unit-calibration';
 
 export interface CitySprite {
@@ -47,6 +48,7 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
   try {
     signal?.throwIfAborted();
     for (const id of new Set(ids)) {
+      if (CITY_OUTSKIRT_IDS.some(key => key === id)) continue;
       const decoration = createCityDecoration(id);
       if (decoration) { images[id] = decoration; continue; }
       const entry = CITY_UNIT_CATALOG[id];
@@ -54,7 +56,7 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
       const variants = files.get(entry.file) ?? [];
       variants.push({ id, sample: entry.sample }); files.set(entry.file, variants);
     }
-    const results = await Promise.allSettled([...files].map(async ([file, variants]) => {
+    const requests = [...files].map(async ([file, variants]) => {
       const image = await loadUnit(new URL(file, base).href, signal), sprites: CityImages = {};
       try {
         signal?.throwIfAborted();
@@ -66,7 +68,9 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
       } finally {
         image.close();
       }
-    }));
+    });
+    if (ids.some(id => CITY_OUTSKIRT_IDS.some(key => key === id))) requests.push(loadCityOutskirtsImages(base, signal));
+    const results = await Promise.allSettled(requests);
     for (const result of results) if (result.status === 'fulfilled') Object.assign(images, result.value);
     const failed = results.find(result => result.status === 'rejected');
     if (failed) throw new Error('城市素材加载失败，请重新生成风景。', { cause: failed.reason });

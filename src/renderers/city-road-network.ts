@@ -1,4 +1,5 @@
-import type { WeeklyCity } from './city-parcels';
+import { CITY_QUARTER_ROADS, type CityLayout } from './city-layout';
+import { CITY_OUTSKIRT_MARGIN } from './city-outskirts';
 import type { CityRoadJunction, CityRoadRoute, RoadPoint } from './city-roads';
 import type { CityVehicle, CityVehicleKind } from './city-vehicles';
 
@@ -23,31 +24,40 @@ export function sampleCityBridge(bridge: CityBridge, t: number, offset = 0) {
 }
 
 /** 日期地块不动；道路、桥和车辆共用这一份世界坐标计划。 */
-export function planCityRoadNetwork(weekly: WeeklyCity, width: number, depth: number, parkStarts: readonly number[]): CityRoadNetwork {
+export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStarts: readonly number[]): CityRoadNetwork {
+  const { width } = layout;
   const roads: CityRoadRoute[] = [], junctions: CityRoadJunction[] = [], bridges: CityBridge[] = [];
-  const districts = weekly.districts.map((district, block) => {
-    const z = block * 8.6 + Math.floor(block / 5) * 4;
-    const quarters = [1, 2, 3].flatMap(quarter => {
-      const week = Math.round((Date.UTC(district.year, quarter * 3, 1) - district.monday) / 604800000);
-      return district.breaks.includes(week)
-        ? [{ quarter, x: week + district.breaks.filter(b => b < week).length * .8 + .4 }] : [];
-    });
-    return { z, quarters };
-  });
+  const districts = layout.districts.map(({ z,quarterPadding }) => ({ z,quarterPadding,
+    quarters: CITY_QUARTER_ROADS.map((x, index) => ({ quarter: index + 1, x: x + .4,shoulder:quarterPadding[index] })) }));
   roads.push({ id: 'ring', lanes: 8, closed: true, points: [
     [-CITY_RING_CENTER, -CITY_RING_CENTER], [width + CITY_RING_CENTER, -CITY_RING_CENTER],
     [width + CITY_RING_CENTER, depth + CITY_RING_CENTER], [-CITY_RING_CENTER, depth + CITY_RING_CENTER],
   ] });
+  // 出城路继续沿已有主路/季度轴，穿过环路进入外围自然地景。
+  const exitX=CITY_QUARTER_ROADS[1]+.4,exitZ=districts[Math.floor((districts.length-1)/2)].z-.8;
+  const reach=CITY_RING_OUTER+CITY_OUTSKIRT_MARGIN;
+  roads.push(
+    {id:'exit-north',lanes:4,points:[[exitX,-CITY_RING_CENTER],[exitX,-reach]]},
+    {id:'exit-south',lanes:4,points:[[exitX,depth+CITY_RING_CENTER],[exitX,depth+reach]]},
+    {id:'exit-west',lanes:4,points:[[-CITY_RING_CENTER,exitZ],[-reach,exitZ]]},
+    {id:'exit-east',lanes:4,points:[[width+CITY_RING_CENTER,exitZ],[width+reach,exitZ]]},
+  );
   const avenues = new Set<number>();
-  districts.forEach(({ z, quarters }, block) => {
+  districts.forEach(({ z, quarters,quarterPadding }, block) => {
     for (const avenueZ of [z - .8, z + 7.8]) avenues.add(Math.round(avenueZ * 1000) / 1000);
-    for (const { quarter, x } of quarters) {
+    for (const { quarter, x,shoulder } of quarters) {
       const fromZ = block === 0 ? -CITY_RING_CENTER : z - .8;
-      const toZ = block === weekly.rows - 1 ? depth + CITY_RING_CENTER : z + 7.8;
-      roads.push({ id: `quarter-${block}-${quarter}`, lanes: 2, points: [[x, fromZ], [x, toZ]] });
-      for (const junctionZ of [z - .8, z + 7.8]) junctions.push({ x, z: junctionZ, radius: .9 });
-      if (block === 0) junctions.push({ x, z: -CITY_RING_CENTER, radius: 1.7 });
-      if (block === weekly.rows - 1) junctions.push({ x, z: depth + CITY_RING_CENTER, radius: 1.7 });
+      const toZ = block === districts.length - 1 ? depth + CITY_RING_CENTER : z + 7.8;
+      roads.push({ id: `quarter-${block}-${quarter}`, lanes: 2, leftShoulder:shoulder,points: [[x, fromZ], [x, toZ]] });
+      for (const junctionZ of [z - .8, z + 7.8]) junctions.push({ x, z: junctionZ, radius: shoulder?2.05:.9 });
+      if (block === 0) junctions.push({ x, z: -CITY_RING_CENTER, radius: 1.7+shoulder*.5 });
+      if (block === districts.length - 1) junctions.push({ x, z: depth + CITY_RING_CENTER, radius: 1.7+shoulder*.5 });
+    }
+    // 最后一季的余量沿街区外侧形成边路，并与两端年度主路相接。
+    if(quarterPadding[3]){
+      const x=width-.4;
+      roads.push({id:`year-edge-${block}`,lanes:2,leftShoulder:quarterPadding[3]-.8,points:[[x,z-.8],[x,z+7.8]]});
+      for(const junctionZ of [z-.8,z+7.8])junctions.push({x,z:junctionZ,radius:1.1});
     }
   });
   for (const z of avenues) {
