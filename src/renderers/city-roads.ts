@@ -47,7 +47,7 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
         if(cursor<1)visible.push([cursor,1]);
         for(const [start,end]of visible){
           const segment=new Path2D();segment.moveTo(a[0]+dx*start,a[1]+dz*start);segment.lineTo(a[0]+dx*end,a[1]+dz*end);
-          markings.push({path:segment,color,width,dash,phase:-(distance+start*length)});
+          markings.push({path:segment,color,width,dash,phase:distance+start*length});
         }
         distance+=length;
       }
