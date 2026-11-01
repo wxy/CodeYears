@@ -24,7 +24,7 @@
   <rect x="355" y="132" width="36" height="36" rx="10" fill="#C79A56"/>
 </symbol>
 <symbol id="icon-c" viewBox="0 0 512 512">
-<title id="c-title">CodeYears · 等轴街区候选</title><desc id="c-desc">暖石底，三座绿色阶梯楼宇与一块琥珀贡献地砖，采用固定2:1等轴投影。</desc>
+<title id="c-title">CodeYears · 等轴街区</title><desc id="c-desc">暖石底，三座绿色阶梯楼宇与一块琥珀贡献地砖，采用固定2:1等轴投影。</desc>
 <rect width="512" height="512" rx="112" fill="#EDE9DE"/>
 <path d="M256 257 L426 342 L256 427 L86 342Z" fill="#C9C8B5"/>
 <path d="M426 342 L256 427 L256 445 L426 360Z" fill="#9DA88F"/>
@@ -47,14 +47,14 @@
 <rect width="1600" height="1040" fill="#F2F1EC"/>
 <text x="64" y="78" fill="#1D3E32" font-family="Arial,sans-serif" font-size="48" font-weight="700" letter-spacing="-2">CodeYears</text>
 <text x="67" y="113" fill="#6B796E" font-family="Arial,sans-serif" font-size="14" letter-spacing="2">APP ICON · CONCEPT STUDIES / 01</text>
-<text x="1536" y="81" text-anchor="end" fill="#6B796E" font-family="Arial,sans-serif" font-size="13" letter-spacing="1.4">DRAFT · NOT SELECTED</text>
+<text x="1536" y="81" text-anchor="end" fill="#6B796E" font-family="Arial,sans-serif" font-size="13" letter-spacing="1.4">C SELECTED · CITY BLOCK</text>
 <rect x="64" y="157" width="448" height="776" rx="26" fill="#FCFCF8"/>
 <text x="96" y="204" fill="#718075" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="2">A /</text>
 <use xlink:href="#icon-a" x="160" y="231" width="256" height="256"/>
 <text x="96" y="544" fill="#234938" font-family="Arial,sans-serif" font-size="25" font-weight="700" letter-spacing="-.5">CODE TO CITY</text>
 <text x="96" y="577" fill="#657467" font-family="Arial,sans-serif" font-size="15">Code into a growing skyline.</text>
 <text x="96" y="601" fill="#657467" font-family="Arial,sans-serif" font-size="15">Clear at toolbar scale.</text>
-<text x="96" y="640" fill="#48745A" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">RECOMMENDED</text>
+<text x="96" y="640" fill="#48745A" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">EXPLORATION</text>
 <path d="M96 663H480" stroke="#E2E5DA"/>
 <text x="96" y="694" fill="#718075" font-family="Arial,sans-serif" font-size="10" letter-spacing="1.4">ACTUAL PIXEL SIZES</text>
 <use xlink:href="#icon-a" x="116.0" y="722.0" width="48" height="48"/>
@@ -73,7 +73,7 @@
 <text x="608" y="544" fill="#234938" font-family="Arial,sans-serif" font-size="25" font-weight="700" letter-spacing="-.5">TIME RING</text>
 <text x="608" y="577" fill="#657467" font-family="Arial,sans-serif" font-size="15">A quiet mark for years of work.</text>
 <text x="608" y="601" fill="#657467" font-family="Arial,sans-serif" font-size="15">The C holds a compact skyline.</text>
-<text x="608" y="640" fill="#48745A" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">TIME + MEMORY</text>
+<text x="608" y="640" fill="#48745A" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">EXPLORATION</text>
 <path d="M608 663H992" stroke="#E2E5DA"/>
 <text x="608" y="694" fill="#718075" font-family="Arial,sans-serif" font-size="10" letter-spacing="1.4">ACTUAL PIXEL SIZES</text>
 <use xlink:href="#icon-b" x="628.0" y="722.0" width="48" height="48"/>
@@ -92,7 +92,7 @@
 <text x="1120" y="544" fill="#234938" font-family="Arial,sans-serif" font-size="25" font-weight="700" letter-spacing="-.5">CITY BLOCK</text>
 <text x="1120" y="577" fill="#657467" font-family="Arial,sans-serif" font-size="15">The city, reduced to its essence.</text>
 <text x="1120" y="601" fill="#657467" font-family="Arial,sans-serif" font-size="15">A small isometric contribution district.</text>
-<text x="1120" y="640" fill="#48745A" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">SPATIAL + TACTILE</text>
+<text x="1120" y="640" fill="#48745A" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="1.2">SELECTED FOR THE EXTENSION</text>
 <path d="M1120 663H1504" stroke="#E2E5DA"/>
 <text x="1120" y="694" fill="#718075" font-family="Arial,sans-serif" font-size="10" letter-spacing="1.4">ACTUAL PIXEL SIZES</text>
 <use xlink:href="#icon-c" x="1140.0" y="722.0" width="48" height="48"/>
@@ -105,6 +105,6 @@
 <use xlink:href="#icon-c" x="1140.0" y="838.0" width="48" height="48"/>
 <use xlink:href="#icon-c" x="1276.0" y="846.0" width="32" height="32"/>
 <use xlink:href="#icon-c" x="1412.0" y="854.0" width="16" height="16"/>
-<text x="64" y="994" fill="#788176" font-family="Arial,sans-serif" font-size="12" letter-spacing=".3">Three directions, one product. Icon-only candidates; production selection is still open.</text>
+<text x="64" y="994" fill="#788176" font-family="Arial,sans-serif" font-size="12" letter-spacing=".3">C selected for CodeYears. A and B remain design explorations.</text>
 <text x="1536" y="994" text-anchor="end" fill="#788176" font-family="Arial,sans-serif" font-size="12">01 NOV 2026</text>
 </svg>
