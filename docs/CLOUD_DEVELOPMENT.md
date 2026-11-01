@@ -1,17 +1,17 @@
 # Codex 云端开发接续
 
-更新日期：2026-11-01。用户授权后，PR #15 已保留历史合入 main，共同起点为 `e432b1020518df414819b7202f305e53fbda218d`。标定 City、季度道路、连续 Terrain 和清晰近景已进入主线，功能证据见 [接入报告](reports/CALIBRATED-CITY-INTEGRATION.md)。已派发新一轮云端实现与本地验收，P1-G 尚未整体通过。
+更新日期：2026-11-01。用户授权后，PR #15 已保留历史合入 main，共同起点为 `e432b1020518df414819b7202f305e53fbda218d`。标定 City、季度道路、连续 Terrain 和清晰近景已进入主线，功能证据见 [接入报告](reports/CALIBRATED-CITY-INTEGRATION.md)。新一轮四项实现与报告已通过 PR #16–#19 合入，组合检查见 [合入报告](reports/PR-16-20-INTEGRATION.md)；P1-G 尚未整体通过。
 
 ## 当前并行安排
 
-各项均从上述合入提交建立独立分支，向 main 单独提 PR，未经后续授权不合入。具体边界、验收和状态见 [本轮任务安排](tasks/CITY-PARALLEL-2026-10-31.md)。
+各项均从上述合入提交建立独立分支，向 main 单独提 PR；本轮用户后续已授权审查并合入，四项均已完成。具体边界、验收和状态见 [本轮任务安排](tasks/CITY-PARALLEL-2026-10-31.md)。
 
 | 任务 | 分支 | 独占范围 | 交付 |
 | --- | --- | --- | --- |
-| 云端 · 建筑占地匹配 | `codex/city-footprint-matching` | `src/renderers/city-parcels.ts` 与自己的任务/报告 | [PR #17](https://github.com/wxy/CodeYears/pull/17) 已交付，未合入；停止缺素材的长条中高层合并，保留有效组合和数据守恒 |
-| 云端 · 城市图例 | `codex/city-legend` | `src/extension/content.ts`、`probes/city/` 的页面/入口、必要的图例模块与自己的任务/报告 | [PR #16](https://github.com/wxy/CodeYears/pull/16) 已交付，未合入；说明贡献等级、融合地块和装饰景观，City/Terrain 切换正确 |
-| 本地 · 真实浏览器 | `codex/city-local-browser` | 只新增 `CITY-LOCAL-BROWSER` 任务/报告 | [PR #18](https://github.com/wxy/CodeYears/pull/18) 已交付，未合入；真实播放/近景/关闭/导航通过，后台无法定论，Edge 未验收 |
-| 本地 · 性能基线 | `codex/city-local-performance` | 只新增 `CITY-LOCAL-PERFORMANCE` 任务/报告 | [PR #19](https://github.com/wxy/CodeYears/pull/19) 已交付，未合入；60 Hz 本机基线、暂停与释放有证据，首次全景尖峰仍待定位 |
+| 云端 · 建筑占地匹配 | `codex/city-footprint-matching` | `src/renderers/city-parcels.ts` 与自己的任务/报告 | [PR #17](https://github.com/wxy/CodeYears/pull/17) 已审查合入；停止缺素材的长条中高层合并，保留有效组合和数据守恒 |
+| 云端 · 城市图例 | `codex/city-legend` | `src/extension/content.ts`、`probes/city/` 的页面/入口、必要的图例模块与自己的任务/报告 | [PR #16](https://github.com/wxy/CodeYears/pull/16) 已审查合入；说明贡献等级、融合地块和装饰景观，City/Terrain 切换正确 |
+| 本地 · 真实浏览器 | `codex/city-local-browser` | 只新增 `CITY-LOCAL-BROWSER` 任务/报告 | [PR #18](https://github.com/wxy/CodeYears/pull/18) 已审查合入；真实播放/近景/关闭/导航通过，后台无法定论，Edge 未验收 |
+| 本地 · 性能基线 | `codex/city-local-performance` | 只新增 `CITY-LOCAL-PERFORMANCE` 任务/报告 | [PR #19](https://github.com/wxy/CodeYears/pull/19) 已审查合入；60 Hz 本机基线、暂停与释放有证据，首次全景尖峰仍待定位 |
 
 云端环境配置显示就绪不代表任务实际执行或代理可用。本轮占地任务首次遇到 `proxy:8080` 连接拒绝，续跑查明命令工具需要显式启用网络权限；启用后原代理正常，取基线、依赖安装和构建通过，无需更换环境。应使用正常代理和平台诊断，不能绕过网络策略；有源码或规划检查也不冒充完整构建、真实 MV3 或硬件验收。主代理按实际结果承接必要的本地补验。
 
