@@ -78,7 +78,7 @@ git diff --check
 rm -rf /tmp/codeyears-building-families-build /tmp/codeyears-building-npm-cache
 ```
 
-规划路径复用现有 city-view seed 算法以验证兼容；最终调用方仍负责按年份和成员日期生成稳定 seed，本函数不负责日期哈希。设施保持现有规划频率，未作新增设施或密度优化。
+规划路径复用现有 city-view 基于 block/x/z 的 seed 算法以验证兼容；由调用方提供稳定 seed，不随缩放或播放变化。设施保持现有规划频率，未作新增设施或密度优化。
 
 ## 未验收与本地组合责任
 

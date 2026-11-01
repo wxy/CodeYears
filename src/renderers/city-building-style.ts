@@ -1,6 +1,6 @@
 import type { CityParcel } from './city-parcels';
 
-/** 仅用于已规划的合法建筑地块；seed 由调用方按年份和成员日期稳定生成。 */
+/** 仅用于已规划的合法建筑地块；由调用方提供稳定 seed，不随缩放或播放变化。 */
 export function selectCityBuilding(parcel: CityParcel, seed: number): { id: string; factor: number } {
   const variant = (seed >>> 0) % 2 === 0 ? 'a' : 'b';
   const { band, w } = parcel;
