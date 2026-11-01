@@ -2,7 +2,7 @@
 
 **代码岁月，自成风景。**
 
-CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，计划把 GitHub 多年的真实每日贡献数量呈现为 **City（贡献之城）**与 **Terrain（时光山脉）**。
+CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，将 GitHub 多年的真实每日贡献数量呈现为 **City（贡献之城）**。首发集中完成 City，Terrain（时光山脉）暂缓，扩展入口不显示山脉视图。
 
 > 当前 City 已接入 **22 款新透明单元与 3 款旧中高层建筑**的共享标定数据，涵盖建筑、单树、树林、草地、水体与广场。每年一条横向街区，周为列、周一至周日为行；季度交叉道路分段，建筑按地面包络居中留距。固定视角，支持缩放、平移与重置；缩放不改变建筑和合并结果。整体视觉、二十年性能预算与完整浏览器路径仍待验收，PR #15 已按用户授权合入。
 
@@ -17,7 +17,7 @@ CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，�
 - 完全免费，不要求 GitHub Token 或独立登录，没有后端。
 - 在 GitHub 个人主页，利用现有会话与同源贡献页面请求，按年获取真实每日数量；可行性与解析规则先验证。
 - 数据本地按年缓存，按登录访问者身份隔离；主页所有者不等于访问者。
-- 仅 City 与 Terrain，不开发独立 Classic 或 Orbit；保留 GitHub 原生贡献图。
+- 首发仅 City，Terrain 暂缓；不开发独立 Classic 或 Orbit，保留 GitHub 原生贡献图。
 - Apple 式精致克制设计，Signature / Natural 两种主题。
 - Time Travel 从平地整体生长，即使缓存完整也可重播；支持暂停、跳过。
 - 用户主动激活才加载景观，静止停止连续帧，离开释放 WebGL 资源，优先保障 GitHub 原页面体验。
@@ -28,7 +28,7 @@ CodeYears 是完全免费的 Chrome / Edge Manifest V3 浏览器扩展项目，�
 | --- | --- |
 | [产品定义](docs/PRODUCT.md) | 已确认决策、使用流程、范围与后续设想 |
 | [技术架构](docs/ARCHITECTURE.md) | 模块边界、数据流、生命周期与当前骨架 |
-| [开发路线](docs/ROADMAP.md) | 数据与性能验证 → City MVP → Terrain → 发布 |
+| [开发路线](docs/ROADMAP.md) | 数据与性能验证 → City MVP → City 发布，Terrain 暂缓 |
 | [执行计划](docs/DEVELOPMENT_PLAN.md) | 工作包、依赖、PR 切分与阶段验收 |
 | [云端开发](docs/CLOUD_DEVELOPMENT.md) | Codex 环境配置、首次任务与本地验收边界 |
 | [数据与隐私](docs/DATA_AND_PRIVACY.md) | 数量准确性、身份隔离、缓存和权限待验证项 |

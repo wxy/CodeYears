@@ -7,18 +7,20 @@ import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from
 import { createCityRoadPainter } from './city-roads';
 import { createCityVehiclePainter } from './city-vehicles';
 import { createCityBridgePainter } from './city-bridges';
+import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
+  CITY_YEAR_GAP as YEAR_GAP, CITY_PARK_DEPTH as PARK, type CityLayout } from './city-layout';
+import { createCityYearMarkers } from './city-year-markers';
+import { createCityOutskirtsPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
 import type { LandscapeView, LandscapeViewport } from './types';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
-const ROAD=.8,YEAR_GAP=1.6,PARK=4;
 export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean }
-export interface CityScene { weekly:WeeklyCity; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
-const districtX=(weekly:WeeklyCity,block:number,x:number)=>x+weekly.districts[block].breaks.filter(b=>b<=x).length*ROAD;
-const districtZ=(block:number)=>block*(7+YEAR_GAP)+Math.floor(block/5)*PARK;
+export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
 export function planCityScene(days:readonly DailyContribution[],wonders=true):CityScene {
   const weekly=planWeeklyCity(days,true,wonders),selectGround=createGroundSelector(weekly);
+  const layout=createCityLayout(weekly);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
     const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
     const seed=(hash^(hash>>>16))>>>0,variant=seed%2?'b':'a';
@@ -28,18 +30,18 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true):Ci
     else if(kind==='shrub')id=`sapling-${variant}`;
     else if(kind==='tree')id=w===2&&d===2?`forest-2x2-${variant}`:w===2?`small-grove-2x1-${variant}`:d===2?`small-grove-1x2-${variant}`:variant==='a'?'broadleaf-a':'conifer-b';
     else ({id,factor}=selectCityBuilding(parcel,seed));
-    return {parcel,id,factor,x:districtX(weekly,parcel.block,parcel.x),z:districtZ(parcel.block)+parcel.z,w,d,flat:kind==='grass'};
+    return {parcel,id,factor,x:layout.districts[parcel.block].weekX(parcel.x),z:layout.districts[parcel.block].z+parcel.z,w,d,flat:kind==='grass'};
   });
   const parkStarts=Array.from({length:Math.floor((weekly.rows-1)/5)},(_,i)=>(i+1)*5*(7+YEAR_GAP)+i*PARK-YEAR_GAP/2);
-  const width=Math.max(...weekly.districts.map(d=>d.weeks+d.breaks.length*ROAD));
+  const width=layout.width;
   for(const start of parkStarts)for(let x=1;x<width;x+=2.6)for(const z of [start+.2,start+PARK-1]){
     items.push({id:Math.round(x)%2?'broadleaf-a':'conifer-b',factor:.75,x,z,w:.75,d:.75,flat:false});
   }
   // 信号灯仅装饰有建筑相邻的季度路口，摆在路缘，不占贡献日期格。
-  weekly.districts.forEach((district,block)=>{
-    const buildings=weekly.cells.filter(cell=>cell.block===block&&cell.kind==='building'),z=districtZ(block);
-    district.breaks.forEach((week,index)=>{
-      const x=week+index*ROAD;
+  weekly.districts.forEach((_,block)=>{
+    const buildings=weekly.cells.filter(cell=>cell.block===block&&cell.kind==='building'),z=layout.districts[block].z;
+    layout.districts[block].quarterWeeks.forEach((week,index)=>{
+      const x=CITY_QUARTER_ROADS[index];
       for(const north of [true,false]){
         if(!buildings.some(cell=>Math.abs(cell.x-week)<=2&&(north?cell.z<=2:cell.z>=4)))continue;
         const curbZ=north?z-.3:z+7.05;
@@ -49,15 +51,15 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true):Ci
     });
   });
   const depth=weekly.rows*(7+YEAR_GAP)-YEAR_GAP+parkStarts.length*PARK;
-  const roadNetwork=planCityRoadNetwork(weekly,width,depth,parkStarts);
+  const roadNetwork=planCityRoadNetwork(layout,depth,parkStarts);
   const visibleItems=items.filter(item=>item.parcel||!['broadleaf-a','conifer-b'].includes(item.id)
     ||cityTreeClearsBridges(item.x,item.z,item.w,item.d,roadNetwork.bridges));
-  const keys=[...new Set(visibleItems.map(i=>i.id))];
-  return {weekly,items:visibleItems,keys,parkStarts,width,depth,roadNetwork};
+  const keys=[...new Set([...visibleItems.map(i=>i.id),...CITY_OUTSKIRT_IDS])];
+  return {weekly,layout,items:visibleItems,keys,parkStarts,width,depth,roadNetwork};
 }
 
 export function createCityView(scene:CityScene,images:CityImages):LandscapeView {
-  const {weekly,items,parkStarts,width,depth,roadNetwork}=scene;
+  const {weekly,layout,items,parkStarts,width,depth,roadNetwork}=scene;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
   const placed=items.map(item=>{
@@ -67,7 +69,7 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
     const left=x+sprite.left*item.factor,top=y+sprite.top*item.factor;
     return {item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1]};
   }).sort((a,b)=>a.groundY-b.groundY||a.left-b.left);
-  const outer=roadNetwork.ringOuter;
+  const outer=roadNetwork.ringOuter+CITY_OUTSKIRT_MARGIN;
   const minX=Math.min(-depth/2-outer-.4,...placed.map(p=>p.left))-.3,maxX=Math.max(width/2+outer+.4,...placed.map(p=>p.left+p.width))+.3;
   const minY=Math.min(-outer/2-.4,...placed.map(p=>p.top))-.5,maxY=Math.max((width+depth)/4+outer/2+.5,...placed.map(p=>p.top+p.height));
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
@@ -90,17 +92,23 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   const image=(p:{sprite:CityImages[string];left:number;top:number;width:number;height:number})=>{
     groundPaint.push(target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height));
   };
+  groundPaint.push(createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images));
   // 静态地面与路网分层；路面/车道线只在缓存构建时提交。
-  for(let edge=6;edge>0;edge--)polygon(-outer-edge*.05,-outer-edge*.05,width+outer*2+edge*.1,depth+outer*2+edge*.1,'rgba(130,152,117,0.025)');
+  for(let edge=6;edge>0;edge--)polygon(-roadNetwork.ringOuter-edge*.05,-roadNetwork.ringOuter-edge*.05,width+roadNetwork.ringOuter*2+edge*.1,depth+roadNetwork.ringOuter*2+edge*.1,'rgba(130,152,117,0.025)');
   weekly.districts.forEach((district,block)=>{
-    const z=districtZ(block),span=district.weeks+district.breaks.length*ROAD;
+    const {z,quarterWeeks}=layout.districts[block],span=width;
     polygon(-YEAR_GAP/2,z-YEAR_GAP/2,span+YEAR_GAP,7+YEAR_GAP,'#606967');
     // 连续暖石人行道与细路缘包住年度街区，庭院不再逐格铺深色底。
     polygon(-.16,z-.16,span+.32,7.32,'#b6b5a4');
     polygon(-.12,z-.12,span+.24,7.24,'#d2cbb6');
     polygon(0,z,span,7,'#b3b4a2');
-    district.breaks.forEach((week,index)=>{
-      const x=week+index*ROAD;
+    // 不足14周的季度留出无日期绿带，保持楼宇和一周七格的原比例。
+    for(let quarter=0;quarter<4;quarter++){
+      const start=quarter?quarterWeeks[quarter-1]:0,end=quarterWeeks[quarter]??district.weeks;
+      const padding=14-(end-start);
+      if(padding>0)polygon(quarter*14.8+end-start,z,padding,7,'#a6b28d');
+    }
+    CITY_QUARTER_ROADS.forEach(x=>{
       polygon(x-.1,z,.1,7,'#d2cbb6');polygon(x+ROAD,z,.1,7,'#d2cbb6');
     });
   });
@@ -141,10 +149,8 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   }
   groundPaint.push(createCityRoadPainter(roadNetwork.roads,roadNetwork.junctions));
   // 过街带跨越完整道路宽度；不在合并地块内部新增道路。
-  weekly.districts.forEach((district,block)=>{
-    const z=districtZ(block);
-    district.breaks.forEach((week,index)=>{
-      const x=week+index*ROAD;
+  layout.districts.forEach(({z})=>{
+    CITY_QUARTER_ROADS.forEach(x=>{
       for(let stripe=0;stripe<4;stripe++){
         for(const crossingZ of [z+.08,z+6.48])polygon(x+.07,crossingZ+stripe*.12,ROAD-.14,.065,'#dedccc');
         for(const crossingX of [x-.55,x+ROAD+.15]){
@@ -156,6 +162,7 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   });
   groundPaint.push(createCityBridgePainter(roadNetwork.bridges));
   groundPaint.push(createCityVehiclePainter(roadNetwork.vehicles));
+  groundPaint.push(createCityYearMarkers(layout));
 
   // 二十年细节平移已在同环境对照；保留统一顺序，本轮不扩建剔除框架。
   const paintGround=(target:CanvasRenderingContext2D)=>{for(const paint of groundPaint)paint(target)};
@@ -193,8 +200,6 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
         context.save();context.beginPath();context.rect(x-1,sy(p.groundY)-(p.groundY-p.top)*scale*growth,w+2,h+2);context.clip();context.globalAlpha=Math.min(1,growth*4);
         context.drawImage(p.sprite.canvas,x,y,w,h);context.restore();
       }
-      context.font='11px -apple-system,BlinkMacSystemFont,sans-serif';context.textAlign='right';context.fillStyle=viewport.dark?'#aab7ac':'#536451';
-      weekly.districts.forEach((district,block)=>{const p=project(-1.2,districtZ(block)+3.5);context.fillText(String(district.year),sx(p[0]),sy(p[1]))});
     },
     dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear()},
   };
