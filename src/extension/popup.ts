@@ -12,9 +12,6 @@ shadow.innerHTML = `
       letter-spacing: .12em; text-transform: uppercase; }
     h1 { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: -.04em; }
     .tagline { margin: 8px 0 24px; font-size: 14px; color: #59665e; }
-    .views { display: flex; gap: 8px; margin-bottom: 24px; }
-    .views span { padding: 7px 12px; border: 1px solid #dce3dc;
-      border-radius: 20px; font-size: 12px; background: #fff; }
     .status { border-top: 1px solid #dce3dc; padding-top: 18px; }
     h2 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
     p { margin: 0; font-size: 12px; line-height: 1.7; color: #59665e; }
@@ -25,12 +22,9 @@ shadow.innerHTML = `
     <p class="eyebrow">GitHub contribution history</p>
     <h1>CodeYears</h1>
     <p class="tagline">代码岁月，自成风景。</p>
-    <div class="views" aria-label="计划支持的两种视图">
-      <span>City · 贡献之城</span><span>Terrain · 时光山脉</span>
-    </div>
     <section class="status" aria-labelledby="status-title">
-      <h2 id="status-title">City / Terrain · 真实贡献风景</h2>
-      <p>从平地整体长出城市与山脉。城市保留年份街区，山脉连续隆起；两种视图共享真实历史和生长进度。</p>
+      <h2 id="status-title">City · 贡献之城</h2>
+      <p>选择年份，用 GitHub 上真实可见的每日贡献，生成你的城市。</p>
       <button type="button">打开 CodeYears</button>
       <output role="status" aria-live="polite"></output>
     </section>
@@ -51,9 +45,9 @@ button.addEventListener("click", async () => {
       const panel = document.getElementById("codeyears-data-probe");
       return Boolean(panel?.isConnected && panel.shadowRoot?.querySelector("form #year") && panel.shadowRoot.querySelector('form #run[type="submit"]'));
     } });
-    if (mounted.result !== true) throw new Error("诊断面板未能完整打开，请等待主页加载完成后重试。");
-    popupStatus.textContent = "CodeYears 已打开，请选择年份范围和视图，生成你的贡献风景。";
+    if (mounted.result !== true) throw new Error("CodeYears 未能完整打开，请等待主页加载完成后重试。");
+    popupStatus.textContent = "CodeYears 已打开，请选择年份范围，生成你的贡献之城。";
   } catch (error) {
-    popupStatus.textContent = error instanceof Error ? error.message : "无法打开诊断，请重新加载扩展。";
+    popupStatus.textContent = error instanceof Error ? error.message : "无法打开 CodeYears，请重新加载扩展。";
   } finally { button.disabled = false; }
 });
