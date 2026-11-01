@@ -1,0 +1,36 @@
+name: City package check
+
+on:
+  pull_request:
+  push:
+    branches: [main, codex/city-profile-tabs, codex/cloud-city-package-checks]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Build and verify in temporary checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          task_tmp=$(mktemp -d "$RUNNER_TEMP/codeyears-package.XXXXXX")
+          trap 'rm -rf "$task_tmp"' EXIT
+          git archive HEAD | tar -x -C "$task_tmp"
+          cd "$task_tmp"
+          npm ci --cache "$task_tmp/npm-cache"
+          npm run check
+          npm run build -- --outDir "$task_tmp/checked-dist"
+          npm run package:city
+          version=$(node -p 'JSON.parse(require("fs").readFileSync("package.json", "utf8")).version')
+          python3 scripts/verify-city-package.py "release/codeyears-$version-city.zip"
