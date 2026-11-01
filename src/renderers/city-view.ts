@@ -50,61 +50,116 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
   const ground=document.createElement('canvas'),unit=Math.min(48,3072/(maxX-minX));
   ground.width=Math.ceil((maxX-minX)*unit);ground.height=Math.ceil((maxY-minY)*unit);
-  const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);
-  const groundShapes:{path:Path2D;color:string;left:number;right:number;top:number;bottom:number}[]=[],groundStrokes:{path:Path2D;color:string;width:number;dash:number[]}[]=[];
+  // 同一绘制序列供全景与近景缓存使用，避免缩放时改变遮挡与道路几何。
+  const groundPaint:((target:CanvasRenderingContext2D)=>void)[]=[];
   const polygon=(x:number,z:number,w:number,d:number,color:string)=>{
-    const points=[project(x,z),project(x+w,z),project(x+w,z+d),project(x,z+d)],path=new Path2D();
-    points.forEach((p,i)=>i?path.lineTo(...p):path.moveTo(...p));path.closePath();g.fillStyle=color;g.fill(path);
-    groundShapes.push({path,color,left:Math.min(...points.map(p=>p[0])),right:Math.max(...points.map(p=>p[0])),top:points[0][1],bottom:points[2][1]});
+    if(w<=0||d<=0)return;
+    const path=new Path2D();
+    [project(x,z),project(x+w,z),project(x+w,z+d),project(x,z+d)].forEach((p,i)=>i?path.lineTo(...p):path.moveTo(...p));path.closePath();
+    groundPaint.push(target=>{target.fillStyle=color;target.fill(path)});
   };
-  g.filter='blur(13px)';g.globalAlpha=.35;polygon(-1,-1,width+2,depth+2,'#829875');g.filter='none';g.globalAlpha=1;
-  groundShapes.pop(); // 只在远景缓存保留柔和边缘，近景不会露出外围光晕。
+  const stroke=(path:Path2D,color:string,lineWidth:number,dash:number[]=[])=>{
+    groundPaint.push(target=>{target.lineJoin='round';target.strokeStyle=color;target.lineWidth=lineWidth;target.setLineDash(dash);target.stroke(path)});
+  };
+  const line=(x:number,z:number,x2:number,z2:number,color:string,lineWidth:number,dash:number[]=[])=>{
+    const path=new Path2D();path.moveTo(...project(x,z));path.lineTo(...project(x2,z2));stroke(path,color,lineWidth,dash);
+  };
+  const image=(p:{sprite:CityImages[string];left:number;top:number;width:number;height:number})=>{
+    groundPaint.push(target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height));
+  };
+  // 低透明度的外围层逐步淡出，两个缓存使用相同世界坐标，不依赖像素模糊。
+  for(let edge=6;edge>0;edge--)polygon(-edge*.12,-edge*.12,width+edge*.24,depth+edge*.24,'rgba(130,152,117,0.035)');
   weekly.districts.forEach((district,block)=>{
     const z=districtZ(block),span=district.weeks+district.breaks.length*ROAD;
-    polygon(-YEAR_GAP/2,z-YEAR_GAP/2,span+YEAR_GAP,7+YEAR_GAP,'#505b60');polygon(-.12,z-.12,span+.24,7.24,'#8fa17c');
-    g.strokeStyle='#d6d0ad';g.lineWidth=.025;g.setLineDash([.19,.22]);
-    for(const [from,to]of [[[-.4,z-.4],[span+.4,z-.4]],[[span+.4,z-.4],[span+.4,z+7.4]],[[span+.4,z+7.4],[-.4,z+7.4]],[[-.4,z+7.4],[-.4,z-.4]]]){
-      const path=new Path2D();path.moveTo(...project(...from as [number,number]));path.lineTo(...project(...to as [number,number]));g.stroke(path);groundStrokes.push({path,color:'#d6d0ad',width:.025,dash:[.19,.22]});
-    }
-    g.setLineDash([]);
+    polygon(-YEAR_GAP/2,z-YEAR_GAP/2,span+YEAR_GAP,7+YEAR_GAP,'#606967');
+    // 连续暖石人行道与细路缘包住年度街区，庭院不再逐格铺深色底。
+    polygon(-.16,z-.16,span+.32,7.32,'#b6b5a4');
+    polygon(-.12,z-.12,span+.24,7.24,'#d2cbb6');
+    polygon(0,z,span,7,'#b3b4a2');
+    line(-.4,z-.4,span+.4,z-.4,'#c6c3aa',.022,[.25,.3]);
+    line(-.4,z+7.4,span+.4,z+7.4,'#c6c3aa',.022,[.25,.3]);
     district.breaks.forEach((week,index)=>{
-      const roadX=week+index*ROAD;polygon(roadX,z-.8,ROAD,8.6,'#505b60');
-      const path=new Path2D();path.moveTo(...project(roadX+ROAD/2,z-.6));path.lineTo(...project(roadX+ROAD/2,z+7.6));g.strokeStyle='#d6d0ad';g.setLineDash([.16,.2]);g.stroke(path);groundStrokes.push({path,color:'#d6d0ad',width:.025,dash:[.16,.2]});g.setLineDash([]);
-      for(let stripe=0;stripe<5;stripe++){polygon(roadX+.07+stripe*.14,z-.45,.07,.45,'#e1e5d8');polygon(roadX+.07+stripe*.14,z+7,.07,.45,'#e1e5d8')}
+      const x=week+index*ROAD;
+      polygon(x-.1,z,.1,7,'#d2cbb6');polygon(x+ROAD,z,.1,7,'#d2cbb6');
+      polygon(x,z-.8,ROAD,8.6,'#6c7470');
+      line(x+ROAD/2,z+.3,x+ROAD/2,z+6.7,'#c6c3aa',.02,[.18,.25]);
+      // 横跨季度路：条纹沿行进轴排列；主路方向的过街带位于交叉口两侧。
+      for(let stripe=0;stripe<4;stripe++){
+        for(const crossingZ of [z+.08,z+6.48])polygon(x+.09,crossingZ+stripe*.12,ROAD-.18,.065,'#dedccc');
+        for(const crossingX of [x-.5,x+ROAD+.12]){
+          polygon(crossingX+stripe*.1,z-.67,.055,.46,'#dedccc');
+          polygon(crossingX+stripe*.1,z+7.21,.055,.46,'#dedccc');
+        }
+      }
     });
   });
-  // 庭院和支路沿已合并地块铺设，不在大建筑的内部画穿行道路。
-  const lanes=new Path2D();
-  for(const p of placed)if(p.item.parcel){
+  // 只沿建筑邻接的完整地块边界留窄步道；共享边去重，不切开合并建筑。
+  const edges=new Map<string,[number,number,number,number]>();
+  for(const p of placed)if(p.item.parcel?.kind==='building'){
     const {item,sprite}=p,{x,z,w,d}=item;
-    const green=item.flat?'#92a87e':item.parcel!.kind==='building'?'#829875':'#8da578';
-    polygon(x+.1,z+.1,w-.2,d-.2,green);
-    if(item.parcel!.kind==='building'){
-      const pw=sprite.nativeWidth*item.factor,pd=sprite.nativeDepth*item.factor,px=x+(w-pw)/2,pz=z+(d-pd)/2;
-      polygon(px+.13,pz+.13,pw-.26,pd-.26,'#b1b19f');
-      polygon(x+w/2-.045,pz+pd-.13,.09,z+d-(pz+pd)+.13,'#c3bea8');
+    const pw=sprite.nativeWidth*item.factor,pd=sprite.nativeDepth*item.factor,px=x+(w-pw)/2,pz=z+(d-pd)/2;
+    polygon(px+.08,pz+.08,pw-.16,pd-.16,'#c2bba6');
+    polygon(x+w/2-.055,pz+pd-.08,.11,z+d-(pz+pd)+.08,'#d5ceb9');
+    for(let i=0;i<w;i++)for(const ez of [z,z+d])edges.set(`${x+i},${ez},x`,[x+i,ez,x+i+1,ez]);
+    for(let i=0;i<d;i++)for(const ex of [x,x+w])edges.set(`${ex},${z+i},z`,[ex,z+i,ex,z+i+1]);
+  }
+  for(const [x,z,x2,z2]of edges.values())line(x,z,x2,z2,'#d0c9b4',.055);
+  // 平地/水岸贴图覆盖自身庭院；树木与楼体在地面之后按深度绘制。
+  for(const p of placed)if(p.item.flat)image(p);
+  for(const [band,start]of parkStarts.entries()){
+    // 河道在既有四格景观带内起伏；两岸保留既有树木落地所需的草坡。
+    polygon(0,start,width,PARK,'#98a88a');
+    const samples=Array.from({length:Math.ceil(width*2)+1},(_,i)=>{
+      const x=width*i/Math.ceil(width*2);
+      const center=start+PARK*.5+.12*Math.sin(x*.22+band*.7);
+      const half=.82+.09*Math.sin(x*.31+1.2);
+      return {x,near:center-half,far:center+half};
+    });
+    const bankPath=(side:'near'|'far',offset:number)=>{
+      const path=new Path2D();samples.forEach((p,i)=>{const point=project(p.x,p[side]+offset);if(i)path.lineTo(...point);else path.moveTo(...point)});return path;
+    };
+    const water=new Path2D();
+    samples.forEach((p,i)=>{const point=project(p.x,p.near);if(i)water.lineTo(...point);else water.moveTo(...point)});
+    for(const p of [...samples].reverse())water.lineTo(...project(p.x,p.far));water.closePath();
+    stroke(bankPath('near',-.12),'#839578',.22);stroke(bankPath('far',.12),'#839578',.22);
+    groundPaint.push(target=>{target.fillStyle='#699c9c';target.fill(water)});
+    stroke(bankPath('near',0),'#b0c3ac',.055);stroke(bankPath('far',0),'#b0c3ac',.055);
+    // 沿岸步道与水面轮廓共用采样，不出现独立池塘或穿水黄线。
+    stroke(bankPath('near',-.3),'#b4b5a0',.18);stroke(bankPath('near',-.3),'#d8d1bb',.12);
+    stroke(bankPath('far',.3),'#b4b5a0',.18);stroke(bankPath('far',.3),'#d8d1bb',.12);
+    // 每带一座桥对齐前一年度中间季度路，桥头仅在年间道路内衔接。
+    const before=weekly.districts[(band+1)*5-1],after=weekly.districts[(band+1)*5];
+    const index=Math.floor(before.breaks.length/2),week=before.breaks[index];
+    if(week!==undefined){
+      const roadX=week+index*ROAD;
+      // 桥从既有岸树之间的空隙通过，避免把保留的场景树画在桥面上。
+      const bankTrees=items.filter(item=>!item.parcel&&item.z>=start&&item.z<start+PARK).sort((a,b)=>a.x-b.x);
+      const gaps=bankTrees.flatMap((tree,i)=>{
+        const next=bankTrees[i+1];return next&&next.x-(tree.x+tree.w)>ROAD+.6?[(tree.x+tree.w+next.x-ROAD)/2]:[];
+      });
+      const x=gaps.sort((a,b)=>Math.abs(a-roadX)-Math.abs(b-roadX))[0]??roadX;
+      const bridgeZ=start-.4,bridgeDepth=PARK+.8;
+      polygon(x-.14,bridgeZ,ROAD+.28,bridgeDepth,'#a7afa3');
+      polygon(x,bridgeZ,ROAD,bridgeDepth,'#747e79');
+      line(x+ROAD/2,bridgeZ+.1,x+ROAD/2,bridgeZ+bridgeDepth-.1,'#d4d0b7',.02,[.18,.25]);
+      for(const railX of [x-.1,x+ROAD+.1])line(railX,start+.15,railX,start+PARK-.15,'#e0ddcd',.035);
+      polygon(Math.min(x,roadX),start-.6,Math.abs(x-roadX)+ROAD,.4,'#747e79');
+      const nextWeek=after?.breaks[index];
+      if(nextWeek!==undefined){
+        const nextX=nextWeek+index*ROAD;
+        polygon(Math.min(x,nextX),start+PARK+.2,Math.abs(nextX-x)+ROAD,.4,'#747e79');
+      }
     }
-    [project(x,z),project(x+w,z),project(x+w,z+d),project(x,z+d)].forEach((point,i)=>i?lanes.lineTo(...point):lanes.moveTo(...point));lanes.closePath();
   }
-  // 数据平地一次画入地面缓存；每帧只绘制正在生长的建筑和植被。
-  for(const p of placed)if(p.item.flat)g.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height);
-  g.lineJoin='round';g.strokeStyle='#bbbda6';g.lineWidth=.12;g.stroke(lanes);g.strokeStyle='#65736b';g.lineWidth=.065;g.stroke(lanes);
-  groundStrokes.push({path:lanes,color:'#bbbda6',width:.12,dash:[]},{path:lanes,color:'#65736b',width:.065,dash:[]});
-  const parkPonds:{left:number;top:number;width:number;height:number}[]=[];
-  for(const start of parkStarts){
-    polygon(0,start,width,PARK,'#759765');
-    const path=new Path2D();path.moveTo(...project(0,start+PARK*.36));path.bezierCurveTo(...project(width*.3,start+PARK*.85),...project(width*.65,start+PARK*.12),...project(width,start+PARK*.65));
-    g.strokeStyle='#d5c9a6';g.lineWidth=.13;g.stroke(path);groundStrokes.push({path,color:'#d5c9a6',width:.13,dash:[]});
-    const pond=images['pond-a'],factor=1.4,[x,y]=project(width*.61-1.4,start+.6);
-    g.drawImage(pond.canvas,x+pond.left*factor,y+pond.top*factor,pond.width*factor,pond.height*factor);
-    parkPonds.push({left:x+pond.left*factor,top:y+pond.top*factor,width:pond.width*factor,height:pond.height*factor});
-  }
+  // 二十年细节平移已在同环境对照；保留统一顺序，本轮不扩建剔除框架。
+  const paintGround=(target:CanvasRenderingContext2D)=>{for(const paint of groundPaint)paint(target)};
+  const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);
   const detailGround=document.createElement('canvas');let detailKey='';
   const fitScale=(viewport:LandscapeViewport)=>Math.min(Math.max(1,viewport.width-32)/(maxX-minX),Math.max(1,viewport.height-24)/(maxY-minY));
   return {
     canvas,
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
-    description:()=> '固定视角 · 标定单元居中留距 · 庭院支路 / 季度交叉路 / 每五年景观带 · 可放大查看建筑细节 · 拖动平移',
+    description:()=> '固定视角 · 标定单元居中留距 · 连续庭院步道 / 季度交叉路 / 每五年滨河带 · 可放大查看建筑细节 · 拖动平移',
     draw(progress,viewport:LandscapeViewport){
       const pw=Math.round(viewport.width*viewport.dpr),ph=Math.round(viewport.height*viewport.dpr);
       if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph}
@@ -118,10 +173,7 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
         if(key!==detailKey){
           detailGround.width=pw;detailGround.height=ph;const d=detailGround.getContext('2d')!;
           d.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);d.imageSmoothingQuality='high';
-          for(const shape of groundShapes){if(sx(shape.right)<0||sx(shape.left)>viewport.width||sy(shape.bottom)<0||sy(shape.top)>viewport.height)continue;d.fillStyle=shape.color;d.fill(shape.path)}
-          for(const p of placed)if(p.item.flat&&sx(p.left+p.width)>=0&&sx(p.left)<=viewport.width&&sy(p.top+p.height)>=0&&sy(p.top)<=viewport.height)d.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height);
-          d.lineJoin='round';for(const stroke of groundStrokes){d.strokeStyle=stroke.color;d.lineWidth=stroke.width;d.setLineDash(stroke.dash);d.stroke(stroke.path)}
-          if(parkPonds.length)for(const p of parkPonds)d.drawImage(images['pond-a'].canvas,p.left,p.top,p.width,p.height);
+          paintGround(d);
           detailKey=key;
         }
         context.drawImage(detailGround,0,0,viewport.width,viewport.height);
@@ -138,6 +190,6 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
       context.font='11px -apple-system,BlinkMacSystemFont,sans-serif';context.textAlign='right';context.fillStyle=viewport.dark?'#aab7ac':'#536451';
       weekly.districts.forEach((district,block)=>{const p=project(-1.2,districtZ(block)+3.5);context.fillText(String(district.year),sx(p[0]),sy(p[1]))});
     },
-    dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0},
+    dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear()},
   };
 }
