@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="c-title c-desc">
+<title id="c-title">CodeYears · 等轴街区</title><desc id="c-desc">暖石底，三座绿色阶梯楼宇与一块琥珀贡献地砖，采用固定2:1等轴投影。</desc>
+<rect width="512" height="512" rx="112" fill="#EDE9DE"/>
+<path d="M256 257 L426 342 L256 427 L86 342Z" fill="#C9C8B5"/>
+<path d="M426 342 L256 427 L256 445 L426 360Z" fill="#9DA88F"/>
+<path d="M256 427 L86 342 L86 360 L256 445Z" fill="#B1B89D"/>
+<path d="M256 269.5 L321 302 L256 334.5 L191 302Z" fill="#B6CBA4"/>
+<path d="M176 309.5 L241 342 L176 374.5 L111 342Z" fill="#D3B771"/>
+<path d="M336 309.5 L401 342 L336 374.5 L271 342Z" fill="#8FB694"/>
+<path d="M256 349.5 L321 382 L256 414.5 L191 382Z" fill="#AAC19B"/>
+<path d="M198.5 148.25 L256 177 L256 327 L198.5 298.25Z" fill="#7DA58A"/>
+<path d="M313.5 148.25 L256 177 L256 327 L313.5 298.25Z" fill="#487D67"/>
+<path d="M256 119.5 L313.5 148.25 L256 177 L198.5 148.25Z" fill="#CBE0BC"/>
+<path d="M278.5 120.25 L336 149 L336 367 L278.5 338.25Z" fill="#5C9177"/>
+<path d="M393.5 120.25 L336 149 L336 367 L393.5 338.25Z" fill="#2D6653"/>
+<path d="M336 91.5 L393.5 120.25 L336 149 L278.5 120.25Z" fill="#A5C9A0"/>
+<path d="M198.5 268.25 L256 297 L256 407 L198.5 378.25Z" fill="#6C9C7D"/>
+<path d="M313.5 268.25 L256 297 L256 407 L313.5 378.25Z" fill="#3F765F"/>
+<path d="M256 239.5 L313.5 268.25 L256 297 L198.5 268.25Z" fill="#BCD4A9"/>
+</svg>
