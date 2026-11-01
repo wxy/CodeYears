@@ -1,10 +1,12 @@
 import type { DailyContribution } from "../data/types";
+import { planCityWonders } from './city-wonders';
 
 export type CityKind = "grass" | "shrub" | "tree" | "building";
 export interface CityParcel {
   x: number; z: number; w: number; d: number;
   block: number; band: number; kind: CityKind;
   indices: number[]; count: number; mean: number;
+  wonder?: 'wonder-stadium' | 'wonder-theater' | 'wonder-park';
 }
 export interface WeeklyCity {
   columns: number; rows: number; blocks: number;
@@ -13,7 +15,7 @@ export interface WeeklyCity {
 }
 
 /** 每年一条横向街区：周为列，周一至周日为行。年首尾不足周不丢日期。 */
-export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false): WeeklyCity {
+export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false, wonders = false): WeeklyCity {
   const years = [...new Set(days.map(day => Number(day.date.slice(0, 4))))];
   const districts = years.map(year => {
     const first = Date.UTC(year, 0, 1), weekday = (new Date(first).getUTCDay() + 6) % 7, monday = first - weekday * 86400000;
@@ -43,7 +45,9 @@ export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRect
     cell.kind = cell.mean === 0 ? "grass" : cell.mean <= 2 ? "shrub" : cell.mean <= 5 ? "tree" : "building";
     cell.band = cell.kind === "building" ? Math.max(1, Math.ceil(Math.log1p(cell.mean - 5) / strongest * 4)) : 0;
   }
-  const used = new Set<CityParcel>(), parcels: CityParcel[] = [];
+  const parcels: CityParcel[] = wonders ? planCityWonders(cells, districts) : [];
+  const reserved = new Set(parcels.flatMap(parcel => parcel.indices));
+  const used = new Set(cells.filter(cell => reserved.has(cell.indices[0])));
   for (const cell of cells) {
     if (used.has(cell)) continue;
     // 新长条与素材/选择调用一起显式启用；默认保留原有合法占地。
