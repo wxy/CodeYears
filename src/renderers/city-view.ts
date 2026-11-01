@@ -100,7 +100,8 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
       polygon(-1.8,roadZ,1.8,.8,'#606967');polygon(span,roadZ,width+1.8-span,.8,'#606967');
     }
     if(block===0||block===weekly.rows-1)district.breaks.forEach((week,index)=>{
-      polygon(week+index*ROAD,block===0?-1.8:z+7,ROAD,1.8,'#6c7470');
+      if(block===0)polygon(week+index*ROAD,-1.8,ROAD,1.8,'#6c7470');
+      if(block===weekly.rows-1)polygon(week+index*ROAD,z+7,ROAD,1.8,'#6c7470');
     });
   });
   weekly.districts.forEach((district,block)=>{
