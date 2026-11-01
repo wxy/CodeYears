@@ -41,11 +41,11 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true):Ci
   weekly.districts.forEach((_,block)=>{
     const buildings=weekly.cells.filter(cell=>cell.block===block&&cell.kind==='building'),z=layout.districts[block].z;
     layout.districts[block].quarterWeeks.forEach((week,index)=>{
-      const x=CITY_QUARTER_ROADS[index];
+      const x=CITY_QUARTER_ROADS[index],shoulder=layout.districts[block].quarterPadding[index];
       for(const north of [true,false]){
         if(!buildings.some(cell=>Math.abs(cell.x-week)<=2&&(north?cell.z<=2:cell.z>=4)))continue;
         const curbZ=north?z-.3:z+7.05;
-        items.push({id:'traffic-signal-w',factor:1,x:x-.3,z:curbZ,w:.25,d:.25,flat:false});
+        items.push({id:'traffic-signal-w',factor:1,x:x-shoulder-.3,z:curbZ,w:.25,d:.25,flat:false});
         items.push({id:north?'traffic-signal-d-reverse':'traffic-signal-d',factor:1,x:x+ROAD+.05,z:curbZ,w:.25,d:.25,flat:false});
       }
     });
@@ -95,21 +95,15 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   groundPaint.push(createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images));
   // 静态地面与路网分层；路面/车道线只在缓存构建时提交。
   for(let edge=6;edge>0;edge--)polygon(-roadNetwork.ringOuter-edge*.05,-roadNetwork.ringOuter-edge*.05,width+roadNetwork.ringOuter*2+edge*.1,depth+roadNetwork.ringOuter*2+edge*.1,'rgba(130,152,117,0.025)');
-  weekly.districts.forEach((district,block)=>{
-    const {z,quarterWeeks}=layout.districts[block],span=width;
+  layout.districts.forEach(({z,quarterPadding})=>{
+    const span=width;
     polygon(-YEAR_GAP/2,z-YEAR_GAP/2,span+YEAR_GAP,7+YEAR_GAP,'#606967');
     // 连续暖石人行道与细路缘包住年度街区，庭院不再逐格铺深色底。
     polygon(-.16,z-.16,span+.32,7.32,'#b6b5a4');
     polygon(-.12,z-.12,span+.24,7.24,'#d2cbb6');
     polygon(0,z,span,7,'#b3b4a2');
-    // 不足14周的季度留出无日期绿带，保持楼宇和一周七格的原比例。
-    for(let quarter=0;quarter<4;quarter++){
-      const start=quarter?quarterWeeks[quarter-1]:0,end=quarterWeeks[quarter]??district.weeks;
-      const padding=14-(end-start);
-      if(padding>0)polygon(quarter*14.8+end-start,z,padding,7,'#a6b28d');
-    }
-    CITY_QUARTER_ROADS.forEach(x=>{
-      polygon(x-.1,z,.1,7,'#d2cbb6');polygon(x+ROAD,z,.1,7,'#d2cbb6');
+    CITY_QUARTER_ROADS.forEach((x,index)=>{
+      polygon(x-quarterPadding[index]-.1,z,.1,7,'#d2cbb6');polygon(x+ROAD,z,.1,7,'#d2cbb6');
     });
   });
   // 只沿建筑邻接的完整地块边界留窄步道；共享边去重，不切开合并建筑。
@@ -149,11 +143,12 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   }
   groundPaint.push(createCityRoadPainter(roadNetwork.roads,roadNetwork.junctions));
   // 过街带跨越完整道路宽度；不在合并地块内部新增道路。
-  layout.districts.forEach(({z})=>{
-    CITY_QUARTER_ROADS.forEach(x=>{
+  layout.districts.forEach(({z,quarterPadding})=>{
+    CITY_QUARTER_ROADS.forEach((x,index)=>{
+      const shoulder=quarterPadding[index];
       for(let stripe=0;stripe<4;stripe++){
-        for(const crossingZ of [z+.08,z+6.48])polygon(x+.07,crossingZ+stripe*.12,ROAD-.14,.065,'#dedccc');
-        for(const crossingX of [x-.55,x+ROAD+.15]){
+        for(const crossingZ of [z+.08,z+6.48])polygon(x-shoulder+.07,crossingZ+stripe*.12,ROAD+shoulder-.14,.065,'#dedccc');
+        for(const crossingX of [x-shoulder-.55,x+ROAD+.15]){
           polygon(crossingX+stripe*.1,z-1.52,.055,1.44,'#dedccc');
           polygon(crossingX+stripe*.1,z+7.08,.055,1.44,'#dedccc');
         }
