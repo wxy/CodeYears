@@ -1,5 +1,7 @@
 # City 首发准备清单
 
+2026-11-01 合入后更新：#31/#32/#33/#34/#36 已保留历史合入，main `12518a9`；#35 保持 OPEN/DRAFT，最终只有原生右键保存提示。用户已选择代码 MIT。当前发布准备分支统一版本为 `0.1.0`，新增根目录 LICENSE、THIRD_PARTY_NOTICES、ASSETS、PRIVACY 与 [商店材料草稿](STORE_LISTING.md)，提供 `npm run package:city` 本地发行 ZIP。源码、锁文件和 manifest 版本一致；这不是已发布版本。实际结果见 [本轮报告](reports/CITY-RELEASE-PREPARATION.md)，下面旧基线为历史核对记录。
+
 补充：用户已选择第三款等轴街区，PR #34已导出正式16/32/48/128图标并注册manifest；本地组合构建通过。用户重载后Chrome工具栏已实际看到第三款等轴街区图标；Edge图标仍待验收。
 
 本地最终组合补证（2026-11-01）：贯通道路、两侧年份雕塑和正式AI图片外围已接入；当前Chrome已登录七年City、默认收起设置、惰性明细、暂停/跳过/关闭与重开通过，见 [组合报告](reports/CITY-CONNECTED-LANDSCAPE.md)。下面“本轮受控UI”为云端阶段记录；本机单账户路径现已补充，但A/B/退出、Edge和当前完整性能预算仍未完成。新增外围原图8,886,798 bytes，运行源目录约93MiB；不是安装ZIP或运行内存测量。
@@ -16,11 +18,11 @@
 
 | 项目 | 当前事实 | 发布前还须完成 |
 | --- | --- | --- |
-| 版本 | manifest 为 `0.0.0` | 由维护者确定正式版本并更新发布包。Chrome 规定版本各段不能全部为零，当前值不满足要求；本轮按授权保留，不代定版本。[官方版本规则](https://developer.chrome.com/docs/extensions/reference/manifest/version) |
+| 版本 | package/锁文件/manifest 统一为 `0.1.0` 候选 | 满足非全零版本规则；最终安装包和控制台仍待验收，不宣称已发布。[官方版本规则](https://developer.chrome.com/docs/extensions/reference/manifest/version) |
 | 图标 | 用户选定C等轴街区，public/icons已有16/32/48/128/512 PNG，manifest注册icons/action图标；Chrome重载实物已检查 | Edge及商店材料中的实际显示仍需核对；Chrome 建议包含 128/48/16 等用途尺寸，商店图标必备，不能用程序默认图标交付。[manifest 图标](https://developer.chrome.com/docs/extensions/reference/manifest/icons)、[商店图片要求](https://developer.chrome.com/docs/webstore/images) |
-| 许可证及素材权利 | 仓库未见项目 LICENSE/第三方 NOTICE 成品 | 维护者选择许可证；核对程序依赖的许可/随包声明、AI/参考素材来源及可分发范围，归档适用声明。公开仓库不等于已授予任意复用许可；本清单不替用户决定许可证，也不把该项称作浏览器强制字段。 |
-| 用户隐私与权限说明 | 有内部隐私约束，尚未见对外隐私政策与商店表单成品 | 提供可访问、与实物一致的隐私政策 URL；说明 GitHub 会话下可见的用户名/贡献日期数量、本地缓存作用域/有效期/清除、无外传/遥测及限制。逐项解释 activeTab/scripting/storage 和本地 WAR 用途，核对商店隐私与代码一致；不能把“只在本地”误填成完全不处理用户数据。[Chrome 隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy) |
-| 商店资料与包 | 尚无已核对的商店材料/发布 ZIP/审核回执 | 完成 City 单一用途描述、说明、支持联系方式、图标及至少一张无私有数据的 Chrome 截图，准备仅含发行产物的 ZIP；核验资源可加载、无临时文件/凭证和远程执行代码。Chrome 开发者账户、控制台配置及提交审核仍需维护者执行，不承诺审核时长。[Chrome 发布流程](https://developer.chrome.com/docs/webstore/publish)、[图片要求](https://developer.chrome.com/docs/webstore/images) |
+| 许可证及素材权利 | 用户选择 MIT，代码 LICENSE、Three.js NOTICE、ASSETS 来源边界已补 | 生成素材适用条款与参考来源可分发范围仍须维护者确认；代码 MIT 不替代位图权利核查。 |
+| 用户隐私与权限说明 | 根目录 PRIVACY.md 与商店字段依据已编写；明确缓存过期不会自动物理删除 | 本 PR 合入后核验公开 URL，提交时逐项填写实际商店字段；本地处理也如实披露。[Chrome 隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy) |
+| 商店资料与包 | City 文案、支持/隐私候选 URL 与发行 ZIP 命令已准备 | 无私有数据的正式商店截图、最终安装验收、账户/控制台配置及提交审核仍待完成；没有上传或审核回执。[Chrome 发布流程](https://developer.chrome.com/docs/webstore/publish)、[图片要求](https://developer.chrome.com/docs/webstore/images) |
 | 当前组合的真实 UI | 本轮 Chromium 受控页面验证，非已登录 MV3 | 本地重载最终组合包，实测入口、City/素材、年份范围、每日明细、设置/刷新/清除、失败/取消、关闭/重开/导航；不得将受控 API 替身视为真实权限或会话验收。 |
 | 真实身份与数据 | 历史有 Chrome 单账户主路径，完整矩阵尚未完成 | 同一主页 A/B/退出登录、请求中切换/多标签、身份未知、后台清空、私有可见性变化与缓存隔离；闰年/当年截止、语言/解析失败不填零，核对真实日数/合计。沿用 D1–D6 与身份门槛，不因收起文字降低要求。[隐私验收清单](DATA_AND_PRIVACY.md) |
 | Edge | 未取得当前版本完整 Edge 证据 | 若首发宣称支持或发布 Edge，先实际 Edge/MV3、权限与身份/缓存/后台路径验收，再备 Partner Center 资料与认证。官方区分必填名称/描述/logo 等与可选截图，logo 最小 128×128；不要把 Chrome 上的结果或图片字段直接当作 Edge 通过。[Edge 发布流程](https://learn.microsoft.com/en-us/microsoft-edge/extensions/publish/publish-extension) |
