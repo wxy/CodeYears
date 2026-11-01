@@ -8,7 +8,7 @@
 
 候选只含完整加载的 3×3 或 4×3，不跨年度、七天行边界或季度道路，不填缺失/未来日期。3×3 选择 theater；4×3 按年度与格坐标整数种子的奇偶稳定选 stadium/park，不依赖缩放、播放或时钟。每年最多两处，按排名贪心预留，成员不重叠；不强制凑两处。
 
-初版门槛：活跃 `count>0` 至少 90%，建筑 `count>5` 至少 80%，已有 `band>=2` 至少 75%，各项向上取整。3×3 分别要求 9、8、7 个，4×3 要求 11、10、9 个。先按建筑密度降序，再按真实日均贡献降序；并列按 block/z/x 升序、宽度降序。允许异档成员，奇观 kind 为 building、band 为成员已有最高档；原始 cells 的 kind/band 不变。所有 indices 保留，日期通过原输入索引查询；count 是成员真实合计，mean 是合计/成员数，不添加虚构贡献或修改分档阈值。
+初版门槛：活跃 `count>0` 至少 90%，建筑 `count>5` 至少 80%，已有 `band>=2` 至少 75%，各项向上取整。3×3 分别要求 9、8、7 个，4×3 要求 11、10、9 个。先按建筑密度降序，再按试排分数 `mean * sqrt(w*d)` 降序，以贡献强度与覆盖面积兼顾，减少较小窗口均值优势；并列按 block/z/x 升序、宽度降序。允许异档成员，奇观 kind 为 building、band 为成员已有最高档；原始 cells 的 kind/band 不变。所有 indices 保留，日期通过原输入索引查询；count 是成员真实合计，mean 是合计/成员数，不添加虚构贡献或修改分档阈值。
 
 以上门槛、排名和每年上限是初版设计参数，尚未证实是最佳策略。最高 band 是聚合元数据，不代表素材物理高度。连续每日 6 次在没有更高峰值时也可进入相对较高档，不额外添加绝对贡献门槛。
 
@@ -28,11 +28,24 @@ Linux 云端，Node v24.19.0、npm 11.9.0、Vite 8.3.5。没有登录数据、To
 | 常规混合 | 133508 | 6245 | 6213 | 5 |
 | 全零 | 0 | 2928 | 2928 | 0 |
 
-密集输入为 2006-01-01 起连续 7305 天，count 循环 12/35/120。常规输入按下方取模规则，全零只保留日期。三次完整诊断约 173/118/87 ms，含断言和重复规划，不能作为单次算法耗时、FPS、内存或本机预算。没有补写单元测试，只执行一次性直接路径诊断。整理报告时临时命令分隔符冲突产生三个空文件，已清理，没有进入提交。
+密集输入为 2006-01-01 起连续 7305 天，count 循环 12/35/120。常规输入按下方取模规则，全零只保留日期。完整诊断包含断言和重复规划，其耗时不能作为单次算法耗时、FPS、内存或本机预算。没有补写单元测试，只执行一次性直接路径诊断。整理报告时临时命令分隔符冲突产生三个空文件，已清理，没有进入提交。
+
+## 正式 LCG 数据复核与评分修正
+
+本轮按本地同数据反馈，仅把建筑密度之后的均值排名改为 `mean * sqrt(area)`，真实 mean/count、门槛、每年上限及坐标 tie 均不变；不为类型设置配额。评分是试排参数，非验证出的最优方案。与修正前 `6838613` 比较，直接调用正式 `src/renderers/probe/data.ts` 的 `generateDays`；3 年取生成结果中 2023–2025，保留完整 LCG 历史，不重置种子。
+
+| 正式输入 | 天数 / 真实总量 | 修正前 theater / 4×3 | 修正后 theater / 4×3 | 修正后 stadium / park | 普通 / 奇观地块 |
+| --- | --- | --- | --- | --- | --- |
+| regular 3 年 | 1096 / 13729 | 6 / 0 | 6 / 0 | 0 / 0 | 877 / 850 |
+| regular 20 年 | 7305 / 93171 | 37 / 3 | 28 / 12 | 7 / 5 | 5878 / 5688 |
+| dense 3 年 | 1096 / 139777 | 6 / 0 | 0 / 6 | 2 / 4 | 402 / 387 |
+| dense 20 年 | 7305 / 913530 | 39 / 1 | 0 / 40 | 17 / 23 | 2809 / 2713 |
+
+密集样本的 4×3 不再被小窗口均值排序系统性压后，常规 20 年也增加；常规 3 年仍全部为剧院，不承诺每类数据都有大占地或每种造型。原 19 场景与新增 4 组正式路径共 23 场景通过相同主路径断言：日期/数量守恒、成员不重叠、边界、门槛、分类/mean 不变、每年上限与确定性。正式 4 组默认关闭结果亦与基线深度相等；npm check/build 和 diff 检查通过。复现脚本包含旧评分对照，未增加单元测试。
 
 ## 启用与未验收边界
 
-本地组合须接入 wonder 字段与三张原生素材：stadium 4×3 targetH1.1、theater 3×3 targetH1.5、park 4×3 targetH1.0；在同一份已校验数据上对比普通与 `planWeeklyCity(days,true,true)`。本分支未改 city-view/assets/catalog/landscape/preview，未取得三张新图，不声称素材加载、标定高度、对照页面、真实 Chrome 或最终画面验收通过。不能只开启第三参数而遗漏绘制端 wonder 选择与目录注册。
+本地组合须接入 wonder 字段与三张原生素材：stadium 4×3、theater 3×3、park 4×3（实际高度以本地标定为准）；在同一份已校验数据上对比普通与 `planWeeklyCity(days,true,true)`。本分支未改 city-view/assets/catalog/landscape/preview，未取得三张新图，不声称素材加载、标定高度、对照页面、真实 Chrome 或最终画面验收通过。不能只开启第三参数而遗漏绘制端 wonder 选择与目录注册。
 
 本地负责最终集成、同数据视觉对照和真实浏览器验收，本 PR 只提供纯布局依赖，暂不合入。park 依然是贡献成员的聚合表现；原低值 cell 语义不变，造型不代表活动类型，不增加游戏系统。
 
@@ -52,9 +65,15 @@ root=Path('/tmp/codeyears-wonder-probe')
 s=Path('src/renderers/city-parcels.ts').read_text().replace("'./city-wonders'", "'./city-wonders.ts'")
 (root/'city-parcels.ts').write_text(s)
 (root/'city-wonders.ts').write_text(Path('src/renderers/city-wonders.ts').read_text())
+import subprocess
+(root/'previous-wonders.ts').write_text(subprocess.check_output(['git','show','6838613:src/renderers/city-wonders.ts'],text=True))
+(root/'previous-parcels.ts').write_text(s.replace("'./city-wonders.ts'", "'./previous-wonders.ts'"))
+(root/'probe-data.ts').write_text(Path('src/renderers/probe/data.ts').read_text())
 PY
 cat > /tmp/codeyears-wonder-probe/check.mjs <<'JS'
 import assert from 'node:assert/strict';
+import {generateDays} from './probe-data.ts';
+import {planWeeklyCity as previous} from './previous-parcels.ts';
 import {performance} from 'node:perf_hooks';
 import {planWeeklyCity as plan} from './city-parcels.ts';
 import {planWeeklyCity as baseline} from './baseline.ts';
@@ -107,6 +126,17 @@ for(const [name,days] of [['dense',dense],['regular',regular],['zero',dense.map(
  summaries.push({name,days:days.length,total:days.reduce((s,q)=>s+q.count,0),ordinary:plan(days,true).parcels.length,parcels:p.parcels.length,wonders:wonders(p).length,probeMs:+elapsed.toFixed(1)});
 }
 console.log(JSON.stringify({status:'PASS',scenarios,variants:[...ids,'wonder-theater'],summaries}));
+const lcg=[];
+for(const density of ['regular','dense'])for(const years of [3,20]){
+ const days=generateDays(density).filter(q=>years===20||q.date>='2023-01-01');
+ for(const tall of [false,true])assert.deepEqual(plan(days,tall),baseline(days,tall));
+ const p=check(days),old=previous(days,true,true);
+ const summarize=q=>({theater:wonders(q).filter(v=>v.w===3).length,wide:wonders(q).filter(v=>v.w===4).length,ids:wonders(q).reduce((s,v)=>(s[v.wonder]=(s[v.wonder]??0)+1,s),{})});
+ const current=summarize(p),before=summarize(old);
+ if(density==='dense')assert(current.wide>0);assert(current.wide>=before.wide);
+ lcg.push({density,years,days:days.length,total:days.reduce((s,d)=>s+d.count,0),before,current,ordinary:plan(days,true).parcels.length,parcels:p.parcels.length});
+}
+console.log(JSON.stringify({lcg,scenarios,status:'PASS'}));
 JS
 node --experimental-strip-types /tmp/codeyears-wonder-probe/check.mjs
 git diff --check

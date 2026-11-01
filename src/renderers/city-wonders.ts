@@ -3,7 +3,7 @@ import type { CityParcel, WeeklyCity } from './city-parcels';
 /** 初版试排参数；只在普通合并前为完整矩形预留日期，不改变每日分类。 */
 export function planCityWonders(cells: readonly CityParcel[], districts: WeeklyCity['districts']): CityParcel[] {
   const grid = new Map(cells.map(cell => [`${cell.block},${cell.x},${cell.z}`, cell]));
-  const candidates: { parcel: CityParcel; density: number }[] = [];
+  const candidates: { parcel: CityParcel; density: number; score: number }[] = [];
   for (const cell of cells) {
     const district = districts[cell.block];
     for (const w of [4, 3]) {
@@ -27,14 +27,15 @@ export function planCityWonders(cells: readonly CityParcel[], districts: WeeklyC
         ^ Math.imul(cell.z + 1, 83492791)) >>> 0;
       candidates.push({
         density: members.filter(member => member.count > 5).length / area,
+        score: count / indices.length * Math.sqrt(area),
         parcel: { ...cell, w, d, kind: 'building', band: Math.max(...members.map(member => member.band)),
           wonder: w === 3 ? 'wonder-theater' : seed % 2 === 0 ? 'wonder-stadium' : 'wonder-park',
           indices, count, mean: count / indices.length },
       });
     }
   }
-  // 先建筑密度、再日均贡献；并列时按固定坐标与较宽占地确定顺序。
-  candidates.sort((a, b) => b.density - a.density || b.parcel.mean - a.parcel.mean
+  // 先建筑密度，再以日均贡献 × sqrt(面积) 兼顾强度与覆盖；真实 mean 不变。
+  candidates.sort((a, b) => b.density - a.density || b.score - a.score
     || a.parcel.block - b.parcel.block || a.parcel.z - b.parcel.z || a.parcel.x - b.parcel.x
     || b.parcel.w - a.parcel.w);
   const reserved = new Set<number>(), perYear = new Map<number, number>(), wonders: CityParcel[] = [];
