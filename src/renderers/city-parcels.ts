@@ -13,7 +13,7 @@ export interface WeeklyCity {
 }
 
 /** 每年一条横向街区：周为列，周一至周日为行。年首尾不足周不丢日期。 */
-export function planWeeklyCity(days: readonly DailyContribution[]): WeeklyCity {
+export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false): WeeklyCity {
   const years = [...new Set(days.map(day => Number(day.date.slice(0, 4))))];
   const districts = years.map(year => {
     const first = Date.UTC(year, 0, 1), weekday = (new Date(first).getUTCDay() + 6) % 7, monday = first - weekday * 86400000;
@@ -46,12 +46,12 @@ export function planWeeklyCity(days: readonly DailyContribution[]): WeeklyCity {
   const used = new Set<CityParcel>(), parcels: CityParcel[] = [];
   for (const cell of cells) {
     if (used.has(cell)) continue;
-    // 仅 H3/H4 有两个方向的原生长条；H4 优先保留 2×2 等比复用。
+    // 新长条与素材/选择调用一起显式启用；默认保留原有合法占地。
     const sizes: [number, number][] = cell.kind === "building"
       ? cell.band === 1 ? [[3, 3], [2, 1], [1, 1]]
         : cell.band === 2 ? [[2, 2], [1, 1]]
-        : cell.band === 3 ? [[2, 1], [1, 2], [1, 1]]
-        : [[2, 2], [2, 1], [1, 2], [1, 1]]
+        : cell.band === 3 ? (mergeTallRectangles ? [[2, 1], [1, 2], [1, 1]] : [[1, 1]])
+        : mergeTallRectangles ? [[2, 2], [2, 1], [1, 2], [1, 1]] : [[2, 2], [1, 1]]
       : cell.kind === "tree" ? [[2, 2], [2, 1], [1, 2], [1, 1]]
       : cell.kind === "grass" ? [[2, 2], [1, 1]] : [[1, 1]];
     let w = 1, d = 1, members = [cell];

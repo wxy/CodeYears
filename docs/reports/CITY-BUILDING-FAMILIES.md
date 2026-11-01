@@ -4,7 +4,7 @@
 
 ## 实际实现
 
-仅修改授权的四个文件。H3 合并顺序为 2×1、1×2、1×1；H4 为 2×2、2×1、1×2、1×1。H2 保持 2×2、1×1；不开放三格占地，不改同档、道路、年度边界、日期、数量或强度映射。H3/H4 长条按 w/d 分别选择 wide/deep A/B 固定 id，factor 1；H4 2×2 仍选 apartment-h2-a/b、factor 2。由调用方提供稳定 seed，不随缩放或播放变化。
+仅修改授权的四个文件。`planWeeklyCity(days, mergeTallRectangles = false)` 默认关闭新长条；默认 H3 仅 1×1，H4 仅 2×2、1×1，保持旧布局。仅显式传 `true` 时，H3 合并顺序为 2×1、1×2、1×1；H4 为 2×2、2×1、1×2、1×1。H2 保持 2×2、1×1；不开放三格占地，不改同档、道路、年度边界、日期、数量或强度映射。H3/H4 长条按 w/d 分别选择 wide/deep A/B 固定 id，factor 1；H4 2×2 仍选 apartment-h2-a/b、factor 2。由调用方提供稳定 seed，不随缩放或播放变化。
 
 ## 实际检查
 
@@ -13,7 +13,8 @@
 - `npm run check`：PASS。
 - `npm run build -- --outDir /tmp/codeyears-building-strips-build`：PASS，三个构建完成；仓库外目录提示为正常警告。
 - 十二种合法组合 × seed 0–255，共 3072 次主选择：候选、factor、相同输入稳定、输入不变均通过。
-- 16 个直接规划场景：H3/H4 两方向两格可合、两方向三连成为 2+1、跨季度路不合；H4 2×2 保持、H3 2×2 拆两个 2×1；混档不合、H2 两方向长条均不开放、跨年度不合，均通过。
+- 默认调用及显式 `false`：与 `0a10a65` 的完整 20 年规划结果深度相等，仍为 6690 地块、4222 建筑、总量 133508；默认不会生成新长条。
+- 以下新长条诊断全部显式传 `true`。16 个直接规划场景：H3/H4 两方向两格可合、两方向三连成为 2+1、跨季度路不合；H4 2×2 保持、H3 2×2 拆两个 2×1；混档不合、H2 两方向长条均不开放、跨年度不合，均通过。
 - 2006–2025 共 7305 天：6245 地块、3777 建筑，总量 133508。索引完整且唯一、逐地块数量守恒、同档成员、年度/季度边界、规划重复稳定及输入不变均通过。该分布产生 445 个 H3 2×1，其他新长条由上述受控场景覆盖，不将此 20 年样本称作所有占地覆盖。
 - `git diff --check`：PASS。没有补写单元测试。检查通过后停止扩展范围。
 
@@ -24,8 +25,10 @@
 ```sh
 npm run check
 npm run build -- --outDir /tmp/codeyears-building-strips-build
+git show 0a10a65:src/renderers/city-parcels.ts > /tmp/codeyears-before-strips.ts
 node --experimental-strip-types --input-type=module <<'JS'
 import assert from 'node:assert/strict';
+import { planWeeklyCity as beforeStrips } from '/tmp/codeyears-before-strips.ts';
 import { planWeeklyCity } from './src/renderers/city-parcels.ts';
 import { selectCityBuilding as select } from './src/renderers/city-building-style.ts';
 const cases=[
@@ -42,7 +45,7 @@ function fixture(points) {
  const days=Array.from({length:366},(_,i)=>({date:new Date(Date.UTC(2024,0,1)+i*86400000).toISOString().slice(0,10),count:0}));
  days[365].count=120;
  for(const [x,z,count] of points)days[x*7+z].count=count;
- const plan=planWeeklyCity(days);
+ const plan=planWeeklyCity(days,true);
  return plan.parcels.filter(p=>p.x<50&&p.kind==='building');
 }
 let scenarios=0;
@@ -59,10 +62,16 @@ expect([[2,0,35],[3,0,35],[2,1,35],[3,1,35]],[[3,2,1],[3,2,1]]);
 expect([[2,0,35],[3,0,120]],[[3,1,1],[4,1,1]]);
 expect([[2,0,12],[3,0,12]],[[2,1,1],[2,1,1]]);
 expect([[2,0,12],[2,1,12]],[[2,1,1],[2,1,1]]);
-const annual=planWeeklyCity([{date:'2023-12-31',count:120},{date:'2024-01-01',count:120}]);
+const annual=planWeeklyCity([{date:'2023-12-31',count:120},{date:'2024-01-01',count:120}],true);
 assert.equal(annual.parcels.length,2);assert(annual.parcels.every(p=>p.indices.length===1));scenarios++;
 const days=Array.from({length:7305},(_,i)=>({date:new Date(Date.UTC(2006,0,1)+i*86400000).toISOString().slice(0,10),count:i%13===0?120:i%7===0?35:i%5===0?12:i%3===0?6:i%6}));
-const before=JSON.stringify(days),plan=planWeeklyCity(days),seen=new Set(),counts={};
+const before=JSON.stringify(days),plan=planWeeklyCity(days,true),seen=new Set(),counts={};
+const defaultPlan=planWeeklyCity(days);
+assert.deepEqual(defaultPlan,beforeStrips(days));
+assert.deepEqual(planWeeklyCity(days,false),defaultPlan);
+assert.equal(defaultPlan.parcels.length,6690);
+assert.equal(defaultPlan.parcels.filter(p=>p.kind==='building').length,4222);
+assert.equal(defaultPlan.parcels.reduce((s,p)=>s+p.count,0),133508);
 for(const p of plan.parcels){
  for(const i of p.indices){assert(!seen.has(i));seen.add(i);assert.equal(Number(days[i].date.slice(0,4)),plan.districts[p.block].year);}
  assert(!plan.districts[p.block].breaks.some(x=>p.x<x&&x<p.x+p.w));
@@ -75,17 +84,17 @@ for(const p of plan.parcels){
   const key=`H${p.band}:${p.w}x${p.d}`;counts[key]=(counts[key]??0)+1;
  }
 }
-assert.equal(seen.size,days.length);assert.equal(JSON.stringify(days),before);assert.deepEqual(planWeeklyCity(days),plan);
+assert.equal(seen.size,days.length);assert.equal(JSON.stringify(days),before);assert.deepEqual(planWeeklyCity(days,true),plan);
 assert.equal(plan.parcels.reduce((s,p)=>s+p.count,0),133508);
 console.log(JSON.stringify({combinations:cases.length,seedCalls:cases.length*256,scenarios,days:days.length,parcels:plan.parcels.length,buildings:plan.parcels.filter(p=>p.kind==='building').length,total:133508,counts,status:'PASS'}));
 JS
 git diff --check
-rm -rf /tmp/codeyears-building-strips-build
+rm -rf /tmp/codeyears-building-strips-build /tmp/codeyears-before-strips.ts
 ```
 
 ## 未验收范围与本地组合责任
 
-本分支未取得八张新长条 PNG，不宣称素材已加载、H3/H4 原生比例或本机视觉验收通过；原六张 1×1 素材也未进入本检出。这里交付规划与选择依赖，本地负责生成/标定/登记素材、在 city-view 接入函数，并将本提交组合进已有功能 PR #24，完成最终加载、比例、遮挡、整体画面和缩放/播放稳定验证。无真实 Chrome/Edge 会话或硬件性能验收。本分支 city-view 仍为原有选择逻辑，构建成功仅证明当前源码可构建，不能视为新长条已完成运行时接入。
+本分支未取得八张新长条 PNG，不宣称素材已加载、H3/H4 原生比例或本机视觉验收通过；原六张 1×1 素材也未进入本检出。这里交付规划与选择依赖，本地负责生成/标定/登记素材、在 city-view 接入函数，并在 #24 的 planCityScene 中调用 `planWeeklyCity(days,true)`，与图片/目录一起启用新长条；并将本提交组合进已有功能 PR #24，完成最终加载、比例、遮挡、整体画面和缩放/播放稳定验证。无真实 Chrome/Edge 会话或硬件性能验收。本分支 city-view 仍为原有选择逻辑，构建成功仅证明当前源码可构建，不能视为新长条已完成运行时接入。
 
 临时脚本、缓存、构建不提交；仅保留可复现报告。原 PR #22 更新后仍不合入。
 
