@@ -17,7 +17,7 @@ export interface ContributionLandscape {
 }
 
 /** 两种引擎共享播放/缩放/平移；City 不加载 Three.js、不创建 WebGL。 */
-export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href): ContributionLandscape {
+export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true): ContributionLandscape {
   const timeline=createTimeline(days.length),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:1,panX:0,panY:0,dark:false};
   let view=initialView,layer:LandscapeView|undefined,images:CityImages|undefined,assetPromise:Promise<CityImages>|undefined;
   let cityScene:CityScene|undefined;const assetAbort=new AbortController();
@@ -35,7 +35,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     const token=++generation;layer?.dispose();layer=undefined;timeline.pause();anchored=false;blocked=false;preparationError=undefined;notify();
     try{
       if(view==="city"){
-        cityScene??=planCityScene(days);assetPromise??=loadCityImages(assetBase,cityScene.keys,assetAbort.signal);const ready=await assetPromise;
+        cityScene??=planCityScene(days,cityWonders);assetPromise??=loadCityImages(assetBase,cityScene.keys,assetAbort.signal);const ready=await assetPromise;
         if(disposed||token!==generation)return;
         images=ready;layer=createCityView(cityScene,ready);
       }else{

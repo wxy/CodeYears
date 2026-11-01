@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>CodeYears · 奇观同数据对照</title>
+  <style>
+    :root{color-scheme:light;--bg:#fff;--ink:#1f2328;--muted:#67736b;--line:#d1d9e0;--surface:#f6f8fa}
+    :root[data-preview-theme=dark]{color-scheme:dark;--bg:#0d1117;--ink:#e6edf3;--muted:#9daaa4;--line:#30363d;--surface:#161b22}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    main{max-width:1600px;margin:32px auto;padding:0 28px}h1{font-size:34px;letter-spacing:-.04em;margin:8px 0}h2{font-size:18px;margin:0}p{margin:4px 0;color:var(--muted)}
+    .eyebrow{font-size:11px;letter-spacing:.12em;color:var(--muted)}.settings,.controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:22px 0}
+    label{font-size:12px;color:var(--muted)}button,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:7px 11px;cursor:pointer}select{margin-left:7px}
+    button:focus-visible,select:focus-visible{outline:2px solid #429c80;outline-offset:3px}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:24px}.panel{min-width:0;border-top:1px solid var(--line);padding-top:18px}.scene{height:clamp(440px,64vh,720px)}
+    .status,.detail,.metrics{font-size:12px;min-height:20px}.metrics{font-variant-numeric:tabular-nums}.foot{font-size:12px;margin:18px 0}a{color:#39886b}
+    @media(max-width:850px){.comparison{grid-template-columns:1fr}.scene{height:480px}main{padding:0 18px}}
+  </style>
+</head>
+<body><main>
+  <div class="eyebrow">CODEYEARS · 视觉对照</div><h1>同一段岁月，两种城市。</h1>
+  <p>左侧保留普通楼群，右侧让持续密集贡献汇成奇观。日期、每日数量与总贡献完全相同。</p>
+  <div class="settings">
+    <label>范围<select id="range"><option value="1">2024 · 一年</option><option value="3" selected>2023–2025 · 三年</option><option value="20">2006–2025 · 二十年</option></select></label>
+    <label>数据<select id="density"><option value="districts" selected>密集街区试排</option><option value="regular">常规</option><option value="dense">持续高密度</option><option value="sparse">稀疏</option><option value="empty">全零</option></select></label>
+    <label>页面外观<select id="appearance"><option value="light">浅色</option><option value="dark">深色</option></select></label>
+    <span id="summary" class="metrics" aria-live="polite"></span>
+  </div>
+  <div class="comparison">
+    <section class="panel"><h2>普通楼群</h2><p id="ordinary-metrics" class="metrics"></p><div id="ordinary" class="scene"></div><p id="ordinary-status" class="status" aria-live="polite"></p><p id="ordinary-detail" class="detail"></p></section>
+    <section class="panel"><h2>贡献奇观</h2><p id="wonder-metrics" class="metrics"></p><div id="wonder" class="scene"></div><p id="wonder-status" class="status" aria-live="polite"></p><p id="wonder-detail" class="detail"></p></section>
+  </div>
+  <div class="controls"><button id="zoom-out">− 缩小两侧</button><button id="zoom-in">＋ 放大两侧</button><button id="reset">重置视图</button><button id="replay">重播</button><button id="pause">暂停</button><button id="resume">继续</button><button id="skip">跳过</button><button id="close">关闭对照</button><button id="generate">重新生成</button></div>
+  <p id="wonder-list" class="metrics"></p>
+  <p class="foot">确定性示例数据，非真实 GitHub 贡献。“密集街区试排”每年含两块高密度区域，便于比较三类素材；其余选项沿用常规压力预览输入。每侧可分别拖动平移、滚轮缩放。体育馆 / 剧院 / 地标公园表示区域密度，不表示真实活动类型。地标公园与低贡献草地区分。首版阈值可调整，不保证每年生成奇观。<a href="/">返回 City / Terrain</a></p>
+</main><script type="module" src="/wonders.ts"></script></body>
+</html>
