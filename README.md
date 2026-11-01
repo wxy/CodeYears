@@ -63,7 +63,7 @@ npm run check
 npm run build
 ```
 
-在 Chrome 的 `chrome://extensions` 开启开发者模式，选择“加载已解压的扩展”，选择本项目的 `dist/` 目录。在 GitHub 个人主页贡献日历加载完成后，点击扩展图标，再选择“打开 CodeYears”。选择起止年份（默认最近三年，也可选择同一年）并生成 City。逐年读取全部成功后展示城市，可拖动平移、滚轮缩放、重置视图、暂停/继续、跳过或重播；生长百分比不表示已呈现到某个真实日期。图片只需调整取景后右键保存或复制，没有独立生成/分享面板。在“设置与数据说明”中刷新所选年份或清除当前访问者的主页缓存；每日数量展开后才建立表格。使用缓存前仍联网确认身份；后台隐藏时清空结果并销毁城市，返回后重新生成。
+在 Chrome 的 `chrome://extensions` 加载本项目 `dist/` 并允许扩展在 GitHub 运行。个人主页日历加载后自动出现“贡献图 / 城市 · CodeYears”，默认仍是原图；点击城市才按需加载最近三年的数据与素材。可选择起止年份后点“应用”，用缩放、平移和“全景”调整取景，或展开为页面内大画面，按 Esc/收起返回。生长约三秒，仅播放时显示暂停/直接查看，完成后可重播；完整缓存也能重播。切回原图会取消并释放城市，再打开先复核身份且不强制重播。工具栏图标可直接定位城市，无二次确认。右键保存帮助、每日明细、刷新/清缓存都在“更多”中；没有独立生成/分享面板。后台隐藏清空结果并返回原图，恢复后由用户再次打开城市。
 
 制作本地发行候选需要 Python 3，运行 `npm run package:city`。它先完整构建，再按发行清单生成 `release/codeyears-0.1.0-city.zip` 与 SHA-256；ZIP 根目录直接包含 manifest、运行资源、许可和隐私说明。固定文件顺序与 ZIP 元信息，同一输入及 Python/zlib 环境下可复现。`release/` 已忽略，不提交发行产物。打包不等于验收通过或商店发布。
 
@@ -71,7 +71,7 @@ npm run build
 
 `npm run dev` 监听源文件并重新构建；修改后在扩展管理页重新加载。它不向扩展注入开发服务器代码。
 
-当前 manifest 使用 `activeTab`、`scripting` 与 `storage`：主动点击后临时注入，本地保存按访问者隔离的年度数量；没有持久网站访问、Cookie 权限、自动 content script 或后台服务。生成风景时才动态加载本地 `landscape.js`；City 使用 Canvas 2D，按当前场景实际需要加载随包 PNG，将标定结果一次烘焙为长边不超过 384 像素的透明画布供播放复用，随后释放源位图。只有选择 Terrain 才导入 Three.js 分包并创建 WebGL。manifest 沿用向 GitHub 声明的本地资源范围，本轮未增加权限；本轮真实 Chrome 已确认默认三年新素材加载、近看和关闭；专项示例覆盖全部运行单元。Edge 和完整身份/权限验收仍待完成，范围见 [本轮报告](docs/reports/CALIBRATED-CITY-INTEGRATION.md)。
+manifest 的 `activeTab`、`scripting` 用于工具栏快捷定位，`storage` 保存隔离年度缓存；新增仅 `https://github.com/*` 匹配的自动 `entry.js`。轻量入口只识别 URL 与贡献 DOM，不读取每日数量或访问者身份，不提前请求历史/缓存/素材。点击城市后才加载本地 `content.js` 和 `landscape.js`。City 使用 Canvas 2D，素材按需标定烘焙并释放源位图；Terrain 仅留在开发预览中。没有 Cookie、所有网站权限、后台轮询或后端。本轮自动站点运行、紧凑 UI 和导航行为是新的验收范围，不能沿用旧版主动注入的真实 Chrome/Edge 结论，见 [本轮计划](docs/tasks/CITY-PROFILE-TABS.md)。
 
 ## 目录
 

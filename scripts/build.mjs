@@ -11,14 +11,21 @@ await build({
   configFile: false,
   publicDir: false,
   build: {
+    target: "es2022", outDir: values.outDir, emptyOutDir: false, watch,
+    lib: { entry: "src/extension/entry.ts", name: "CodeYearsEntry", formats: ["iife"], fileName: () => "entry.js" },
+  },
+});
+await build({
+  configFile: false,
+  publicDir: false,
+  build: {
     target: "es2022",
     outDir: values.outDir,
     emptyOutDir: false,
     watch,
     lib: {
       entry: "src/extension/content.ts",
-      name: "CodeYearsDataProbe",
-      formats: ["iife"],
+      formats: ["es"],
       fileName: () => "content.js",
     },
   },
