@@ -1,6 +1,7 @@
 import type { DailyContribution } from '../data/types';
 import { planWeeklyCity, type CityParcel, type WeeklyCity } from './city-parcels';
 import type { CityImages } from './city-assets';
+import { selectCityBuilding } from './city-building-style';
 import type { LandscapeView, LandscapeViewport } from './types';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
@@ -14,16 +15,13 @@ const districtZ=(block:number)=>block*(7+YEAR_GAP)+Math.floor(block/5)*PARK;
 export function planCityScene(days:readonly DailyContribution[]):CityScene {
   const weekly=planWeeklyCity(days);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
-    const {w,d,band,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
+    const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
     const seed=(hash^(hash>>>16))>>>0,variant=seed%2?'b':'a';
     let id:string,factor=1;
     if(kind==='grass')id=w===2?(seed%12===0?'pond-a':seed%12===1?'pond-b':seed%12===2?'plaza-a':seed%12===3?'plaza-b':`grass-2x2-${variant}`):`grass-1x1-${variant}`;
     else if(kind==='shrub')id=`sapling-${variant}`;
     else if(kind==='tree')id=w===2&&d===2?`forest-2x2-${variant}`:w===2?`small-grove-2x1-${variant}`:d===2?`small-grove-1x2-${variant}`:variant==='a'?'broadleaf-a':'conifer-b';
-    else if(band===1)id=w===3?(variant==='a'?'stadium-a':'terminal-b'):w===2?(variant==='a'?'police-a':'fire-b'):(variant==='a'?'townhouse-a':'mixed-use-b');
-    else if(band===2){id=w===2&&d===2?(variant==='a'?'townhouse-a':'mixed-use-b'):(variant==='a'?'apartment':'office');factor=w===2&&d===2?2:1}
-    else if(band===3){id='tower';factor=.82}
-    else {id=w===2&&d===2?(variant==='a'?'apartment':'office'):'tower';factor=w===2&&d===2?2:1}
+    else ({id,factor}=selectCityBuilding(parcel,seed));
     return {parcel,id,factor,x:districtX(weekly,parcel.block,parcel.x),z:districtZ(parcel.block)+parcel.z,w,d,flat:kind==='grass'};
   });
   const parkStarts=Array.from({length:Math.floor((weekly.rows-1)/5)},(_,i)=>(i+1)*5*(7+YEAR_GAP)+i*PARK-YEAR_GAP/2);

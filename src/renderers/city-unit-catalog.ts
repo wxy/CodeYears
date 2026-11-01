@@ -2,11 +2,14 @@ import buildings from '../../docs/design/city-units/v2/calibration/buildings.jso
 import ground from '../../docs/design/city-units/v2/calibration/ground.json';
 import vegetation from '../../docs/design/city-units/v2/calibration/vegetation.json';
 import legacy from '../../docs/design/city-units/v2/calibration/legacy-buildings.json';
+import h2 from '../../docs/design/city-units/v3/calibration/h2.json';
+import h3 from '../../docs/design/city-units/v3/calibration/h3.json';
+import h4 from '../../docs/design/city-units/v3/calibration/h4.json';
 import type { UnitSample } from './unit-calibration';
 
 /** 标定数据与预览共用；运行包只替换素材路径，不改写源图或坐标。 */
 export const CITY_UNIT_CATALOG: Record<string, { sample: UnitSample; file: string }> = Object.fromEntries(
-  ([...buildings.assets, ...ground.assets, ...vegetation.assets] as UnitSample[]).map(sample =>
+  ([...buildings.assets, ...ground.assets, ...vegetation.assets, ...h2.assets, ...h3.assets, ...h4.assets] as UnitSample[]).map(sample =>
     [sample.id, { sample, file: `unit-${sample.id}.png` }]),
 );
 

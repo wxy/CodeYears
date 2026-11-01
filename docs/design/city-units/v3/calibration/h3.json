@@ -1,0 +1,166 @@
+{
+  "assets": [
+    {
+      "id": "office-h3-a",
+      "file": "candidates/h3/office-h3-a.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 3,
+      "crop": [
+        274,
+        52,
+        781,
+        1465
+      ],
+      "anchor": [
+        559,
+        1463
+      ],
+      "supportEnvelope": {
+        "L": [
+          274,
+          1303
+        ],
+        "F": [
+          559,
+          1463
+        ],
+        "R": [
+          781,
+          1322
+        ],
+        "basis": "Manually selected visible outer masonry footing extrema and frontmost contact. Logical placement envelope includes compact entrance threshold; rear corner is hidden and only inferred by parallelogram closure. Approximately +/-6 px; not a four-corner physical camera measurement."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              520,
+              54
+            ],
+            [
+              655,
+              120
+            ]
+          ],
+          "basis": "Visible straight upper roof parapet edge toward lower right; manually selected endpoints, approximately +/-3 px."
+        },
+        "D": {
+          "points": [
+            [
+              394,
+              116
+            ],
+            [
+              520,
+              54
+            ]
+          ],
+          "basis": "Visible straight upper roof parapet edge toward upper right; D reported with increasing source x, approximately +/-3 px."
+        }
+      },
+      "heightReference": {
+        "base": [
+          533,
+          1443
+        ],
+        "top": [
+          533,
+          188
+        ],
+        "basis": "Vertical architectural body ruler; excludes roof machinery and antennae. Same source x. Main body cornice is visible; ground plane reference is inferred where upper setbacks obscure the vertical projection. Approximate visual height reference, +/-12 px, not a physical storey measurement."
+      },
+      "notes": [
+        "Source RGBA PNG is copied byte-for-byte; no pixel editing, recoloring, cropping or alpha thresholding was applied.",
+        "Crop is the half-open absolute bbox of alpha>8; runtime display cache may suppress very low alpha by the existing shared rule.",
+        "This is render-time direction/scale calibration. Unmeasured roof details and hidden geometry are not claimed to share an exact physical orthographic camera.",
+        "Ground envelope, not full transparent image or roof silhouette, determines centering and at least 0.1-cell setback.",
+        "A single corrective imagegen pass narrowed the whole ground plan and removed exterior ground planters/paving; the first draft was rejected because footprint-limited height was below H3."
+      ]
+    },
+    {
+      "id": "office-h3-b",
+      "file": "candidates/h3/office-h3-b.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 3,
+      "crop": [
+        308,
+        70,
+        811,
+        1463
+      ],
+      "anchor": [
+        560,
+        1462
+      ],
+      "supportEnvelope": {
+        "L": [
+          309,
+          1301
+        ],
+        "F": [
+          560,
+          1462
+        ],
+        "R": [
+          810,
+          1356
+        ],
+        "basis": "Manually selected visible outer masonry footing extrema and frontmost contact. Logical placement envelope includes compact entrance threshold; rear corner is hidden and only inferred by parallelogram closure. Approximately +/-6 px; not a four-corner physical camera measurement."
+      },
+      "axes": {
+        "W": {
+          "points": [
+            [
+              500,
+              72
+            ],
+            [
+              626,
+              135
+            ]
+          ],
+          "basis": "Visible straight upper roof parapet edge toward lower right; manually selected endpoints, approximately +/-3 px."
+        },
+        "D": {
+          "points": [
+            [
+              394,
+              128
+            ],
+            [
+              500,
+              72
+            ]
+          ],
+          "basis": "Visible straight upper roof parapet edge toward upper right; D reported with increasing source x, approximately +/-3 px."
+        }
+      },
+      "heightReference": {
+        "base": [
+          560,
+          1456
+        ],
+        "top": [
+          560,
+          337
+        ],
+        "basis": "Vertical architectural body ruler; excludes roof machinery and antennae. Same source x. Main body cornice is visible; ground plane reference is inferred where upper setbacks obscure the vertical projection. Approximate visual height reference, +/-12 px, not a physical storey measurement."
+      },
+      "notes": [
+        "Source RGBA PNG is copied byte-for-byte; no pixel editing, recoloring, cropping or alpha thresholding was applied.",
+        "Crop is the half-open absolute bbox of alpha>8; runtime display cache may suppress very low alpha by the existing shared rule.",
+        "This is render-time direction/scale calibration. Unmeasured roof details and hidden geometry are not claimed to share an exact physical orthographic camera.",
+        "Ground envelope, not full transparent image or roof silhouette, determines centering and at least 0.1-cell setback.",
+        "A single corrective imagegen pass narrowed the whole ground plan and removed exterior ground planters/paving; the first draft was rejected because footprint-limited height was below H3."
+      ]
+    }
+  ]
+}

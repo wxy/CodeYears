@@ -1,0 +1,166 @@
+{
+  "assets": [
+    {
+      "id": "tower-h4-a",
+      "file": "candidates/h4/tower-h4-a.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 4,
+      "crop": [
+        384,
+        70,
+        641,
+        1460
+      ],
+      "anchor": [
+        530,
+        1459
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              416,
+              117
+            ],
+            [
+              530,
+              166
+            ]
+          ],
+          "basis": "Manually selected left-to-front parapet edge of compact top crown, visible straight edge; endpoints approximately +/-3px."
+        },
+        "D": {
+          "points": [
+            [
+              530,
+              166
+            ],
+            [
+              608,
+              126
+            ]
+          ],
+          "basis": "Manually selected front-to-right parapet edge of the same crown, increasing image x; approximately +/-3px. D is reported toward upper-right."
+        }
+      },
+      "heightReference": {
+        "base": [
+          530,
+          1449
+        ],
+        "top": [
+          530,
+          166
+        ],
+        "basis": "Front structural rib at x=530, from ground-floor front footing to top crown front edge. Ground footing is selected just above contact/entrance paving; approximately +/-6px. Roof equipment is excluded."
+      },
+      "supportEnvelope": {
+        "L": [
+          384,
+          1378
+        ],
+        "F": [
+          530,
+          1459
+        ],
+        "R": [
+          640,
+          1398
+        ],
+        "basis": "Visible leftmost base ledge, frontmost entrance footing and right base ledge. Includes tiny entry paving. These form a logical support envelope rather than proven physical rectangle corners; hidden back point is inferred only by parallelogram closure. Approximately +/-5px."
+      },
+      "notes": [
+        "Generated RGBA source is 1024x1536. crop is the half-open alpha>8 bounding box. Source pixels are unchanged; display pipeline suppresses low-alpha residue only in cache.",
+        "One targeted built-in edit narrowed the broad first candidate and removed lateral annexes; the accepted silhouette is a straight shaft with compact crown.",
+        "Recorded main edges are mapped to +0.5/-0.5 with the existing render-time shear/vertical transform. This does not prove every unmeasured window/roof detail shares an exact physical camera.",
+        "Height scale reaches 4.000H before footprint constraint; approximate minimum per-side clearance W/D is 0.249865/0.302765 cell. Complete rooftop equipment is not used as the H4 reference.",
+        "Ground support is deliberately narrower than the available cell. Placement uses support-envelope center, not PNG or crown center. No new geometry stretching is introduced."
+      ]
+    },
+    {
+      "id": "tower-h4-b",
+      "file": "candidates/h4/tower-h4-b.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 4,
+      "crop": [
+        372,
+        56,
+        721,
+        1408
+      ],
+      "anchor": [
+        570,
+        1406
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              457,
+              108
+            ],
+            [
+              544,
+              159
+            ]
+          ],
+          "basis": "Visible left-to-front topmost crown parapet edge, manually selected; approximately +/-3px."
+        },
+        "D": {
+          "points": [
+            [
+              544,
+              159
+            ],
+            [
+              626,
+              110
+            ]
+          ],
+          "basis": "Visible front-to-right topmost crown parapet edge; same crown as W, increasing image x; approximately +/-3px."
+        }
+      },
+      "heightReference": {
+        "base": [
+          544,
+          1390
+        ],
+        "top": [
+          544,
+          159
+        ],
+        "basis": "Top of tallest main vertical rib at x=544. Its ground-level base is inferred below the visible rib/podium transition from the adjacent front footing plane; ground base is occluded by the compact entrance podium. Approximate +/-10px, not a fully visible single edge. Excludes roof equipment."
+      },
+      "supportEnvelope": {
+        "L": [
+          372,
+          1299
+        ],
+        "F": [
+          570,
+          1406
+        ],
+        "R": [
+          721,
+          1326
+        ],
+        "basis": "Visible outer left entry-planter footing, frontmost paved footing and right entry-planter footing. Includes all compact podium/planter contact. Logical L/F/R placement envelope; back contact is occluded and is inferred only for placement. Approximately +/-5px."
+      },
+      "notes": [
+        "Generated RGBA source is 1086x1448. crop is the half-open alpha>8 bounding box. Original pixels and alpha remain unchanged in source and runtime copy.",
+        "One targeted built-in edit narrowed the broad first candidate to keep the H4 body and minimum .1-cell ground inset compatible. B has asymmetric stacked terraces, green glass and stepped planting strips, distinct from straight-shaft blue A.",
+        "Main roof-edge slopes differ from standard in the source and are corrected to +0.5/-0.5 by existing render-time calibration. Complete physical geometry and hidden ground corners are not claimed.",
+        "Recorded reference reaches 4.000H with per-side clearance W/D approximately 0.117305/0.211477 cell. The reference uses an explicitly inferred ground base; minor local facade edges and high-alpha foliage fringe remain visual-review limits.",
+        "Silhouette, planted terraces and complete crown are preserved; no source pixel editing, mirroring, independent horizontal stretch or fabricated height inflation is used."
+      ]
+    }
+  ]
+}

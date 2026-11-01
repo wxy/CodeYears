@@ -1,0 +1,166 @@
+{
+  "assets": [
+    {
+      "id": "apartment-h2-a",
+      "file": "candidates/h2/apartment-h2-a.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 2,
+      "crop": [
+        169,
+        64,
+        875,
+        1441
+      ],
+      "anchor": [
+        539,
+        1439
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              530,
+              68
+            ],
+            [
+              609,
+              93
+            ]
+          ],
+          "basis": "Visible upper roof/back cornice silhouette, alpha>220 contour; endpoints with increasing x. Approximate common architectural direction, not proof all fine edges are collinear."
+        },
+        "D": {
+          "points": [
+            [
+              360,
+              98
+            ],
+            [
+              439,
+              71
+            ]
+          ],
+          "basis": "Visible upper roof/back cornice silhouette in the other ground direction; endpoints with increasing x. Approximate +/-2 px endpoint selection."
+        }
+      },
+      "heightReference": {
+        "base": [
+          539,
+          1426
+        ],
+        "top": [
+          539,
+          344
+        ],
+        "basis": "Manually selected front main-wall vertical from base contact to main cornice, excludes rooftop housings and the recessed top volume. Approximate +/-12 px."
+      },
+      "supportEnvelope": {
+        "L": [
+          176,
+          1269
+        ],
+        "F": [
+          539,
+          1439
+        ],
+        "R": [
+          869,
+          1265
+        ],
+        "basis": "Manual visible support extremities including facade footings and attached planters/balconies in front projection; asymmetric logical placement envelope, not a claim of three exact rectangle corners. Rear support is hidden and only parallelogram closure is inferred. Approximate +/-8 px."
+      },
+      "notes": [
+        "Original tool PNG preserved byte-for-byte in source and runtime copies; no programmatic masking, warping, recoloring or background removal.",
+        "crop is the half-open source pixel bbox of alpha>8; low-value exterior alpha is suppressed only by the existing display cache.",
+        "The support envelope is ground-centered for placement; rear corner is inferred, not measured.",
+        "The two selected roof axes are mapped at render time to +/-0.5, with vertical edges kept vertical. This does not recover a physical 3D camera or guarantee every drawn roof edge.",
+        "targetHeight=2 is the main-wall visual scale; rooftop details rise beyond the chosen reference and remain part of visual acceptance."
+      ]
+    },
+    {
+      "id": "apartment-h2-b",
+      "file": "candidates/h2/apartment-h2-b.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 2,
+      "crop": [
+        152,
+        25,
+        918,
+        1483
+      ],
+      "anchor": [
+        559,
+        1482
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              610,
+              83
+            ],
+            [
+              689,
+              105
+            ]
+          ],
+          "basis": "Visible upper roof/back cornice silhouette, alpha>220 contour; endpoints with increasing x. Approximate common architectural direction, not proof all fine edges are collinear."
+        },
+        "D": {
+          "points": [
+            [
+              260,
+              140
+            ],
+            [
+              339,
+              105
+            ]
+          ],
+          "basis": "Visible upper roof/back cornice silhouette in the other ground direction; endpoints with increasing x. Approximate +/-2 px endpoint selection."
+        }
+      },
+      "heightReference": {
+        "base": [
+          558,
+          1478
+        ],
+        "top": [
+          558,
+          370
+        ],
+        "basis": "Manually selected front main-wall vertical from base contact to main cornice, excludes rooftop housings and the recessed top volume. Approximate +/-12 px."
+      },
+      "supportEnvelope": {
+        "L": [
+          159,
+          1290
+        ],
+        "F": [
+          559,
+          1482
+        ],
+        "R": [
+          908,
+          1327
+        ],
+        "basis": "Manual visible support extremities including facade footings and attached planters/balconies in front projection; asymmetric logical placement envelope, not a claim of three exact rectangle corners. Rear support is hidden and only parallelogram closure is inferred. Approximate +/-8 px."
+      },
+      "notes": [
+        "Original tool PNG preserved byte-for-byte in source and runtime copies; no programmatic masking, warping, recoloring or background removal.",
+        "crop is the half-open source pixel bbox of alpha>8; low-value exterior alpha is suppressed only by the existing display cache.",
+        "The support envelope is ground-centered for placement; rear corner is inferred, not measured.",
+        "The two selected roof axes are mapped at render time to +/-0.5, with vertical edges kept vertical. This does not recover a physical 3D camera or guarantee every drawn roof edge.",
+        "targetHeight=2 is the main-wall visual scale; rooftop details rise beyond the chosen reference and remain part of visual acceptance."
+      ]
+    }
+  ]
+}

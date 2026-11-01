@@ -1,12 +1,17 @@
 import buildings from '../../docs/design/city-units/v2/calibration/buildings.json';
 import ground from '../../docs/design/city-units/v2/calibration/ground.json';
 import vegetation from '../../docs/design/city-units/v2/calibration/vegetation.json';
+import h2 from '../../docs/design/city-units/v3/calibration/h2.json';
+import h3 from '../../docs/design/city-units/v3/calibration/h3.json';
+import h4 from '../../docs/design/city-units/v3/calibration/h4.json';
 import {calibrate,drawUnit,loadUnit,project,slope,type Point,type UnitImage,type UnitSample} from './calibration';
 
-const samples=[...buildings.assets,...ground.assets,...vegetation.assets] as UnitSample[];
-const urls=import.meta.glob<string>('../../docs/design/city-units/v2/candidates/**/*.png',{eager:true,query:'?url',import:'default'});
+const samples=[...buildings.assets,...ground.assets,...vegetation.assets,...h2.assets,...h3.assets,...h4.assets] as UnitSample[];
+const urls=import.meta.glob<string>('../../docs/design/city-units/v{2,3}/candidates/**/*.png',{eager:true,query:'?url',import:'default'});
+const sourceFolder=(s:UnitSample)=>s.id.includes('-h2-')||s.id.includes('-h3-')||s.id.includes('-h4-')?'v3':'v2';
 const labels:Record<string,string>={
  'townhouse-a':'砖石住宅 A','mixed-use-b':'石材商住 B','police-a':'警局 A','fire-b':'消防局 B','stadium-a':'体育场 A','terminal-b':'铁路总站 B',
+ 'apartment-h2-a':'赤陶公寓 A · H2','apartment-h2-b':'浅石住宅 B · H2','office-h3-a':'棕铜退台办公 A · H3','office-h3-b':'蓝灰办公 B · H3','tower-h4-a':'蓝玻璃直塔 A · H4','tower-h4-b':'青绿退台塔 B · H4',
  'pond-a':'池塘 A','pond-b':'浅湖 B','plaza-a':'暖石广场 A','plaza-b':'灰石广场 B',
  'grass-1x1-a':'单格草坪 A','grass-1x1-b':'单格野草 B','grass-2x2-a':'四格草坪 A','grass-2x2-b':'四格野草 B',
  'broadleaf-a':'阔叶单树 A','conifer-b':'针叶单树 B','small-grove-2x1-a':'横向树丛 A','small-grove-2x1-b':'横向林带 B',
@@ -99,9 +104,9 @@ $<HTMLSelectElement>('#appearance').onchange=e=>{document.documentElement.datase
 for(const el of [guides,edge,zoom])el.addEventListener('change',schedule);
 const observer=new ResizeObserver(schedule);for(const el of [scene,raw,corrected])observer.observe(el);
 window.addEventListener('pagehide',()=>{disposed=true;abort.abort();cancelAnimationFrame(frame);observer.disconnect();for(const image of images.values())image.close();images.clear();for(const canvas of [scene,raw,corrected])canvas.width=canvas.height=0},{once:true});
-updateDetail();summary.textContent='正在读取二十二款本地候选…';
+updateDetail();summary.textContent=`正在读取 ${samples.length} 款本地候选…`;
 void(async()=>{
- const results=await Promise.allSettled(samples.map(async s=>[s.id,await loadUnit(urls[`../../docs/design/city-units/v2/${s.file}`],abort.signal)] as const));
+ const results=await Promise.allSettled(samples.map(async s=>[s.id,await loadUnit(urls[`../../docs/design/city-units/${sourceFolder(s)}/${s.file}`],abort.signal)] as const));
  for(const r of results)if(r.status==='fulfilled'){if(disposed)r.value[1].close();else images.set(...r.value)}
  if(disposed)return;
  const failed=results.filter(r=>r.status==='rejected').length;
