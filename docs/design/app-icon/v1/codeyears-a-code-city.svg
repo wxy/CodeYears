@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="a-title a-desc">
+  <title id="a-title">CodeYears · 代码成城候选</title>
+  <desc id="a-desc">深松绿底，代码括号环抱三座浅绿高低楼宇，表达贡献积累成城。</desc>
+  <defs><linearGradient id="a-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#214E41"/><stop offset="1" stop-color="#12392F"/></linearGradient></defs>
+  <rect width="512" height="512" rx="112" fill="url(#a-bg)"/>
+  <g fill="none" stroke="#8BC6A9" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M130 170 82 256l48 86"/>
+    <path d="m382 170 48 86-48 86"/>
+  </g>
+  <rect x="162" y="246" width="48" height="104" rx="7" fill="#76B698"/>
+  <rect x="230" y="154" width="48" height="196" rx="7" fill="#D5EBD0"/>
+  <rect x="298" y="208" width="48" height="142" rx="7" fill="#AFD5B2"/>
+</svg>

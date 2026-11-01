@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="b-title b-desc">
+  <title id="b-title">CodeYears · 时间环候选</title>
+  <desc id="b-desc">暖白底，C形时间环与简化城市轮廓，琥珀点表示岁月中的一个刻度。</desc>
+  <rect width="512" height="512" rx="112" fill="#F0ECDF"/>
+  <path d="M370 153a154 154 0 1 0 0 206" fill="none" stroke="#2D6653" stroke-width="43" stroke-linecap="round"/>
+  <rect x="197" y="247" width="50" height="94" rx="7" fill="#679B7B"/>
+  <rect x="269" y="181" width="50" height="160" rx="7" fill="#2D6653"/>
+  <rect x="355" y="132" width="36" height="36" rx="10" fill="#C79A56"/>
+</svg>
