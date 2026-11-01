@@ -31,7 +31,7 @@ function show() {
   const first = new Date(isoYearStart(start)).toISOString().slice(0, 10);
   const after = new Date(isoYearStart(end + 1)).toISOString().slice(0, 10);
   const days = generateDays(density.value as Density).filter(day => first <= day.date && day.date < after);
-  displayedRange = `${start === end ? start : `${start}–${end}`} ISO 周年`;
+  displayedRange = `${start === end ? start : `${start}–${end}`}`;
   document.querySelector("#year-title")!.textContent = `${displayedRange} · ${viewName()}`;
   document.querySelector("#summary")!.textContent = `${days.length} 天 · ${days.reduce((sum, day) => sum + day.count, 0).toLocaleString()} 次示例贡献`;
   legend.replaceChildren();

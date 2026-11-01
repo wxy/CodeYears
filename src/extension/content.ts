@@ -43,19 +43,19 @@ import type { TimelineState } from "../timeline/types";
     </style>
     <div class="panel">
       <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
-      <form><label>从 <select id="start-year" aria-label="起始 ISO 周年"></select></label><label>到 <select id="year" aria-label="结束 ISO 周年"></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="cancel" type="button" hidden disabled>取消</button></form>
-      <p class="note">ISO 周年：周一至周日归周四所在年，源日期不变；合计可能与 GitHub 公历年度不同。</p>
-      <output id="status" role="status" aria-live="polite">选择 ISO 周年范围，生成你的贡献之城。</output>
+      <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="cancel" type="button" hidden disabled>取消</button></form>
+      <output id="status" role="status" aria-live="polite">选择年份范围，生成你的贡献之城。</output>
       <progress id="loading-progress" value="0" max="1" hidden aria-label="公历源年加载进度"></progress>
       <section class="city" id="city" hidden aria-label="贡献之城">
         <div class="city-head"><h3 id="city-title">贡献之城</h3><p class="note" id="city-summary"></p></div>
         <div id="scene"></div>
+        <p class="note">调整缩放和平移后，在图上点右键，选择“图片存储为…”保存当前画面；也可选择“复制图片”。</p>
         <div class="city-controls"><span id="progress"></span><button id="zoom-out" type="button" aria-label="缩小景观">−</button><button id="zoom-in" type="button" aria-label="放大景观">＋</button><button id="reset-view" type="button">重置视图</button><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭城市</button></div>
       </section>
       <details id="data-settings"><summary>设置与数据说明</summary>
         <p id="identity" class="note"></p>
         <p class="note">显示当前 GitHub 会话可见的真实每日贡献；数量以明细为准。数据只缓存在本机，按访问者与主页隔离。刷新会重新请求所选年份，清除仅影响当前访问者在此主页的缓存。</p>
-        <p class="note">所选年份为 ISO 周年，完整周归入周四所在年。边界所需日期从相邻公历年读取，缓存仍按公历年保存；周年合计只包含范围内的源日期。未提供或未来日期不会补零。</p>
+        <p class="note">年份按完整周划分（ISO 周规则）：周一至周日归周四所在年。边界所需日期从相邻公历年读取，因此合计可能与 GitHub 公历年度不同。未提供或未来日期不会补零。</p>
         <div class="data-actions"><button id="refresh" type="button">刷新所选年份</button><button id="clear" type="button">清除此主页缓存</button></div>
       </details>
       <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
@@ -65,8 +65,8 @@ import type { TimelineState } from "../timeline/types";
   const select = shadow.querySelector<HTMLSelectElement>("#year")!;
   const startSelect = shadow.querySelector<HTMLSelectElement>("#start-year")!;
   for (const year of years) {
-    select.add(new Option(`${year} ISO`, String(year)));
-    startSelect.add(new Option(`${year} ISO`, String(year)));
+    select.add(new Option(String(year), String(year)));
+    startSelect.add(new Option(String(year), String(year)));
   }
   startSelect.value = String(years[Math.min(2, years.length - 1)]);
   const identity = context.viewer.state === "unknown" ? "身份未识别" : context.viewer.identity.kind === "signed-out" ? "未登录" : `已登录访问者 ${context.viewer.identity.login}`;
@@ -145,7 +145,7 @@ import type { TimelineState } from "../timeline/types";
     const requestedYears = Array.from({ length: lastSource - firstSource + 1 }, (_, index) => firstSource + index);
     const firstDate = new Date(windowStart).toISOString().slice(0, 10);
     const endDate = new Date(windowEnd).toISOString().slice(0, 10);
-    const range = `${start === end ? start : `${start}–${end}`} ISO 周年`;
+    const range = `${start === end ? start : `${start}–${end}`}`;
     const request = new AbortController();
     controller = request;
     setBusy(true);
@@ -155,10 +155,10 @@ import type { TimelineState } from "../timeline/types";
     let completedYears = 0;
     const warnings = new Set<string>();
     if (firstSource > firstNeeded || (lastSource < lastNeeded && lastNeeded <= calendarYear)) {
-      warnings.add("可用公历年度不足，所选周年边界不完整；仅保留已提供的真实日期。");
+      warnings.add("可用年度不足，所选年份边界不完整；仅保留已提供的真实日期。");
     }
     if (windowEnd > Date.UTC(calendarYear, now.getMonth(), now.getDate()) + 86400000) {
-      warnings.add("所选 ISO 周年尚未结束，仅显示已提供的真实日期，不补未来零值。");
+      warnings.add("所选年份尚未结束，仅显示已提供的真实日期，不补未来零值。");
     }
     try {
       const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, progress => {
@@ -171,7 +171,7 @@ import type { TimelineState } from "../timeline/types";
       if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
       visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
       if (!visibleDays.length) {
-        status.textContent = `所选 ISO 周年尚无已提供的日期。${warnings.size ? `\n${[...warnings].join(" ")}` : ""}`;
+        status.textContent = `所选年份尚无已提供的日期。${warnings.size ? `\n${[...warnings].join(" ")}` : ""}`;
         return;
       }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
