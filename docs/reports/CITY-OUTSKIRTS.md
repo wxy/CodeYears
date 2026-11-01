@@ -1,6 +1,6 @@
 # 城市外围自然地景模块
 
-> 状态（2026-11-01 最新用户纠正）：本轮程序地貌方案已被图片生成方案替代，PR #31 不能视为最终交付，不得据此合入。暂停程序地貌开发；最终外围林地/荒地/丘陵必须使用 imagegen 生成的透明 PNG，不以程序或 SVG 地貌作为最终内容。本地正在生成并保留资源，等待其资源接口后再实施。PR 保持打开且未合入，现有模块和接口仅为避免当前集成冲突而暂时原样保留。下文实现与检查仅为旧方案历史记录，不代表新方案完成或获接受。
+> 当前状态（2026-11-01）：已用正式 imagegen PNG 加载/绘制方案替换程序地貌。下面首轮程序实现与暂停记录仅留作历史，不作为最终内容；当前交付以文末“最终 PNG 版本”为准。PR #31 更新，暂不合入。
 
 2026-11-01。用户授权；从main `510e5237c07707c4c608b96e5f3739925ebbc20b`建立`codex/city-outskirts`，独立PR、不合入。仅新增city-outskirts.ts与本报告；未改city-view、日期映射、季度轴、出口规划、年份雕塑或全局文档。实现前已阅读当前PERFORMANCE，遵守静态按需和预算证据边界。
 
@@ -26,3 +26,16 @@
 ## 未验收
 
 真实出口路线与统一季度轴的组合、年份雕塑和建筑遮挡、用户整体美术接受、真实MV3/本机Chrome与性能预算仍由主代理验收。当前几何剪裁保证画布包络内，不代表本地camera已扩大视图；调用方须计入CITY_OUTSKIRT_MARGIN。仅验证1/20年代表尺寸，不穷举路网输入；出口处地景被裁成清晰廊道，草坡与实际路肩的最终衔接需集成复核。独立PR暂不合入。
+
+
+## 最终 PNG 版本
+
+2026-11-01，本地正式资源来自origin/codex/city-connected-landscape的8f451da，运行文件outskirts-{forest,meadow,hills}.png，均1536×1024；提示/哈希由本地docs/design/city-outskirts/v1/SOURCES.md维护。本分支仅fetch并git show提取原图到/tmp，不合并该分支、不复制资源入本提交。所有程序树木、山体、草沙blob均已移除，最终自然内容仅来自这三PNG。
+
+接口保持CITY_OUTSKIRT_MARGIN=12，新增CITY_OUTSKIRT_IDS三id常量及loadCityOutskirtsImages(base,signal?)，CityImages仅type导入；createCityOutskirtsPainter新增images第五参数。loader复用loadUnit的768上限及低alpha清理，将clean等比画入512×341独立canvas；每个源UnitImage在finally关闭。失败/取消时已创建canvas清零，返回画布由root既有closeCityImages释放。没有新像素算法。CitySprite暂按8×6占地、显示宽7/高4.6667，地面中心偏移与65%图高锚点作视觉近似，不宣称精确物理标定。建议root将loader纳入现有Promise.allSettled和统一释放；本模块不自行调度逐帧加载。
+
+每边最多9个稳定PNG簇，森林/草甸/丘陵交替，倍率.65–.75、轻微位置扰动；短边有叠接，长边有留白，不随年份增加数量。出口附近按到路线段距离主动跳过小簇，避免仅靠clip切开树冠。原外包络/环路内区及逐出口廊道clip保留；paint只提交drawImage，没有程序自然几何或新路径分配。首轮样板发现树冠裁平，已收小倍率、调整锚点及距环路位置后复核。极端出口/尺寸的最终构图仍需本地确认。
+
+最终实际Canvas：同云端Chromium154.0.8037.57、1600×1000、DPR1，以Playwright请求拦截从/tmp提供提取的真实三PNG；loader完整走fetch/loadUnit/clean/bake链路。使用width56，depth7/182.4，ringOuter3及历史四向出口（4/2/8/4车道），浅深两背景及同painter2倍放大。三图缓存均512×341；每尺寸11条预编译clip路径，重复paint不新增路径。单年最终16簇/paint、20年31簇/paint（浅深两次drawImage计数32/62）。四向出口各20个中心线位置（不含包络边界终点）的alpha采样均0；早期样板终点落于外包络抗锯齿边缘，后续明确排除该边界像素，不把抗锯齿当廊道内容。查看浅深PNG样板与放大结果，森林/草甸/岩丘均来自真实图片，未用程序造型替代。closeCityImages后三缓存尺寸均0×0。
+
+npm run check、临时目录build、diff --check通过。失败/取消清理由源码检查，未展开取消矩阵；未加事后单测。实际城市整合/出口路肩/远近缓存、主机MV3/性能预算和用户最终美术接受仍待本地，云端样板不能代替。本次只修改模块和自身报告，图像/样板/日志/构建清理。原程序方案被本版本替代，原PR31保持打开、暂不合入。
