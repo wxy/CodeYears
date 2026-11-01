@@ -2,6 +2,15 @@
 
 日期：2026-11-01。基线 `63327cb60c44d0f01c1ae43e2daaed6cb94d200d`；分支 `codex/city-static-vehicles`。只新增 `src/renderers/city-vehicles.ts` 和本报告，其他源码、图片、目录与依赖未改。不合入。
 
+## 审查修复 · 2026-11-01
+
+本轮沿用 `6808fa5` 更新原 PR #29，仅修改本模块与报告，不合入。按假设→旧版复现→最小修正→同 Canvas 对照推进；当前环境未找到同名 hypothesis-driven-debugging 技能，采用该调试步骤，不增加框架。
+
+1. 轮胎假设：每个圆盘独立平均深度导致远端轮先于车身侧面提交。实际浏览器四车型×四向，在世界高度 .06、两轮轴中心的相同外侧点采样：旧版每车一轮为车身色 `[96,118,128,255]`、另一轮为轮胎色 `[37,49,53,255]`，证实遮挡不一致。可见侧面的轮胎/轮毂现在独立保留，车身面排序完毕后整组提交；两轮不再参加面中心深度竞争，32 个采样点全部为轮胎色。
+2. 收顶假设：驾驶舱侧面的法线除了局部侧向分量，还有收窄产生的正高度分量。可见条件改为 `sign*(cos(angle)-sin(angle))*(roof-belt) + (side-roofSide) > epsilon`，只使用当前梯形侧面尺寸。π/4 下四车型两侧中点从旧版车身顶面色变为驾驶舱侧面/车窗色。诊断进一步发现轿车低矮侧面的平均深度仍可能低于车身顶面，因此把已可见侧面的排序下界设为顶面之后，窗/把手沿用所属面顺序。未增加通用 3D 可见性系统或角度特例。
+
+最终 Chromium 154 headless 同 Canvas 样板只覆盖原四向加 π/4 一个斜角，共四车型×五角度，并人工查看前后对照图；没有扩大角度矩阵。复画新增 Path2D 为 0，pageerror 为 0。`npm run check`、临时构建 `/tmp/codeyears-vehicle-fix-build`、`git diff --check` 均通过。未新增事后单测；临时脚本、截图和构建清理。以下首轮明暗/桥高/180车结果是历史证据，本轮没有重跑整个矩阵；本地实际四轴道路、69–90度桥路及最终城市遮挡仍由组合分支复核。
+
 ## 接口与实际实现
 
 ```ts
@@ -23,7 +32,7 @@ x/z 是车体地面中心，angle 是 `atan2(dz,dx)` 弧度，车头沿局部纵
 
 在 .4 宽车道内保留横向余量；轮胎向外约 .004，阴影另留很小包络。可见侧面/端面、顶面、车窗、深色底盘、双车轮与轮毂、暖白前灯/红色尾灯区分方向。调用方直接传入 CSS 车身颜色，顶面柔和提亮、侧面克制压暗；样板使用蓝灰、灰绿、陶土与灰紫，不内置随机配色。
 
-创建 painter 时复制参数、准备全部世界投影 Path2D 与阴影、明暗色字符串，并按地面深度 x+z 排车，车内按面深度排面，窗/把手与所属面一起排序。paint 只提交预备路径，不创建路径、画布、图片、模型、随机数或定时器；save/restore 保留调用方变换与绘制状态。没有资源解码、独立生命周期或交通模拟，闭包随当前 groundPaint 释放即可。车辆数量上限、路段/车道/桥面布置由主代理控制，一般不超过 180 辆；本模块不替调用方截断或重新抽样。
+创建 painter 时复制参数、准备全部世界投影 Path2D 与阴影、明暗色字符串，并按地面深度 x+z 排车，车内按面深度排面，窗/把手与所属面一起排序，可见轮胎/轮毂在车身之后统一提交。paint 只提交预备路径，不创建路径、画布、图片、模型、随机数或定时器；save/restore 保留调用方变换与绘制状态。没有资源解码、独立生命周期或交通模拟，闭包随当前 groundPaint 释放即可。车辆数量上限、路段/车道/桥面布置由主代理控制，一般不超过 180 辆；本模块不替调用方截断或重新抽样。
 
 ## 实际检查
 
@@ -122,4 +131,60 @@ VEHICLE_PROBE
 node /tmp/codeyears-vehicle-probe/browser.cjs
 git diff --check
 rm -rf /tmp/codeyears-vehicle-probe /tmp/codeyears-vehicle-build
+```
+
+## 本轮针对性复现
+
+在仓库根目录运行，使用上方同一 Chromium/外部 Playwright；命令工具正常启用网络权限。旧版固定为首轮提交，当前模块直接移除类型后在浏览器运行。
+
+```sh
+mkdir -p /tmp/codeyears-vehicle-fix
+git show 6808fa5:src/renderers/city-vehicles.ts > /tmp/codeyears-vehicle-fix/before.ts
+cat > /tmp/codeyears-vehicle-fix/check.cjs <<'VEHICLE_FIX_PROBE'
+const fs=require('node:fs'),{stripTypeScriptTypes}=require('node:module');
+const {chromium}=require('/opt/codex/cua_node/lib/node_modules/playwright-core');
+(async()=>{const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});try{
+ const page=await browser.newPage({viewport:{width:1600,height:830}}),errors=[];page.on('pageerror',e=>errors.push(String(e)));
+ await page.setContent('<style>body{margin:0;background:#e9ede5}</style><canvas width="1600" height="830"></canvas>');
+ for(const [path,name] of [['/tmp/codeyears-vehicle-fix/before.ts','beforePainter'],['src/renderers/city-vehicles.ts','afterPainter']])await page.addScriptTag({content:stripTypeScriptTypes(fs.readFileSync(path,'utf8')).replace(/export /g,'').replace('function createCityVehiclePainter','function '+name)});
+ const result=await page.evaluate(()=>{
+  const assert=(v,m)=>{if(!v)throw Error(m)};
+  const canvas=document.querySelector('canvas'),g=canvas.getContext('2d'),kinds=['sedan','suv','van','bus'],angles=[0,Math.PI/2,Math.PI,Math.PI*1.5,Math.PI/4],colors=['#7a939e','#8c9b83','#ae8b73','#8d819c'];
+  const text=(s,x,y)=>{g.setTransform(1,0,0,1,0,0);g.font='15px sans-serif';g.fillStyle='#364844';g.fillText(s,x,y)};
+  text('BEFORE (left) / AFTER (right): four axes + one diagonal',24,26);
+  for(let a=0;a<5;a++){text(['+W','+D','−W','−D','π/4'][a],a*320+140,56);for(let k=0;k<4;k++){
+   for(let version=0;version<2;version++){g.setTransform(230,0,0,230,a*320+80+version*160,130+k*180);(version?afterPainter:beforePainter)([{x:0,z:0,angle:angles[a],kind:kinds[k],color:colors[k]}])(g)}
+   text(kinds[k],a*320+132,180+k*180);
+  }}
+  const probe=document.createElement('canvas');probe.width=probe.height=800;const ctx=probe.getContext('2d');
+  function samples(factory,kind,angle){
+   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,800,800);ctx.setTransform(800,0,0,800,400,500);
+   factory([{x:0,z:0,kind,angle,color:'#7a939e'}])(ctx);
+   const length={sedan:.55,suv:.62,van:.72,bus:1}[kind],side={sedan:.125,suv:.135,van:.135,bus:.14}[kind],roof={sedan:.155,suv:.19,van:.215,bus:.23}[kind];
+   const c=Math.cos(angle),s=Math.sin(angle),sign=c-s>=0?1:-1,axle=length/2*(kind==='bus'?.7:.65);
+   const pixel=(u,v,h)=>{const x=c*u-s*v,z=s*u+c*v;return [...ctx.getImageData(Math.floor(400+800*.5*(x-z)),Math.floor(500+800*(.25*(x+z)-.5*h)),1,1).data]};
+   const tires=[-axle,axle].map(u=>pixel(u,sign*(side+.003),.06));
+   const cabin=[-1,1].map(sign=>pixel(0,sign*(side-.009),(roof+.095)/2));
+   return {tires,cabin};
+  }
+  const wheelChecks=[];
+  for(const kind of kinds)for(const angle of angles.slice(0,4)){
+   const before=samples(beforePainter,kind,angle),after=samples(afterPainter,kind,angle);
+   assert(after.tires.every(p=>p[0]===37&&p[1]===49&&p[2]===53&&p[3]===255),'both tires visible '+kind+' '+angle);
+   wheelChecks.push({kind,angle,before:before.tires,after:after.tires});
+  }
+  const diagonal=kinds.map(kind=>({kind,before:samples(beforePainter,kind,Math.PI/4).cabin,after:samples(afterPainter,kind,Math.PI/4).cabin}));
+  assert(diagonal.every(v=>v.after.every((pixel,i)=>pixel.toString()!==v.before[i].toString())),'diagonal both cabin sides restored');
+  let paths=0;const Native=Path2D;window.Path2D=new Proxy(Native,{construct(t,a){paths++;return Reflect.construct(t,a)}});
+  const painter=afterPainter(kinds.map((kind,i)=>({x:i,z:0,angle:angles[i],kind,color:colors[i]}))),prepared=paths;painter(ctx);painter(ctx);assert(paths===prepared,'paint allocated paths');window.Path2D=Native;
+  return {wheelChecks,diagonal,paintNewPaths:paths-prepared,status:'PASS'};
+ });
+ await page.screenshot({path:'/tmp/codeyears-vehicle-fix/sample.png'});console.log(JSON.stringify({browser:await browser.version(),errors,result}));if(errors.length)throw Error(errors.join());
+ }finally{await browser.close()}})().catch(e=>{console.error(e);process.exitCode=1});
+VEHICLE_FIX_PROBE
+node /tmp/codeyears-vehicle-fix/check.cjs
+npm run check
+npm run build -- --outDir /tmp/codeyears-vehicle-fix-build
+git diff --check
+rm -rf /tmp/codeyears-vehicle-fix /tmp/codeyears-vehicle-fix-build
 ```
