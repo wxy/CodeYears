@@ -3,6 +3,7 @@ import { createLandscape, type ContributionLandscape } from "../../src/renderers
 import type { ViewMode } from "../../src/renderers/types";
 import { generateDays, type Density } from "../../src/renderers/probe/data";
 import { isoYearStart } from "../../src/data/iso-week";
+import { createCityShare } from "../../src/extension/city-share";
 
 const legendStyle = document.createElement("style");
 legendStyle.textContent = cityLegendStyles;
@@ -20,18 +21,22 @@ document.querySelector<HTMLSelectElement>("#appearance")!.onchange = event => {
   document.documentElement.dataset.previewTheme = (event.target as HTMLSelectElement).value;
 };
 let city: ContributionLandscape | undefined;
+const shareRoot = document.createElement("div"); document.body.append(shareRoot);
+const shareShadow = shareRoot.attachShadow({mode:"open"});
+let share: ReturnType<typeof createCityShare> | undefined;
 let displayedRange = "";
 const viewName = () => view.value === "city" ? "贡献之城" : "时光山脉";
 const legend = document.querySelector<HTMLElement>("#year-legend")!;
 let paused = false;
 function show() {
+  share?.dispose(); share = undefined;
   city?.dispose();
   const start = range.value === "1" ? 2024 : range.value === "3" ? 2023 : 2006;
   const end = range.value === "1" ? 2024 : 2025;
   const first = new Date(isoYearStart(start)).toISOString().slice(0, 10);
   const after = new Date(isoYearStart(end + 1)).toISOString().slice(0, 10);
   const days = generateDays(density.value as Density).filter(day => first <= day.date && day.date < after);
-  displayedRange = `${start === end ? start : `${start}–${end}`} ISO 周年`;
+  displayedRange = `${start === end ? start : `${start}–${end}`}`;
   document.querySelector("#year-title")!.textContent = `${displayedRange} · ${viewName()}`;
   document.querySelector("#summary")!.textContent = `${days.length} 天 · ${days.reduce((sum, day) => sum + day.count, 0).toLocaleString()} 次示例贡献`;
   legend.replaceChildren();
@@ -44,6 +49,9 @@ function show() {
     pause.disabled = state.status === "completed";
     progress.textContent = error ?? `景观生长 · ${Math.round(state.revealedDays / state.totalDays * 100)}%`;
   }, view.value as ViewMode, new URL("/assets/city/", location.href).href);
+  const landscape = city;
+  share = createCityShare(shareShadow, {prepare: () => landscape.exportImage(), range: displayedRange,
+    filename: `CodeYears-${start === end ? start : `${start}-${end}`}.png`});
 }
 pause.onclick = () => paused ? city?.resume() : city?.pause();
 document.querySelector<HTMLButtonElement>("#skip")!.onclick = () => city?.skip();
@@ -51,8 +59,9 @@ document.querySelector<HTMLButtonElement>("#replay")!.onclick = () => city?.repl
 document.querySelector<HTMLButtonElement>("#zoom-out")!.onclick = () => city?.zoomBy(0.8);
 document.querySelector<HTMLButtonElement>("#reset-view")!.onclick = () => city?.resetView();
 document.querySelector<HTMLButtonElement>("#zoom-in")!.onclick = () => city?.zoomBy(1.25);
+document.querySelector<HTMLButtonElement>("#export")!.onclick = () => { void share?.open(); };
 density.onchange = show;
 range.onchange = show;
 view.onchange = () => { city?.setView(view.value as ViewMode); document.querySelector("#year-title")!.textContent = `${displayedRange} · ${viewName()}`; cityLegend.hidden = legend.hidden = view.value !== "city"; };
-window.addEventListener("pagehide", () => city?.dispose());
+window.addEventListener("pagehide", () => { share?.dispose(); city?.dispose(); });
 show();

@@ -1,6 +1,6 @@
 # City 首发准备清单
 
-补充：正式图标已通过独立 PR #34 提交三套设计候选（代码成城/时间环/等轴街区），尚未由用户选定或注册进manifest；不能标作发布图标已完成。
+补充：用户已选择第三款等轴街区，PR #34已导出正式16/32/48/128图标并注册manifest；本地组合构建通过。用户重载后Chrome工具栏已实际看到第三款等轴街区图标；Edge图标仍待验收。
 
 本地最终组合补证（2026-11-01）：贯通道路、两侧年份雕塑和正式AI图片外围已接入；当前Chrome已登录七年City、默认收起设置、惰性明细、暂停/跳过/关闭与重开通过，见 [组合报告](reports/CITY-CONNECTED-LANDSCAPE.md)。下面“本轮受控UI”为云端阶段记录；本机单账户路径现已补充，但A/B/退出、Edge和当前完整性能预算仍未完成。新增外围原图8,886,798 bytes，运行源目录约93MiB；不是安装ZIP或运行内存测量。
 
@@ -17,7 +17,7 @@
 | 项目 | 当前事实 | 发布前还须完成 |
 | --- | --- | --- |
 | 版本 | manifest 为 `0.0.0` | 由维护者确定正式版本并更新发布包。Chrome 规定版本各段不能全部为零，当前值不满足要求；本轮按授权保留，不代定版本。[官方版本规则](https://developer.chrome.com/docs/extensions/reference/manifest/version) |
-| 图标 | public 未见扩展图标，manifest 无 icons/action icon 声明 | 制作并验收品牌图标、登记实际资源；Chrome 建议包含 128/48/16 等用途尺寸，商店图标必备，不能用程序默认图标交付。[manifest 图标](https://developer.chrome.com/docs/extensions/reference/manifest/icons)、[商店图片要求](https://developer.chrome.com/docs/webstore/images) |
+| 图标 | 用户选定C等轴街区，public/icons已有16/32/48/128/512 PNG，manifest注册icons/action图标；Chrome重载实物已检查 | Edge及商店材料中的实际显示仍需核对；Chrome 建议包含 128/48/16 等用途尺寸，商店图标必备，不能用程序默认图标交付。[manifest 图标](https://developer.chrome.com/docs/extensions/reference/manifest/icons)、[商店图片要求](https://developer.chrome.com/docs/webstore/images) |
 | 许可证及素材权利 | 仓库未见项目 LICENSE/第三方 NOTICE 成品 | 维护者选择许可证；核对程序依赖的许可/随包声明、AI/参考素材来源及可分发范围，归档适用声明。公开仓库不等于已授予任意复用许可；本清单不替用户决定许可证，也不把该项称作浏览器强制字段。 |
 | 用户隐私与权限说明 | 有内部隐私约束，尚未见对外隐私政策与商店表单成品 | 提供可访问、与实物一致的隐私政策 URL；说明 GitHub 会话下可见的用户名/贡献日期数量、本地缓存作用域/有效期/清除、无外传/遥测及限制。逐项解释 activeTab/scripting/storage 和本地 WAR 用途，核对商店隐私与代码一致；不能把“只在本地”误填成完全不处理用户数据。[Chrome 隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy) |
 | 商店资料与包 | 尚无已核对的商店材料/发布 ZIP/审核回执 | 完成 City 单一用途描述、说明、支持联系方式、图标及至少一张无私有数据的 Chrome 截图，准备仅含发行产物的 ZIP；核验资源可加载、无临时文件/凭证和远程执行代码。Chrome 开发者账户、控制台配置及提交审核仍需维护者执行，不承诺审核时长。[Chrome 发布流程](https://developer.chrome.com/docs/webstore/publish)、[图片要求](https://developer.chrome.com/docs/webstore/images) |

@@ -3,7 +3,7 @@ import { createTimeline } from "../timeline/controller";
 import type { TimelineState } from "../timeline/types";
 import { closeCityImages, loadCityImages, type CityImages } from "./city-assets";
 import { createCityView, planCityScene, type CityScene } from "./city-view";
-import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
+import type { LandscapeImage, LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface ContributionLandscape {
   setView(view: ViewMode): void;
@@ -13,6 +13,7 @@ export interface ContributionLandscape {
   resume(): void;
   skip(): void;
   replay(): void;
+  exportImage(): Promise<LandscapeImage>;
   dispose(): void;
 }
 
@@ -72,6 +73,10 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     resume(){if(disposed||blocked||timeline.getState().status==="completed")return;playing=true;anchored=false;schedule()},
     skip(){if(disposed)return;playing=false;timeline.skip();schedule();notify()},
     replay(){if(disposed)return;timeline.replay(performance.now());timeline.pause();playing=true;anchored=false;schedule();notify()},
+    async exportImage(){
+      if(disposed||!layer?.exportImage)throw new Error("城市尚未准备好，请稍候再试。");
+      return layer.exportImage(viewport.dark);
+    },
     dispose(){
       if(disposed)return;disposed=true;generation++;assetAbort.abort();playing=false;timeline.pause();cancelAnimationFrame(raf);raf=0;observer.disconnect();themeObserver.disconnect();preference.removeEventListener("change",theme);document.removeEventListener("visibilitychange",visibility);
       host.removeEventListener("pointerdown",down);host.removeEventListener("pointermove",move);host.removeEventListener("pointerup",up);host.removeEventListener("pointercancel",up);host.removeEventListener("lostpointercapture",up);host.removeEventListener("wheel",wheel);layer?.dispose();layer=undefined;

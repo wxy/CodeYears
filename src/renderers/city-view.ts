@@ -73,6 +73,18 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   const minX=Math.min(-depth/2-outer-.4,...placed.map(p=>p.left))-.3,maxX=Math.max(width/2+outer+.4,...placed.map(p=>p.left+p.width))+.3;
   const minY=Math.min(-outer/2-.4,...placed.map(p=>p.top))-.5,maxY=Math.max((width+depth)/4+outer/2+.5,...placed.map(p=>p.top+p.height));
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
+  // 窗格在远景大幅缩小时容易随像素相位跳闪；逐级预滤波，避免每帧直接从384像素缩到十几像素。
+  const samples=new Map<HTMLCanvasElement,HTMLCanvasElement[]>();
+  for(const p of placed){
+    if(p.item.flat||samples.has(p.sprite.canvas))continue;
+    const levels=[p.sprite.canvas];
+    while(Math.max(levels.at(-1)!.width,levels.at(-1)!.height)>32){
+      const source=levels.at(-1)!,small=document.createElement('canvas');
+      small.width=Math.max(1,Math.ceil(source.width/2));small.height=Math.max(1,Math.ceil(source.height/2));
+      const target=small.getContext('2d')!;target.imageSmoothingQuality='high';target.drawImage(source,0,0,small.width,small.height);levels.push(small);
+    }
+    samples.set(p.sprite.canvas,levels);
+  }
   const ground=document.createElement('canvas'),unit=Math.min(48,3072/(maxX-minX));
   ground.width=Math.ceil((maxX-minX)*unit);ground.height=Math.ceil((maxY-minY)*unit);
   // 同一绘制序列供全景与近景缓存使用，避免缩放时改变遮挡与道路几何。
@@ -174,7 +186,7 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
       context.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);context.clearRect(0,0,viewport.width,viewport.height);
       const scale=fitScale(viewport)*viewport.zoom;
       const sx=(x:number)=>viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,sy=(y:number)=>viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale;
-      context.imageSmoothingEnabled=true;context.imageSmoothingQuality=scale<10?'medium':'high';
+      context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
       if(scale<=unit*1.25)context.drawImage(ground,sx(minX),sy(minY),(maxX-minX)*scale,(maxY-minY)*scale);
       else{
         const key=[pw,ph,scale,viewport.panX,viewport.panY].join(',');
@@ -192,10 +204,34 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
         const x=sx(p.left),y=sy(p.top),w=p.width*scale,h=p.height*scale;
         if(x+w<0||x>viewport.width||y+h<0||y>viewport.height)continue;
         const growth=Math.min(1,level/Math.max(.1,p.groundY-p.top));if(growth<=0)continue;
-        context.save();context.beginPath();context.rect(x-1,sy(p.groundY)-(p.groundY-p.top)*scale*growth,w+2,h+2);context.clip();context.globalAlpha=Math.min(1,growth*4);
-        context.drawImage(p.sprite.canvas,x,y,w,h);context.restore();
+        context.save();
+        if(growth<1){context.beginPath();context.rect(x-1,sy(p.groundY)-(p.groundY-p.top)*scale*growth,w+2,h+2);context.clip();context.globalAlpha=Math.min(1,growth*4)}
+        let source=p.sprite.canvas;
+        const levels=samples.get(p.sprite.canvas)!;
+        for(let i=1;i<levels.length;i++){
+          const sample=levels[i];
+          if(sample.width<w*viewport.dpr||sample.height<h*viewport.dpr)break;
+          source=sample;
+        }
+        context.drawImage(source,x,y,w,h);context.restore();
       }
     },
-    dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear()},
+    async exportImage(dark){
+      const spanX=maxX-minX,spanY=maxY-minY;
+      const scale=Math.min(8192/Math.max(spanX,spanY),Math.sqrt(32_000_000/(spanX*spanY)));
+      const output=document.createElement('canvas');output.width=Math.floor(spanX*scale);output.height=Math.floor(spanY*scale);
+      const width=output.width,height=output.height;
+      try{
+        const target=output.getContext('2d')!;
+        target.fillStyle=dark?'#0d1117':'#ffffff';target.fillRect(0,0,width,height);
+        target.setTransform(scale,0,0,scale,-minX*scale,-minY*scale);target.imageSmoothingQuality='high';
+        // 独立重画完整最终城市，不放大屏幕截图，不改变镜头或Time Travel进度。
+        paintGround(target);
+        for(const p of placed)if(!p.item.flat)target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height);
+        const blob=await new Promise<Blob>((resolve,reject)=>output.toBlob(blob=>blob?resolve(blob):reject(new Error('图片编码失败。')),'image/png'));
+        return {blob,width,height};
+      }finally{output.width=output.height=0}
+    },
+    dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
   };
 }

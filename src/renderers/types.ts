@@ -12,10 +12,12 @@ export interface LandscapeViewport {
   width: number; height: number; dpr: number;
   zoom: number; panX: number; panY: number; dark: boolean;
 }
+export interface LandscapeImage { blob: Blob; width: number; height: number }
 export interface LandscapeView {
   canvas: HTMLCanvasElement;
   maxZoom?(viewport: LandscapeViewport): number;
   draw(progress: number, viewport: LandscapeViewport): void;
   description(): string;
+  exportImage?(dark: boolean): Promise<LandscapeImage>;
   dispose(): void;
 }

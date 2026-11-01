@@ -22,7 +22,7 @@ function show() {
         : x >= 30 && x < 33 && z >= 4 ? 50
         : x >= 1 && x <= 40 ? 3 + index % 5 : 0 };
     });
-  $('#summary').textContent = `${start}–${end} ISO 周年 · ${days.length.toLocaleString()} 天 · ${days.reduce((sum, day) => sum + day.count, 0).toLocaleString()} 次贡献`;
+  $('#summary').textContent = `${start}–${end} · ${days.length.toLocaleString()} 天 · ${days.reduce((sum, day) => sum + day.count, 0).toLocaleString()} 次贡献`;
   for (const [id, enabled] of [['ordinary', false], ['wonder', true]] as const) {
     const scene = planCityScene(days, enabled), parcels = scene.weekly.parcels, wonders = parcels.filter(p => p.wonder);
     const indices = parcels.flatMap(p => p.indices), unique = new Set(indices), total = parcels.reduce((sum, p) => sum + p.count, 0);
