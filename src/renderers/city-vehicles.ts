@@ -10,7 +10,7 @@ interface Face { path: Path2D; color: string; shade: string; depth: number }
 export function createCityVehiclePainter(vehicles: readonly CityVehicle[]): (context: CanvasRenderingContext2D) => void {
   const models = vehicles.map(vehicle => {
     const { x, z, angle, color, kind, elevation = 0 } = vehicle;
-    const c = Math.cos(angle), s = Math.sin(angle), faces: Face[] = [];
+    const c = Math.cos(angle), s = Math.sin(angle), faces: Face[] = [], wheels: Face[] = [];
     const [length, width, roof] = kind === 'sedan' ? [.55, .25, .155]
       : kind === 'suv' ? [.62, .27, .19] : kind === 'van' ? [.72, .27, .215] : [1, .28, .23];
     const half = length / 2, side = width / 2, belt = .095, bottom = .04;
@@ -40,7 +40,7 @@ export function createCityVehiclePainter(vehicles: readonly CityVehicle[]): (con
       [half+.015,side+.008,.002],[-half-.015,side+.008,.002]], '#18262a', 0);
     const shadow = faces.pop()!;
     // 底盘、车身顶面及朝向镜头的两个侧面。
-    face([[-half,-side,belt],[half,-side,belt],[half,side,belt],[-half,side,belt]], color, -.12);
+    const bodyTop = face([[-half,-side,belt],[half,-side,belt],[half,side,belt],[-half,side,belt]], color, -.12);
     for (const sign of [-1, 1]) {
       if (sign * sideFacing > 1e-8) {
         face([[-half,sign*side,bottom],[half,sign*side,bottom],
@@ -62,9 +62,11 @@ export function createCityVehiclePainter(vehicles: readonly CityVehicle[]): (con
     face([[roofRear,-roofSide,roof],[roofFront,-roofSide,roof],
       [roofFront,roofSide,roof],[roofRear,roofSide,roof]], color, -.18);
     for (const sign of [-1, 1]) {
-      if (sign * sideFacing > 1e-8) {
+      if (sign * sideFacing * (roof-belt) + side-roofSide > 1e-8) {
         const v = sign * side, rv = sign * roofSide;
         const panel = face([[rear,v,belt],[front,v,belt],[roofFront,rv,roof],[roofRear,rv,roof]], color, .18);
+        // 收顶侧面在车身顶面之上，低矮斜背也不能被顶面的平均深度盖回。
+        panel.depth = Math.max(panel.depth, bodyTop.depth + .00001);
         const windows = kind === 'bus' ? 5 : kind === 'van' ? 1 : 2;
         const start = kind === 'van' ? front - .16 : rear + .025;
         const end = front - .02, step = (end-start) / windows;
@@ -95,10 +97,12 @@ export function createCityVehiclePainter(vehicles: readonly CityVehicle[]): (con
           const a = i / 12 * Math.PI * 2;
           points.push([u+Math.cos(a)*r, sign*(side+.003+(r<radius?.001:0)), radius+Math.sin(a)*r]);
         }
-        face(points, fill);
+        wheels.push(face(points, fill)); faces.pop();
       }
     }
     faces.sort((a, b) => a.depth - b.depth);
+    // 可见轮胎在车身侧面外，整组置后，避免后轮被面的平均深度误遮挡。
+    faces.push(...wheels);
     return { depth: x+z, shadow: shadow.path, faces };
   });
   models.sort((a, b) => a.depth - b.depth);
