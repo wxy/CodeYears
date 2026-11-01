@@ -14,7 +14,7 @@ export interface CityPanel {
 }
 
 /** 用户选择城市后才加载；入口负责原图切换、后台与导航生命周期。 */
-export function mountCityPanel(host: HTMLElement): CityPanel {
+export function mountCityPanel(host: HTMLElement, onSummary: (text: string) => void): CityPanel {
   let context = readPageContext(document, new URL(location.href));
   const years = [...new Set(Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
     .map(link => Number(link.id.slice("year-link-".length)))
@@ -26,13 +26,13 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       ${cityLegendStyles}
       :host { display:block; color:var(--fgColor-default,#1f2328); font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
       * { box-sizing:border-box; } [hidden] { display:none !important; }
-      .panel { background:var(--bgColor-default,#fff); border:1px solid var(--borderColor-default,#d1d9e0); border-radius:12px; }
+      .panel { background:var(--bgColor-default,#fff); }
       .bar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:10px 12px; }
       form { display:flex; align-items:center; gap:6px; margin-right:auto; }
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
-      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0 12px; }
+      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { display:none; margin:0 12px; } .expanded .summary { display:block; }
       .status { display:flex; align-items:center; gap:8px; padding:0 12px; } output { white-space:pre-line; } output:empty { display:none; }
       #loading-progress { width:100%; accent-color:#268f80; } .loading { padding:0 12px; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
@@ -88,6 +88,8 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
   let controller: AbortController | undefined, city: ContributionLandscape | undefined, timelineState: TimelineState | undefined;
   let visibleDays: readonly DailyContribution[] = [];
   const currentContext = () => readPageContext(document, new URL(location.href));
+  const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
+  const setSummary = (text: string) => { summary.textContent = text; onSummary(text); };
   const collapse = (restoreFocus = true) => {
     if (!dialog.open) return;
     dialog.close(); dialog.before(panel); panel.classList.remove("expanded");
@@ -140,9 +142,9 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
     const firstSource = Math.max(firstNeeded, years.at(-1)!), lastSource = Math.min(lastNeeded, years[0], calendarYear);
     const requestedYears = Array.from({ length: lastSource - firstSource + 1 }, (_, index) => firstSource + index);
     const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
-    const range = String(start === end ? start : `${start}–${end}`);
+    const range = selectedRange();
     const request = new AbortController(); controller = request;
-    resetResult(); setBusy(true); more.open = false; retry.hidden = true;
+    resetResult(); setSummary(`${range} · 正在读取…`); setBusy(true); more.open = false; retry.hidden = true;
     loadingProgress.max = requestedYears.length; loadingProgress.value = 0; loading.hidden = false;
     preparing.textContent = "正在读取贡献数据…"; status.textContent = "正在确认身份…";
     let completedYears = 0;
@@ -164,10 +166,10 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
       visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
-      if (!visibleDays.length) { status.textContent = "所选年份尚无已提供的日期。"; preparing.textContent = "暂无可展示的数据"; return; }
+      if (!visibleDays.length) { setSummary(`${range} · 暂无数据`); status.textContent = "所选年份尚无已提供的日期。"; preparing.textContent = "暂无可展示的数据"; return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       status.textContent = [...warnings].join(" "); details.hidden = false;
-      summary.textContent = `${range} · ${total.toLocaleString()} 次贡献`;
+      setSummary(`${range} · ${total.toLocaleString()} 次贡献`);
       preparing.textContent = "正在准备城市素材…";
       const module = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
       request.signal.throwIfAborted();
@@ -175,7 +177,7 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       city = module.createLandscape(cityHost, visibleDays, (state, error) => {
         if (!active) return;
         timelineState = state;
-        if (error) { status.textContent = error; preparing.textContent = "城市未能加载"; retry.hidden = false; }
+        if (error) { setSummary(`${range} · 城市未能加载`); status.textContent = error; preparing.textContent = "城市未能加载"; retry.hidden = false; }
         if (cityHost.querySelector("canvas")) hasPresented = true;
         updateControls();
       }, "city");
@@ -183,6 +185,7 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
     } catch (error) {
       if (!active || controller !== request) return;
       resetResult();
+      setSummary(`${range} · ${request.signal.aborted ? "已取消读取" : "读取失败"}`);
       status.textContent = request.signal.aborted ? "请求已取消。" : error instanceof Error ? error.message : "读取失败，请重试。";
       preparing.textContent = request.signal.aborted ? "已取消读取" : "城市未能加载"; retry.hidden = false;
     } finally {
@@ -202,13 +205,13 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
   clear.onclick = async () => {
     if (!active || busy) return;
     const request = new AbortController(); controller = request;
-    resetResult(); setBusy(true); cancel.hidden = true; more.open = false; retry.hidden = true;
+    resetResult(); setSummary(`${selectedRange()} · 正在清除缓存…`); setBusy(true); cancel.hidden = true; more.open = false; retry.hidden = true;
     status.textContent = "正在确认身份并清除此主页缓存…";
     try {
       await clearContributionCache(context, request.signal, currentContext);
-      if (active && !request.signal.aborted) { status.textContent = "已清除此访问者在当前主页的年度缓存。"; preparing.textContent = "重新读取后可查看城市"; retry.hidden = false; }
+      if (active && !request.signal.aborted) { setSummary(`${selectedRange()} · 缓存已清除`); status.textContent = "已清除此访问者在当前主页的年度缓存。"; preparing.textContent = "重新读取后可查看城市"; retry.hidden = false; }
     } catch (error) {
-      if (active && controller === request) { status.textContent = error instanceof Error ? error.message : "缓存清除失败。"; retry.hidden = false; }
+      if (active && controller === request) { setSummary(`${selectedRange()} · 缓存清除失败`); status.textContent = error instanceof Error ? error.message : "缓存清除失败。"; retry.hidden = false; }
     } finally { if (controller === request) { controller = undefined; setBusy(false); } }
   };
   const deactivate = () => {
