@@ -68,3 +68,36 @@ git diff --check
 - 用户已明确取消独立测试账户和A/B登录切换验收；本轮未覆盖，不索取账号、密码、Cookie，也不将其列为本轮要求用户完成的阻塞。身份逻辑没有修改。
 - 没有接入已关闭#35导出/分享，也没有增加缩放百分比或最大倍率入口。
 - 停止临时HTTP服务、关闭本次Playwright浏览器，删除 `/tmp/codeyears-page-polish` 内构建、npm缓存、夹具、输入与日志；只长期保留任务/报告。提交前diff检查与文件边界核对通过，不提交任何过程产物。
+
+## 原PR #47追加：批次让出与实际界面反馈
+
+2026-11-02继续原分支，在 `d6f009563332766697ef24cf0b03765a71affe1f` 后追加。主代理报告原菜单/Esc/真实方向键主路径已在本地通过，本节不撤销该范围。用户提供的本机性能诊断：147463B renderer、regular7301天/93111，填入2696.2ms、长任务775ms；另一次857ms任务连续包含source-2007至2018的12个updateDays，单批createCityView约40–93ms、plan约5–37ms，而mip每批2–5ms、loadUnit像素块通常<10ms。**这些是主代理提供的证据，不是本云端测得的时长。** 修复针对已证明的无新素材快照微任务链，未将问题归因于GPU/mip或新增共享缓存重构。
+
+### 最小实现
+
+- progressive City的updateDays先递增generation，再 `await new Promise<void>(resolve=>setTimeout(resolve,0))`，恢复后立即throwIfAborted并检查disposed/token，然后才planCityScene。让浏览器有处理其他任务、输入与绘制的机会；不是Promise.resolve微任务，不为观赏延长加载。原资产等待、顺序、图层交换与650ms动画合同不变，Promise仍在资产就绪/新层交换时resolve。
+- 英文More实际页面核对后，语言行与主页操作之间增加1px分隔和12px留白；原主页/帮助区分隔保留，逐日明细/帮助/图例折叠行分别加轻边框和6px间距，原生三角放在行内。数据按钮max-width100%、正常换行/长词断行，保持既有组件与文案。
+- dialog追加原生 `closedby="any"`，不加兼容框架或全局遮罩事件。沿既有cancel→collapse生命周期恢复toolbar/画布位置和展开按钮焦点；既有Esc菜单优先规则保留。document pointerdown会在遮罩点击时先关闭More，随后原生cancel收起dialog；内容内操作仍由浏览器原生light-dismiss判定，避免按坐标猜测拖动。
+
+原生行为核对来源：[MDN dialog closedby说明](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog#closedby)明确any支持light-dismiss、平台关闭和开发者关闭；[MDN浏览器支持数据](https://github.com/mdn/browser-compat-data/blob/main/html/elements/dialog.json)的Chrome version_added=134。本轮系统Chromium154实际存在HTMLDialogElement.prototype.closedBy，真实点击验证通过。尝试的两条Chrome blog猜测地址返回404，未据此认定支持；以上文档、支持数据和直接实测才作为依据。
+
+### 实际验证与复现
+
+复用Node24.19.0/npm11.9.0/Chromium154环境及已装锁文件依赖。运行 `npm run check`、`npm run build -- --outDir /tmp/codeyears-batch-yield/dist`、`git diff --check`通过；界面反馈追加及折叠行marker收口后再次check/build，最终renderer147631 bytes；最终构建单年/菜单/遮罩/拖动/键盘复查通过，销毁live0且pageerror为空。正式renderer、content及原PNG在临时HTTP4196直接运行，无依赖、locale、数据/缓存/布局/素材变更，也未新建单元测试。
+
+二十年输入复用仓库 `generateDays('regular')`，seed初始20060101；每天 `seed=(Math.imul(seed,1664525)+1013904223)>>>0`，`count=seed%5===0?0:1+seed%30`，从公历2006-01-01生成至2025-12-31，再过滤ISO展示窗口2006-01-02至2025-12-28（含）。只读诊断模块临时导出现有generateDays/planCityScene作守恒交叉核对，不替换正式renderer。reservedYears=2006–2025，在同一场景中按源年2006到2025依次 `await field.updateDays(all.filter(d=>+d.date.slice(0,4)<=year))`；每批调用前排队一个0ms任务设置sentinel，同时记录原生RAF/Canvas drawImage回调，最终在浏览器外以100ms轮询等待state.completed，未调用skip。
+
+| 追加路径 | 实际结果 |
+| --- | --- |
+| 二十年顺序自然填入 | PASS。20批均完成，最终state.completed/7301；原始days、cells、parcel成员数与唯一成员数均7301，原量与parcel量均93111；未补未知日期0。20个sentinel全部在该批resolve前执行，每批均有RAF及drawImage回调，表明批次之间确实可处理普通任务与绘制回调。不是完整输入延迟或硬件呈现时限保证。 |
+| resolve合同 | PASS。批次resolve时仍观测playing，后续自然completed；没有将updateDays改为等待650ms动画。Linux软件会话各批墙钟包含PNG、CPU和调度；不能与本机2696.2ms/775ms直接比较或宣称提速。 |
+| 让出时立即关闭 | PASS。调用updateDays后同任务立即dispose，await拒绝AbortError；用临时Proxy记录输入map访问=0，新增canvas=0，200ms后live canvas=0。说明恢复后取消检查发生在规划前；未隐藏错误。 |
+| 正常单年完整数据路径 | PASS。2024年度HTML从同LCG输入生成完整366日与精确h2/英文tooltip，经正式content/parser/loader/cache路径按ISO筛选，最终364日/4487；与合成源数据过滤一致。API/身份为受控替身。首次断言读了body面板ShadowRoot而表格实际在toolbar ShadowRoot，得到0行；修正测试定位至#details后通过，未据此改产品逻辑。 |
+| 英文More边界与宽度 | PASS。实际英文截图目视检查：语言/This profile/Help and data边界、折叠行边框清楚。语言下边线与帮助/图例框均1px。1440px视口菜单clientWidth/scrollWidth=388/388，360px视口342/342，两个英文操作按钮分别145/145、120/120，无水平溢出。折叠与展开均可用。截图仅TMP，结束删除。 |
+| 原生遮罩与焦点 | PASS。展开后实际mouse.click(5,5)落遮罩：收起、焦点回展开按钮；More开启时点击遮罩同样完成收起。不是模拟cancel事件。 |
+| 内容点击与拖动不误关 | PASS。点击帮助、画布、缩放按钮均保持dialog.open；场景内拖动，以及从内容拖到遮罩后松开，均不触发关闭。随后独立遮罩点击仍可关闭。 |
+| Esc/键盘/关闭回归 | PASS。第一Esc仅关More、dialog仍开，第二Esc收起；正常scene聚焦ArrowRight产生新绘制，最后dispose后live canvas=0、pageerror=[]。未改前轮已通过的方向键和原图/年份处理。 |
+
+批次验证不将普通任务sentinel冒充真实硬件输入延迟；RAF/绘制回调也不冒充GPU帧率。本机regular/sparse/dense、长任务、静止/重复关闭和真实MV3重载按用户指示由主代理最后复核，不将本云端结果写成完整性能预算通过。不要求隔离账号或A/B切换。
+
+测试页面、临时诊断编译、模拟HTML/输入、截图、下载的文档、日志及正式测试构建均位于 `/tmp/codeyears-batch-yield`，完成停止服务器/浏览器并删除。仅追加自己的任务/报告，仍更新原PR #47，不另建PR、不合入或发布。

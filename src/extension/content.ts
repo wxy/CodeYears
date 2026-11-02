@@ -47,14 +47,17 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }
       .more-panel { position:absolute; z-index:3; right:0; top:100%; width:390px; max-width:100%; max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
-      .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+      .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       .more-panel h3 { margin:0 0 8px; font-size:12px; font-weight:600; }
       .more-section + .more-section { margin-top:12px; padding-top:12px; border-top:1px solid var(--borderColor-default,#d1d9e0); }
-      .more-section > details > summary { padding:6px 0; list-style:disclosure-closed; }
-      .more-section > details[open] > summary { list-style:disclosure-open; }
+      .more-section > details { margin-top:6px; padding:0 8px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; }
+      .more-section > details[open] { padding-bottom:8px; }
+      .more-section > details > summary { padding:6px 0; list-style:disclosure-closed inside; }
+      .more-section > details[open] > summary { list-style:disclosure-open inside; }
       .more-section > details > summary::-webkit-details-marker { display:inline; }
       .more-section .city-legend { margin:0; padding:4px 0 0; border-top:0; }
       .more-panel p { margin:0 0 10px; } .data-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+      .data-actions button { max-width:100%; white-space:normal; overflow-wrap:anywhere; text-align:left; }
       #details summary { padding:6px 0; } .days { max-height:220px; overflow:auto; } table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; } td,th { padding:3px 6px; text-align:left; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       dialog { color:inherit; background:var(--bgColor-default,#fff); width:min(1400px,calc(100vw - 40px)); height:calc(100dvh - 40px); max-width:none; max-height:none; padding:0; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:14px; }
       dialog::backdrop { background:#0d111799; }
@@ -69,7 +72,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
         <div class="view-tools" hidden><button id="zoom-out" type="button" data-i18n-label="zoomOut">−</button><button id="zoom-in" type="button" data-i18n-label="zoomIn">＋</button><button id="reset-view" type="button" data-i18n="fitView"></button></div>
       </div>
-    </section><dialog data-i18n-label="expandedCity"></dialog>`;
+    </section><dialog closedby="any" data-i18n-label="expandedCity"></dialog>`;
   controls.innerHTML = `<style>${styles}
     :host { display:block; width:100%; min-width:0; }
     .bar { padding:0; gap:6px; }
