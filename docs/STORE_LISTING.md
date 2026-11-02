@@ -1,6 +1,6 @@
 # City 0.1.0 商店材料候选
 
-更新：2026-11-02。对应固定源码 `e3a609e84a821b2a792711c888f63f27edc120e5`。本文与两张正式示例PNG供审阅，尚未上传商店、提交审核或发布。只描述当前 City；文案与截图仍需本地最终组合验收。商店名称来自 manifest，当前为 CodeYears；下列短说明是建议文案，不在本任务修改公共语言JSON或manifest。
+更新：2026-11-02。截图对应此前固定源码 `e3a609e84a821b2a792711c888f63f27edc120e5`；正文已同步本地验证的#47/#48功能。本文与两张正式示例PNG供审阅，尚未上传商店、提交审核或发布。只描述当前 City；两图已获本地审阅接受；最终候选源与本地报告以 [首发收尾PR #46](https://github.com/wxy/CodeYears/pull/46) 对应组合版本为准。商店名称来自 manifest，当前为 CodeYears；下列短说明是建议文案，不在本任务修改公共语言JSON或manifest。
 
 ## 简体中文 · 可复制
 
@@ -25,11 +25,13 @@ CodeYears 在 GitHub 个人主页的贡献区提供“城市 / 贡献图”标�
 
 先看到完整空场地与道路，再随已校验的年度数据填入地块。未知、尚未返回和未来日期不会被填成零贡献。读取、取消、警告与失败状态在画布浮层中显示，正常完成后隐藏。
 
-从多年全景到建筑近景，支持滚轮或按钮缩放、拖动平移、“全景”恢复取景，以及在当前页面内展开和收起。展开后可按 Esc 返回。缩放不会改变真实数量或重新决定建筑合并。
+从多年全景到建筑近景，支持滚轮或按钮缩放、拖动平移、聚焦城市画布后用方向键平移、“全景”恢复取景，以及在当前页面内展开和收起。展开后可按 Esc 返回。缩放不会改变真实数量或重新决定建筑合并。
 
 零贡献区域以自然地块或城市邻域铺装表达；少量正贡献从平房开始，逐步对应低层住宅、公寓、办公楼与大厦。道路、河道和城郊景观只作装饰。年份按 ISO 完整周组织，边界日期可能归入相邻周年，因此所选周年合计可能与 GitHub 公历年统计不同。
 
-在“更多”中查看每日明细、数据与操作帮助，刷新或清除当前主页缓存，并选择英文、简体中文或跟随浏览器。界面双语不等于 GitHub 网页任意语言均可解析：当前贡献来源主要验证英文页面。
+“更多”将主页操作与帮助分组，帮助和图例可折叠；点击菜单外部或按 Esc 可关闭菜单。可查看每日明细、数据与操作帮助，刷新或清除当前主页缓存，并选择英文、简体中文或跟随浏览器。界面双语不等于 GitHub 网页任意语言均可解析：当前贡献来源主要验证英文页面。
+
+左键点击扩展图标可快捷打开当前 GitHub 主页的城市。右键点击扩展图标，选择浏览器原生菜单中的“选项”，可更改全局界面语言，并查看版本、帮助、隐私和反馈入口。语言设置会保存到本机，并同步到 GitHub 页内入口。
 
 调整取景后，可在画布上右键使用浏览器原生保存或复制图片菜单。CodeYears 不提供独立导出或分享服务。
 
@@ -61,11 +63,13 @@ CodeYears adds City and Contributions tabs to the contribution section of a GitH
 
 A complete empty site and road network appear first. Validated yearly data then fills the city. Unknown, pending and future dates are never treated as zero contributions. Loading, cancellation, warnings and errors appear in an overlay on the canvas, which hides after normal completion.
 
-Explore a multi-year overview or zoom into individual buildings. Use the wheel or zoom buttons, drag to pan, select Fit view to restore the overview, or expand the same canvas within the page. Press Esc to return from the expanded view. Zooming does not change the underlying counts or replan merged buildings.
+Explore a multi-year overview or zoom into individual buildings. Use the wheel or zoom buttons, drag to pan, use the arrow keys when the city canvas is focused, select Fit view to restore the overview, or expand the same canvas within the page. Press Esc to return from the expanded view. Zooming does not change the underlying counts or replan merged buildings.
 
 Zero-contribution areas use natural plots or paving near urban neighborhoods. Positive contributions begin with small houses, then progress through low-rise homes, apartments, offices and towers. Roads, rivers and scenery outside the city are decorative. The city groups complete ISO weeks, so year-boundary dates and totals can differ from GitHub's calendar-year statistics.
 
-Open More for daily details, data and viewing help, refresh and cache removal, and the interface language setting: English, Simplified Chinese or the browser language. A bilingual interface does not mean every GitHub page language can be parsed. The contribution source has primarily been validated on English pages.
+More groups profile actions and help, with collapsible help and legend sections. Click outside the menu or press Esc to close it. Open More for daily details, data and viewing help, refresh and cache removal, and the interface language setting: English, Simplified Chinese or the browser language. A bilingual interface does not mean every GitHub page language can be parsed. The contribution source has primarily been validated on English pages.
+
+Left-click the extension icon to quickly open the city on the current GitHub profile. Right-click the extension icon and choose Options from the browser's native menu to change the global interface language and find the version, help, privacy and feedback links. The language preference is saved locally and applies to the GitHub page controls as well.
 
 After adjusting the view, right-click the canvas to use your browser's native image save or copy menu. CodeYears has no separate export or sharing service.
 
@@ -97,10 +101,14 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 1. [多年总览与页内标签](store/city-0.1.0/01-overview.png)
 2. [同一画布展开近景](store/city-0.1.0/02-closeup.png)
 
-两图均清楚标“示例数据 / Demo data”，使用受控GitHub样式外壳与未修改的正式City入口/渲染器，不冒充真实登录页面。“更多”保持收起，不预告A的菜单分组或B的图标原生“选项”。正式图标沿用 `public/icons/codeyears-128.png`，本任务不修改或复制新图标。
+两图均清楚标“示例数据 / Demo data”，使用受控GitHub样式外壳与未修改的正式City入口/渲染器，不冒充真实登录页面。两图已由本地确认尺寸、标签与画面可接受；截图对应此前固定SHA，More收起与普通展开外观未变，保留原图，不补宣传图或重截。最终候选源码与本地报告对应#46的组合记录，而不是把截图SHA当作后续功能的验收SHA。正式图标沿用 `public/icons/codeyears-128.png`，本任务不修改或复制新图标。
 
 2026-11-02核对Chrome官方现行文档：短说明最多132字符；截图至少1张、最多5张，采用1280×800（也接受640×400）、方角、无外围留白；本次选用前者。商店图标128×128；本地化详情和截图可按支持语言分别设置。可选宣传图不是本次两张截图的替代品。[文案建议](https://developer.chrome.com/docs/webstore/best-listing)、[图片规范](https://developer.chrome.com/docs/webstore/images)、[商店字段与本地化](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)。上述为本次读取到的规范，不宣称商店已审核图片；提交时仍以控制台为准。
 
-## 本地组合确认后再更新的项目
+## 本地验证与待复核边界
 
-A的“更多”分组/键盘平移和B的图标原生右键“选项”是本轮独立工作包，在本材料对应基线尚未实现；不纳入可复制正文和截图，不写成验收通过。组合后若入口或文案变化，先复核截图再更新。最终仍需本地真实MV3、安装/更新提示、当前性能与支持浏览器确认，以及维护者对素材分发范围的决定；本次没有上传、审核或发布动作。详细实际证据见 [本任务报告](reports/CITY-RELEASE-STORE-MATERIALS.md)。
+[PR #47](https://github.com/wxy/CodeYears/pull/47) 的菜单分组、菜单外部与Esc关闭、同一画布展开返回、方向键平移已在本地真实Chrome验证。[PR #48](https://github.com/wxy/CodeYears/pull/48) 的图标原生“选项”已由用户切换English，看到Saved并确认刷新仍为English，GitHub入口也已联动英文；上述已有功能已纳入双语正文。
+
+用户随后反馈的英文菜单分区与点击展开遮罩关闭，以及针对快照微任务链长任务的最小让出调度修复，仍在#47更新，尚未完成本地新版复核。这里不将这两项交互或调度修复列为最终验收通过，也不据此宣称完整性能预算已达标。安装/更新提示、最终性能与支持浏览器结果继续对应各自版本记录。
+
+本地#46已追溯59张运行图并更新ASSETS.md中的来源和现行条款；来源记录不替代法律权益保证，不将位图独立复用自动解释为代码MIT。本次仅同步材料，没有上传、审核或发布动作。详细实际证据见 [本任务报告](reports/CITY-RELEASE-STORE-MATERIALS.md)。
