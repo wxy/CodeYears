@@ -102,8 +102,15 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const up=(event:PointerEvent)=>{if(pointer?.id!==event.pointerId)return;pointer=undefined;host.style.cursor="grab"};
   const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const next=Math.min(layer?.maxZoom?.(viewport)??5,Math.max(.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;schedule()};
   const wheel=(event:WheelEvent)=>{event.preventDefault();const rect=host.getBoundingClientRect();zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2)};
+  // Only the stable, focused scene host owns arrows; inputs and browser shortcuts keep theirs.
+  const keydown=(event:KeyboardEvent)=>{
+    if(disposed||view!=="city"||event.target!==host||!host.matches(":focus")||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    const delta:Record<string,[number,number]>={ArrowLeft:[-40,0],ArrowRight:[40,0],ArrowUp:[0,-40],ArrowDown:[0,40]};
+    const move=delta[event.key];if(!move)return;
+    event.preventDefault();event.stopPropagation();viewport.panX+=move[0];viewport.panY+=move[1];schedule();
+  };
   const visibility=()=>{if(document.hidden){pause();cancelAnimationFrame(raf);raf=0}else schedule()};
-  host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("wheel",wheel,{passive:false});document.addEventListener("visibilitychange",visibility);
+  host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
     setView(next){if(disposed||next===view||progressiveCity)return;view=next;void prepare()},
@@ -139,7 +146,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     },
     dispose(){
       if(disposed)return;disposed=true;generation++;assetAbort.abort();playing=false;timeline.pause();cancelAnimationFrame(raf);raf=0;observer.disconnect();themeObserver.disconnect();preference.removeEventListener("change",theme);document.removeEventListener("visibilitychange",visibility);
-      host.removeEventListener("pointerdown",down);host.removeEventListener("pointermove",move);host.removeEventListener("pointerup",up);host.removeEventListener("pointercancel",up);host.removeEventListener("lostpointercapture",up);host.removeEventListener("wheel",wheel);layer?.dispose();layer=undefined;
+      host.removeEventListener("pointerdown",down);host.removeEventListener("pointermove",move);host.removeEventListener("pointerup",up);host.removeEventListener("pointercancel",up);host.removeEventListener("lostpointercapture",up);host.removeEventListener("wheel",wheel);host.removeEventListener("keydown",keydown);layer?.dispose();layer=undefined;
       if(images)closeCityImages(images);else if(assetPromise)void assetPromise.then(closeCityImages,()=>{});
     },
   };
