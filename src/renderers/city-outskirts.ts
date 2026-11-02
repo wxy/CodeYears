@@ -4,7 +4,7 @@ import { loadUnit } from './unit-calibration';
 
 export const CITY_OUTSKIRT_MARGIN=12;
 
-export const CITY_OUTSKIRT_IDS=['outskirts-forest','outskirts-meadow','outskirts-hills'] as const;
+export const CITY_OUTSKIRT_IDS=['outskirts-forest','outskirts-hills','natural-ground'] as const;
 
 /** 原图经过共享低alpha清理后一次缩图；返回画布由closeCityImages统一释放。 */
 export async function loadCityOutskirtsImages(base:string,signal?:AbortSignal):Promise<CityImages> {
@@ -15,10 +15,22 @@ export async function loadCityOutskirtsImages(base:string,signal?:AbortSignal):P
       const source=await loadUnit(new URL(`${id}.png`,base).href,signal);
       try {
         signal?.throwIfAborted();
+        if(id==='natural-ground'){
+          const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
+          images[id]={canvas,left:0,top:0,width:128,height:128,nativeWidth:128,nativeDepth:128,baselineHeight:0,sampleId:id};
+          const context=canvas.getContext('2d');if(!context)throw new Error('无法创建自然地面缓存。');
+          context.imageSmoothingQuality='high';
+          // 镜像接续保留图边连续；只构造一次512px缓存，不生成无限地块。
+          for(let x=0;x<2;x++)for(let y=0;y<2;y++){
+            context.save();context.translate(x?512:0,y?512:0);context.scale(x?-1:1,y?-1:1);
+            context.drawImage(source.clean,0,0,256,256);context.restore();
+          }
+          continue;
+        }
         const canvas=document.createElement('canvas'),ratio=Math.min(1,512/Math.max(source.clean.width,source.clean.height));
         canvas.width=Math.max(1,Math.round(source.clean.width*ratio));canvas.height=Math.max(1,Math.round(source.clean.height*ratio));
         const displayWidth=7,displayHeight=displayWidth*source.sourceHeight/source.sourceWidth;
-        images[id]={canvas,left:.5-displayWidth/2,top:1.75-displayHeight*.65,width:displayWidth,height:displayHeight,nativeWidth:8,nativeDepth:6,baselineHeight:id==='outskirts-meadow'?.25:2,sampleId:id};
+        images[id]={canvas,left:.5-displayWidth/2,top:1.75-displayHeight*.65,width:displayWidth,height:displayHeight,nativeWidth:8,nativeDepth:6,baselineHeight:2,sampleId:id};
         const context=canvas.getContext('2d');if(!context)throw new Error('无法创建外围地貌缓存。');
         context.imageSmoothingQuality='high';context.drawImage(source.clean,0,0,canvas.width,canvas.height);
         signal?.throwIfAborted();
@@ -49,28 +61,28 @@ export function createCityOutskirtsPainter(width:number,depth:number,ringOuter:n
     }
   }
   const noise=(i:number)=>{const n=Math.sin(i*127.1+31.7)*43758.5453;return n-Math.floor(n)};
-  for(let side=0;side<4;side++)for(const low of [true,false]){
+  for(let side=0;side<4;side++){
     const along=(side%2?depth:width)+ringOuter*2;
-    // 内层连续低草甸、外层立体林丘，总上限4×(40+10)=200张。
-    const count=Math.min(low?40:10,Math.max(2,Math.ceil(along/(low?4.2:8.5))));
+    // 全画布已有连续自然底图，外围仅保留最多40处立体林丘。
+    const count=Math.min(10,Math.max(2,Math.ceil(along/8.5)));
     for(let group=0;group<count;group++){
       const seed=side*101+group*13,t=(group+.5+(noise(seed+6)-.5)*.16)/count;
-      const center=-ringOuter+t*along,offset=ringOuter+(low?1.8+noise(seed)*.4:5.2+noise(seed)*.3);
+      const center=-ringOuter+t*along,offset=ringOuter+5.2+noise(seed)*.3;
       const x=side===0?center:side===1?width+offset:side===2?center:-offset;
       const z=side===0?-offset:side===1?center:side===2?depth+offset:center;
-      const factor=low?1.05+noise(seed+3)*.15:.7+noise(seed+3)*.08;
-      // 高地景主动避开廊道；低草甸靠近路肩，由共享clip留出出口。
-      const nearExit=!low&&exits.some(route=>route.points.some((a,i)=>{
+      const factor=.7+noise(seed+3)*.08;
+      // 高地景主动避开出城道路廊道。
+      const nearExit=exits.some(route=>route.points.some((a,i)=>{
         if(i===route.points.length-1&&!route.closed)return false;
         const b=route.points[(i+1)%route.points.length],dx=b[0]-a[0],dz=b[1]-a[1],length=dx*dx+dz*dz;
         const u=length?Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/length)):0;
         return Math.hypot(x-a[0]-u*dx,z-a[1]-u*dz)<route.lanes*.4/2+7.5*factor;
       }));
       if(nearExit)continue;
-      const id=low?'outskirts-meadow':(group+side)%2?'outskirts-forest':'outskirts-hills',sprite=images[id];
+      const id=(group+side)%2?'outskirts-forest':'outskirts-hills',sprite=images[id];
       if(!sprite)throw new Error(`未加载外围图片：${id}`);
       const [px,py]=project(x,z);
-      commands.push({canvas:sprite.canvas,left:px+(sprite.left-.5)*factor,top:py+(sprite.top-1.75)*factor,width:sprite.width*factor,height:sprite.height*factor,order:low?-Infinity:x+z});
+      commands.push({canvas:sprite.canvas,left:px+(sprite.left-.5)*factor,top:py+(sprite.top-1.75)*factor,width:sprite.width*factor,height:sprite.height*factor,order:x+z});
     }
   }
   commands.sort((a,b)=>a.order-b.order);
