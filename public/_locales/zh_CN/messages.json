@@ -316,5 +316,41 @@
   },
   "errAssetRequest": {
     "message": "素材读取失败：$1"
+  },
+  "moreProfileSection": {
+    "message": "当前主页"
+  },
+  "moreHelpSection": {
+    "message": "使用与数据说明"
+  },
+  "keyboardControls": {
+    "message": "聚焦城市后可用方向键平移，使用缩放按钮调整比例。"
+  },
+  "canvasKeyboardLabel": {
+    "message": "贡献之城。可用方向键或拖动平移，通过缩放按钮或滚轮缩放。"
+  },
+  "settingsTitle": {
+    "message": "CodeYears 设置"
+  },
+  "settingsHelp": {
+    "message": "偏好设置适用于当前浏览器；年份与画面操作仍在 GitHub 个人主页中使用。"
+  },
+  "settingsAbout": {
+    "message": "关于 CodeYears"
+  },
+  "settingsSaved": {
+    "message": "已保存"
+  },
+  "version": {
+    "message": "版本 $1"
+  },
+  "privacy": {
+    "message": "隐私说明"
+  },
+  "help": {
+    "message": "使用帮助"
+  },
+  "feedback": {
+    "message": "问题反馈"
   }
 }

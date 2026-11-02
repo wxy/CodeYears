@@ -316,5 +316,41 @@
   },
   "errAssetRequest": {
     "message": "Asset request failed: $1"
+  },
+  "moreProfileSection": {
+    "message": "This profile"
+  },
+  "moreHelpSection": {
+    "message": "Help and data"
+  },
+  "keyboardControls": {
+    "message": "Focus the city and use arrow keys to pan. Use the zoom buttons to zoom."
+  },
+  "canvasKeyboardLabel": {
+    "message": "Contribution City. Use arrow keys to pan, drag to pan, and the zoom buttons or scroll wheel to zoom."
+  },
+  "settingsTitle": {
+    "message": "CodeYears settings"
+  },
+  "settingsHelp": {
+    "message": "Preferences apply in this browser. Year and view controls stay on the GitHub profile."
+  },
+  "settingsAbout": {
+    "message": "About CodeYears"
+  },
+  "settingsSaved": {
+    "message": "Saved"
+  },
+  "version": {
+    "message": "Version $1"
+  },
+  "privacy": {
+    "message": "Privacy"
+  },
+  "help": {
+    "message": "Help"
+  },
+  "feedback": {
+    "message": "Feedback"
   }
 }
