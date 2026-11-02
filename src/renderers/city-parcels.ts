@@ -16,9 +16,10 @@ export interface WeeklyCity {
 }
 
 /** ISO周年一条街区，完整周一至周日同属一个block；只使用实际输入日期。 */
-export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false, wonders = false): WeeklyCity {
+export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false, wonders = false, reservedYears?: readonly number[]): WeeklyCity {
   const dates = days.map(day => isoWeekDate(day.date));
-  const years = [...new Set(dates.map(date => date.year))].sort((a,b)=>a-b);
+  // 预留年份仅决定场地坐标；尚未收到的日期不生成零值cell。
+  const years = [...(reservedYears ?? new Set(dates.map(date => date.year)))].sort((a,b)=>a-b);
   const districts = years.map(year => ({ year, monday: isoYearStart(year), weeks: isoYearWeeks(year), breaks: [13,26,39] }));
   const byYear = new Map(districts.map((district, index) => [district.year, index]));
   const columns = Math.max(0,...districts.map(district => district.weeks)), rows = years.length, blocks = rows;

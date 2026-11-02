@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "免费的 GitHub 贡献历史可视化扩展。选择年份，用真实每日贡献生成贡献之城。",
   "permissions": ["activeTab", "scripting", "storage"],
+  "content_scripts": [{ "matches": ["https://github.com/*"], "js": ["entry.js"], "run_at": "document_idle" }],
   "action": {
     "default_title": "CodeYears · 贡献风景",
     "default_popup": "popup.html",
@@ -20,7 +21,7 @@
     "48": "icons/codeyears-48.png",
     "128": "icons/codeyears-128.png"
   },
-  "web_accessible_resources": [{ "resources": ["landscape.js", "chunks/*.js", "assets/city/*.png"], "matches": ["https://github.com/*"] }],
+  "web_accessible_resources": [{ "resources": ["content.js", "landscape.js", "chunks/*.js", "assets/city/*.png"], "matches": ["https://github.com/*"] }],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'"
   }

@@ -18,8 +18,8 @@ export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x
 export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
-export function planCityScene(days:readonly DailyContribution[],wonders=true):CityScene {
-  const weekly=planWeeklyCity(days,true,wonders),selectGround=createGroundSelector(weekly);
+export function planCityScene(days:readonly DailyContribution[],wonders=true,reservedYears?:readonly number[]):CityScene {
+  const weekly=planWeeklyCity(days,true,wonders,reservedYears),selectGround=createGroundSelector(weekly);
   const layout=createCityLayout(weekly);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
     const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
@@ -58,20 +58,25 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true):Ci
   return {weekly,layout,items:visibleItems,keys,parkStarts,width,depth,roadNetwork};
 }
 
-export function createCityView(scene:CityScene,images:CityImages):LandscapeView {
+export function createCityView(scene:CityScene,images:CityImages,previouslyRevealedDays?:number):LandscapeView {
   const {weekly,layout,items,parkStarts,width,depth,roadNetwork}=scene;
+  const progressive=previouslyRevealedDays!==undefined;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
-  const placed=items.map(item=>{
+  const placed=items.flatMap(item=>{
     const sprite=images[item.id];
+    // 空场地不等待图片，也不以程序地貌代替尚未加载的PNG。
+    if(progressive&&!sprite)return [];
     const offsetX=(item.w-sprite.nativeWidth*item.factor)/2,offsetZ=(item.d-sprite.nativeDepth*item.factor)/2;
     const [x,y]=project(item.x+offsetX,item.z+offsetZ);
     const left=x+sprite.left*item.factor,top=y+sprite.top*item.factor;
-    return {item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1]};
+    // 所有成员已在本批真实days中，融合地块按首个成员进入呈现前缀时整体出现。
+    return [{item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1],after:progressive&&item.parcel?Math.min(...item.parcel.indices)+1:0}];
   }).sort((a,b)=>a.groundY-b.groundY||a.left-b.left);
   const outer=roadNetwork.ringOuter+CITY_OUTSKIRT_MARGIN;
-  const minX=Math.min(-depth/2-outer-.4,...placed.map(p=>p.left))-.3,maxX=Math.max(width/2+outer+.4,...placed.map(p=>p.left+p.width))+.3;
-  const minY=Math.min(-outer/2-.4,...placed.map(p=>p.top))-.5,maxY=Math.max((width+depth)/4+outer/2+.5,...placed.map(p=>p.top+p.height));
+  // 渐进场地的包围盒只取预留布局和既有外围余量，不随后到楼宇改变取景。
+  const minX=Math.min(-depth/2-outer-.4,...(progressive?[]:placed.map(p=>p.left)))-.3,maxX=Math.max(width/2+outer+.4,...(progressive?[]:placed.map(p=>p.left+p.width)))+.3;
+  const minY=Math.min(-outer/2-.4,...(progressive?[]:placed.map(p=>p.top)))-.5,maxY=Math.max((width+depth)/4+outer/2+.5,...(progressive?[]:placed.map(p=>p.top+p.height)));
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
   // 窗格在远景大幅缩小时容易随像素相位跳闪；逐级预滤波，避免每帧直接从384像素缩到十几像素。
   const samples=new Map<HTMLCanvasElement,HTMLCanvasElement[]>();
@@ -88,23 +93,24 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
   const ground=document.createElement('canvas'),unit=Math.min(48,3072/(maxX-minX));
   ground.width=Math.ceil((maxX-minX)*unit);ground.height=Math.ceil((maxY-minY)*unit);
   // 同一绘制序列供全景与近景缓存使用，避免缩放时改变遮挡与道路几何。
-  const groundPaint:((target:CanvasRenderingContext2D)=>void)[]=[];
+  const groundPaint:{after:number;paint:(target:CanvasRenderingContext2D)=>void}[]=[];
+  let revealAfter=0;
   const polygon=(x:number,z:number,w:number,d:number,color:string)=>{
     if(w<=0||d<=0)return;
     const path=new Path2D();
     [project(x,z),project(x+w,z),project(x+w,z+d),project(x,z+d)].forEach((p,i)=>i?path.lineTo(...p):path.moveTo(...p));path.closePath();
-    groundPaint.push(target=>{target.fillStyle=color;target.fill(path)});
+    groundPaint.push({after:revealAfter,paint:target=>{target.fillStyle=color;target.fill(path)}});
   };
   const stroke=(path:Path2D,color:string,lineWidth:number,dash:number[]=[])=>{
-    groundPaint.push(target=>{target.lineJoin='round';target.strokeStyle=color;target.lineWidth=lineWidth;target.setLineDash(dash);target.stroke(path)});
+    groundPaint.push({after:revealAfter,paint:target=>{target.lineJoin='round';target.strokeStyle=color;target.lineWidth=lineWidth;target.setLineDash(dash);target.stroke(path)}});
   };
   const line=(x:number,z:number,x2:number,z2:number,color:string,lineWidth:number,dash:number[]=[])=>{
     const path=new Path2D();path.moveTo(...project(x,z));path.lineTo(...project(x2,z2));stroke(path,color,lineWidth,dash);
   };
   const image=(p:{sprite:CityImages[string];left:number;top:number;width:number;height:number})=>{
-    groundPaint.push(target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height));
+    groundPaint.push({after:revealAfter,paint:target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height)});
   };
-  groundPaint.push(createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images));
+  if(!progressive||CITY_OUTSKIRT_IDS.every(id=>images[id]))groundPaint.push({after:0,paint:createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images)});
   // 静态地面与路网分层；路面/车道线只在缓存构建时提交。
   for(let edge=6;edge>0;edge--)polygon(-roadNetwork.ringOuter-edge*.05,-roadNetwork.ringOuter-edge*.05,width+roadNetwork.ringOuter*2+edge*.1,depth+roadNetwork.ringOuter*2+edge*.1,'rgba(130,152,117,0.025)');
   layout.districts.forEach(({z,quarterPadding})=>{
@@ -119,18 +125,21 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
     });
   });
   // 只沿建筑邻接的完整地块边界留窄步道；共享边去重，不切开合并建筑。
-  const edges=new Map<string,[number,number,number,number]>();
+  const edges=new Map<string,{points:[number,number,number,number];after:number}>();
   for(const p of placed)if(p.item.parcel?.kind==='building'){
     const {item,sprite}=p,{x,z,w,d}=item;
+    revealAfter=p.after;
     const pw=sprite.nativeWidth*item.factor,pd=sprite.nativeDepth*item.factor,px=x+(w-pw)/2,pz=z+(d-pd)/2;
     polygon(px+.08,pz+.08,pw-.16,pd-.16,'#c2bba6');
     polygon(x+w/2-.055,pz+pd-.08,.11,z+d-(pz+pd)+.08,'#d5ceb9');
-    for(let i=0;i<w;i++)for(const ez of [z,z+d])edges.set(`${x+i},${ez},x`,[x+i,ez,x+i+1,ez]);
-    for(let i=0;i<d;i++)for(const ex of [x,x+w])edges.set(`${ex},${z+i},z`,[ex,z+i,ex,z+i+1]);
+    for(let i=0;i<w;i++)for(const ez of [z,z+d]){const key=`${x+i},${ez},x`;edges.set(key,{points:[x+i,ez,x+i+1,ez],after:Math.min(edges.get(key)?.after??Infinity,revealAfter)})}
+    for(let i=0;i<d;i++)for(const ex of [x,x+w]){const key=`${ex},${z+i},z`;edges.set(key,{points:[ex,z+i,ex,z+i+1],after:Math.min(edges.get(key)?.after??Infinity,revealAfter)})}
   }
-  for(const [x,z,x2,z2]of edges.values())line(x,z,x2,z2,'#d0c9b4',.055);
+  for(const {points:[x,z,x2,z2],after}of edges.values()){revealAfter=after;line(x,z,x2,z2,'#d0c9b4',.055)}
   // 平地/水岸贴图覆盖自身庭院；树木与楼体在地面之后按深度绘制。
-  for(const p of placed)if(p.item.flat)image(p);
+  for(const p of placed)if(p.item.flat){revealAfter=p.after;image(p)}
+  revealAfter=0;
+  const overlayStart=groundPaint.length;
   for(const [band,start]of parkStarts.entries()){
     // 河道在既有四格景观带内起伏；两岸保留既有树木落地所需的草坡。
     polygon(0,start,width,PARK,'#98a88a');
@@ -147,13 +156,13 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
     samples.forEach((p,i)=>{const point=project(p.x,p.near);if(i)water.lineTo(...point);else water.moveTo(...point)});
     for(const p of [...samples].reverse())water.lineTo(...project(p.x,p.far));water.closePath();
     stroke(bankPath('near',-.12),'#839578',.22);stroke(bankPath('far',.12),'#839578',.22);
-    groundPaint.push(target=>{target.fillStyle='#699c9c';target.fill(water)});
+    groundPaint.push({after:0,paint:target=>{target.fillStyle='#699c9c';target.fill(water)}});
     stroke(bankPath('near',0),'#b0c3ac',.055);stroke(bankPath('far',0),'#b0c3ac',.055);
     // 沿岸步道与水面轮廓共用采样，不出现独立池塘或穿水黄线。
     stroke(bankPath('near',-.3),'#b4b5a0',.18);stroke(bankPath('near',-.3),'#d8d1bb',.12);
     stroke(bankPath('far',.3),'#b4b5a0',.18);stroke(bankPath('far',.3),'#d8d1bb',.12);
   }
-  groundPaint.push(createCityRoadPainter(roadNetwork.roads,roadNetwork.junctions));
+  groundPaint.push({after:0,paint:createCityRoadPainter(roadNetwork.roads,roadNetwork.junctions)});
   // 过街带跨越完整道路宽度；不在合并地块内部新增道路。
   layout.districts.forEach(({z,quarterPadding})=>{
     CITY_QUARTER_ROADS.forEach((x,index)=>{
@@ -167,12 +176,14 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
       }
     });
   });
-  groundPaint.push(createCityBridgePainter(roadNetwork.bridges));
-  groundPaint.push(createCityVehiclePainter(roadNetwork.vehicles));
-  groundPaint.push(createCityYearMarkers(layout));
+  groundPaint.push({after:0,paint:createCityBridgePainter(roadNetwork.bridges)});
+  groundPaint.push({after:0,paint:createCityVehiclePainter(roadNetwork.vehicles)});
+  groundPaint.push({after:0,paint:createCityYearMarkers(layout)});
+  const overlayPaint=groundPaint.slice(overlayStart);
 
   // 二十年细节平移已在同环境对照；保留统一顺序，本轮不扩建剔除框架。
-  const paintGround=(target:CanvasRenderingContext2D)=>{for(const paint of groundPaint)paint(target)};
+  let cachedPrefix=progressive?previouslyRevealedDays!:Infinity;
+  const paintGround=(target:CanvasRenderingContext2D)=>{for(const command of groundPaint)if(command.after<=cachedPrefix)command.paint(target)};
   const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);
   const detailGround=document.createElement('canvas');let detailKey='';
   const fitScale=(viewport:LandscapeViewport)=>Math.min(Math.max(1,viewport.width-32)/(maxX-minX),Math.max(1,viewport.height-24)/(maxY-minY));
@@ -181,6 +192,11 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
     description:()=> `固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
     draw(progress,viewport:LandscapeViewport){
+      const prefix=progress===1?weekly.cells.length:Math.floor(progress*weekly.cells.length);
+      // 新批次只有短填入期间逐帧画增量地面；完成后恢复整块缓存，不续连续帧。
+      if(progressive&&prefix===weekly.cells.length&&cachedPrefix<prefix){
+        cachedPrefix=prefix;g.resetTransform();g.clearRect(0,0,ground.width,ground.height);g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);detailKey='';
+      }
       const pw=Math.round(viewport.width*viewport.dpr),ph=Math.round(viewport.height*viewport.dpr);
       if(canvas.width!==pw||canvas.height!==ph){canvas.width=pw;canvas.height=ph}
       context.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);context.clearRect(0,0,viewport.width,viewport.height);
@@ -198,12 +214,19 @@ export function createCityView(scene:CityScene,images:CityImages):LandscapeView 
         }
         context.drawImage(detailGround,0,0,viewport.width,viewport.height);
       }
+      if(progressive&&prefix>cachedPrefix){
+        context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
+        for(const command of groundPaint)if(command.after>cachedPrefix&&command.after<=prefix)command.paint(context);
+        // 增量平地仍位于既有河岸/道路/年份之下，顺序与最终缓存一致。
+        for(const command of overlayPaint)command.paint(context);
+        context.restore();
+      }
       const level=(1-Math.pow(1-progress,1.4))*tallest;
       for(const p of placed){
-        if(p.item.flat)continue;
+        if(p.item.flat||(progressive&&p.after>prefix))continue;
         const x=sx(p.left),y=sy(p.top),w=p.width*scale,h=p.height*scale;
         if(x+w<0||x>viewport.width||y+h<0||y>viewport.height)continue;
-        const growth=Math.min(1,level/Math.max(.1,p.groundY-p.top));if(growth<=0)continue;
+        const growth=progressive?1:Math.min(1,level/Math.max(.1,p.groundY-p.top));if(growth<=0)continue;
         context.save();
         if(growth<1){context.beginPath();context.rect(x-1,sy(p.groundY)-(p.groundY-p.top)*scale*growth,w+2,h+2);context.clip();context.globalAlpha=Math.min(1,growth*4)}
         let source=p.sprite.canvas;

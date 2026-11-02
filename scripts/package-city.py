@@ -18,9 +18,11 @@ if not any(parts) or max(parts) > 65535 or package["version"] != version:
     raise SystemExit("Version must be nonzero, valid and match package.json")
 if manifest["permissions"] != ["activeTab", "scripting", "storage"] or manifest.get("host_permissions"):
     raise SystemExit("Review changed permissions before packaging")
+if manifest.get("content_scripts") != [{"matches": ["https://github.com/*"], "js": ["entry.js"], "run_at": "document_idle"}]:
+    raise SystemExit("Review changed automatic entry scope before packaging")
 
 # An explicit distribution list excludes repository material, source maps and local data.
-files = {name: dist / name for name in ("manifest.json", "popup.html", "content.js", "landscape.js")}
+files = {name: dist / name for name in ("manifest.json", "popup.html", "entry.js", "content.js", "landscape.js")}
 for pattern in ("assets/popup-*.js", "assets/city/*.png", "chunks/*.js"):
     files.update((path.relative_to(dist).as_posix(), path) for path in dist.glob(pattern))
 for table in (manifest["icons"], manifest["action"]["default_icon"]):
