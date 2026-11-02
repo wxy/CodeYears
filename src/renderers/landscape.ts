@@ -3,6 +3,7 @@ import { createTimeline } from "../timeline/controller";
 import type { TimelineState } from "../timeline/types";
 import { closeCityImages, loadCityImages, type CityImages } from "./city-assets";
 import { createCityView, planCityScene, type CityScene } from "./city-view";
+import { CITY_OUTSKIRT_IDS } from "./city-outskirts";
 import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface ContributionLandscape {
@@ -61,7 +62,17 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     try{
       if(view==="city"){
         cityScene??=planCityScene(days,cityWonders,reservedYears);
-        if(progressiveCity){images={};layer=createCityView(cityScene,images,0)}
+        if(progressiveCity){
+          images={};layer=createCityView(cityScene,images,0);configureCanvas(layer);host.append(layer.canvas);
+          layer.draw(1,viewport);labelCity();schedule();notify();
+          // 场地先同步显示；本地自然图片独立于网络贡献加载，且与后续批次共用。
+          assetPromise=loadCityImages(assetBase,CITY_OUTSKIRT_IDS,assetAbort.signal).then(ready=>{
+            if(disposed){closeCityImages(ready);throw new DOMException('城市已关闭。','AbortError')}
+            Object.assign(images!,ready);return ready;
+          });
+          await assetPromise;if(disposed||token!==generation)return;
+          const previous=layer;layer=createCityView(cityScene,images,0);previous.canvas.replaceWith(layer.canvas);previous.dispose();
+        }
         else{
           assetPromise??=loadCityImages(assetBase,cityScene.keys,assetAbort.signal);const ready=await assetPromise;
           if(disposed||token!==generation)return;
@@ -106,9 +117,10 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(!progressiveCity)throw new Error("逐年填入仅适用于预留年份的City。");
       if(disposed)throw new DOMException("城市已关闭。","AbortError");
       const token=++generation,nextScene=planCityScene(nextDays,cityWonders,reservedYears);
-      const missing=nextScene.keys.filter(id=>!images?.[id]);
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{
+        await assetPromise;
+        const missing=nextScene.keys.filter(id=>!images?.[id]);
         if(missing.length)added=await loadCityImages(assetBase,missing,assetAbort.signal);
         assetAbort.signal.throwIfAborted();
         if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
