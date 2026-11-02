@@ -24,13 +24,13 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true,res
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
     const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
     const seed=(hash^(hash>>>16))>>>0,variant=seed%2?'b':'a';
-    let id:string,factor=1;
+    let id:string,factor=1,flat=kind==='grass';
     if(parcel.wonder)id=parcel.wonder;
-    else if(kind==='grass')({id,factor}=selectGround(parcel,seed));
+    else if(kind==='grass')({id,factor,flat}=selectGround(parcel,seed));
     else if(kind==='shrub')id=`sapling-${variant}`;
     else if(kind==='tree')id=w===2&&d===2?`forest-2x2-${variant}`:w===2?`small-grove-2x1-${variant}`:d===2?`small-grove-1x2-${variant}`:variant==='a'?'broadleaf-a':'conifer-b';
     else ({id,factor}=selectCityBuilding(parcel,seed));
-    return {parcel,id,factor,x:layout.districts[parcel.block].weekX(parcel.x),z:layout.districts[parcel.block].z+parcel.z,w,d,flat:kind==='grass'};
+    return {parcel,id,factor,x:layout.districts[parcel.block].weekX(parcel.x),z:layout.districts[parcel.block].z+parcel.z,w,d,flat};
   });
   const parkStarts=Array.from({length:Math.floor((weekly.rows-1)/5)},(_,i)=>(i+1)*5*(7+YEAR_GAP)+i*PARK-YEAR_GAP/2);
   const width=layout.width;

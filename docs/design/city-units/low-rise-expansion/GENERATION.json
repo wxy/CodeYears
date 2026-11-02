@@ -1,0 +1,125 @@
+{
+  "tool": "image_gen.imagegen",
+  "transparent_background": true,
+  "referenceImages": [],
+  "conceptBoard": {
+    "prompt": "Create an original exquisite miniature city-building transparent sprite concept sheet, 10 isolated buildings in a spacious 5 columns by 2 rows grid, no text numbers labels background roads or shared scenery. Original architecture, do not copy any game assets. Refined detailed painted bitmap simulation-city aesthetic, warm upper-left sunlight, orthographic 2:1 dimetric projection, all ground horizontal axes slopes +0.5 and -0.5, verticals vertical. Same physical scale for all buildings, generous transparent gutters. Row 1: four distinct SINGLE STORY 1x1 houses (ordinary red gable-roof cottage with porch; cream hip-roof villa with veranda; modern L-shaped flat-roof courtyard house; timber butterfly-roof garden bungalow), then one 1x1 two-story brick residential building with pitched roof. Row 2: one 1x1 two-story stepped flat-roof residential building with balcony; one 2x1 attached two-house row with staggered gables along down-right axis; one 2x1 two-story corner shop/residence with arcade along down-right axis; one 1x2 attached two-house row with mono-pitch roofs along down-left axis; one 1x2 two-story small shop/residence with recessed court along down-left axis. Ground footprint parcel diamond for 1x1, elongated parallelogram for 2x1 and 1x2, lawns/courts strictly contained within each parcel; wall and yard edges inset at least 0.1 cell. All houses one-story wall height ~0.4 of cell edge unit with roof peak ~0.65; two-story buildings ~1 height unit. No trees obscuring structures. Clean transparency, restrained soft shadows down-right. Every building complete with no overlap. This is a source concept sheet, not a runtime atlas.",
+    "sourcePath": "/workspace/generated_images/exec-3c006122-5a1e-42a0-8daf-2ecdbf7483a5.png",
+    "file": "concept-board.png",
+    "status": "generated-unmeasured",
+    "size": [
+      1983,
+      793
+    ],
+    "sha256": "92b4404a7fa998f17a967cf8a6d5dff19548cb3f78d6a4b0555fcde9d137f707",
+    "bytes": 2212777,
+    "mode": "RGBA"
+  },
+  "note": "概念板为原创生成，仅作造型参考；不裁切为正式独立素材。独立单元完整提示在manifest.json；实测后更新状态。",
+  "independentUnits": [
+    {
+      "id": "cottage-gable",
+      "file": "candidates/cottage-gable.png",
+      "sourcePath": "/workspace/generated_images/exec-509dd2a1-0678-4568-b920-34f294169d78.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "villa-hip",
+      "file": "candidates/villa-hip.png",
+      "sourcePath": "/workspace/generated_images/exec-3af8f085-1843-44cb-a97e-093aab686d3f.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "courtyard-flat",
+      "file": "candidates/courtyard-flat.png",
+      "sourcePath": "/workspace/generated_images/exec-1aa36e26-cc5b-4e44-8dcb-e9c3132be2a5.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "garden-butterfly",
+      "file": "candidates/garden-butterfly.png",
+      "sourcePath": "/workspace/generated_images/exec-83a617d0-4d35-4e90-893e-48037c5e6e72.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "low-gable",
+      "file": "candidates/low-gable.png",
+      "sourcePath": "/workspace/generated_images/exec-ffe19660-909a-4db0-baec-444939e77d5f.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "low-terrace",
+      "file": "candidates/low-terrace.png",
+      "sourcePath": "/workspace/generated_images/exec-5130781f-7275-45ea-ac8c-3e39d6490bf9.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "row-wide",
+      "file": "candidates/row-wide.png",
+      "sourcePath": "/workspace/generated_images/exec-5fe69855-964e-4be5-9cab-d03eff12dca2.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": "Create a NEW original transparent two-story attached pair of townhouses in refined painted miniature simulation-city style. Correct a critical footprint requirement: the LONG facade must be the LEFT visible facade sloping DOWN-RIGHT (+0.5), with TWO SEPARATE DOORS and two attached houses arranged from upper-left to lower-right. The RIGHT visible facade sloping UP-RIGHT (-0.5) is a SHORT narrow end wall, only half as long. Footprint 2x1 along W=(48,24), D=(-48,24), verticals vertical. Ground parallelogram example O=(520,560), W=(1000,800), WD=(760,920), D=(280,680), so left-to-near boundary has twice the horizontal run of near-to-right boundary. This geometric example is for orientation only, do not draw labels or grid. Staggered red and dark slate gables along the LONG LEFT facade, two recessed porches, fine brick/stone joints, contained narrow front gardens. Two stories, low-rise total peak ~1H, ordinary natural proportions. Not a square building, not a long facade on the right. Full isolated transparent RGBA, generous margins, all elements inset .1 cell, upper-left light, only tight contact shadow, no halo, backdrop, lettering, numbers, roads or separate scene. Do not mirror any prior image; render original architecture in this camera orientation.",
+      "firstAttempt": {
+        "file": "revisions/row-wide-first.png",
+        "sourcePath": "/workspace/generated_images/exec-0a22f095-d1e7-404a-9404-3208abbd4d8e.png",
+        "status": "rejected-orientation",
+        "reason": "地面长短轴与目标不符，不用于本次正式比例对照",
+        "pixelSize": [
+          1536,
+          1024
+        ],
+        "mode": "RGBA",
+        "sha256": "55b8e5ada4ff76db82095612f42a46172b752f86119f508cbd8143cfcb7be46d",
+        "bytes": 2079752
+      }
+    },
+    {
+      "id": "shop-wide",
+      "file": "candidates/shop-wide.png",
+      "sourcePath": "/workspace/generated_images/exec-9e201fa1-cb5c-4b78-914c-5ab4715db7b1.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "row-deep",
+      "file": "candidates/row-deep.png",
+      "sourcePath": "/workspace/generated_images/exec-be80b3a4-b988-43c1-b880-ebc91906f31c.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": null,
+      "firstAttempt": null
+    },
+    {
+      "id": "shop-deep",
+      "file": "candidates/shop-deep.png",
+      "sourcePath": "/workspace/generated_images/exec-50e1a542-f517-4932-9360-1b35f8811507.png",
+      "promptField": "manifest.json assets[].prompt",
+      "revisionPrompt": "Create ONE NEW original refined painted miniature two-story mixed-use corner house with a small shop below and a recessed small courtyard at the far end, transparent RGBA. Correct geometry is essential: very LONG RIGHT visible facade sloping UP-RIGHT at -0.5 with THREE shop/residential bays; SHORT LEFT visible end wall sloping DOWN-RIGHT at +0.5 with ONE narrow entry. Logical footprint1x2 extends along D=(-48,24). Example ground support corners O=(1000,400), W=(1240,520), WD=(760,760), D=(520,640): left-to-front edge240px horizontal, front-to-right edge480px horizontal. Never draw coordinates or labels. Long right facade is TWICE short left end, not a square house. Flat stepped zinc roof with a small recessed roof terrace, creamy stucco, terracotta trim, deep green small-shop joinery and canvas awning; two stories, total candidate structural peak1H; legible separate ground entrance. Native orientation, no mirroring of any previous image. Exquisite original architecture not copied game assets. Orthographic2:1 dimetric, verticals vertical, same upper-left daylight, natural proportions. Complete unit isolated, generous transparent margin, no outside cast shadow or halo, no road/baseplate/backdrop/text/number/grid. Include only tiny contained court with low plants within footprint and .1cell edge retreat.",
+      "firstAttempt": {
+        "file": "revisions/shop-deep-first.png",
+        "sourcePath": "/workspace/generated_images/exec-d5662f47-3977-4d3f-ae88-9ce38073fe7b.png",
+        "status": "rejected-orientation",
+        "reason": "地面长短轴与目标不符，不用于本次正式比例对照",
+        "pixelSize": [
+          1431,
+          1099
+        ],
+        "mode": "RGBA",
+        "sha256": "5a4052ca76d6305391330cba075a8bd4107e3cfa6da1fac379d7e174419fdd49",
+        "bytes": 1303335
+      }
+    }
+  ]
+}

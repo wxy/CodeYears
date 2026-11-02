@@ -1,0 +1,785 @@
+{
+  "basis": "2026-11-02 运行标定，手工目视包络为近似；不宣称隐藏物理角点/峰高精确",
+  "assets": [
+    {
+      "id": "cottage-gable",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/cottage-gable.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.3,
+      "crop": [
+        370,
+        170,
+        1229,
+        865
+      ],
+      "anchor": [
+        781,
+        859
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              370,
+              703
+            ],
+            [
+              781,
+              859
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              781,
+              859
+            ],
+            [
+              1229,
+              708
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          779,
+          737
+        ],
+        "top": [
+          779,
+          574
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          370,
+          703
+        ],
+        "F": [
+          781,
+          859
+        ],
+        "R": [
+          1229,
+          708
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "villa-hip",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/villa-hip.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.3,
+      "crop": [
+        313,
+        157,
+        1264,
+        861
+      ],
+      "anchor": [
+        727,
+        852
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              315,
+              630
+            ],
+            [
+              727,
+              852
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              727,
+              852
+            ],
+            [
+              1260,
+              680
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          790,
+          684
+        ],
+        "top": [
+          790,
+          457
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          315,
+          630
+        ],
+        "F": [
+          727,
+          852
+        ],
+        "R": [
+          1260,
+          680
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "courtyard-flat",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/courtyard-flat.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.3,
+      "crop": [
+        142,
+        162,
+        1420,
+        910
+      ],
+      "anchor": [
+        883,
+        901
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              142,
+              580
+            ],
+            [
+              883,
+              901
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              883,
+              901
+            ],
+            [
+              1413,
+              645
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          1129,
+          729
+        ],
+        "top": [
+          1129,
+          550
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          142,
+          580
+        ],
+        "F": [
+          883,
+          901
+        ],
+        "R": [
+          1413,
+          645
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "garden-butterfly",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/garden-butterfly.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.3,
+      "crop": [
+        312,
+        209,
+        1224,
+        832
+      ],
+      "anchor": [
+        776,
+        822
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              313,
+              651
+            ],
+            [
+              776,
+              822
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              776,
+              822
+            ],
+            [
+              1220,
+              636
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          845,
+          695
+        ],
+        "top": [
+          845,
+          499
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          313,
+          651
+        ],
+        "F": [
+          776,
+          822
+        ],
+        "R": [
+          1220,
+          636
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "low-gable",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/low-gable.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        257,
+        62,
+        1229,
+        1019
+      ],
+      "anchor": [
+        727,
+        1014
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              261,
+              800
+            ],
+            [
+              727,
+              1014
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              727,
+              1014
+            ],
+            [
+              1233,
+              862
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          813,
+          887
+        ],
+        "top": [
+          813,
+          514
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          261,
+          800
+        ],
+        "F": [
+          727,
+          1014
+        ],
+        "R": [
+          1233,
+          862
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "low-terrace",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/low-terrace.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        290,
+        58,
+        1188,
+        993
+      ],
+      "anchor": [
+        690,
+        984
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              291,
+              758
+            ],
+            [
+              690,
+              984
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              690,
+              984
+            ],
+            [
+              1190,
+              773
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          792,
+          830
+        ],
+        "top": [
+          792,
+          375
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          291,
+          758
+        ],
+        "F": [
+          690,
+          984
+        ],
+        "R": [
+          1190,
+          773
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "row-wide",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/row-wide.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        228,
+        11,
+        1291,
+        1007
+      ],
+      "anchor": [
+        962,
+        998
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              231,
+              676
+            ],
+            [
+              962,
+              998
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              962,
+              998
+            ],
+            [
+              1273,
+              766
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          1091,
+          845
+        ],
+        "top": [
+          1091,
+          531
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          231,
+          676
+        ],
+        "F": [
+          962,
+          998
+        ],
+        "R": [
+          1273,
+          766
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "shop-wide",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/shop-wide-v2.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        110,
+        99,
+        1444,
+        1003
+      ],
+      "anchor": [
+        1134,
+        998
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              111,
+              632
+            ],
+            [
+              1134,
+              998
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              1134,
+              998
+            ],
+            [
+              1442,
+              902
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          1134,
+          955
+        ],
+        "top": [
+          1134,
+          493
+        ],
+        "basis": "商住楼可见同一竖墙，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          111,
+          632
+        ],
+        "F": [
+          1134,
+          998
+        ],
+        "R": [
+          1442,
+          902
+        ],
+        "basis": "2026-11-02 目视选取落地台阶包络，包含花盆；约±15px，背角为推定"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "row-deep",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/row-deep.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        2
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        369,
+        95,
+        1243,
+        938
+      ],
+      "anchor": [
+        686,
+        933
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              371,
+              696
+            ],
+            [
+              686,
+              933
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              686,
+              933
+            ],
+            [
+              1240,
+              695
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          656,
+          818
+        ],
+        "top": [
+          656,
+          475
+        ],
+        "basis": "可见同一竖墙参考，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          371,
+          696
+        ],
+        "F": [
+          686,
+          933
+        ],
+        "R": [
+          1240,
+          695
+        ],
+        "basis": "手工目视选择，包含庭院/台阶/花圃；逻辑包络非精确物理角点，约±15px"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    },
+    {
+      "id": "shop-deep",
+      "file": "docs/design/city-units/low-rise-expansion/candidates/shop-deep-v2.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        2
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        137,
+        43,
+        1430,
+        999
+      ],
+      "anchor": [
+        520,
+        993
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              140,
+              870
+            ],
+            [
+              520,
+              993
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        },
+        "D": {
+          "points": [
+            [
+              520,
+              993
+            ],
+            [
+              1428,
+              743
+            ]
+          ],
+          "basis": "可见地面包络主边，方向校正为±0.5"
+        }
+      },
+      "heightReference": {
+        "base": [
+          520,
+          940
+        ],
+        "top": [
+          520,
+          449
+        ],
+        "basis": "商住楼可见同一竖墙，约±15px"
+      },
+      "supportEnvelope": {
+        "L": [
+          140,
+          870
+        ],
+        "F": [
+          520,
+          993
+        ],
+        "R": [
+          1428,
+          743
+        ],
+        "basis": "2026-11-02 目视选取落地台阶包络，包含花盆；约±15px，背角为推定"
+      },
+      "notes": [
+        "原始PNG保留；共享方向校正和等比适配，地面包络居中，四周至少退让0.1格。",
+        "targetHeight为可见墙身参考上限，屋顶不计入；受占地限制时允许更低，不横纵独立拉伸。"
+      ]
+    }
+  ]
+}
