@@ -10,7 +10,9 @@
 
 生成提示、来源和标定分别保留在 `docs/design/city-buildings/`、`docs/design/city-units/v2/` 至 `v4/`、`docs/design/city-outskirts/`。部分提示使用城市建造游戏作为质感参考，并要求不复制游戏素材、标志或受保护的特色建筑；没有将游戏图片打包。不能仅凭提示就宣称已完成第三方权利核查。
 
-发布前仍须由维护者确认生成工具在生成时适用的条款及参考来源可分发范围。本文件记录来源和许可边界，不把这项确认写成已完成。设计板与源图留在仓库，不随发行 ZIP 重复打包；运行 PNG 不因打包而缩放或改写。
+2026-11-02完成运行包来源核对：59张运行PNG中，53张与仓库内设计源图字节或解码RGBA一致；六张早期建筑与`docs/design/city-buildings/v1/SPRITES.md`记录的原始生成文件解码RGBA一致。各代README、SOURCES及GENERATION记录指向本项目内置image_gen生成；未发现从商业游戏或图库下载的运行图片。
+
+已查阅生成时有效的OpenAI个人[使用条款](https://openai.com/policies/row-terms-of-use/)（2026-01-01生效）与对应[服务协议第4节](https://openai.com/policies/services-agreement/)：在适用法律允许范围内，用户与OpenAI之间的输出权益归用户，输入仍须有相应权利；输出不保证唯一。该来源记录不把第三方权益或位图独立复用自动改成代码MIT，也不把本项目图片描述为人工绘制。设计板与源图留在仓库，不随发行 ZIP 重复打包；运行 PNG 不因打包而缩放或改写。
 
 ## 依赖
 
