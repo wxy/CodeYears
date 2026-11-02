@@ -1,7 +1,8 @@
 {
   "name": "codeyears",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "免费的 GitHub 贡献历史可视化浏览器扩展",
   "type": "module",
   "engines": {
@@ -10,6 +11,7 @@
   "scripts": {
     "check": "tsc --noEmit",
     "build": "npm run check && node scripts/build.mjs",
+    "package:city": "npm run build && python3 scripts/package-city.py",
     "dev": "node scripts/build.mjs --watch",
     "preview:city": "vite --config probes/city/vite.config.ts",
     "preview:units": "vite --config probes/city-units/vite.config.ts"
