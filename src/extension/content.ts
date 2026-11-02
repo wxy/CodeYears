@@ -4,7 +4,6 @@ import { readPageContext } from "../platform/github/probe";
 import { clearContributionCache } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
 import { isoYearStart } from "../data/iso-week";
-import type { DailyContribution } from "../data/types";
 import type { ContributionLandscape } from "../renderers/landscape";
 
 export interface CityPanel {
@@ -58,7 +57,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .more-section .city-legend { margin:0; padding:4px 0 0; border-top:0; }
       .more-panel p { margin:0 0 10px; } .data-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
       .data-actions button { max-width:100%; white-space:normal; overflow-wrap:anywhere; text-align:left; }
-      #details summary { padding:6px 0; } .days { max-height:220px; overflow:auto; } table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; } td,th { padding:3px 6px; text-align:left; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       dialog { color:inherit; background:var(--bgColor-default,#fff); width:min(1400px,calc(100vw - 40px)); height:calc(100dvh - 40px); max-width:none; max-height:none; padding:0; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:14px; }
       dialog::backdrop { background:#0d111799; }
       .panel.expanded { height:100%; border:0; display:flex; flex-direction:column; }
@@ -87,7 +85,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
             <h3 id="profile-section" data-i18n="moreProfileSection"></h3>
             <p id="identity" class="note"></p>
             <div class="data-actions"><button id="refresh" type="button" data-i18n="refreshData"></button><button id="clear" type="button" data-i18n="clearCache"></button></div>
-            <details id="details" hidden><summary data-i18n="dailyData"></summary><div class="days"><table><thead><tr><th data-i18n="date"></th><th data-i18n="contributionCount"></th></tr></thead><tbody></tbody></table></div></details>
           </section>
           <section class="more-section" aria-labelledby="help-section">
             <h3 id="help-section" data-i18n="moreHelpSection"></h3>
@@ -105,12 +102,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const run = get<HTMLButtonElement>("#run"), refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
   const cancel = get<HTMLButtonElement>("#cancel"), retry = get<HTMLButtonElement>("#retry"), expand = get<HTMLButtonElement>("#expand");
   const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
-  const more = get<HTMLDetailsElement>("#more"), details = get<HTMLDetailsElement>("#details"), body = get<HTMLTableSectionElement>("tbody");
+  const more = get<HTMLDetailsElement>("#more");
   const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), feedback = get<HTMLElement>(".status");
   const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
-  let visibleDays: readonly DailyContribution[] = [];
   let statusMessage = () => "", summaryMessage = () => "";
   const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
   const setStatus = (message: () => string) => { statusMessage = message; status.textContent = message(); updateFeedback(); };
@@ -163,19 +159,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   const resetResult = () => {
     city?.dispose(); city = undefined; cityHost.replaceChildren();
-    visibleDays = []; body.replaceChildren(); details.open = false; details.hidden = true; setSummary(() => "");
+    setSummary(() => "");
     updateControls();
   };
-  details.addEventListener("toggle", () => {
-    if (!details.open || body.childElementCount) return;
-    const fragment = document.createDocumentFragment();
-    for (const day of visibleDays) {
-      const row = document.createElement("tr");
-      for (const value of [day.date, String(day.count)]) { const cell = document.createElement("td"); cell.textContent = value; row.append(cell); }
-      fragment.append(row);
-    }
-    body.append(fragment);
-  });
   const load = async (forceRefresh: boolean) => {
     if (!active || disposed || busy) return;
     const start = Number(startSelect.value), end = Number(select.value);
@@ -233,10 +219,10 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       if (renderFailure) throw renderFailure;
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
-      visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
+      const visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
       if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
-      setStatus(() => [...warnings].map(message => externalText(language, message)).join(" ")); details.hidden = false;
+      setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
       setSummary(() => t("totalContributions", [numberText(language, total)]));
     } catch (error) {
       if (!active || controller !== request) return;
