@@ -13,15 +13,16 @@ export interface CityPanel {
 }
 
 /** 用户选择城市后才加载；入口负责原图切换、后台与导航生命周期。 */
-export function mountCityPanel(host: HTMLElement): CityPanel {
+export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): CityPanel {
   let context = readPageContext(document, new URL(location.href));
   const years = [...new Set(Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
     .map(link => Number(link.id.slice("year-link-".length)))
     .filter(year => Number.isInteger(year) && year >= 2008 && year <= new Date().getFullYear()))].sort((a, b) => b - a);
   if (!years.length) throw new Error("当前页面没有可识别的年度入口。");
   const shadow = host.attachShadow({ mode: "open" });
-  shadow.innerHTML = `
-    <style>
+  const controls = toolbarHost.attachShadow({ mode: "open" });
+  const toolbarHome = toolbarHost.parentElement!;
+  const styles = `
       ${cityLegendStyles}
       :host { display:block; color:var(--fgColor-default,#1f2328); font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
       * { box-sizing:border-box; } [hidden] { display:none !important; }
@@ -31,7 +32,8 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
-      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { display:none; margin:0 12px; } .expanded .summary { display:block; }
+      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; white-space:nowrap; }
+      #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
       .status { display:flex; align-items:center; gap:8px; padding:0 12px; } output { white-space:pre-line; } output:empty { display:none; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { width:100%; height:100%; background:transparent; }
@@ -47,10 +49,20 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       .panel.expanded { height:100%; border:0; display:flex; flex-direction:column; }
       .expanded .scene-wrap { flex:1; height:auto; } .expanded .bar { padding:12px 16px; }
       @media(max-width:500px) { .scene-wrap { height:300px; } .bar { gap:4px; } select,button { padding:4px 6px; } dialog { width:calc(100vw - 16px); height:calc(100dvh - 16px); } }
-    </style>
+  `;
+  shadow.innerHTML = `<style>${styles}</style>
     <section class="panel" aria-label="贡献之城">
-      <div class="bar">
+      <div id="expanded-controls"></div>
+      <div class="status"><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" hidden>重试</button><button id="cancel" type="button" hidden>取消</button></div>
+      <div class="scene-wrap"><div id="scene"></div><span id="preparing">正在准备城市…</span><div class="view-tools" hidden><button id="zoom-out" type="button" aria-label="缩小城市">−</button><button id="zoom-in" type="button" aria-label="放大城市">＋</button><button id="reset-view" type="button">全景</button></div></div>
+    </section><dialog aria-label="展开的贡献之城"></dialog>`;
+  controls.innerHTML = `<style>${styles}
+    :host { display:block; width:100%; min-width:0; }
+    .bar { padding:0; gap:6px; }
+  </style>
+    <div class="bar">
         <form aria-label="城市年份范围"><select id="start-year" aria-label="起始年份"></select><span>—</span><select id="year" aria-label="结束年份"></select><button id="run" type="submit">应用</button></form>
+        <span id="city-summary" class="summary"></span>
         <button id="expand" type="button" aria-expanded="false" disabled>展开</button>
         <details id="more"><summary aria-label="更多与数据说明">更多</summary><div class="more-panel">
           <p class="note">拖动平移，滚轮缩放。“全景”恢复完整取景。场地随已读取的数据逐步填入，未返回的区域保持待填充。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。</p>
@@ -60,13 +72,9 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
           <details id="details" hidden><summary>数据明细</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
           <div id="legend"></div>
         </div></details>
-      </div>
-      <p id="city-summary" class="summary"></p>
-      <div class="status"><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" hidden>重试</button><button id="cancel" type="button" hidden>取消</button></div>
-      <div class="scene-wrap"><div id="scene"></div><span id="preparing">正在准备城市…</span><div class="view-tools" hidden><button id="zoom-out" type="button" aria-label="缩小城市">−</button><button id="zoom-in" type="button" aria-label="放大城市">＋</button><button id="reset-view" type="button">全景</button></div></div>
-    </section><dialog aria-label="展开的贡献之城"></dialog>`;
-  shadow.querySelector("#legend")!.append(createCityLegend());
-  const get = <T extends Element>(selector: string) => shadow.querySelector<T>(selector)!;
+      </div>`;
+  controls.querySelector("#legend")!.append(createCityLegend());
+  const get = <T extends Element>(selector: string) => (shadow.querySelector<T>(selector) ?? controls.querySelector<T>(selector))!;
   const panel = get<HTMLElement>(".panel"), dialog = get<HTMLDialogElement>("dialog");
   const startSelect = get<HTMLSelectElement>("#start-year"), select = get<HTMLSelectElement>("#year");
   for (const year of years) { select.add(new Option(String(year), String(year))); startSelect.add(new Option(String(year), String(year))); }
@@ -83,14 +91,14 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
   const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
   const collapse = (restoreFocus = true) => {
     if (!dialog.open) return;
-    dialog.close(); dialog.before(panel); panel.classList.remove("expanded");
+    dialog.close(); dialog.before(panel); toolbarHome.append(toolbarHost); panel.classList.remove("expanded");
     expand.textContent = "展开"; expand.setAttribute("aria-expanded", "false");
     updateControls();
     if (restoreFocus) expand.focus();
   };
   expand.onclick = () => {
     if (dialog.open) { collapse(); return; }
-    more.open = false; panel.classList.add("expanded"); dialog.append(panel); dialog.showModal();
+    more.open = false; get<HTMLElement>("#expanded-controls").append(toolbarHost); panel.classList.add("expanded"); dialog.append(panel); dialog.showModal();
     expand.textContent = "收起"; expand.setAttribute("aria-expanded", "true"); expand.focus();
   };
   dialog.addEventListener("cancel", event => { event.preventDefault(); collapse(); });
@@ -125,13 +133,13 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
     if (start > end) { status.textContent = "起始年份不能晚于结束年份。"; return; }
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
     const firstNeeded = new Date(windowStart).getUTCFullYear(), lastNeeded = new Date(windowEnd - 86400000).getUTCFullYear();
-    const now = new Date(), calendarYear = now.getFullYear();
+    const calendarYear = new Date().getFullYear();
     const firstSource = Math.max(firstNeeded, years.at(-1)!), lastSource = Math.min(lastNeeded, years[0], calendarYear);
     const requestedYears = Array.from({ length: lastSource - firstSource + 1 }, (_, index) => firstSource + index);
     const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
     const range = selectedRange();
     const request = new AbortController(); controller = request;
-    resetResult(); summary.textContent = `${range} · 正在读取…`; setBusy(true); more.open = false; retry.hidden = true;
+    resetResult(); summary.textContent = "正在读取…"; setBusy(true); more.open = false; retry.hidden = true;
     preparing.textContent = "正在准备场地…"; status.textContent = "正在读取贡献数据…";
     const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
     let renderer: typeof import("../renderers/landscape") | undefined;
@@ -149,7 +157,6 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
     };
     const warnings = new Set<string>();
     if (firstSource > firstNeeded || (lastSource < lastNeeded && lastNeeded <= calendarYear)) warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
-    if (windowEnd > Date.UTC(calendarYear, now.getMonth(), now.getDate()) + 86400000) warnings.add("所选年份尚未结束，仅显示已提供的日期。");
     try {
       context = currentContext();
       const identity = context.viewer.state === "unknown" ? "身份未识别，本次不读写缓存" : context.viewer.identity.kind === "signed-out" ? "未登录访问者" : `访问者 ${context.viewer.identity.login}`;
@@ -179,17 +186,17 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
       visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
-      if (!visibleDays.length) { summary.textContent = `${range} · 暂无数据`; status.textContent = "所选年份尚无已提供的日期。"; preparing.textContent = "暂无可展示的数据"; return; }
+      if (!visibleDays.length) { summary.textContent = "暂无数据"; status.textContent = "所选年份尚无已提供的日期。"; preparing.textContent = "暂无可展示的数据"; return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       status.textContent = [...warnings].join(" "); details.hidden = false;
-      summary.textContent = `${range} · ${total.toLocaleString()} 次贡献`;
+      summary.textContent = `${total.toLocaleString()} 次贡献`;
     } catch (error) {
       if (!active || controller !== request) return;
       const cancelled = request.signal.aborted && !renderFailure;
       request.abort();
       resetResult();
       if (renderer && fieldCreated) mountEmptyField();
-      summary.textContent = `${range} · ${cancelled ? "已取消读取" : "读取失败"}`;
+      summary.textContent = cancelled ? "已取消读取" : "读取失败";
       const failure = renderFailure ?? error;
       status.textContent = cancelled ? "读取已取消，场地尚未完成。" : failure instanceof Error ? failure.message : "读取失败，请重试。";
       preparing.textContent = cancelled ? "已取消读取" : "城市未能加载"; retry.hidden = false;
@@ -225,6 +232,6 @@ export function mountCityPanel(host: HTMLElement): CityPanel {
   return {
     async activate() { if (disposed || active) return; active = true; await load(false); },
     deactivate,
-    dispose() { if (disposed) return; deactivate(); disposed = true; shadow.replaceChildren(); },
+    dispose() { if (disposed) return; deactivate(); disposed = true; shadow.replaceChildren(); controls.replaceChildren(); },
   };
 }
