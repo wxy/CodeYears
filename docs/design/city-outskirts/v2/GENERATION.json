@@ -1,0 +1,9 @@
+{
+  "date": "2026-11-02",
+  "tool": "image_gen",
+  "file": "natural-ground.png",
+  "runtime": "public/assets/city/natural-ground.png",
+  "prompt": "Create a seamless tileable top-down natural ground texture for a refined miniature city-map background. Use case: game terrain bitmap material. Overhead ORTHOGRAPHIC straight-down view, absolutely no horizon, no sky, no perspective, no 3D standing objects or cast shadows. Fill every pixel of a square tile with continuous rich quiet terrain: predominantly fresh muted sage and moss-green meadow (60%), darker fern undergrowth and forest-floor vegetation (20%), soft olive low heath/stone patches (10%), small irregular blue-green shallow wetland pools with reed margins (10%). Gentle natural blended transitions, patches of delicate grass and tiny wildflowers, subtle rocky moss. Green and cool, not yellow/brown or gray wasteland. Fine hand-painted physically plausible game-map texture, restrained Apple-like polish, soft diffuse daylight, readable at a distance. No roads, no buildings, no trees viewed from the side, no mountains from the side, no grids, no labels, no lines, no watermark, no border or vignette. Avoid large high-contrast shapes and repeated conspicuous circles. Left/right and top/bottom edges must join seamlessly. Opaque full-bleed square image.",
+  "source": "/Users/xingyuwang/.codex/generated_images/01a187ba-93a6-70e0-bab8-de4cbec15028/exec-c8d4f542-7fd7-4d0d-ac50-ee636234a716.png",
+  "note": "原始字节保留；提示词要求可拼接，实际以运行镜像平铺接续。地貌装饰不表示贡献。"
+}

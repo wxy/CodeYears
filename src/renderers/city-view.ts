@@ -63,6 +63,9 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const progressive=previouslyRevealedDays!==undefined;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
+  const terrain=images['natural-ground'],terrainPattern=terrain?context.createPattern(terrain.canvas,'repeat'):null;
+  // 图案坐标与城市共用地面投影和世界原点；缩放平移时不会像屏幕壁纸滑动。
+  if(terrainPattern){const size=terrain.width/terrain.canvas.width;terrainPattern.setTransform(new DOMMatrix([size*.5,size*.25,-size*.5,size*.25,0,0]))}
   const placed=items.flatMap(item=>{
     const sprite=images[item.id];
     // 空场地不等待图片，也不以程序地貌代替尚未加载的PNG。
@@ -203,6 +206,12 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const scale=fitScale(viewport)*viewport.zoom;
       const sx=(x:number)=>viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,sy=(y:number)=>viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale;
       context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
+      // 本地PNG未就绪也先铺平地，不把空场地变回空白。背景只填当前视口。
+      context.fillStyle='#a3b58d';context.fillRect(0,0,viewport.width,viewport.height);
+      if(terrainPattern){
+        context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
+        context.fillStyle=terrainPattern;context.fillRect(-sx(0)/scale,-sy(0)/scale,viewport.width/scale,viewport.height/scale);context.restore();
+      }
       if(scale<=unit*1.25)context.drawImage(ground,sx(minX),sy(minY),(maxX-minX)*scale,(maxY-minY)*scale);
       else{
         const key=[pw,ph,scale,viewport.panX,viewport.panY].join(',');
