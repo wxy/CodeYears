@@ -1,4 +1,6 @@
 import type { CityPanel } from './content';
+import { entryText } from './entry-text';
+import { LANGUAGE_KEY, languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
 
 declare global {
   interface Window { __codeyearsOpenCity?: () => boolean }
@@ -9,6 +11,11 @@ declare global {
 
   let mounted: ReturnType<typeof mount> | undefined;
   let navigating = false, queued = false;
+  let preference: LanguagePreference = 'auto';
+  const languageSettings = () => ({ language: resolveLanguage(preference), preference, change: async (next: LanguagePreference) => { await saveLanguagePreference(next); updateLanguage(next); } });
+  const updateLanguage = (next: LanguagePreference) => { preference = next; mounted?.localize(); };
+  void readLanguagePreference().then(updateLanguage);
+  chrome.storage.onChanged.addListener((changes, area) => { if (area === 'local' && changes[LANGUAGE_KEY]) updateLanguage(languagePreference(changes[LANGUAGE_KEY].newValue)); });
 
   function mount(root: HTMLElement, native: HTMLElement, grid: HTMLElement, heading: HTMLElement, profile: string) {
     const host = document.createElement('span');
@@ -18,9 +25,10 @@ declare global {
       <style>
         :host { display:block; width:100%; color:var(--fgColor-default,#1f2328); font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
         * { box-sizing:border-box; } [hidden] { display:none!important; }
-        .tabs { display:flex; align-items:flex-start; gap:6px; }
-        .tab { display:flex; align-items:center; gap:8px; min-width:0; padding:4px; border-radius:7px; }
-        .tab[data-active="true"] { flex:1; flex-wrap:wrap; background:var(--bgColor-muted,#f6f8fa); box-shadow:inset 0 -2px #398466; }
+        .tabs { display:flex; align-items:stretch; gap:4px; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
+        .tab { display:flex; align-items:center; gap:8px; min-width:0; padding:5px 7px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px 8px 0 0; position:relative; }
+        .tab[data-active="true"] { flex:1; flex-wrap:wrap; z-index:2; margin-bottom:-1px; background:var(--bgColor-default,#fff); border-bottom-color:var(--bgColor-default,#fff); }
+        .tab[data-active="false"] { align-items:flex-start; z-index:0; margin-top:5px; border-bottom:0; background:var(--bgColor-muted,#f6f8fa); color:var(--fgColor-muted,#59636e); }
         .controls { display:flex; align-items:center; flex:1 1 240px; min-width:0; gap:8px; }
         #native-controls { flex-wrap:wrap; }
         button { flex:none; white-space:nowrap; font:inherit; color:inherit; cursor:pointer; padding:4px 7px; border:0; border-radius:4px; background:transparent; }
@@ -31,23 +39,25 @@ declare global {
         ::slotted(.js-contribution-settings-menu) { float:none!important; margin:0!important; }
         ::slotted([slot="city-controls"]) { display:block; width:100%; min-width:0; }
       </style>
-      <div class="tabs" role="group" aria-label="贡献展示方式">
-        <div class="tab" data-active="false"><button id="tab-city" type="button" aria-pressed="false">城市</button><div id="city-controls" class="controls" hidden><slot name="city-controls"></slot></div></div>
-        <div class="tab" data-active="true"><button id="tab-native" type="button" aria-pressed="true">贡献图</button><div id="native-controls" class="controls"><slot name="native-stat"></slot><slot name="native-settings"></slot></div></div>
+      <div class="tabs" role="group">
+        <div class="tab" data-active="false"><button id="tab-city" type="button" aria-pressed="false"></button><div id="city-controls" class="controls" hidden><slot name="city-controls"></slot></div></div>
+        <div class="tab" data-active="true"><button id="tab-native" type="button" aria-pressed="true"></button><div id="native-controls" class="controls"><slot name="native-stat"></slot><slot name="native-settings"></slot></div></div>
       </div>`;
     const bodyHost = document.createElement('div');
     bodyHost.id = 'codeyears-city-content'; bodyHost.hidden = true;
     const bodyShadow = bodyHost.attachShadow({ mode: 'open' });
     bodyShadow.innerHTML = `
       <style>
-        :host { display:block; color:var(--fgColor-default,#1f2328); font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+        :host { display:block; position:relative; min-height:340px; border:1px solid var(--borderColor-default,#d1d9e0); border-top:0; border-radius:0 0 8px 8px; color:var(--fgColor-default,#1f2328); font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
         :host([hidden]),[hidden] { display:none!important; }
-        #entry-status { display:block; margin:10px 0; white-space:pre-line; }
+        #city-panel { min-height:340px; }
+        @media(max-width:500px) { :host, #city-panel { min-height:300px; } }
+        .feedback { position:absolute; z-index:3; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:var(--bgColor-default,#fff); box-shadow:0 2px 8px #0002; }
+        #entry-status { white-space:pre-line; }
         button { font:inherit; color:inherit; cursor:pointer; padding:5px 12px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); }
         button:focus-visible { outline:2px solid #268f80; outline-offset:2px; }
       </style>
-      <output id="entry-status" role="status" aria-live="polite" hidden></output>
-      <button id="retry" type="button" hidden>重试</button>
+      <div class="feedback" hidden><output id="entry-status" role="status" aria-live="polite" hidden></output><button id="retry" type="button" hidden></button></div>
       <div id="city-panel" hidden></div>`;
     const nativeButton = shadow.querySelector<HTMLButtonElement>('#tab-native')!;
     const cityButton = shadow.querySelector<HTMLButtonElement>('#tab-city')!;
@@ -57,7 +67,14 @@ declare global {
     const panelHost = bodyShadow.querySelector<HTMLElement>('#city-panel')!;
     const status = bodyShadow.querySelector<HTMLOutputElement>('#entry-status')!;
     const retry = bodyShadow.querySelector<HTMLButtonElement>('#retry')!;
+    const feedback = bodyShadow.querySelector<HTMLElement>('.feedback')!;
     const headingStyle = heading.getAttribute('style');
+    heading.style.setProperty('margin-bottom', '0', 'important');
+    const graph = grid.closest<HTMLElement>('.graph-before-activity-overview');
+    const graphStyle = graph?.getAttribute('style');
+    graph?.style.setProperty('border-top-width', '0', 'important');
+    graph?.style.setProperty('border-top-left-radius', '0', 'important');
+    graph?.style.setProperty('border-top-right-radius', '0', 'important');
     const nativeStats = document.createElement('span');
     nativeStats.id = 'codeyears-native-stat'; nativeStats.slot = 'native-stat';
     nativeStats.append(...heading.childNodes);
@@ -70,6 +87,16 @@ declare global {
     const hiddenNative = new Map<HTMLElement, { display: string; priority: string }>();
     let active = false, disposed = false, selection = 0, panel: CityPanel | undefined;
     let modulePromise: Promise<typeof import('./content')> | undefined;
+    let entryState: 'preparing' | 'error' = 'preparing';
+    const localize = () => {
+      const language = resolveLanguage(preference); host.lang = bodyHost.lang = language;
+      shadow.querySelector('.tabs')!.setAttribute('aria-label', entryText(language, 'viewGroup'));
+      cityButton.textContent = entryText(language, 'city'); nativeButton.textContent = entryText(language, 'contributions');
+      retry.textContent = entryText(language, 'retry');
+      status.textContent = entryText(language, entryState === 'error' ? 'cityOpenError' : 'prepareCity');
+      panel?.setLanguage(language, preference);
+    };
+    localize();
 
     const sync = () => {
       if (!active) return;
@@ -94,6 +121,7 @@ declare global {
       nativeButton.parentElement!.dataset.active = 'true'; cityButton.parentElement!.dataset.active = 'false';
       nativeButton.setAttribute('aria-pressed', 'true'); cityButton.setAttribute('aria-pressed', 'false');
       bodyHost.hidden = panelHost.hidden = status.hidden = retry.hidden = true;
+      feedback.hidden = true;
       host.dataset.view = 'native';
     };
     const selectCity = async () => {
@@ -103,19 +131,19 @@ declare global {
       nativeButton.parentElement!.dataset.active = 'false'; cityButton.parentElement!.dataset.active = 'true';
       nativeButton.setAttribute('aria-pressed', 'false'); cityButton.setAttribute('aria-pressed', 'true');
       host.dataset.view = 'city'; bodyHost.hidden = panelHost.hidden = false; retry.hidden = true;
-      status.hidden = false; status.textContent = '正在准备城市…';
+      status.hidden = feedback.hidden = false; entryState = 'preparing'; localize();
       try {
         modulePromise ??= import(/* @vite-ignore */ chrome.runtime.getURL('content.js'));
         const module = await modulePromise;
         if (disposed || token !== selection || !active) return;
-        panel ??= module.mountCityPanel(panelHost, toolbarHost);
-        status.hidden = true;
+        panel ??= module.mountCityPanel(panelHost, toolbarHost, languageSettings());
+        status.hidden = feedback.hidden = true;
         await panel.activate();
       } catch {
         if (disposed || token !== selection || !active) return;
         modulePromise = undefined; panel?.deactivate(); panelHost.hidden = true;
-        status.textContent = '城市未能打开，请刷新页面或重新加载 CodeYears；也可返回贡献图。';
-        status.hidden = false; retry.hidden = false;
+        entryState = 'error'; localize();
+        status.hidden = feedback.hidden = false; retry.hidden = false;
       }
     };
     nativeButton.addEventListener('click', selectNative);
@@ -131,7 +159,7 @@ declare global {
     });
     host.dataset.view = 'native';
     return {
-      root, native, grid, heading, nativeStats, host, bodyHost, profile, sync,
+      root, native, grid, heading, nativeStats, host, bodyHost, profile, sync, localize,
       open() { host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
       deactivate: selectNative,
       dispose() {
@@ -141,6 +169,7 @@ declare global {
           settingsHome.replaceWith(nativeSettings);
         }
         host.replaceWith(...nativeStats.childNodes); bodyHost.remove();
+        if (graph) { if (graphStyle == null) graph.removeAttribute('style'); else graph.setAttribute('style', graphStyle); }
         if (headingStyle === null) heading.removeAttribute('style'); else heading.setAttribute('style', headingStyle);
       },
     };

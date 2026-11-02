@@ -1,0 +1,320 @@
+{
+  "extensionDescription": {
+    "message": "A free GitHub contribution visualizer. Turn real daily contributions into a city."
+  },
+  "actionTitle": {
+    "message": "CodeYears · Contribution City"
+  },
+  "viewGroup": {
+    "message": "Contribution view"
+  },
+  "city": {
+    "message": "City"
+  },
+  "contributions": {
+    "message": "Contributions"
+  },
+  "retry": {
+    "message": "Retry"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "apply": {
+    "message": "Apply"
+  },
+  "expand": {
+    "message": "Expand"
+  },
+  "collapse": {
+    "message": "Collapse"
+  },
+  "more": {
+    "message": "More"
+  },
+  "moreLabel": {
+    "message": "More and data information"
+  },
+  "yearRange": {
+    "message": "City year range"
+  },
+  "startYear": {
+    "message": "Start year"
+  },
+  "endYear": {
+    "message": "End year"
+  },
+  "cityRegion": {
+    "message": "Contribution City"
+  },
+  "expandedCity": {
+    "message": "Expanded Contribution City"
+  },
+  "zoomOut": {
+    "message": "Zoom out"
+  },
+  "zoomIn": {
+    "message": "Zoom in"
+  },
+  "fitView": {
+    "message": "Fit view"
+  },
+  "canvasLabel": {
+    "message": "Contribution City. Fixed view. Drag to pan and scroll to zoom."
+  },
+  "prepareCity": {
+    "message": "Preparing your city…"
+  },
+  "readingData": {
+    "message": "Reading contributions…"
+  },
+  "readingRange": {
+    "message": "Reading $1. Your city fills as data arrives…"
+  },
+  "invalidRange": {
+    "message": "The start year must not be later than the end year."
+  },
+  "noData": {
+    "message": "No data"
+  },
+  "noDates": {
+    "message": "No dates are available for the selected years."
+  },
+  "totalContributions": {
+    "message": "$1 contributions"
+  },
+  "readCancelled": {
+    "message": "Cancelled"
+  },
+  "readFailed": {
+    "message": "Could not load"
+  },
+  "cancelledDetail": {
+    "message": "Loading was cancelled. The field is incomplete."
+  },
+  "readFailedDetail": {
+    "message": "Could not load contributions. Please retry."
+  },
+  "cityOpenError": {
+    "message": "Could not open City. Refresh the page or reload CodeYears. You can return to Contributions."
+  },
+  "clearCache": {
+    "message": "Clear profile cache"
+  },
+  "refreshData": {
+    "message": "Refresh selected years"
+  },
+  "clearingCache": {
+    "message": "Clearing cache…"
+  },
+  "confirmingClear": {
+    "message": "Confirming your identity and clearing this profile’s cache…"
+  },
+  "cacheCleared": {
+    "message": "Cache cleared"
+  },
+  "cacheClearedDetail": {
+    "message": "Cleared this visitor’s yearly cache for this profile."
+  },
+  "clearFailed": {
+    "message": "Could not clear cache"
+  },
+  "clearFailedDetail": {
+    "message": "Could not clear the cache."
+  },
+  "dailyData": {
+    "message": "Daily data"
+  },
+  "date": {
+    "message": "Date"
+  },
+  "contributionCount": {
+    "message": "Contributions"
+  },
+  "viewHelp": {
+    "message": "Drag to pan and scroll to zoom. “Fit view” restores the full city. Data fills the field as it arrives; unavailable areas remain empty. Frame your view, then right-click the canvas and choose “Save image as…” or “Copy image”."
+  },
+  "dataHelp": {
+    "message": "Data stays on this device, separated by visitor and profile. Years use complete ISO weeks: Monday–Sunday belongs to the year containing Thursday. Adjacent calendar years may be requested at the boundary, so totals can differ from GitHub’s calendar-year totals. Missing and future dates are never filled with zeros."
+  },
+  "identityUnknown": {
+    "message": "Identity unknown; cache is not used"
+  },
+  "signedOut": {
+    "message": "Signed-out visitor"
+  },
+  "visitor": {
+    "message": "Visitor $1"
+  },
+  "profileIdentity": {
+    "message": "Profile $1 · $2"
+  },
+  "language": {
+    "message": "Language"
+  },
+  "followBrowser": {
+    "message": "Follow browser"
+  },
+  "languageSaveError": {
+    "message": "Could not save the language preference. Please retry."
+  },
+  "legendLabel": {
+    "message": "City legend"
+  },
+  "legendHeading": {
+    "message": "Read your city · Daily contributions"
+  },
+  "legendZero": {
+    "message": "Nature / urban paving"
+  },
+  "legendBungalow": {
+    "message": "Single-storey homes"
+  },
+  "legendLowRise": {
+    "message": "Low-rise homes / shops"
+  },
+  "legendApartment": {
+    "message": "Apartments"
+  },
+  "legendOffice": {
+    "message": "Offices"
+  },
+  "legendTower": {
+    "message": "Towers"
+  },
+  "legendLevels": {
+    "message": "Fixed levels use real daily counts. Adjacent cells in the same level may merge into supported footprints, so one building can represent several dates. Single-storey homes stay on single cells. See Daily data for exact counts."
+  },
+  "legendWonders": {
+    "message": "Sustained dense contributions can become a stadium, theater or landmark park, with up to two wonders per year. Their larger footprints represent density and preserve every date and count. A landmark park is not a low-contribution grass tile."
+  },
+  "legendNature": {
+    "message": "Zero-count tiles follow their surroundings: grass, trees or ponds in open areas; paving or plazas in dense urban areas. Colors are material variations. Rivers, bank trees, roads, signals and vehicles are decoration, not contribution types."
+  },
+  "legendMissing": {
+    "message": "Dates that have not arrived, and future dates, remain unfilled. They are not zero contributions."
+  },
+  "popupOpening": {
+    "message": "Opening Contribution City…"
+  },
+  "popupWrongPage": {
+    "message": "Open a GitHub profile first, then click CodeYears."
+  },
+  "popupNotReady": {
+    "message": "Retry after the contribution calendar has loaded on the GitHub profile."
+  },
+  "popupOpened": {
+    "message": "City opened."
+  },
+  "popupFailed": {
+    "message": "Could not open City. Refresh the GitHub profile and retry."
+  },
+  "errNoYears": {
+    "message": "No yearly contribution links were found on this page."
+  },
+  "errProfilePage": {
+    "message": "Open a GitHub profile and wait for its contribution calendar to load."
+  },
+  "errYear": {
+    "message": "Select a valid historical year."
+  },
+  "errGrid": {
+    "message": "A unique contribution calendar was not found. Your session or GitHub’s page structure may have changed."
+  },
+  "errHeading": {
+    "message": "The yearly heading could not be read. Only GitHub’s English yearly format has been validated."
+  },
+  "errYearTotal": {
+    "message": "The yearly total is not a valid integer."
+  },
+  "errTooltip": {
+    "message": "A date tooltip is bound more than once."
+  },
+  "errDateFormat": {
+    "message": "The contribution date format is not supported."
+  },
+  "errDate": {
+    "message": "A contribution date is invalid."
+  },
+  "errDateRange": {
+    "message": "The calendar contains duplicate or out-of-range dates."
+  },
+  "errContextChanged": {
+    "message": "The profile or visitor has changed. Refresh the page and reopen City."
+  },
+  "errIdentityChanged": {
+    "message": "The current GitHub identity could not be confirmed or has changed. Old cache was not used. Refresh and retry."
+  },
+  "warnCacheRead": {
+    "message": "The cache could not be read. Fetching from GitHub instead."
+  },
+  "warnIdentity": {
+    "message": "Visitor identity is unknown. Cache is not read or written."
+  },
+  "warnCacheWrite": {
+    "message": "Real data was loaded but could not be cached. It is available on this page only."
+  },
+  "errClearIdentity": {
+    "message": "Identity is unknown, so the cache scope cannot be selected for clearing."
+  },
+  "errRedirect": {
+    "message": "The request was redirected. Check your GitHub session and retry."
+  },
+  "errResponse": {
+    "message": "GitHub returned an unsupported response format."
+  },
+  "errAssets": {
+    "message": "City assets could not be loaded. Please retry."
+  },
+  "errAssetsRetry": {
+    "message": "City assets could not be loaded. Please retry."
+  },
+  "errCanvas": {
+    "message": "Could not create a city asset canvas."
+  },
+  "errGraphics": {
+    "message": "The graphics context was interrupted. Please retry."
+  },
+  "errLandscape": {
+    "message": "The landscape could not be loaded. Please retry."
+  },
+  "errNetwork": {
+    "message": "The network request failed. Check your connection and retry."
+  },
+  "warnYearBoundary": {
+    "message": "Available source years do not cover the full boundary. Only provided dates are shown."
+  },
+  "errRequestedDuplicate": {
+    "message": "Duplicate requested year."
+  },
+  "errProfileMismatch": {
+    "message": "Contribution profile does not match requested profile."
+  },
+  "errUnexpectedYear": {
+    "message": "Contribution year was not requested."
+  },
+  "errRecordDuplicate": {
+    "message": "Duplicate contribution year."
+  },
+  "errHTTP": {
+    "message": "GitHub request failed (HTTP $1). The failed response was not treated as empty data."
+  },
+  "errParseDay": {
+    "message": "Could not accurately parse the count or date text for $1. Color levels were not used to estimate it."
+  },
+  "errDayCount": {
+    "message": "The count for $1 is not a valid non-negative integer."
+  },
+  "errCoverage": {
+    "message": "Incomplete yearly coverage: received $1 days, expected $2. Missing dates were not filled with zeros."
+  },
+  "errTotalMismatch": {
+    "message": "Daily total $1 does not match the page’s yearly total $2. Accuracy could not be confirmed."
+  },
+  "errMissingAsset": {
+    "message": "City asset not found: $1"
+  },
+  "errAssetRequest": {
+    "message": "Asset request failed: $1"
+  }
+}
