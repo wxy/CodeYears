@@ -10,7 +10,7 @@ from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXED = {'manifest.json', 'popup.html', 'entry.js', 'content.js', 'landscape.js'}
+FIXED = {'manifest.json', 'popup.html', 'options.html', 'entry.js', 'content.js', 'landscape.js'}
 NOTICES = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'ASSETS.md', 'PRIVACY.md'}
 SCOPE = ['https://github.com/*']
 ENTRY = [{'matches': SCOPE, 'js': ['entry.js'], 'run_at': 'document_idle'}]
@@ -54,6 +54,7 @@ def verify(archive, build):
         require(manifest.get('content_scripts') == ENTRY, 'automatic entry scope changed')
         require(manifest.get('web_accessible_resources') == WAR, 'resource exposure changed')
         require(manifest.get('content_security_policy') == {'extension_pages': "script-src 'self'; object-src 'none'"}, 'CSP changed')
+        require(manifest.get('options_ui') == {'page': 'options.html', 'open_in_tab': False}, 'options page changed')
         require(manifest == source, 'manifest differs from checkout; review new capabilities')
         require(manifest.get('default_locale') == 'en', 'expected English fallback locale')
         catalogs = [read_json(ROOT / f'public/_locales/{locale}/messages.json') for locale in ('en', 'zh_CN')]
@@ -78,9 +79,9 @@ def verify(archive, build):
         for path in (ROOT / 'public/assets/city').glob('*.png'):
             name = path.relative_to(ROOT / 'public').as_posix()
             expected[name] = build / name
-        for pattern in ('assets/popup-*.js', 'chunks/*.js'):
+        for pattern in ('assets/popup-*.js', 'assets/options-*.js', 'assets/shared-*.js', 'chunks/*.js'):
             paths = list(build.glob(pattern))
-            require(paths, f'build missing {pattern}')
+            require(paths or pattern == 'assets/shared-*.js', f'build missing {pattern}')
             expected.update((p.relative_to(build).as_posix(), p) for p in paths)
         expected.update((name, ROOT / name) for name in NOTICES)
         require(names == set(expected), f'file inventory mismatch; missing={sorted(set(expected) - names)}, extra={sorted(names - set(expected))}')
@@ -90,6 +91,7 @@ def verify(archive, build):
             require(name in names, f'missing reference: {owner} -> {target}')
 
         reference('manifest.json', manifest['action']['default_popup'], True)
+        reference('manifest.json', manifest['options_ui']['page'], True)
         for group in manifest['content_scripts']:
             for name in group['js']:
                 reference('manifest.json', name, True)
@@ -102,10 +104,17 @@ def verify(archive, build):
                 text = data.decode('utf-8')
                 # Current Vite output: static/dynamic imports, runtime getURL,
                 # HTML src/href and CSS url. Not a general JavaScript parser.
-                for target in re.findall(r'''(?:import\s*\(\s*|from\s*|getURL\s*\(\s*)["'`]([^"'`]+\.js)["'`]''', text):
+                for target in re.findall(r'''(?:import\s*(?:\(\s*)?|from\s*|getURL\s*\(\s*)["'`]([^"'`]+\.js)["'`]''', text):
                     reference(name, target, not target.startswith('.'))
                 for target in re.findall(r'''(?:src|href)=["']([^"']+)["']|url\(["']?([^\s)'";]+)''', text):
-                    reference(name, target[0] or target[1])
+                    target = target[0] or target[1]
+                    if name == 'options.html' and target in {
+                        'https://github.com/wxy/CodeYears#readme',
+                        'https://github.com/wxy/CodeYears/blob/main/PRIVACY.md',
+                        'https://github.com/wxy/CodeYears/issues',
+                    }:
+                        continue
+                    reference(name, target)
                 # Catalog also carries non-runtime candidate paths; only bare
                 # PNG names are actual legacy local resources. unit-${id}.png
                 # and outskirts templates are covered by the full PNG inventory.
