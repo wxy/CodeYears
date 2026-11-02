@@ -183,7 +183,7 @@
     "message": "Towers"
   },
   "legendLevels": {
-    "message": "Fixed levels use real daily counts. Adjacent cells in the same level may merge into supported footprints, so one building can represent several dates. Single-storey homes stay on single cells. See Daily data for exact counts."
+    "message": "Fixed levels use real daily counts. Adjacent cells in the same level may merge into supported footprints, so one building can represent several dates. Single-storey homes stay on single cells."
   },
   "legendWonders": {
     "message": "Sustained dense contributions can become a stadium, theater or landmark park, with up to two wonders per year. Their larger footprints represent density and preserve every date and count. A landmark park is not a low-contribution grass tile."
