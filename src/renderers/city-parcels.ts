@@ -23,7 +23,6 @@ export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRect
   const districts = years.map(year => ({ year, monday: isoYearStart(year), weeks: isoYearWeeks(year), breaks: [13,26,39] }));
   const byYear = new Map(districts.map((district, index) => [district.year, index]));
   const columns = Math.max(0,...districts.map(district => district.weeks)), rows = years.length, blocks = rows;
-  const strongest = Math.max(...days.map(day => Math.log1p(Math.max(0, day.count - 5))), 1);
   const groups = new Map<string, CityParcel>();
   days.forEach((day, index) => {
     const date = dates[index], block = byYear.get(date.year)!;
@@ -34,8 +33,9 @@ export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRect
   const cells = [...groups.values()].sort((a, b) => a.block - b.block || a.z - b.z || a.x - b.x);
   for (const cell of cells) {
     cell.mean = cell.count / cell.indices.length;
-    cell.kind = cell.mean === 0 ? "grass" : cell.mean <= 2 ? "shrub" : cell.mean <= 5 ? "tree" : "building";
-    cell.band = cell.kind === "building" ? Math.max(1, Math.ceil(Math.log1p(cell.mean - 5) / strongest * 4)) : 0;
+    cell.kind = cell.mean === 0 ? "grass" : "building";
+    // 固定绝对档位；后到年份中的极值不改变已有日期的贡献级别。
+    cell.band = cell.mean <= 2 ? 0 : cell.mean <= 5 ? 1 : cell.mean <= 19 ? 2 : cell.mean <= 49 ? 3 : 4;
   }
   const parcels: CityParcel[] = wonders ? planCityWonders(cells, districts) : [];
   const reserved = new Set(parcels.flatMap(parcel => parcel.indices));
@@ -44,7 +44,8 @@ export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRect
     if (used.has(cell)) continue;
     // 新长条与素材/选择调用一起显式启用；默认保留原有合法占地。
     const sizes: [number, number][] = cell.kind === "building"
-      ? cell.band === 1 ? [[3, 3], [2, 1], [1, 1]]
+      ? cell.band === 0 ? [[1, 1]]
+        : cell.band === 1 ? [[2, 1], [1, 2], [1, 1]]
         : cell.band === 2 ? [[2, 2], [1, 1]]
         : cell.band === 3 ? (mergeTallRectangles ? [[2, 1], [1, 2], [1, 1]] : [[1, 1]])
         : mergeTallRectangles ? [[2, 2], [2, 1], [1, 2], [1, 1]] : [[2, 2], [1, 1]]
