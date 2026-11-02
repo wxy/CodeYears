@@ -23,6 +23,9 @@ if manifest.get("content_scripts") != [{"matches": ["https://github.com/*"], "js
 
 # An explicit distribution list excludes repository material, source maps and local data.
 files = {name: dist / name for name in ("manifest.json", "popup.html", "entry.js", "content.js", "landscape.js")}
+for locale in ("en", "zh_CN"):
+    name = f"_locales/{locale}/messages.json"
+    files[name] = dist / name
 for pattern in ("assets/popup-*.js", "assets/city/*.png", "chunks/*.js"):
     files.update((path.relative_to(dist).as_posix(), path) for path in dist.glob(pattern))
 for table in (manifest["icons"], manifest["action"]["default_icon"]):

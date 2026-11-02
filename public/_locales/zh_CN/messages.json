@@ -1,0 +1,320 @@
+{
+  "extensionDescription": {
+    "message": "免费的 GitHub 贡献历史可视化扩展。选择年份，用真实每日贡献生成贡献之城。"
+  },
+  "actionTitle": {
+    "message": "CodeYears · 贡献之城"
+  },
+  "viewGroup": {
+    "message": "贡献展示方式"
+  },
+  "city": {
+    "message": "城市"
+  },
+  "contributions": {
+    "message": "贡献图"
+  },
+  "retry": {
+    "message": "重试"
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "apply": {
+    "message": "应用"
+  },
+  "expand": {
+    "message": "展开"
+  },
+  "collapse": {
+    "message": "收起"
+  },
+  "more": {
+    "message": "更多"
+  },
+  "moreLabel": {
+    "message": "更多与数据说明"
+  },
+  "yearRange": {
+    "message": "城市年份范围"
+  },
+  "startYear": {
+    "message": "起始年份"
+  },
+  "endYear": {
+    "message": "结束年份"
+  },
+  "cityRegion": {
+    "message": "贡献之城"
+  },
+  "expandedCity": {
+    "message": "展开的贡献之城"
+  },
+  "zoomOut": {
+    "message": "缩小城市"
+  },
+  "zoomIn": {
+    "message": "放大城市"
+  },
+  "fitView": {
+    "message": "全景"
+  },
+  "canvasLabel": {
+    "message": "贡献之城。固定视角，拖动平移，滚轮缩放。"
+  },
+  "prepareCity": {
+    "message": "正在准备城市…"
+  },
+  "readingData": {
+    "message": "正在读取贡献数据…"
+  },
+  "readingRange": {
+    "message": "正在读取 $1 的贡献数据，场地随数据填入…"
+  },
+  "invalidRange": {
+    "message": "起始年份不能晚于结束年份。"
+  },
+  "noData": {
+    "message": "暂无数据"
+  },
+  "noDates": {
+    "message": "所选年份尚无已提供的日期。"
+  },
+  "totalContributions": {
+    "message": "$1 次贡献"
+  },
+  "readCancelled": {
+    "message": "已取消读取"
+  },
+  "readFailed": {
+    "message": "读取失败"
+  },
+  "cancelledDetail": {
+    "message": "读取已取消，场地尚未完成。"
+  },
+  "readFailedDetail": {
+    "message": "读取失败，请重试。"
+  },
+  "cityOpenError": {
+    "message": "城市未能打开，请刷新页面或重新加载 CodeYears；也可返回贡献图。"
+  },
+  "clearCache": {
+    "message": "清除此主页缓存"
+  },
+  "refreshData": {
+    "message": "刷新所选年份"
+  },
+  "clearingCache": {
+    "message": "正在清除缓存…"
+  },
+  "confirmingClear": {
+    "message": "正在确认身份并清除此主页缓存…"
+  },
+  "cacheCleared": {
+    "message": "缓存已清除"
+  },
+  "cacheClearedDetail": {
+    "message": "已清除此访问者在当前主页的年度缓存。"
+  },
+  "clearFailed": {
+    "message": "缓存清除失败"
+  },
+  "clearFailedDetail": {
+    "message": "缓存清除失败。"
+  },
+  "dailyData": {
+    "message": "数据明细"
+  },
+  "date": {
+    "message": "日期"
+  },
+  "contributionCount": {
+    "message": "贡献数量"
+  },
+  "viewHelp": {
+    "message": "拖动平移，滚轮缩放。“全景”恢复完整取景。场地随已读取的数据逐步填入，未返回的区域保持待填充。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。"
+  },
+  "dataHelp": {
+    "message": "数据只缓存在本机，按访问者与主页隔离。年份按完整周划分（ISO 周规则）：周一至周日归周四所在年；边界会读取相邻公历年，因此合计可能与 GitHub 公历年度不同。缺失或未来日期不会补零。"
+  },
+  "identityUnknown": {
+    "message": "身份未识别，本次不读写缓存"
+  },
+  "signedOut": {
+    "message": "未登录访问者"
+  },
+  "visitor": {
+    "message": "访问者 $1"
+  },
+  "profileIdentity": {
+    "message": "主页 $1 · $2"
+  },
+  "language": {
+    "message": "语言"
+  },
+  "followBrowser": {
+    "message": "跟随浏览器"
+  },
+  "languageSaveError": {
+    "message": "语言偏好保存失败，请重试。"
+  },
+  "legendLabel": {
+    "message": "City 城市图例"
+  },
+  "legendHeading": {
+    "message": "读懂这座城 · 每日贡献"
+  },
+  "legendZero": {
+    "message": "自然地块 / 城市铺装"
+  },
+  "legendBungalow": {
+    "message": "平房"
+  },
+  "legendLowRise": {
+    "message": "低层住宅 / 商住楼"
+  },
+  "legendApartment": {
+    "message": "公寓"
+  },
+  "legendOffice": {
+    "message": "办公楼"
+  },
+  "legendTower": {
+    "message": "大厦"
+  },
+  "legendLevels": {
+    "message": "按每日真实数量固定分档；同档相邻格可按可用占地融合，一座建筑可包含多个源日期。平房保留单格，不靠放大变成高楼。精确数量以每日明细为准。"
+  },
+  "legendWonders": {
+    "message": "持续密集贡献的区域可汇成体育馆、剧院或地标公园，每年最多两处。奇观用更大的占地表达贡献密度，完整保留所含日期和数量；地标公园不代表低贡献草地。"
+  },
+  "legendNature": {
+    "message": "零值地块按周边环境选材：空旷处有草地、树木或池塘，建筑密集处可出现铺装或广场。颜色仅为材质差异；河道、岸树、道路、信号灯和车辆只作装饰，车型不表示贡献类型。"
+  },
+  "legendMissing": {
+    "message": "尚未返回和未来日期只保留待填充场地，不当作零贡献。"
+  },
+  "popupOpening": {
+    "message": "正在打开贡献之城…"
+  },
+  "popupWrongPage": {
+    "message": "请先打开 GitHub 个人主页，再点击扩展。"
+  },
+  "popupNotReady": {
+    "message": "请在 GitHub 个人主页的贡献日历加载完成后重试。"
+  },
+  "popupOpened": {
+    "message": "已打开城市。"
+  },
+  "popupFailed": {
+    "message": "无法打开城市，请刷新 GitHub 主页后重试。"
+  },
+  "errNoYears": {
+    "message": "当前页面没有可识别的年度入口。"
+  },
+  "errProfilePage": {
+    "message": "请在 GitHub 个人主页的贡献日历加载完成后打开诊断。"
+  },
+  "errYear": {
+    "message": "请选择有效历史年份。"
+  },
+  "errGrid": {
+    "message": "页面没有唯一贡献日历，可能为会话跳转或页面结构变化。"
+  },
+  "errHeading": {
+    "message": "年度标题无法识别；当前解析器仅验证了英文年度格式。"
+  },
+  "errYearTotal": {
+    "message": "年度总数不是有效整数。"
+  },
+  "errTooltip": {
+    "message": "日期 tooltip 绑定重复。"
+  },
+  "errDateFormat": {
+    "message": "贡献日期格式不支持。"
+  },
+  "errDate": {
+    "message": "贡献日期不存在。"
+  },
+  "errDateRange": {
+    "message": "日历存在越界或重复日期。"
+  },
+  "errContextChanged": {
+    "message": "主页或访问者身份已改变，请刷新页面后重新打开诊断。"
+  },
+  "errIdentityChanged": {
+    "message": "当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。"
+  },
+  "warnCacheRead": {
+    "message": "缓存读取失败，本次改为联网获取。"
+  },
+  "warnIdentity": {
+    "message": "访问者身份未识别，本次不读取或写入缓存。"
+  },
+  "warnCacheWrite": {
+    "message": "已取得真实数据，但缓存写入失败；本次结果仅保留在页面中。"
+  },
+  "errClearIdentity": {
+    "message": "身份未识别，无法选择要清除的缓存作用域。"
+  },
+  "errRedirect": {
+    "message": "请求发生重定向，请检查当前 GitHub 会话后重试。"
+  },
+  "errResponse": {
+    "message": "GitHub 返回了不支持的响应格式。"
+  },
+  "errAssets": {
+    "message": "城市素材加载失败，请重新生成风景。"
+  },
+  "errAssetsRetry": {
+    "message": "城市素材加载失败，请重试。"
+  },
+  "errCanvas": {
+    "message": "无法创建城市素材画布。"
+  },
+  "errGraphics": {
+    "message": "图形上下文已中断，请重新生成风景。"
+  },
+  "errLandscape": {
+    "message": "风景加载失败，请重新生成。"
+  },
+  "errNetwork": {
+    "message": "网络请求失败，请检查连接后重试。"
+  },
+  "warnYearBoundary": {
+    "message": "可用年度不足，年份边界不完整；仅显示已提供的日期。"
+  },
+  "errRequestedDuplicate": {
+    "message": "请求年份重复。"
+  },
+  "errProfileMismatch": {
+    "message": "贡献记录与请求的主页不一致。"
+  },
+  "errUnexpectedYear": {
+    "message": "贡献年份未被请求。"
+  },
+  "errRecordDuplicate": {
+    "message": "贡献年份重复。"
+  },
+  "errHTTP": {
+    "message": "GitHub 请求失败（HTTP $1），没有将失败响应当作空数据。"
+  },
+  "errParseDay": {
+    "message": "无法准确解析 $1 的数量或日期文本；未使用颜色等级估算。"
+  },
+  "errDayCount": {
+    "message": "$1 的数量不是有效非负整数。"
+  },
+  "errCoverage": {
+    "message": "年度日期覆盖不完整：收到 $1 天，预期 $2 天；缺失日期未填零。"
+  },
+  "errTotalMismatch": {
+    "message": "逐日合计 $1 与页面年度总数 $2 不一致，尚不能确认为准确数据。"
+  },
+  "errMissingAsset": {
+    "message": "未找到城市素材：$1"
+  },
+  "errAssetRequest": {
+    "message": "素材读取失败：$1"
+  }
+}

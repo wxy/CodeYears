@@ -55,6 +55,16 @@ def verify(archive, build):
         require(manifest.get('web_accessible_resources') == WAR, 'resource exposure changed')
         require(manifest.get('content_security_policy') == {'extension_pages': "script-src 'self'; object-src 'none'"}, 'CSP changed')
         require(manifest == source, 'manifest differs from checkout; review new capabilities')
+        require(manifest.get('default_locale') == 'en', 'expected English fallback locale')
+        catalogs = [read_json(ROOT / f'public/_locales/{locale}/messages.json') for locale in ('en', 'zh_CN')]
+        require(catalogs[0] and catalogs[0].keys() == catalogs[1].keys(), 'locale keys differ')
+        for key in catalogs[0]:
+            messages = [catalog[key]['message'] for catalog in catalogs]
+            require(all(isinstance(message, str) and message for message in messages), f'empty locale message: {key}')
+            require(set(re.findall(r'\$[1-9]', messages[0])) == set(re.findall(r'\$[1-9]', messages[1])), f'locale substitutions differ: {key}')
+        for value in (manifest['description'], manifest['action']['default_title']):
+            match = re.fullmatch(r'__MSG_(\w+)__', value)
+            require(match and match[1] in catalogs[0], 'missing localized manifest message')
 
         # Same distribution boundary as package-city.py, with public PNG inventory
         # independent of dist, so a missing copied/dynamically named image fails too.
@@ -62,6 +72,9 @@ def verify(archive, build):
         require(set(manifest['icons'].values()) == icons
                 and set(manifest['action']['default_icon'].values()) == icons, 'icon inventory changed')
         expected = {name: build / name for name in FIXED | icons}
+        for locale in ('en', 'zh_CN'):
+            name = f'_locales/{locale}/messages.json'
+            expected[name] = ROOT / 'public' / name
         for path in (ROOT / 'public/assets/city').glob('*.png'):
             name = path.relative_to(ROOT / 'public').as_posix()
             expected[name] = build / name

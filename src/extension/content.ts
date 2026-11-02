@@ -1,3 +1,4 @@
+import { text, externalText, localize, numberText, type Language, type LanguagePreference, type LanguageSettings, type MessageKey } from "./i18n";
 import { cityLegendStyles, createCityLegend } from "./city-legend";
 import { readPageContext } from "../platform/github/probe";
 import { clearContributionCache } from "../platform/github/load-year";
@@ -8,12 +9,15 @@ import type { ContributionLandscape } from "../renderers/landscape";
 
 export interface CityPanel {
   activate(): Promise<void>;
+  setLanguage(language: Language, preference: LanguagePreference): void;
   deactivate(): void;
   dispose(): void;
 }
 
 /** 用户选择城市后才加载；入口负责原图切换、后台与导航生命周期。 */
-export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): CityPanel {
+export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, settings: LanguageSettings): CityPanel {
+  let language = settings.language, preference = settings.preference;
+  const t = (key: MessageKey, values: readonly (string | number)[] = []) => text(language, key, values);
   let context = readPageContext(document, new URL(location.href));
   const years = [...new Set(Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
     .map(link => Number(link.id.slice("year-link-".length)))
@@ -27,21 +31,22 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
       :host { display:block; color:var(--fgColor-default,#1f2328); font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
       * { box-sizing:border-box; } [hidden] { display:none !important; }
       .panel { background:var(--bgColor-default,#fff); }
-      .bar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:10px 12px; }
-      form { display:flex; align-items:center; gap:6px; margin-right:auto; }
+      .bar { position:relative; display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:10px 12px; }
+      form { display:flex; align-items:center; flex-wrap:wrap; min-width:0; gap:6px; margin-right:auto; }
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
-      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; white-space:nowrap; }
+      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:min(24ch,100%); white-space:nowrap; }
       #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
-      .status { display:flex; align-items:center; gap:8px; padding:0 12px; } output { white-space:pre-line; } output:empty { display:none; }
+      .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:var(--bgColor-default,#fff); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { width:100%; height:100%; background:transparent; }
-      #preparing { position:absolute; inset:0; display:grid; place-items:center; color:var(--fgColor-muted,#59636e); pointer-events:none; }
       .view-tools { position:absolute; right:10px; bottom:10px; display:flex; gap:4px; padding:4px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:var(--bgColor-default,#fff); }
       .view-tools button { border:0; min-width:30px; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
-      .more-panel { position:absolute; z-index:3; right:0; top:100%; width:min(390px,calc(100vw - 64px)); max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
+      #more { position:static; }
+      .more-panel { position:absolute; z-index:3; right:0; top:100%; width:390px; max-width:100%; max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
+      .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
       .more-panel p { margin:0 0 10px; } .data-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
       #details summary { padding:6px 0; } .days { max-height:220px; overflow:auto; } table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; } td,th { padding:3px 6px; text-align:left; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       dialog { color:inherit; background:var(--bgColor-default,#fff); width:min(1400px,calc(100vw - 40px)); height:calc(100dvh - 40px); max-width:none; max-height:none; padding:0; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:14px; }
@@ -51,29 +56,32 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
       @media(max-width:500px) { .scene-wrap { height:300px; } .bar { gap:4px; } select,button { padding:4px 6px; } dialog { width:calc(100vw - 16px); height:calc(100dvh - 16px); } }
   `;
   shadow.innerHTML = `<style>${styles}</style>
-    <section class="panel" aria-label="贡献之城">
+    <section class="panel" data-i18n-label="cityRegion">
       <div id="expanded-controls"></div>
-      <div class="status"><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" hidden>重试</button><button id="cancel" type="button" hidden>取消</button></div>
-      <div class="scene-wrap"><div id="scene"></div><span id="preparing">正在准备城市…</span><div class="view-tools" hidden><button id="zoom-out" type="button" aria-label="缩小城市">−</button><button id="zoom-in" type="button" aria-label="放大城市">＋</button><button id="reset-view" type="button">全景</button></div></div>
-    </section><dialog aria-label="展开的贡献之城"></dialog>`;
+      <div class="scene-wrap"><div id="scene"></div>
+        <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
+        <div class="view-tools" hidden><button id="zoom-out" type="button" data-i18n-label="zoomOut">−</button><button id="zoom-in" type="button" data-i18n-label="zoomIn">＋</button><button id="reset-view" type="button" data-i18n="fitView"></button></div>
+      </div>
+    </section><dialog data-i18n-label="expandedCity"></dialog>`;
   controls.innerHTML = `<style>${styles}
     :host { display:block; width:100%; min-width:0; }
     .bar { padding:0; gap:6px; }
   </style>
     <div class="bar">
-        <form aria-label="城市年份范围"><select id="start-year" aria-label="起始年份"></select><span>—</span><select id="year" aria-label="结束年份"></select><button id="run" type="submit">应用</button></form>
+        <form data-i18n-label="yearRange"><select id="start-year" data-i18n-label="startYear"></select><span>—</span><select id="year" data-i18n-label="endYear"></select><button id="run" type="submit" data-i18n="apply"></button></form>
         <span id="city-summary" class="summary"></span>
-        <button id="expand" type="button" aria-expanded="false" disabled>展开</button>
-        <details id="more"><summary aria-label="更多与数据说明">更多</summary><div class="more-panel">
-          <p class="note">拖动平移，滚轮缩放。“全景”恢复完整取景。场地随已读取的数据逐步填入，未返回的区域保持待填充。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。</p>
+        <button id="expand" type="button" aria-expanded="false" disabled></button>
+        <details id="more"><summary data-i18n-label="moreLabel" data-i18n="more"></summary><div class="more-panel">
+          <label class="language"><span data-i18n="language"></span><select id="language"><option value="auto" data-i18n="followBrowser"></option><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></label>
+          <p class="note" data-i18n="viewHelp"></p>
           <p id="identity" class="note"></p>
-          <p class="note">数据只缓存在本机，按访问者与主页隔离。年份按完整周划分（ISO 周规则）：周一至周日归周四所在年；边界会读取相邻公历年，因此合计可能与 GitHub 公历年度不同。缺失或未来日期不会补零。</p>
-          <div class="data-actions"><button id="refresh" type="button">刷新所选年份</button><button id="clear" type="button">清除此主页缓存</button></div>
-          <details id="details" hidden><summary>数据明细</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
+          <p class="note" data-i18n="dataHelp"></p>
+          <div class="data-actions"><button id="refresh" type="button" data-i18n="refreshData"></button><button id="clear" type="button" data-i18n="clearCache"></button></div>
+          <details id="details" hidden><summary data-i18n="dailyData"></summary><div class="days"><table><thead><tr><th data-i18n="date"></th><th data-i18n="contributionCount"></th></tr></thead><tbody></tbody></table></div></details>
           <div id="legend"></div>
         </div></details>
       </div>`;
-  controls.querySelector("#legend")!.append(createCityLegend());
+  controls.querySelector("#legend")!.append(createCityLegend(language));
   const get = <T extends Element>(selector: string) => (shadow.querySelector<T>(selector) ?? controls.querySelector<T>(selector))!;
   const panel = get<HTMLElement>(".panel"), dialog = get<HTMLDialogElement>("dialog");
   const startSelect = get<HTMLSelectElement>("#start-year"), select = get<HTMLSelectElement>("#year");
@@ -83,30 +91,40 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
   const cancel = get<HTMLButtonElement>("#cancel"), retry = get<HTMLButtonElement>("#retry"), expand = get<HTMLButtonElement>("#expand");
   const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
   const more = get<HTMLDetailsElement>("#more"), details = get<HTMLDetailsElement>("#details"), body = get<HTMLTableSectionElement>("tbody");
-  const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), preparing = get<HTMLElement>("#preparing");
+  const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), feedback = get<HTMLElement>(".status");
+  const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
   let visibleDays: readonly DailyContribution[] = [];
+  let statusMessage = () => "", summaryMessage = () => "";
+  const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
+  const setStatus = (message: () => string) => { statusMessage = message; status.textContent = message(); updateFeedback(); };
+  const setSummary = (message: () => string) => { summaryMessage = message; summary.textContent = message(); };
+  const showIdentity = () => {
+    const identity = context.viewer.state === "unknown" ? t("identityUnknown") : context.viewer.identity.kind === "signed-out" ? t("signedOut") : t("visitor", [context.viewer.identity.login]);
+    get<HTMLElement>("#identity").textContent = active ? t("profileIdentity", [context.profileLogin, identity]) : "";
+  };
   const currentContext = () => readPageContext(document, new URL(location.href));
   const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
   const collapse = (restoreFocus = true) => {
     if (!dialog.open) return;
     dialog.close(); dialog.before(panel); toolbarHome.append(toolbarHost); panel.classList.remove("expanded");
-    expand.textContent = "展开"; expand.setAttribute("aria-expanded", "false");
+    expand.textContent = t("expand"); expand.setAttribute("aria-expanded", "false");
     updateControls();
     if (restoreFocus) expand.focus();
   };
   expand.onclick = () => {
     if (dialog.open) { collapse(); return; }
     more.open = false; get<HTMLElement>("#expanded-controls").append(toolbarHost); panel.classList.add("expanded"); dialog.append(panel); dialog.showModal();
-    expand.textContent = "收起"; expand.setAttribute("aria-expanded", "true"); expand.focus();
+    expand.textContent = t("collapse"); expand.setAttribute("aria-expanded", "true"); expand.focus();
   };
   dialog.addEventListener("cancel", event => { event.preventDefault(); collapse(); });
   const updateControls = () => {
     const ready = Boolean(cityHost.querySelector("canvas"));
     expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
     cancel.hidden = !busy;
-    preparing.hidden = ready;
+    cityHost.querySelector("canvas")?.setAttribute("aria-label", t("canvasLabel"));
+    updateFeedback();
   };
   const setBusy = (value: boolean) => {
     busy = value; run.disabled = refresh.disabled = select.disabled = startSelect.disabled = busy;
@@ -114,7 +132,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
   };
   const resetResult = () => {
     city?.dispose(); city = undefined; cityHost.replaceChildren();
-    visibleDays = []; body.replaceChildren(); details.open = false; details.hidden = true; summary.textContent = "";
+    visibleDays = []; body.replaceChildren(); details.open = false; details.hidden = true; setSummary(() => "");
     updateControls();
   };
   details.addEventListener("toggle", () => {
@@ -130,7 +148,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
   const load = async (forceRefresh: boolean) => {
     if (!active || disposed || busy) return;
     const start = Number(startSelect.value), end = Number(select.value);
-    if (start > end) { status.textContent = "起始年份不能晚于结束年份。"; return; }
+    if (start > end) { setStatus(() => t("invalidRange")); return; }
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
     const firstNeeded = new Date(windowStart).getUTCFullYear(), lastNeeded = new Date(windowEnd - 86400000).getUTCFullYear();
     const calendarYear = new Date().getFullYear();
@@ -139,8 +157,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
     const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
     const range = selectedRange();
     const request = new AbortController(); controller = request;
-    resetResult(); summary.textContent = "正在读取…"; setBusy(true); more.open = false; retry.hidden = true;
-    preparing.textContent = "正在准备场地…"; status.textContent = "正在读取贡献数据…";
+    resetResult(); setBusy(true); more.open = false; retry.hidden = true;
+    setStatus(() => t("readingData"));
     const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
     let renderer: typeof import("../renderers/landscape") | undefined;
     let renderFailure: Error | undefined;
@@ -159,8 +177,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
     if (firstSource > firstNeeded || (lastSource < lastNeeded && lastNeeded <= calendarYear)) warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
     try {
       context = currentContext();
-      const identity = context.viewer.state === "unknown" ? "身份未识别，本次不读写缓存" : context.viewer.identity.kind === "signed-out" ? "未登录访问者" : `访问者 ${context.viewer.identity.login}`;
-      get<HTMLElement>("#identity").textContent = `主页 ${context.profileLogin} · ${identity}`;
+      showIdentity();
       if (context.viewer.state === "unknown") warnings.add("访问者身份未识别，本次不读取或写入缓存。");
       renderer = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
       request.signal.throwIfAborted();
@@ -171,7 +188,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
         if (request.signal.aborted) return;
         if (result.warning) warnings.add(result.warning);
         const available = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
-        status.textContent = `正在读取 ${range} 的贡献数据，场地随数据填入…`;
+        setStatus(() => t("readingRange", [range]));
         painting = painting.then(async () => {
           if (!active || controller !== request || request.signal.aborted) return;
           await field.updateDays(available);
@@ -186,20 +203,19 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
       visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
-      if (!visibleDays.length) { summary.textContent = "暂无数据"; status.textContent = "所选年份尚无已提供的日期。"; preparing.textContent = "暂无可展示的数据"; return; }
+      if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
-      status.textContent = [...warnings].join(" "); details.hidden = false;
-      summary.textContent = `${total.toLocaleString()} 次贡献`;
+      setStatus(() => [...warnings].map(message => externalText(language, message)).join(" ")); details.hidden = false;
+      setSummary(() => t("totalContributions", [numberText(language, total)]));
     } catch (error) {
       if (!active || controller !== request) return;
       const cancelled = request.signal.aborted && !renderFailure;
       request.abort();
       resetResult();
       if (renderer && fieldCreated) mountEmptyField();
-      summary.textContent = cancelled ? "已取消读取" : "读取失败";
       const failure = renderFailure ?? error;
-      status.textContent = cancelled ? "读取已取消，场地尚未完成。" : failure instanceof Error ? failure.message : "读取失败，请重试。";
-      preparing.textContent = cancelled ? "已取消读取" : "城市未能加载"; retry.hidden = false;
+      retry.hidden = false;
+      setStatus(() => cancelled ? t("cancelledDetail") : failure instanceof Error ? externalText(language, failure.message) : t("readFailedDetail"));
     } finally {
       // 切回城市会开始新请求，旧请求不能撤销新一轮的忙碌状态。
       if (controller === request) { controller = undefined; setBusy(false); }
@@ -215,21 +231,34 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement): Cit
   clear.onclick = async () => {
     if (!active || busy) return;
     const request = new AbortController(); controller = request;
-    resetResult(); summary.textContent = `${selectedRange()} · 正在清除缓存…`; setBusy(true); cancel.hidden = true; more.open = false; retry.hidden = true;
-    status.textContent = "正在确认身份并清除此主页缓存…";
+    resetResult(); setBusy(true); cancel.hidden = true; more.open = false; retry.hidden = true;
+    setStatus(() => t("confirmingClear"));
     try {
       await clearContributionCache(context, request.signal, currentContext);
-      if (active && !request.signal.aborted) { summary.textContent = `${selectedRange()} · 缓存已清除`; status.textContent = "已清除此访问者在当前主页的年度缓存。"; preparing.textContent = "重新读取后可查看城市"; retry.hidden = false; }
+      if (active && !request.signal.aborted) { retry.hidden = false; setStatus(() => t("cacheClearedDetail")); }
     } catch (error) {
-      if (active && controller === request) { summary.textContent = `${selectedRange()} · 缓存清除失败`; status.textContent = error instanceof Error ? error.message : "缓存清除失败。"; retry.hidden = false; }
+      if (active && controller === request) { retry.hidden = false; setStatus(() => error instanceof Error ? externalText(language, error.message) : t("clearFailedDetail")); }
     } finally { if (controller === request) { controller = undefined; setBusy(false); } }
   };
   const deactivate = () => {
     active = false; controller?.abort(); controller = undefined; collapse(false);
-    resetResult(); more.open = false; status.textContent = ""; retry.hidden = true;
+    resetResult(); more.open = false; retry.hidden = true; setStatus(() => "");
     get<HTMLElement>("#identity").textContent = ""; setBusy(false);
   };
+  const setLanguage = (next: Language, selected: LanguagePreference) => {
+    language = next; preference = selected; host.lang = toolbarHost.lang = language;
+    localize(shadow, language); localize(controls, language);
+    expand.textContent = t(dialog.open ? "collapse" : "expand");
+    languageSelect.value = preference; languageSelect.setAttribute("aria-label", t("language"));
+    setStatus(statusMessage); setSummary(summaryMessage); showIdentity(); updateControls();
+  };
+  languageSelect.onchange = async () => {
+    try { await settings.change(languageSelect.value as LanguagePreference); }
+    catch { languageSelect.value = preference; setStatus(() => t("languageSaveError")); }
+  };
+  setLanguage(language, preference);
   return {
+    setLanguage,
     async activate() { if (disposed || active) return; active = true; await load(false); },
     deactivate,
     dispose() { if (disposed) return; deactivate(); disposed = true; shadow.replaceChildren(); controls.replaceChildren(); },

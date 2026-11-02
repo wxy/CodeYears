@@ -2,11 +2,12 @@
   "manifest_version": 3,
   "name": "CodeYears",
   "version": "0.1.0",
-  "description": "免费的 GitHub 贡献历史可视化扩展。选择年份，用真实每日贡献生成贡献之城。",
+  "default_locale": "en",
+  "description": "__MSG_extensionDescription__",
   "permissions": ["activeTab", "scripting", "storage"],
   "content_scripts": [{ "matches": ["https://github.com/*"], "js": ["entry.js"], "run_at": "document_idle" }],
   "action": {
-    "default_title": "CodeYears · 贡献风景",
+    "default_title": "__MSG_actionTitle__",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/codeyears-16.png",
