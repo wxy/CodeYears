@@ -53,3 +53,14 @@
 | 本地 | [PR #46](https://github.com/wxy/CodeYears/pull/46)。来源/隐私、主线文档、真实Chrome与三密度20年正式renderer验收、最终79文件ZIP候选。结果/限制见[本地报告](../reports/CITY-FIRST-RELEASE-LOCAL.md)。 |
 
 当前停止点是可审阅候选：未核验干净安装/首次站点提示、商店账户、Edge和真实后台；不宣称完整性能预算通过。浏览器工具不能读取商店控制台，未绕过；没有上传/审核/发布动作。用户随后明确授权移除“每日数据”入口，已在原#47实现；内部数据保留，中英文图例及公开说明同步。缩放百分比/最大倍率继续后置，不安排新本地或云端实现。
+
+## 用户后续授权的两项云端预检
+
+每日表移除交付后，用户询问剩余工作并授权继续委托云端。已向既有A/B发送后继指令，联合快照确认两者均active/inProgress（不是已通过或已交付）。固定基线`0116ceac5d6785b3ddc595fe1937e5d047213c11`，临时组合#47 af0d675、#48 3bde951、#49 77d94fc；各自报告PR向协调分支提交，不把别人的源码/素材提交混入，不合入或发布。
+
+| 任务 | 既有云端chat / 分支 | 边界与交付 |
+| --- | --- | --- |
+| MV3干净环境预检 | A，`01a1974f-7af2-76fc-8a1c-fd8660c8908c`；`codex/city-mv3-install-preflight` | 使用已有Chromium和一次性目录尝试真实加载扩展，核对资源、权限、原生选项及真实storage持久化；禁止chrome替身冒充安装。环境不支持即记录具体阻塞，不搭新基础设施；仅`docs/reports/CITY-MV3-INSTALL-PREFLIGHT.md`入PR。 |
+| 独立最终组合审查 | B，`01a1974f-aaac-771a-a1e2-544fe1ee00bb`；`codex/city-release-final-review` | goal-driven-review，只找首发阻断：取消/释放/批次合同、菜单焦点、Options/清单/打包一致、移除表格后原始数据保留、公开说明真实。源码只读，有具体疑点才最小验证；仅`docs/reports/CITY-RELEASE-FINAL-REVIEW.md`入PR。 |
+
+不重复20年性能，不补单元测试或做边界重构。云端预检不能代替本机Chrome首次站点提示、真实后台或商店账户。本地下一步只处理这些剩余外部条件并审查云端结果；不安排新功能，缩放控件/Terrain等保持后置。
