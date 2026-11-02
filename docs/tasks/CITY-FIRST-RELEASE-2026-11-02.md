@@ -35,4 +35,12 @@
 
 ## 实际派发与结果
 
-计划建立中；派发、启动、PR和验收状态按实际工具结果追加，不将指令准备写成任务已运行。
+共同执行SHA `e3a609e84a821b2a792711c888f63f27edc120e5` 已推送。2026-11-02已向三个既有Codex Cloud任务发送后继指令，联合快照三者均为active/inProgress，尚不代表已交付PR或验收通过：
+
+| 工作包 | 云端chat ID | host |
+| --- | --- | --- |
+| A 页内体验 | `01a1974f-7af2-76fc-8a1c-fd8660c8908c` | durable |
+| B 全局选项 | `01a1974f-aaac-771a-a1e2-544fe1ee00bb` | durable |
+| C 商店材料 | `01a1974f-df31-7711-8cec-407e619df09c` | durable |
+
+本机只有Chrome可用浏览器连接，`/Applications/Microsoft Edge.app`不存在。按Chrome候选先准备，不宣称Edge已验收；未执行安装Edge或商店上传。
