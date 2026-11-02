@@ -5,94 +5,110 @@ import { loadContributionHistory } from "../platform/github/load-history";
 import { isoYearStart } from "../data/iso-week";
 import type { DailyContribution } from "../data/types";
 import type { ContributionLandscape } from "../renderers/landscape";
-import type { TimelineState } from "../timeline/types";
 
-(() => {
-  const existing = document.getElementById("codeyears-data-probe");
-  if (existing?.shadowRoot?.querySelector("form")) { existing.scrollIntoView({ block: "center" }); return; }
-  existing?.remove();
+export interface CityPanel {
+  activate(): Promise<void>;
+  deactivate(): void;
+  dispose(): void;
+}
 
-  const context = readPageContext(document, new URL(location.href));
-  const years = Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
+/** 用户选择城市后才加载；入口负责原图切换、后台与导航生命周期。 */
+export function mountCityPanel(host: HTMLElement): CityPanel {
+  let context = readPageContext(document, new URL(location.href));
+  const years = [...new Set(Array.from(document.querySelectorAll<HTMLAnchorElement>('a[id^="year-link-"]'))
     .map(link => Number(link.id.slice("year-link-".length)))
-    .filter(year => Number.isInteger(year) && year >= 2008 && year <= new Date().getFullYear())
-    .sort((a, b) => b - a);
+    .filter(year => Number.isInteger(year) && year >= 2008 && year <= new Date().getFullYear()))].sort((a, b) => b - a);
   if (!years.length) throw new Error("当前页面没有可识别的年度入口。");
-
-  const host = document.createElement("section");
-  host.id = "codeyears-data-probe";
   const shadow = host.attachShadow({ mode: "open" });
   shadow.innerHTML = `
     <style>
       ${cityLegendStyles}
-      :host { display:block; margin:16px 0; font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--fgColor-default,#1f2328); }
-      * { box-sizing:border-box; } .panel { padding:20px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:16px; background:var(--bgColor-default,#fff); }
-      header, form { display:flex; align-items:center; flex-wrap:wrap; gap:10px; } header { justify-content:space-between; }
-      h2 { margin:0; font-size:22px; letter-spacing:-.03em; } p { margin:8px 0; } .note { color:var(--fgColor-muted,#59636e); font-size:12px; }
-      select, button { font:inherit; padding:6px 12px; border-radius:8px; border:1px solid var(--borderColor-default,#d1d9e0); background:var(--bgColor-muted,#f6f8fa); color:var(--fgColor-default,#1f2328); }
-      button { cursor:pointer; } button:disabled { cursor:default; opacity:.5; } button.primary { background:#245b3c; color:white; }
-      output { display:block; margin:12px 0; white-space:pre-line; } table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
-      td,th { padding:3px 10px; text-align:left; border-bottom:1px solid var(--borderColor-default,#d1d9e0); } .days { max-height:280px; overflow:auto; }
-      button:active { transform:scale(.97); } button:focus-visible,select:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
-      .city { margin:22px 0 8px; overflow:hidden; background:transparent; }
-      .city[hidden] { display:none; } .city-head { padding:20px 22px 0; } h3 { margin:0; font-size:18px; letter-spacing:-.02em; }
-      #loading-progress { width:100%; accent-color:#268f80; } #loading-progress[hidden] { display:none; }
-      #scene { height:580px; min-height:340px; max-height:68vh; background:transparent; } .city-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:12px 18px 18px; }
-      output:empty, button[hidden] { display:none; } details { margin-top:12px; } summary { cursor:pointer; } .data-actions { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0; }
-      #progress { flex:1 1 190px; color:var(--fgColor-muted,#59636e); font-size:12px; font-variant-numeric:tabular-nums; }
+      :host { display:block; color:var(--fgColor-default,#1f2328); font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+      * { box-sizing:border-box; } [hidden] { display:none !important; }
+      .panel { background:var(--bgColor-default,#fff); }
+      .bar { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:10px 12px; }
+      form { display:flex; align-items:center; gap:6px; margin-right:auto; }
+      select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
+      button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
+      button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
+      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { display:none; margin:0 12px; } .expanded .summary { display:block; }
+      .status { display:flex; align-items:center; gap:8px; padding:0 12px; } output { white-space:pre-line; } output:empty { display:none; }
+      .scene-wrap { position:relative; height:340px; min-height:260px; }
+      #scene { width:100%; height:100%; background:transparent; }
+      #preparing { position:absolute; inset:0; display:grid; place-items:center; color:var(--fgColor-muted,#59636e); pointer-events:none; }
+      .view-tools { position:absolute; right:10px; bottom:10px; display:flex; gap:4px; padding:4px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:var(--bgColor-default,#fff); }
+      .view-tools button { border:0; min-width:30px; }
+      details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
+      .more-panel { position:absolute; z-index:3; right:0; top:100%; width:min(390px,calc(100vw - 64px)); max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
+      .more-panel p { margin:0 0 10px; } .data-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+      #details summary { padding:6px 0; } .days { max-height:220px; overflow:auto; } table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; } td,th { padding:3px 6px; text-align:left; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
+      dialog { color:inherit; background:var(--bgColor-default,#fff); width:min(1400px,calc(100vw - 40px)); height:calc(100dvh - 40px); max-width:none; max-height:none; padding:0; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:14px; }
+      dialog::backdrop { background:#0d111799; }
+      .panel.expanded { height:100%; border:0; display:flex; flex-direction:column; }
+      .expanded .scene-wrap { flex:1; height:auto; } .expanded .bar { padding:12px 16px; }
+      @media(max-width:500px) { .scene-wrap { height:300px; } .bar { gap:4px; } select,button { padding:4px 6px; } dialog { width:calc(100vw - 16px); height:calc(100dvh - 16px); } }
     </style>
-    <div class="panel">
-      <header><div><h2>CodeYears</h2><p class="note">代码岁月，自成风景。</p></div><button id="close" type="button">关闭 CodeYears</button></header>
-      <form><label>从 <select id="start-year" aria-label="起始年份"></select></label><label>到 <select id="year" aria-label="结束年份"></select></label><button class="primary" id="run" type="submit">生成贡献之城</button><button id="cancel" type="button" hidden disabled>取消</button></form>
-      <output id="status" role="status" aria-live="polite">选择年份范围，生成你的贡献之城。</output>
-      <progress id="loading-progress" value="0" max="1" hidden aria-label="公历源年加载进度"></progress>
-      <section class="city" id="city" hidden aria-label="贡献之城">
-        <div class="city-head"><h3 id="city-title">贡献之城</h3><p class="note" id="city-summary"></p></div>
-        <div id="scene"></div>
-        <p class="note">调整缩放和平移后，在图上点右键，选择“图片存储为…”保存当前画面；也可选择“复制图片”。</p>
-        <div class="city-controls"><span id="progress"></span><button id="zoom-out" type="button" aria-label="缩小景观">−</button><button id="zoom-in" type="button" aria-label="放大景观">＋</button><button id="reset-view" type="button">重置视图</button><button id="pause" type="button">暂停</button><button id="skip" type="button">跳过动画</button><button id="replay" type="button">重播</button><button id="close-city" type="button">关闭城市</button></div>
-      </section>
-      <details id="data-settings"><summary>设置与数据说明</summary>
-        <p id="identity" class="note"></p>
-        <p class="note">显示当前 GitHub 会话可见的真实每日贡献；数量以明细为准。数据只缓存在本机，按访问者与主页隔离。刷新会重新请求所选年份，清除仅影响当前访问者在此主页的缓存。</p>
-        <p class="note">年份按完整周划分（ISO 周规则）：周一至周日归周四所在年。边界所需日期从相邻公历年读取，因此合计可能与 GitHub 公历年度不同。未提供或未来日期不会补零。</p>
-        <div class="data-actions"><button id="refresh" type="button">刷新所选年份</button><button id="clear" type="button">清除此主页缓存</button></div>
-      </details>
-      <details id="details" hidden><summary>查看真实每日数量</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
-    </div>`;
-  const cityLegend = createCityLegend();
-  shadow.querySelector("#data-settings")!.append(cityLegend);
-  const select = shadow.querySelector<HTMLSelectElement>("#year")!;
-  const startSelect = shadow.querySelector<HTMLSelectElement>("#start-year")!;
-  for (const year of years) {
-    select.add(new Option(String(year), String(year)));
-    startSelect.add(new Option(String(year), String(year)));
-  }
+    <section class="panel" aria-label="贡献之城">
+      <div class="bar">
+        <form aria-label="城市年份范围"><select id="start-year" aria-label="起始年份"></select><span>—</span><select id="year" aria-label="结束年份"></select><button id="run" type="submit">应用</button></form>
+        <button id="expand" type="button" aria-expanded="false" disabled>展开</button>
+        <details id="more"><summary aria-label="更多与数据说明">更多</summary><div class="more-panel">
+          <p class="note">拖动平移，滚轮缩放。“全景”恢复完整取景。场地随已读取的数据逐步填入，未返回的区域保持待填充。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。</p>
+          <p id="identity" class="note"></p>
+          <p class="note">数据只缓存在本机，按访问者与主页隔离。年份按完整周划分（ISO 周规则）：周一至周日归周四所在年；边界会读取相邻公历年，因此合计可能与 GitHub 公历年度不同。缺失或未来日期不会补零。</p>
+          <div class="data-actions"><button id="refresh" type="button">刷新所选年份</button><button id="clear" type="button">清除此主页缓存</button></div>
+          <details id="details" hidden><summary>数据明细</summary><div class="days"><table><thead><tr><th>日期</th><th>贡献数量</th></tr></thead><tbody></tbody></table></div></details>
+          <div id="legend"></div>
+        </div></details>
+      </div>
+      <p id="city-summary" class="summary"></p>
+      <div class="status"><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" hidden>重试</button><button id="cancel" type="button" hidden>取消</button></div>
+      <div class="scene-wrap"><div id="scene"></div><span id="preparing">正在准备城市…</span><div class="view-tools" hidden><button id="zoom-out" type="button" aria-label="缩小城市">−</button><button id="zoom-in" type="button" aria-label="放大城市">＋</button><button id="reset-view" type="button">全景</button></div></div>
+    </section><dialog aria-label="展开的贡献之城"></dialog>`;
+  shadow.querySelector("#legend")!.append(createCityLegend());
+  const get = <T extends Element>(selector: string) => shadow.querySelector<T>(selector)!;
+  const panel = get<HTMLElement>(".panel"), dialog = get<HTMLDialogElement>("dialog");
+  const startSelect = get<HTMLSelectElement>("#start-year"), select = get<HTMLSelectElement>("#year");
+  for (const year of years) { select.add(new Option(String(year), String(year))); startSelect.add(new Option(String(year), String(year))); }
   startSelect.value = String(years[Math.min(2, years.length - 1)]);
-  const identity = context.viewer.state === "unknown" ? "身份未识别" : context.viewer.identity.kind === "signed-out" ? "未登录" : `已登录访问者 ${context.viewer.identity.login}`;
-  shadow.querySelector("#identity")!.textContent = `主页 ${context.profileLogin} · ${identity}`;
-  const form = shadow.querySelector("form")!;
-  const run = shadow.querySelector<HTMLButtonElement>("#run")!;
-  const refresh = shadow.querySelector<HTMLButtonElement>("#refresh")!;
-  const clear = shadow.querySelector<HTMLButtonElement>("#clear")!;
-  const cancel = shadow.querySelector<HTMLButtonElement>("#cancel")!;
-  const status = shadow.querySelector<HTMLOutputElement>("#status")!;
-  const loadingProgress = shadow.querySelector<HTMLProgressElement>("#loading-progress")!;
-  const details = shadow.querySelector<HTMLDetailsElement>("#details")!;
-  const body = shadow.querySelector("tbody")!;
-  const cityBox = shadow.querySelector<HTMLElement>("#city")!;
-  const cityHost = shadow.querySelector<HTMLElement>("#scene")!;
-  const progress = shadow.querySelector<HTMLElement>("#progress")!;
-  const pause = shadow.querySelector<HTMLButtonElement>("#pause")!;
-  shadow.querySelector<HTMLButtonElement>("#reset-view")!.onclick = () => city?.resetView();
-  let city: ContributionLandscape | undefined;
-  let timelineState: TimelineState | undefined;
+  const run = get<HTMLButtonElement>("#run"), refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
+  const cancel = get<HTMLButtonElement>("#cancel"), retry = get<HTMLButtonElement>("#retry"), expand = get<HTMLButtonElement>("#expand");
+  const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
+  const more = get<HTMLDetailsElement>("#more"), details = get<HTMLDetailsElement>("#details"), body = get<HTMLTableSectionElement>("tbody");
+  const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), preparing = get<HTMLElement>("#preparing");
+  let active = false, disposed = false, busy = false;
+  let controller: AbortController | undefined, city: ContributionLandscape | undefined;
   let visibleDays: readonly DailyContribution[] = [];
-  const disposeCity = () => { city?.dispose(); city = undefined; timelineState = undefined; cityBox.hidden = true; cityHost.replaceChildren(); };
-  let controller: AbortController | undefined;
   const currentContext = () => readPageContext(document, new URL(location.href));
-  const resetResult = () => { disposeCity(); details.hidden = true; details.open = false; visibleDays = []; body.replaceChildren(); };
-  // 多年份可能有数千天，仅在用户展开时建立明细 DOM。
+  const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
+  const collapse = (restoreFocus = true) => {
+    if (!dialog.open) return;
+    dialog.close(); dialog.before(panel); panel.classList.remove("expanded");
+    expand.textContent = "展开"; expand.setAttribute("aria-expanded", "false");
+    updateControls();
+    if (restoreFocus) expand.focus();
+  };
+  expand.onclick = () => {
+    if (dialog.open) { collapse(); return; }
+    more.open = false; panel.classList.add("expanded"); dialog.append(panel); dialog.showModal();
+    expand.textContent = "收起"; expand.setAttribute("aria-expanded", "true"); expand.focus();
+  };
+  dialog.addEventListener("cancel", event => { event.preventDefault(); collapse(); });
+  const updateControls = () => {
+    const ready = Boolean(cityHost.querySelector("canvas"));
+    expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
+    cancel.hidden = !busy;
+    preparing.hidden = ready;
+  };
+  const setBusy = (value: boolean) => {
+    busy = value; run.disabled = refresh.disabled = select.disabled = startSelect.disabled = busy;
+    clear.disabled = busy || context.viewer.state === "unknown"; updateControls();
+  };
+  const resetResult = () => {
+    city?.dispose(); city = undefined; cityHost.replaceChildren();
+    visibleDays = []; body.replaceChildren(); details.open = false; details.hidden = true; summary.textContent = "";
+    updateControls();
+  };
   details.addEventListener("toggle", () => {
     if (!details.open || body.childElementCount) return;
     const fragment = document.createDocumentFragment();
@@ -103,124 +119,112 @@ import type { TimelineState } from "../timeline/types";
     }
     body.append(fragment);
   });
-  const setBusy = (busy: boolean) => {
-    run.disabled = refresh.disabled = select.disabled = startSelect.disabled = busy;
-    clear.disabled = busy || context.viewer.state === "unknown";
-    cancel.disabled = !busy; cancel.hidden = !busy;
-  };
-  setBusy(false);
-  if (context.viewer.state === "unknown") status.textContent = "访问者身份未识别，本次不会读取或写入缓存；仍可联网获取贡献数据。";
-
-  const close = () => {
-    controller?.abort();
-    disposeCity();
-    host.remove();
-    window.removeEventListener("pagehide", close);
-    document.removeEventListener("turbo:before-cache", close);
-    document.removeEventListener("turbo:before-render", close);
-    document.removeEventListener("visibilitychange", visibility);
-  };
-  const visibility = () => {
-    if (!document.hidden) return;
-    controller?.abort();
-    resetResult();
-    loadingProgress.hidden = true;
-    status.textContent = "页面进入后台，结果已清除；返回后重新读取时会核对当前身份。";
-  };
-  shadow.querySelector("#close")!.addEventListener("click", close);
-  window.addEventListener("pagehide", close);
-  document.addEventListener("turbo:before-cache", close);
-  document.addEventListener("turbo:before-render", close);
-  document.addEventListener("visibilitychange", visibility);
-  cancel.addEventListener("click", () => controller?.abort());
   const load = async (forceRefresh: boolean) => {
+    if (!active || disposed || busy) return;
     const start = Number(startSelect.value), end = Number(select.value);
     if (start > end) { status.textContent = "起始年份不能晚于结束年份。"; return; }
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
-    const firstNeeded = new Date(windowStart).getUTCFullYear();
-    const lastNeeded = new Date(windowEnd - 86400000).getUTCFullYear();
+    const firstNeeded = new Date(windowStart).getUTCFullYear(), lastNeeded = new Date(windowEnd - 86400000).getUTCFullYear();
     const now = new Date(), calendarYear = now.getFullYear();
-    const firstSource = Math.max(firstNeeded, years.at(-1)!);
-    const lastSource = Math.min(lastNeeded, years[0], calendarYear);
+    const firstSource = Math.max(firstNeeded, years.at(-1)!), lastSource = Math.min(lastNeeded, years[0], calendarYear);
     const requestedYears = Array.from({ length: lastSource - firstSource + 1 }, (_, index) => firstSource + index);
-    const firstDate = new Date(windowStart).toISOString().slice(0, 10);
-    const endDate = new Date(windowEnd).toISOString().slice(0, 10);
-    const range = `${start === end ? start : `${start}–${end}`}`;
-    const request = new AbortController();
-    controller = request;
-    setBusy(true);
-    resetResult();
-    loadingProgress.max = requestedYears.length; loadingProgress.value = 0; loadingProgress.hidden = false;
-    status.textContent = "正在确认身份并读取所需公历年度…";
-    let completedYears = 0;
+    const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
+    const range = selectedRange();
+    const request = new AbortController(); controller = request;
+    resetResult(); summary.textContent = `${range} · 正在读取…`; setBusy(true); more.open = false; retry.hidden = true;
+    preparing.textContent = "正在准备场地…"; status.textContent = "正在读取贡献数据…";
+    const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
+    let renderer: typeof import("../renderers/landscape") | undefined;
+    let renderFailure: Error | undefined;
+    let fieldCreated = false;
+    let painting = Promise.resolve();
+    const mountEmptyField = () => {
+      city = renderer!.createLandscape(cityHost, [], (_state, error) => {
+        if (!active || controller !== request) return;
+        if (error) { renderFailure = new Error(error); request.abort(); }
+        updateControls();
+      }, "city", undefined, true, reservedYears);
+      fieldCreated = true;
+      return city;
+    };
     const warnings = new Set<string>();
-    if (firstSource > firstNeeded || (lastSource < lastNeeded && lastNeeded <= calendarYear)) {
-      warnings.add("可用年度不足，所选年份边界不完整；仅保留已提供的真实日期。");
-    }
-    if (windowEnd > Date.UTC(calendarYear, now.getMonth(), now.getDate()) + 86400000) {
-      warnings.add("所选年份尚未结束，仅显示已提供的真实日期，不补未来零值。");
-    }
+    if (firstSource > firstNeeded || (lastSource < lastNeeded && lastNeeded <= calendarYear)) warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
+    if (windowEnd > Date.UTC(calendarYear, now.getMonth(), now.getDate()) + 86400000) warnings.add("所选年份尚未结束，仅显示已提供的日期。");
     try {
-      const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, progress => {
-        completedYears = progress.history.providedYears.length;
-        if (progress.warning) warnings.add(progress.warning);
-        loadingProgress.value = progress.history.providedYears.length;
-        status.textContent = `正在读取 ${range} · ${completedYears} / ${requestedYears.length} 个公历源年${warnings.size ? `\n${[...warnings].join(" ")}` : ""}`;
-      });
+      context = currentContext();
+      const identity = context.viewer.state === "unknown" ? "身份未识别，本次不读写缓存" : context.viewer.identity.kind === "signed-out" ? "未登录访问者" : `访问者 ${context.viewer.identity.login}`;
+      get<HTMLElement>("#identity").textContent = `主页 ${context.profileLogin} · ${identity}`;
+      if (context.viewer.state === "unknown") warnings.add("访问者身份未识别，本次不读取或写入缓存。");
+      renderer = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
       request.signal.throwIfAborted();
-      if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
+      if (!active || !host.isConnected) return;
+      const field = mountEmptyField();
+      request.signal.addEventListener("abort", () => field.dispose(), { once: true });
+      const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
+        if (request.signal.aborted) return;
+        if (result.warning) warnings.add(result.warning);
+        const available = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
+        status.textContent = `正在读取 ${range} 的贡献数据，场地随数据填入…`;
+        painting = painting.then(async () => {
+          if (!active || controller !== request || request.signal.aborted) return;
+          await field.updateDays(available);
+        }).catch(error => {
+          if (request.signal.aborted) return;
+          renderFailure = error instanceof Error ? error : new Error("城市素材加载失败，请重试。");
+          request.abort();
+        });
+      });
+      await painting;
+      if (renderFailure) throw renderFailure;
+      request.signal.throwIfAborted();
+      if (!active || !host.isConnected) return;
       visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
-      if (!visibleDays.length) {
-        status.textContent = `所选年份尚无已提供的日期。${warnings.size ? `\n${[...warnings].join(" ")}` : ""}`;
-        return;
-      }
+      if (!visibleDays.length) { summary.textContent = `${range} · 暂无数据`; status.textContent = "所选年份尚无已提供的日期。"; preparing.textContent = "暂无可展示的数据"; return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
-      status.textContent = [...warnings].join(" ");
-      details.hidden = false;
-      {
-        const module = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
-        request.signal.throwIfAborted();
-        if (!host.isConnected) throw new Error("页面已离开，请重新打开 CodeYears。");
-        cityBox.hidden = false;
-        shadow.querySelector("#city-title")!.textContent = `${range} · 贡献之城`;
-        shadow.querySelector("#city-summary")!.textContent = `${total.toLocaleString()} 次贡献 · 拖动平移，滚轮缩放`;
-        try {
-          city = module.createLandscape(cityHost, visibleDays, (state, error) => {
-            if (error) status.textContent = error;
-            timelineState = state;
-            progress.textContent = cityHost.querySelector("canvas")
-              ? `城市生长 · ${Math.round(state.revealedDays / state.totalDays * 100)}%` : "正在准备城市…";
-            pause.textContent = state.status === "paused" ? "继续" : "暂停";
-            pause.disabled = state.status === "completed";
-          }, "city");
-        } catch (error) { disposeCity(); throw error; }
-      }
+      status.textContent = [...warnings].join(" "); details.hidden = false;
+      summary.textContent = `${range} · ${total.toLocaleString()} 次贡献`;
     } catch (error) {
-      if (!document.hidden) status.textContent = `${request.signal.aborted ? "请求已取消。" : error instanceof Error ? error.message : "请求失败，请重新打开 CodeYears。"}\n已读取 ${completedYears} / ${requestedYears.length} 个公历源年，本次未生成风景；下次会重新确认身份并复用可用的年度缓存。`;
+      if (!active || controller !== request) return;
+      const cancelled = request.signal.aborted && !renderFailure;
+      request.abort();
+      resetResult();
+      if (renderer && fieldCreated) mountEmptyField();
+      summary.textContent = `${range} · ${cancelled ? "已取消读取" : "读取失败"}`;
+      const failure = renderFailure ?? error;
+      status.textContent = cancelled ? "读取已取消，场地尚未完成。" : failure instanceof Error ? failure.message : "读取失败，请重试。";
+      preparing.textContent = cancelled ? "已取消读取" : "城市未能加载"; retry.hidden = false;
     } finally {
-      loadingProgress.hidden = true; setBusy(false); controller = undefined;
+      // 切回城市会开始新请求，旧请求不能撤销新一轮的忙碌状态。
+      if (controller === request) { controller = undefined; setBusy(false); }
     }
   };
-  form.addEventListener("submit", event => { event.preventDefault(); void load(false); });
-  refresh.addEventListener("click", () => { void load(true); });
-  pause.addEventListener("click", () => timelineState?.status === "paused" ? city?.resume() : city?.pause());
-  shadow.querySelector("#skip")!.addEventListener("click", () => city?.skip());
-  shadow.querySelector("#replay")!.addEventListener("click", () => city?.replay());
-  shadow.querySelector("#zoom-out")!.addEventListener("click", () => city?.zoomBy(0.8));
-  shadow.querySelector("#zoom-in")!.addEventListener("click", () => city?.zoomBy(1.25));
-  shadow.querySelector("#close-city")!.addEventListener("click", disposeCity);
-  clear.addEventListener("click", async () => {
-    const request = new AbortController();
-    controller = request;
-    setBusy(true); cancel.disabled = true; resetResult();
+  get<HTMLFormElement>("form").addEventListener("submit", event => { event.preventDefault(); void load(false); });
+  refresh.onclick = () => { void load(true); };
+  retry.onclick = () => { void load(false); };
+  cancel.onclick = () => controller?.abort();
+  get<HTMLButtonElement>("#zoom-out").onclick = () => city?.zoomBy(.8);
+  get<HTMLButtonElement>("#zoom-in").onclick = () => city?.zoomBy(1.25);
+  get<HTMLButtonElement>("#reset-view").onclick = () => city?.resetView();
+  clear.onclick = async () => {
+    if (!active || busy) return;
+    const request = new AbortController(); controller = request;
+    resetResult(); summary.textContent = `${selectedRange()} · 正在清除缓存…`; setBusy(true); cancel.hidden = true; more.open = false; retry.hidden = true;
     status.textContent = "正在确认身份并清除此主页缓存…";
     try {
       await clearContributionCache(context, request.signal, currentContext);
-      if (!document.hidden && host.isConnected) status.textContent = "已清除此访问者在当前主页的年度缓存。";
+      if (active && !request.signal.aborted) { summary.textContent = `${selectedRange()} · 缓存已清除`; status.textContent = "已清除此访问者在当前主页的年度缓存。"; preparing.textContent = "重新读取后可查看城市"; retry.hidden = false; }
     } catch (error) {
-      if (!document.hidden) status.textContent = error instanceof Error ? error.message : "缓存清除失败。";
-    } finally { setBusy(false); controller = undefined; }
-  });
-  document.querySelector(".js-yearly-contributions")!.prepend(host);
-  host.scrollIntoView({ block: "center" });
-})();
+      if (active && controller === request) { summary.textContent = `${selectedRange()} · 缓存清除失败`; status.textContent = error instanceof Error ? error.message : "缓存清除失败。"; retry.hidden = false; }
+    } finally { if (controller === request) { controller = undefined; setBusy(false); } }
+  };
+  const deactivate = () => {
+    active = false; controller?.abort(); controller = undefined; collapse(false);
+    resetResult(); more.open = false; status.textContent = ""; retry.hidden = true;
+    get<HTMLElement>("#identity").textContent = ""; setBusy(false);
+  };
+  return {
+    async activate() { if (disposed || active) return; active = true; await load(false); },
+    deactivate,
+    dispose() { if (disposed) return; deactivate(); disposed = true; shadow.replaceChildren(); },
+  };
+}
