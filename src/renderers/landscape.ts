@@ -123,7 +123,12 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     async updateDays(nextDays){
       if(!progressiveCity)throw new Error("逐年填入仅适用于预留年份的City。");
       if(disposed)throw new DOMException("城市已关闭。","AbortError");
-      const token=++generation,nextScene=planCityScene(nextDays,cityWonders,reservedYears);
+      const token=++generation;
+      // 已就绪快照也让出一次任务，避免连续微任务批次阻塞输入与绘制。
+      await new Promise<void>(resolve=>setTimeout(resolve,0));
+      assetAbort.signal.throwIfAborted();
+      if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
+      const nextScene=planCityScene(nextDays,cityWonders,reservedYears);
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{
         await assetPromise;
