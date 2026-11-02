@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-02",
+  "tool": "image_gen",
+  "transparency": true,
+  "sourceImages": [
+    "candidates/shop-wide.png",
+    "candidates/shop-deep.png"
+  ],
+  "outputs": [
+    "candidates/shop-wide-v2.png",
+    "candidates/shop-deep-v2.png"
+  ],
+  "prompts": {
+    "wide": "Use case: precise-object-edit. Edit target: the attached original CodeYears shop-wide transparent building. Keep its refined painted miniature style, warm yellow masonry, dark green shopfronts and awnings, two storeys, upper-left daylight, isolated transparent PNG. Rebuild its proportions into a genuinely BROAD LOW two-storey shop row for a native 2x1 logical footprint: the long LEFT visible facade slopes down-right at +0.5 and is twice the short RIGHT facade. The broad shopfront should have four bays. Orthographic dimetric W=(48,24), D=(-48,24), vertical edges vertical. Ground envelope approximate pixel example L=(270,650), F=(910,970), R=(1230,810), hidden O=(590,490) on a landscape canvas; visible wall height about 250 pixels, NOT a tall compact tower. These are geometry instructions, do not draw coordinates or a grid. The support plan W:D is 2:1; main wall height is 0.8H with H=(0,-48) relative to one cell. Use a low parapet and small roof equipment, no oversized chimney or rooftop that forces the entire building to become tiny. Include only compact attached steps and planters inside the envelope. Every side will have 0.1-cell setback when calibrated. Critical: remove ALL brown/cream glow, background haze, external shadow and vignette. True clean RGBA transparency immediately outside the building, crisp antialiased edges, only tiny contact shadow. No baseplate, no roads, no text, no surrounding scene. Preserve the architectural identity but make its footprint broad and body low.",
+    "deep": "Use case: precise-object-edit. Edit target: the attached CodeYears shop-deep transparent building. Keep refined painted miniature style, cream stucco and terracotta trim, green ground-floor shops, two storeys, upper-left daylight. Rebuild its proportions for a proper native 1x2 logical footprint: SHORT LEFT end facade slopes down-right at +0.5; LONG RIGHT visible facade slopes up-right at -0.5 with four shop bays, twice the short side. Make the short side substantially wider than the old pencil-thin building; do not mirror the other image. Orthographic dimetric W=(48,24), D=(-48,24), verticals vertical. Example ground support on landscape canvas L=(300,800), F=(620,960), R=(1260,640), hidden O=(940,480), main wall height about 250 pixels. Coordinates are instructions, no drawn numbers/grid. Ground W:D ratio 1:2, body low about0.8H. Low zinc parapet roof with compact terrace and tiny chimney; do not inflate the height. Only a very small recessed court within the envelope, not a long empty tail. Keep steps/planters within footprint and allow .1-cell calibrated setback. Critical: remove all background glow/haze/brown vignette and outside cast shadow. Complete isolated clean RGBA transparent asset with crisp antialiasing, tiny contact shadow only. No pedestal/baseplate/road/labels/background."
+  },
+  "basis": "保留原图；本轮标定以可见墙身和落地包络为准，不能把提示词尺寸视作生成结果。"
+}

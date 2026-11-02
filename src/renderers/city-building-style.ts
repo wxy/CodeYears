@@ -4,10 +4,11 @@ import type { CityParcel } from './city-parcels';
 export function selectCityBuilding(parcel: CityParcel, seed: number): { id: string; factor: number } {
   const variant = (seed >>> 0) % 2 === 0 ? 'a' : 'b';
   const { band, w, d } = parcel;
+  if (band === 0) return { id: ['cottage-gable', 'villa-hip', 'courtyard-flat', 'garden-butterfly'][(seed >>> 0) % 4], factor: 1 };
   if (band === 1) {
-    const id = w === 3 ? (variant === 'a' ? 'stadium-a' : 'terminal-b')
-      : w === 2 ? (variant === 'a' ? 'police-a' : 'fire-b')
-      : variant === 'a' ? 'townhouse-a' : 'mixed-use-b';
+    const id = w === 2 ? (variant === 'a' ? 'row-wide' : 'shop-wide')
+      : d === 2 ? (variant === 'a' ? 'row-deep' : 'shop-deep')
+      : variant === 'a' ? 'low-gable' : 'low-terrace';
     return { id, factor: 1 };
   }
   if (band === 2) {
