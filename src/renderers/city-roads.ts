@@ -1,5 +1,5 @@
 export type RoadPoint=[number,number];
-export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;closed?:boolean;leftShoulder?:number}
+export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;closed?:boolean;leftShoulder?:number;cornerRadius?:number}
 export interface CityRoadJunction {x:number;z:number;radius:number}
 export const CITY_LANE_WIDTH=.4;
 
@@ -17,9 +17,16 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
     });
     // 单侧拓宽只用于当前两点直线支路；行车中心与贯通轴保持原位。
     const shoulder=route.leftShoulder??0,shift=shoulder/2,first=directions[0];
-    const path=new Path2D();points.forEach(([x,z],i)=>{
-      const px=x-first.z*shift,pz=z+first.x*shift;i?path.lineTo(px,pz):path.moveTo(px,pz);
-    });if(route.closed)path.closePath();
+    const path=new Path2D(),radius=route.cornerRadius??0;
+    if(radius&&route.closed){
+      // 当前圆弧路线是正交闭合外环；路面用真正的切线圆弧，不只是round join。
+      const prev=directions.at(-1)!;path.moveTo(points[0][0]-prev.x*radius,points[0][1]-prev.z*radius);
+      points.forEach(([x,z],i)=>{const next=directions[i];path.arcTo(x,z,x+next.x*radius,z+next.z*radius,radius)});
+      path.closePath();
+    }else{
+      points.forEach(([x,z],i)=>{const px=x-first.z*shift,pz=z+first.x*shift;i?path.lineTo(px,pz):path.moveTo(px,pz)});
+      if(route.closed)path.closePath();
+    }
     const half=route.lanes*CITY_LANE_WIDTH/2;surfaces.push({path,width:half*2+shoulder});
     const offsets=[{offset:-.05,kind:'central'},{offset:.05,kind:'central'},
       ...Array.from({length:route.lanes/2-1},(_,i)=>(i+1)*CITY_LANE_WIDTH).flatMap(d=>[{offset:-d,kind:'lane'},{offset:d,kind:'lane'}]),
@@ -29,14 +36,22 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
       const central=kind==='central',edge=kind==='edge';
       const color=central?'#d6b96d':edge?'#bcc5bb':'#c9d0c3',width=central?.035:edge?.018:.02,dash=central||edge?[]:[.24,.22];
       // 相邻轴向段的平行线在转角相交，闭环四角不会把线留在道路中心。
-      const parallel:RoadPoint[]=points.map(([x,z],i)=>{
+      const corners:RoadPoint[]=points.map(([x,z],i)=>{
         const prev=directions[(i-1+count)%count],next=directions[i%count];
         const a=!route.closed&&i===0?next:prev,b=!route.closed&&i===points.length-1?prev:next;
         const divisor=1+a.x*b.x+a.z*b.z;
         return divisor>1e-6?[x-(a.z+b.z)*offset/divisor,z+(a.x+b.x)*offset/divisor]:[x-a.z*offset,z+a.x*offset];
       });
+      const parallel:RoadPoint[]=radius&&route.closed?corners.flatMap(([x,z],i)=>{
+        const prev=directions[(i-1+count)%count],next=directions[i],turn=prev.x*next.z-prev.z*next.x;
+        // 内外车道共用圆心，半径按侧向偏移调整；与直线切向连接。
+        const r=radius-offset*turn,cx=x-prev.x*r+next.x*r,cz=z-prev.z*r+next.z*r;
+        const start=Math.atan2(-next.z,-next.x);
+        // 每个90度弧12段，只供既有路口裁段；路面仍由上方arcTo绘制。
+        return Array.from({length:13},(_,step):RoadPoint=>{const angle=start+turn*Math.PI/2*step/12;return [cx+Math.cos(angle)*r,cz+Math.sin(angle)*r]});
+      }):corners;
       let distance=0;
-      for(let i=0;i<count;i++){
+      for(let i=0;i<(route.closed?parallel.length:parallel.length-1);i++){
         const a=parallel[i],b=parallel[(i+1)%parallel.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
         if(length<1e-6)continue;
         const cuts:[number,number][]=[];

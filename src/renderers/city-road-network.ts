@@ -29,7 +29,7 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
   const roads: CityRoadRoute[] = [], junctions: CityRoadJunction[] = [], bridges: CityBridge[] = [];
   const districts = layout.districts.map(({ z,quarterPadding }) => ({ z,quarterPadding,
     quarters: CITY_QUARTER_ROADS.map((x, index) => ({ quarter: index + 1, x: x + .4,shoulder:quarterPadding[index] })) }));
-  roads.push({ id: 'ring', lanes: 8, closed: true, points: [
+  roads.push({ id: 'ring', lanes: 8, closed: true, cornerRadius:2.4, points: [
     [-CITY_RING_CENTER, -CITY_RING_CENTER], [width + CITY_RING_CENTER, -CITY_RING_CENTER],
     [width + CITY_RING_CENTER, depth + CITY_RING_CENTER], [-CITY_RING_CENTER, depth + CITY_RING_CENTER],
   ] });
