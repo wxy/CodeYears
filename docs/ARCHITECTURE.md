@@ -10,11 +10,11 @@
 
 ## 当前骨架
 
-轻量入口与按需面板的职责不变：`entry.js` 仅在 GitHub 范围以 `document_idle` 运行，识别个人页 URL、贡献容器及年度入口。最新布局在原生 h2 内前置切换 host，顺序为“城市 · CodeYears”“贡献图”，后接 GitHub 原统计；原设置仍使用 GitHub 原节点。窄屏允许原统计和切换换行，但须限制在贡献区宽度内。默认原图，未点击不导入 `content.js`、不请求历史、不读写缓存或初始化渲染。
+轻量入口与按需面板职责不变：`entry.js`以document_idle识别个人页。原生h2内是“城市 / 贡献图”两个标签组，默认贡献图展开自身原统计和原贡献设置（保留原节点与事件），城市仅标题；激活后互换。非当前控件由对应Shadow区域隐藏。未点击不导入content、不请求历史、不读写缓存或创建渲染器。
 
-本轮切换边界为 `.js-yearly-contributions` root 内的贡献日历及 Activity overview/蜘蛛图整体。入口将原 h2 子节点保留到 `#codeyears-native-stat`，在其前放入 `span#codeyears-profile-tabs`；不再建立城市统计节点。城市内容由 h2 后的 `div#codeyears-city-content` 承载另一 Shadow DOM。城市模式临时隐藏日历对应的原生兄弟元素、`#user-activity-overview`、原统计和原设置；切回原图、后台或销毁时恢复保存的原生显示值和统计内容，不删除或重新挂载这组原生内容。root 外的 Contribution activity 流水不隐藏，销毁入口时解开原统计包裹并恢复 h2 原样式。
+切换边界仍为root内日历和Activity overview/蜘蛛图整体，root外流水保留。原h2文字置于light DOM `#codeyears-native-stat`，原`.js-contribution-settings-menu`通过slot显示在原图活动标签内；销毁时恢复原位置和slot属性。City内容由h2后的另一Shadow DOM承载，toolbarHost有独立Shadow DOM，平常分发到City活动标签；展开时随同一面板移入dialog，收起/Esc放回原slot，不重建控件、画布或读取数据。
 
-面板接口不再通过统计回调改写顶部 h2，城市模式不另造合计或顶部状态统计。City 内部继续维护年份范围、读取/失败/取消状态，可信范围的局部摘要仅在展开 dialog 时显示；常态摘要隐藏。顶部只负责模式切换，原统计文字和原设置仅原图模式可见。原始日期、数量与统计口径不因这项展示修正改变。
+`mountCityPanel(host, toolbarHost)`直接维护自身年份、可信范围合计、展开/更多，合计在当前City标签内显示；原图不复用City统计。切换键盘方向键只作用于两个标题按钮，不拦截年份选择。常规当前年未结束提示已移除，未来/未知日期仍不补零；保留边界数据不足、身份、读取失败和取消说明。
 
 上述顺序和显示边界继续成立，覆盖前轮顶部显示城市合计，以及更早入口单独占行/Activity overview 仍留的方案。本轮进一步改造正式 City 的加载与显示调度，实际结果须以追加报告证明。轻量 DOM 观察继续配合 Turbo 导航处理延迟日历、重复执行与销毁，不轮询历史数据；权限、数据缓存、素材源文件和公共时间轴不变。
 
