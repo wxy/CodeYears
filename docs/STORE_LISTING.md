@@ -1,6 +1,6 @@
 # City 0.1.0 商店材料候选
 
-更新：2026-11-02。截图对应此前固定源码 `e3a609e84a821b2a792711c888f63f27edc120e5`；正文已同步本地验证的#47/#48功能。本文与两张正式示例PNG供审阅，尚未上传商店、提交审核或发布。只描述当前 City；两图已获本地审阅接受；最终候选源与本地报告以 [首发收尾PR #46](https://github.com/wxy/CodeYears/pull/46) 对应组合版本为准。商店名称来自 manifest，当前为 CodeYears；下列短说明是建议文案，不在本任务修改公共语言JSON或manifest。
+更新：2026-11-03。#46–#52已合入，当前主线`118d18a`；运行代码仍对应`7498d32`，后续仅文档。截图保留固定源码`e3a609e`及来源登记，所呈现的收起菜单/普通展开外观仍适用，不将截图SHA冒充最终验收SHA。本文与两张正式示例PNG已审阅，尚未上传、提交审核或发布。名称和以下短说明已同步当前ZIP的manifest/本地化词库，不修改运行文案或重新打包。
 
 ## 简体中文 · 可复制
 
@@ -13,7 +13,7 @@ CodeYears
 简短说明：
 
 ```text
-将 GitHub 每日贡献化作城市，查看多年街区与建筑细节。免费，无需 Token，数据在浏览器本地缓存。
+免费的 GitHub 贡献历史可视化扩展。选择年份，用真实每日贡献生成贡献之城。
 ```
 
 详细说明：
@@ -51,7 +51,7 @@ CodeYears
 Short description:
 
 ```text
-Turn daily GitHub contributions into a city. Explore years and neighborhoods, with contribution data cached in your browser.
+A free GitHub contribution visualizer. Turn real daily contributions into a city.
 ```
 
 Detailed description:
@@ -94,6 +94,23 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 以上是现有行为的填写依据，不替维护者选择法律分类或确认图片权利。用户已取消专门隔离账户与A/B登录切换验收；不再索取账号、密码或Cookie，不将未执行的身份矩阵写成通过。
 
+## 权限说明与测试步骤草稿
+
+以下供后续控制台填写，不表示已经填入、保存或作数据使用认证：
+
+| 字段 | English copy |
+| --- | --- |
+| Single purpose | Visualize daily GitHub contribution counts visible to the current GitHub session as a switchable city on a profile, with local caching. |
+| activeTab | A click on the extension icon grants temporary access to the active GitHub tab so CodeYears can open the city there. It does not operate on other sites. |
+| scripting | Runs the packaged entry script in the active GitHub tab when the extension icon is clicked, then opens the existing city view. No remote scripts are executed. |
+| storage | Stores the interface language and yearly contribution dates/counts locally, scoped by viewer and profile. Users can refresh or clear the current profile cache. No browser cloud sync is used. |
+| GitHub content script scope | Adds the City/Contributions entry on GitHub profile pages. Contribution history and assets load only after the user chooses City; switching away cancels the work and clears the city. |
+| Remote code | No. Executable code, language catalogs and visual assets are bundled with the extension. GitHub HTML is parsed as data, not executed. |
+
+测试说明：无需CodeYears账户或GitHub Token；使用评审者已有GitHub会话打开可访问的个人主页，等待原贡献区出现，点击City，确认先有空场地/路网再填入。打开More查看语言/帮助/缓存操作；缩放、平移、Expand及Esc/遮罩返回。点击Contributions或切到其他标签后，原贡献区恢复；再进入City可重新读取。图标左键直接打开当前主页城市，原生右键Options可选择语言。没有独立暂停/重播或生成分享图片按钮。未承诺任意匿名页面/语言/组织可见性均可解析，不提供用户日常账户凭证。
+
+数据披露按当前实际字段核对：处理GitHub用户名/登录状态、当前主页及年度贡献URL、贡献日期/数量和本地缓存元信息。未读取Chrome浏览历史列表、密码、Token或Cookie值；复用浏览器已有会话不等于提取凭证。不能因“本地处理”勾选“不处理用户数据”：Chrome官方[用户数据FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq)明确本地处理也需要披露。最终数据类型和Limited Use声明由提交者对照真实字段确认；此处不自动作认证。
+
 ## 图片与当前官方规范
 
 本次最小集为两张1280×800正式候选PNG，见 [截图与复现说明](store/city-0.1.0/README.md)：
@@ -105,10 +122,26 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 2026-11-02核对Chrome官方现行文档：短说明最多132字符；截图至少1张、最多5张，采用1280×800（也接受640×400）、方角、无外围留白；本次选用前者。商店图标128×128；本地化详情和截图可按支持语言分别设置。可选宣传图不是本次两张截图的替代品。[文案建议](https://developer.chrome.com/docs/webstore/best-listing)、[图片规范](https://developer.chrome.com/docs/webstore/images)、[商店字段与本地化](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)。上述为本次读取到的规范，不宣称商店已审核图片；提交时仍以控制台为准。
 
-## 本地验证与待复核边界
+## 本地验证与提交前边界
 
 [PR #47](https://github.com/wxy/CodeYears/pull/47) 的菜单分组、菜单外部与Esc关闭、同一画布展开返回、方向键平移已在本地真实Chrome验证。[PR #48](https://github.com/wxy/CodeYears/pull/48) 的图标原生“选项”已由用户切换English，看到Saved并确认刷新仍为English，GitHub入口也已联动英文；上述已有功能已纳入双语正文。
 
-英文菜单边界、点击展开遮罩关闭、内容点击不误关与Esc焦点恢复已在真实Chrome复核。每日数据表按用户决定从界面移除，精确数据仍用于内部渲染与校验。快照调度修复的本机结果和局限见 [本地报告](reports/CITY-FIRST-RELEASE-LOCAL.md)；不据此宣称60FPS或完整性能预算通过。干净安装/首次站点提示、Edge及真实后台仍未验收。
+英文菜单边界、点击展开遮罩关闭、内容点击不误关与Esc焦点恢复已在真实Chrome复核。每日数据表已移除，精确数据仍用于内部渲染与校验。用户随后从项目dist移除后重装，确认刷新无权限提示；真实首次进入、工具栏、退出调试接管后的原生后台切换/取消/恢复通过，见 [主线安装/后台报告](reports/CITY-LOCAL-INSTALL-AND-BACKGROUND.md)。快照调度与性能仍以[此前报告](reports/CITY-FIRST-RELEASE-LOCAL.md)限定范围为准，不宣称60FPS、长期内存或完整性能预算通过。Edge和商店签名包安装未验收。
 
 本地#46已追溯59张运行图并更新ASSETS.md中的来源和现行条款；来源记录不替代法律权益保证，不将位图独立复用自动解释为代码MIT。本次仅同步材料，没有上传、审核或发布动作。详细实际证据见 [本任务报告](reports/CITY-RELEASE-STORE-MATERIALS.md)。
+
+## 2026-11-03提交材料核对
+
+| 项目 | 已核对结果 |
+| --- | --- |
+| 发行包 | `release/codeyears-0.1.0-city.zip`，0.1.0，79文件，112526864 bytes；SHA-256 `b0f004a227a68d8acce314343cf91cc053121a35ca09f009aa48106a99208018`。本轮只读核对，文件未改，不重复构建。 |
+| 名称/短说明 | CodeYears；英文81字符、简体中文40字符，均与包内词库一致且不超过132。详细说明与当前City功能一致。 |
+| 商店图标 | `public/icons/codeyears-128.png`，128×128 RGBA PNG；与包内图标一致。 |
+| 截图 | 两张1280×800 RGB PNG，字节/哈希与screenshots.json一致；均标注示例数据，不含真实私有活动。 |
+| 隐私与支持 | GitHub API已确认仓库public、main的PRIVACY.md存在、Issues启用；不建设独立网站。尚未通过控制台预览核对链接，上传时连同账户联系信息检查。 |
+| 当前账户 | 浏览器工具访问官方控制台返回Not allowed，未绕过；等待用户手动核对页面状态，不写成已注册或可发布。 |
+| 最终动作 | 未上传ZIP/图片、未填写控制台、未接受条款或付款、未提交审核/发布。 |
+
+本次重新读取官方[发布流程](https://developer.chrome.com/docs/webstore/publish)、[清单短说明](https://developer.chrome.com/docs/extensions/reference/manifest/description)、[商店字段](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)、[图片规范](https://developer.chrome.com/docs/webstore/images)、[隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy)与[账户设置](https://developer.chrome.com/docs/webstore/set-up-account)。正式包低于官方2GB上限；所需图形为128px图标及至少一张截图，宣传图/视频可选，本轮不为它们扩大素材制作。控制台当前字段与用户账户条件仍需实际核对。
+
+新反馈的“全景图标｜比例｜最大图标、去掉加减”工具条仍为后置规格，未实现，不写入本轮可复制功能说明；见[路线图](ROADMAP.md)。
