@@ -1,6 +1,6 @@
 # City 0.1.0 商店材料候选
 
-更新：2026-11-03。#46–#52已合入，当前主线`118d18a`；运行代码仍对应`7498d32`，后续仅文档。截图保留固定源码`e3a609e`及来源登记，所呈现的收起菜单/普通展开外观仍适用，不将截图SHA冒充最终验收SHA。本文与两张正式示例PNG已审阅，尚未上传、提交审核或发布。名称和以下短说明已同步当前ZIP的manifest/本地化词库，不修改运行文案或重新打包。
+更新：2026-11-03。#46–#54已合入，运行代码仍对应`7498d32`，后续为文档和媒体。用户已确认完成Chrome Web Store提交，当前仍在审核；工具未独立读取控制台或逐项核对实际填入内容。本文为准备材料及其来源记录，不冒充商店实际表单副本。名称和短说明已同步冻结ZIP，当前推荐媒体见[中英文媒体包](store/city-0.1.0/media-2026-11-03/README.md)。
 
 ## 简体中文 · 可复制
 
@@ -104,7 +104,7 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 ## 权限说明与测试步骤草稿
 
-以下供后续控制台填写，不表示已经填入、保存或作数据使用认证：
+以下为填写参考。用户已自行完成提交，工具未逐项读取实际填入值，不将这份参考表视为实际表单或数据使用认证：
 
 | 字段 | English copy |
 | --- | --- |
@@ -121,7 +121,7 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 ## 图片与当前官方规范
 
-本次最小集为两张1280×800正式候选PNG，见 [截图与复现说明](store/city-0.1.0/README.md)：
+当前推荐集为[2026-11-03媒体包](store/city-0.1.0/media-2026-11-03/README.md)：全球英文全景、English当地近景、简体中文当地操作各一张1280×800 JPEG，以及440×280小型和1400×560顶部宣传PNG。按用户控制台要求，全球与各当地语言均至少一张，避免用同图重复占位。用户实际上传项未由工具独立读取。下方两张PNG为2026-11-02的历史候选，来源见[旧截图说明](store/city-0.1.0/README.md)：
 
 1. [多年总览与页内标签](store/city-0.1.0/01-overview.png)
 2. [同一画布展开近景](store/city-0.1.0/02-closeup.png)
@@ -145,10 +145,10 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 | 发行包 | `release/codeyears-0.1.0-city.zip`，0.1.0，79文件，112526864 bytes；SHA-256 `b0f004a227a68d8acce314343cf91cc053121a35ca09f009aa48106a99208018`。本轮只读核对，文件未改，不重复构建。 |
 | 名称/短说明 | CodeYears；英文81字符、简体中文40字符，均与包内词库一致且不超过132。详细说明与当前City功能一致。 |
 | 商店图标 | `public/icons/codeyears-128.png`，128×128 RGBA PNG；与包内图标一致。 |
-| 截图 | 两张1280×800 RGB PNG，字节/哈希与screenshots.json一致；均标注示例数据，不含真实私有活动。 |
+| 截图 | #54提供三张1280×800 RGB JPEG及两张RGB PNG宣传图块，已核对规格/哈希与示例标签。旧两张PNG留存为历史，不重复混传。 |
 | 隐私与支持 | GitHub API已确认仓库public、main的PRIVACY.md存在、Issues启用。网站PR #51已合入并生产部署，双语六路由正式域名200；本地完整GEO 62项通过。不建设独立贡献数据网站。尚未通过商店控制台预览核对链接，上传时连同账户联系信息检查。 |
-| 当前账户 | 用户2026-11-03确认能登录且已打开控制台，明确项目创建由用户自行完成。工具仍无法读取控制台；发布者资料、邮箱验证及可发布状态未独立核实，不继续要求用户重复登录。 |
-| 最终动作 | 本任务未创建商店项目、上传ZIP/图片、填写控制台、接受条款或付款、提交审核/发布。用户侧项目进度不由此推断。 |
+| 当前账户 | 用户2026-11-03已自行完成提交，并再次明确CodeYears仍在审核；工具未独立读取控制台。 |
+| 最终动作 | 商店提交由用户完成；本工具未代填、代上传、接受条款或付款，也未替用户发布商店版本。GitHub里程碑按本轮独立授权归档发布。 |
 
 本次重新读取官方[发布流程](https://developer.chrome.com/docs/webstore/publish)、[清单短说明](https://developer.chrome.com/docs/extensions/reference/manifest/description)、[商店字段](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)、[图片规范](https://developer.chrome.com/docs/webstore/images)、[隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy)与[账户设置](https://developer.chrome.com/docs/webstore/set-up-account)。正式包低于官方2GB上限；所需图形为128px图标及至少一张截图，宣传图/视频可选，本轮不为它们扩大素材制作。控制台当前字段与用户账户条件仍需实际核对。
 
