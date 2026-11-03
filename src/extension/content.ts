@@ -4,7 +4,6 @@ import { readPageContext } from "../platform/github/probe";
 import { clearContributionCache } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
 import { isoYearStart } from "../data/iso-week";
-import type { DailyContribution } from "../data/types";
 import type { ContributionLandscape } from "../renderers/landscape";
 
 export interface CityPanel {
@@ -41,14 +40,23 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:var(--bgColor-default,#fff); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { width:100%; height:100%; background:transparent; }
+      #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
       .view-tools { position:absolute; right:10px; bottom:10px; display:flex; gap:4px; padding:4px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:var(--bgColor-default,#fff); }
       .view-tools button { border:0; min-width:30px; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }
       .more-panel { position:absolute; z-index:3; right:0; top:100%; width:390px; max-width:100%; max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
-      .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+      .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
+      .more-panel h3 { margin:0 0 8px; font-size:12px; font-weight:600; }
+      .more-section + .more-section { margin-top:12px; padding-top:12px; border-top:1px solid var(--borderColor-default,#d1d9e0); }
+      .more-section > details { margin-top:6px; padding:0 8px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; }
+      .more-section > details[open] { padding-bottom:8px; }
+      .more-section > details > summary { padding:6px 0; list-style:disclosure-closed inside; }
+      .more-section > details[open] > summary { list-style:disclosure-open inside; }
+      .more-section > details > summary::-webkit-details-marker { display:inline; }
+      .more-section .city-legend { margin:0; padding:4px 0 0; border-top:0; }
       .more-panel p { margin:0 0 10px; } .data-actions { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
-      #details summary { padding:6px 0; } .days { max-height:220px; overflow:auto; } table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; } td,th { padding:3px 6px; text-align:left; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
+      .data-actions button { max-width:100%; white-space:normal; overflow-wrap:anywhere; text-align:left; }
       dialog { color:inherit; background:var(--bgColor-default,#fff); width:min(1400px,calc(100vw - 40px)); height:calc(100dvh - 40px); max-width:none; max-height:none; padding:0; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:14px; }
       dialog::backdrop { background:#0d111799; }
       .panel.expanded { height:100%; border:0; display:flex; flex-direction:column; }
@@ -58,11 +66,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   shadow.innerHTML = `<style>${styles}</style>
     <section class="panel" data-i18n-label="cityRegion">
       <div id="expanded-controls"></div>
-      <div class="scene-wrap"><div id="scene"></div>
+      <div class="scene-wrap"><div id="scene" tabindex="0" role="region" data-i18n-label="canvasKeyboardLabel"></div>
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
         <div class="view-tools" hidden><button id="zoom-out" type="button" data-i18n-label="zoomOut">−</button><button id="zoom-in" type="button" data-i18n-label="zoomIn">＋</button><button id="reset-view" type="button" data-i18n="fitView"></button></div>
       </div>
-    </section><dialog data-i18n-label="expandedCity"></dialog>`;
+    </section><dialog closedby="any" data-i18n-label="expandedCity"></dialog>`;
   controls.innerHTML = `<style>${styles}
     :host { display:block; width:100%; min-width:0; }
     .bar { padding:0; gap:6px; }
@@ -73,12 +81,16 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         <button id="expand" type="button" aria-expanded="false" disabled></button>
         <details id="more"><summary data-i18n-label="moreLabel" data-i18n="more"></summary><div class="more-panel">
           <label class="language"><span data-i18n="language"></span><select id="language"><option value="auto" data-i18n="followBrowser"></option><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></label>
-          <p class="note" data-i18n="viewHelp"></p>
-          <p id="identity" class="note"></p>
-          <p class="note" data-i18n="dataHelp"></p>
-          <div class="data-actions"><button id="refresh" type="button" data-i18n="refreshData"></button><button id="clear" type="button" data-i18n="clearCache"></button></div>
-          <details id="details" hidden><summary data-i18n="dailyData"></summary><div class="days"><table><thead><tr><th data-i18n="date"></th><th data-i18n="contributionCount"></th></tr></thead><tbody></tbody></table></div></details>
-          <div id="legend"></div>
+          <section class="more-section" aria-labelledby="profile-section">
+            <h3 id="profile-section" data-i18n="moreProfileSection"></h3>
+            <p id="identity" class="note"></p>
+            <div class="data-actions"><button id="refresh" type="button" data-i18n="refreshData"></button><button id="clear" type="button" data-i18n="clearCache"></button></div>
+          </section>
+          <section class="more-section" aria-labelledby="help-section">
+            <h3 id="help-section" data-i18n="moreHelpSection"></h3>
+            <details id="help"><summary data-i18n="help"></summary><p class="note" data-i18n="viewHelp"></p><p class="note" data-i18n="keyboardControls"></p><p class="note" data-i18n="dataHelp"></p></details>
+            <details id="legend-section"><summary data-i18n="legendLabel"></summary><div id="legend"></div></details>
+          </section>
         </div></details>
       </div>`;
   controls.querySelector("#legend")!.append(createCityLegend(language));
@@ -90,12 +102,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const run = get<HTMLButtonElement>("#run"), refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
   const cancel = get<HTMLButtonElement>("#cancel"), retry = get<HTMLButtonElement>("#retry"), expand = get<HTMLButtonElement>("#expand");
   const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
-  const more = get<HTMLDetailsElement>("#more"), details = get<HTMLDetailsElement>("#details"), body = get<HTMLTableSectionElement>("tbody");
+  const more = get<HTMLDetailsElement>("#more");
   const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), feedback = get<HTMLElement>(".status");
   const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
-  let visibleDays: readonly DailyContribution[] = [];
   let statusMessage = () => "", summaryMessage = () => "";
   const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
   const setStatus = (message: () => string) => { statusMessage = message; status.textContent = message(); updateFeedback(); };
@@ -104,6 +115,22 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     const identity = context.viewer.state === "unknown" ? t("identityUnknown") : context.viewer.identity.kind === "signed-out" ? t("signedOut") : t("visitor", [context.viewer.identity.login]);
     get<HTMLElement>("#identity").textContent = active ? t("profileIdentity", [context.profileLogin, identity]) : "";
   };
+  const moreTrigger = more.querySelector<HTMLElement>("summary")!;
+  const closeMore = (restoreFocus = false) => {
+    if (!more.open) return;
+    more.open = false;
+    if (restoreFocus) moreTrigger.focus();
+  };
+  // composedPath crosses both our shadow roots, including when controls move into the dialog.
+  const outsidePointer = (event: PointerEvent) => {
+    if (active && !event.composedPath().includes(more)) closeMore();
+  };
+  const escapeMenu = (event: KeyboardEvent) => {
+    if (!active || event.key !== "Escape" || !more.open) return;
+    event.preventDefault(); event.stopPropagation(); closeMore(true);
+  };
+  document.addEventListener("pointerdown", outsidePointer, true);
+  document.addEventListener("keydown", escapeMenu, true);
   const currentContext = () => readPageContext(document, new URL(location.href));
   const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
   const collapse = (restoreFocus = true) => {
@@ -118,7 +145,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     more.open = false; get<HTMLElement>("#expanded-controls").append(toolbarHost); panel.classList.add("expanded"); dialog.append(panel); dialog.showModal();
     expand.textContent = t("collapse"); expand.setAttribute("aria-expanded", "true"); expand.focus();
   };
-  dialog.addEventListener("cancel", event => { event.preventDefault(); collapse(); });
+  dialog.addEventListener("cancel", event => { event.preventDefault(); if (more.open) closeMore(true); else collapse(); });
   const updateControls = () => {
     const ready = Boolean(cityHost.querySelector("canvas"));
     expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
@@ -132,19 +159,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   const resetResult = () => {
     city?.dispose(); city = undefined; cityHost.replaceChildren();
-    visibleDays = []; body.replaceChildren(); details.open = false; details.hidden = true; setSummary(() => "");
+    setSummary(() => "");
     updateControls();
   };
-  details.addEventListener("toggle", () => {
-    if (!details.open || body.childElementCount) return;
-    const fragment = document.createDocumentFragment();
-    for (const day of visibleDays) {
-      const row = document.createElement("tr");
-      for (const value of [day.date, String(day.count)]) { const cell = document.createElement("td"); cell.textContent = value; row.append(cell); }
-      fragment.append(row);
-    }
-    body.append(fragment);
-  });
   const load = async (forceRefresh: boolean) => {
     if (!active || disposed || busy) return;
     const start = Number(startSelect.value), end = Number(select.value);
@@ -202,10 +219,10 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       if (renderFailure) throw renderFailure;
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
-      visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
+      const visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
       if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
-      setStatus(() => [...warnings].map(message => externalText(language, message)).join(" ")); details.hidden = false;
+      setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
       setSummary(() => t("totalContributions", [numberText(language, total)]));
     } catch (error) {
       if (!active || controller !== request) return;
@@ -248,6 +265,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const setLanguage = (next: Language, selected: LanguagePreference) => {
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
+    cityHost.setAttribute("aria-description", t("keyboardControls"));
     expand.textContent = t(dialog.open ? "collapse" : "expand");
     languageSelect.value = preference; languageSelect.setAttribute("aria-label", t("language"));
     setStatus(statusMessage); setSummary(summaryMessage); showIdentity(); updateControls();
@@ -261,6 +279,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     setLanguage,
     async activate() { if (disposed || active) return; active = true; await load(false); },
     deactivate,
-    dispose() { if (disposed) return; deactivate(); disposed = true; shadow.replaceChildren(); controls.replaceChildren(); },
+    dispose() { if (disposed) return; deactivate(); disposed = true; document.removeEventListener("pointerdown", outsidePointer, true); document.removeEventListener("keydown", escapeMenu, true); shadow.replaceChildren(); controls.replaceChildren(); },
   };
 }
