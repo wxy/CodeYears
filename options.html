@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>CodeYears</title>
+    <style>
+      :root { color-scheme: light dark; font: 14px/1.6 system-ui, sans-serif; color: #242d29; background: #f8faf8; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      main { max-width: 580px; margin: 0 auto; padding: 28px 24px; }
+      h1 { margin: 0 0 8px; font-size: 22px; letter-spacing: -.02em; }
+      h2 { margin: 0 0 8px; font-size: 16px; }
+      p { margin: 0 0 20px; color: #56635c; }
+      label { display: block; margin-bottom: 6px; font-weight: 600; }
+      select { max-width: 100%; min-width: 200px; padding: 8px 12px; border: 1px solid #84958b; border-radius: 6px; font: inherit; color: inherit; background: #fff; }
+      output { display: block; min-height: 1.6em; margin-top: 8px; color: #27603e; }
+      output[data-error] { color: #a52626; }
+      section { margin-top: 24px; padding-top: 20px; border-top: 1px solid #d9e1db; }
+      section p { margin-bottom: 12px; }
+      nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+      a { color: #245d40; text-underline-offset: 3px; }
+      :focus-visible { outline: 3px solid #3478c5; outline-offset: 3px; }
+      @media (prefers-color-scheme: dark) {
+        :root { color: #e5ece7; background: #202623; }
+        p { color: #b2beb6; }
+        select { background: #2d3731; border-color: #85998d; }
+        section { border-color: #46544b; }
+        a, output { color: #9ed9b3; }
+        output[data-error] { color: #ffa6a6; }
+      }
+    </style>
+  </head>
+  <body>
+    <main hidden>
+      <h1 data-i18n="settingsTitle"></h1>
+      <p data-i18n="settingsHelp"></p>
+      <label for="language" data-i18n="language"></label>
+      <select id="language" disabled aria-describedby="save-status">
+        <option value="auto" data-i18n="followBrowser"></option>
+        <option value="en" lang="en">English</option>
+        <option value="zh-CN" lang="zh-CN">简体中文</option>
+      </select>
+      <output id="save-status" role="status" aria-live="polite" aria-atomic="true"></output>
+      <section aria-labelledby="about-title">
+        <h2 id="about-title" data-i18n="settingsAbout"></h2>
+        <p id="version"></p>
+        <nav aria-labelledby="about-title">
+          <a href="https://github.com/wxy/CodeYears#readme" target="_blank" rel="noopener noreferrer" data-i18n="help"></a>
+          <a href="https://github.com/wxy/CodeYears/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" data-i18n="privacy"></a>
+          <a href="https://github.com/wxy/CodeYears/issues" target="_blank" rel="noopener noreferrer" data-i18n="feedback"></a>
+        </nav>
+      </section>
+    </main>
+    <script type="module" src="/src/extension/options.ts"></script>
+  </body>
+</html>
