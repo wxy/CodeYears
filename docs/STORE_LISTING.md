@@ -139,8 +139,8 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 | 商店图标 | `public/icons/codeyears-128.png`，128×128 RGBA PNG；与包内图标一致。 |
 | 截图 | 两张1280×800 RGB PNG，字节/哈希与screenshots.json一致；均标注示例数据，不含真实私有活动。 |
 | 隐私与支持 | GitHub API已确认仓库public、main的PRIVACY.md存在、Issues启用；不建设独立网站。尚未通过控制台预览核对链接，上传时连同账户联系信息检查。 |
-| 当前账户 | 浏览器工具访问官方控制台返回Not allowed，未绕过；等待用户手动核对页面状态，不写成已注册或可发布。 |
-| 最终动作 | 未上传ZIP/图片、未填写控制台、未接受条款或付款、未提交审核/发布。 |
+| 当前账户 | 用户2026-11-03确认能登录且已打开控制台，明确项目创建由用户自行完成。工具仍无法读取控制台；发布者资料、邮箱验证及可发布状态未独立核实，不继续要求用户重复登录。 |
+| 最终动作 | 本任务未创建商店项目、上传ZIP/图片、填写控制台、接受条款或付款、提交审核/发布。用户侧项目进度不由此推断。 |
 
 本次重新读取官方[发布流程](https://developer.chrome.com/docs/webstore/publish)、[清单短说明](https://developer.chrome.com/docs/extensions/reference/manifest/description)、[商店字段](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)、[图片规范](https://developer.chrome.com/docs/webstore/images)、[隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy)与[账户设置](https://developer.chrome.com/docs/webstore/set-up-account)。正式包低于官方2GB上限；所需图形为128px图标及至少一张截图，宣传图/视频可选，本轮不为它们扩大素材制作。控制台当前字段与用户账户条件仍需实际核对。
 
