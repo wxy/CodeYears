@@ -1,34 +1,38 @@
 # 五款 Chrome 扩展 · X 展示海报
 
-状态：2026-11-03制作完成，未上传、草拟或发布到X。只准备正式静态图片。CodeYears 0.1.0 GitHub里程碑已发布，Chrome Web Store仍在审核；用户已明确同意海报写“5 款 Chrome 扩展”，单独注明CodeYears审核中。
+状态：2026-11-03按技术目录方向完成V2，未上传、草拟或发布到X。只准备正式静态图片。CodeYears 0.1.0 GitHub里程碑已发布，Chrome Web Store仍在审核；用户已明确同意海报写“5 款 Chrome 扩展”，单独注明CodeYears审核中。
 
-图片：[five-chrome-extensions.png](five-chrome-extensions.png)，1600×1000 RGB PNG，454463 bytes，SHA-256 `64b8ba54250aef5468bddbaa8b885485fbde71e182de2a84e10a267bbc3dc279`。正式导出副本位于项目忽略目录 `release/codeyears-five-chrome-extensions.png`，便于本机直接选择。
+图片：[five-chrome-extensions-v2.png](five-chrome-extensions-v2.png)，1600×1000 RGB PNG，147087 bytes，SHA-256 `e0f6900b65c65d189352960f1022cbcd567c585388a28fd1c589a04acf7ca251`。正式导出副本位于项目忽略目录 `release/codeyears-five-chrome-extensions-v2.png`（最新通用导出仍为 `release/codeyears-five-chrome-extensions.png`），便于本机直接选择。
 
-![五款Chrome扩展海报](five-chrome-extensions.png)
+![五款Chrome扩展海报V2](five-chrome-extensions-v2.png)
 
 ## 内容与来源
 
 | 产品 | 图上用途 | 状态依据 | 图标来源 |
 | --- | --- | --- | --- |
-| HiTable | 网页里的表格，随手分析 | 用户确认已上线；个人网站已有商店链接 | xingyu.wang/public/icons/hitable.png |
-| Navigraph | 浏览路径，直观记录与回看 | 同上 | xingyu.wang/public/icons/navigraph.png |
-| SilentFeed | 过滤信息噪音，专注值得读的 | 同上 | xingyu.wang/public/icons/silentfeed.png |
-| AI Pulse | AI服务余额、用量与状态 | 同上；明确为Chrome扩展，不是macOS/iOS产品 | xingyu.wang/public/icons/ai-pulse-chrome.png |
-| CodeYears | 让GitHub贡献，长成一座城 | 用户再次明确仍在Chrome商店审核 | 本仓库public/icons/codeyears-512.png |
+| HiTable | 网页表格分析 | 用户确认已上线；个人网站已有商店链接 | xingyu.wang/public/icons/hitable.png |
+| Navigraph | 浏览路径可视化 | 同上 | xingyu.wang/public/icons/navigraph.png |
+| SilentFeed | AI驱动的RSS阅读 | 同上 | xingyu.wang/public/icons/silentfeed.png |
+| AI Pulse | AI服务用量与余额 | 同上；明确为Chrome扩展，不是macOS/iOS产品 | xingyu.wang/public/icons/ai-pulse-chrome.png |
+| CodeYears | GitHub贡献城市 | 用户再次明确仍在Chrome商店审核 | 本仓库public/icons/codeyears-512.png |
 
 图标原样复制到icons目录作为可复作的正式设计输入，没有重绘或修改其他项目源码。前四款产品介绍取自个人网站当前产品注册表；商店页面读取失败，未据此声称独立完成商店可用性或安装验证。海报不包含安装量、用户量、认证或排名等未核实数据。
 
-图上标题只描述五款作品，四款标“已上线”，CodeYears用单独的“审核中”标记；页脚再次说明数量与状态，不把刚提交的第五款写成已发布。仅用个人网址作入口，没有替用户上传或发表社交内容。
+左侧主数字05配中文“五个小工具”，右侧产品索引四款标LIVE、CodeYears标IN REVIEW；中文状态与页脚再次说明数量及审核状态，不把刚提交的第五款写成已发布。仅用个人网址作入口，没有替用户上传或发表社交内容。
 
 ## 验证与复作
 
 - 浏览器画布直接导出正式PNG，原尺寸完整解码、1600×1000、RGB无alpha和文件哈希检查通过；小于5MB。
-- 本机Chrome独立窗口检查五个图标、名称、用途、状态、正文换行、边缘与留白。原始PNG已再次目视核对，没有中文缺字或裁切。
+- 本机Chrome独立窗口检查五个图标、名称、用途、状态、正文换行、边缘与留白；V2采用石墨黑、单一橙色、等宽索引和技术杂志式字排，不使用浅色圆角卡片或虚构科技图形。原始PNG已再次目视核对，没有中文缺字或裁切。
 - 1600×1000为8:5横版；X官方说明单图2:1至3:4的常见比例可完整展示。本次没有实际上传，平台压缩与发布预览未验收。[X图片说明](https://help.x.com/en/using-x/posting-gifs-and-pictures)
 - 设计方向见[ART_DIRECTION.md](ART_DIRECTION.md)，可维护的正式构图代码见[SOURCE.md](SOURCE.md)。仅增加宣传文件，不改变扩展行为、权限、发行包或既有运行素材，无需扩展编译或端到端回归。
 - 临时画布页面、HTTP服务和过程输出在交付后清理；只保留正式PNG、五枚输入图标、设计源稿和本报告。
 
-图片替代文本：暖白背景上展示五款Chrome扩展，三加二排列HiTable、Navigraph、SilentFeed、AI Pulse和CodeYears的正式图标、名称与简短用途。前四款标已上线，CodeYears标审核中；页脚为xingyu.wang和“4款已上线·CodeYears审核中”。
+图片替代文本：石墨黑背景，左侧是橙色大数字05和“浏览器里的五个小工具”，右侧用五条水平索引列出HiTable、Navigraph、SilentFeed、AI Pulse和CodeYears的正式图标、名称与用途。前四款标LIVE，CodeYears标IN REVIEW；中文说明四款已上线、一款审核中，底部为个人网站扩展目录。
+
+## 旧稿留存
+
+[V1浅色卡片版](five-chrome-extensions-v1.png)、[V1构图代码](SOURCE_V1.md)与[V1设计方向](ART_DIRECTION_V1.md)保留为对照，不作为当前推荐版本。原V1字节保持不变，SHA-256为 `64b8ba54250aef5468bddbaa8b885485fbde71e182de2a84e10a267bbc3dc279`。
 
 ## 图标指纹
 
