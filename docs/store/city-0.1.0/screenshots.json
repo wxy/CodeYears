@@ -1,0 +1,93 @@
+{
+  "status": "candidate-not-uploaded",
+  "sourceSHA": "e3a609e84a821b2a792711c888f63f27edc120e5",
+  "version": "0.1.0",
+  "captureDate": "2026-11-02",
+  "timezone": "Asia/Shanghai",
+  "browser": "Chromium 154.0.8037.57 (Debian GNU/Linux 13), headless, GPU disabled",
+  "viewport": [
+    1280,
+    800
+  ],
+  "deviceScaleFactor": 1,
+  "language": "zh-CN",
+  "dataLabel": "示例数据 / Demo data",
+  "environmentLabel": "受控界面外壳 / Controlled UI shell",
+  "sourceMode": "Unmodified production entry.js, content.js and landscape.js; CDP-controlled HTML responses and in-memory chrome.storage mock, no real account/session/cache",
+  "rangeISOYears": [
+    2024,
+    2026
+  ],
+  "renderedDays": 1037,
+  "renderedTotal": 17725,
+  "sourceYears": {
+    "2023": {
+      "days": 365,
+      "total": 6865
+    },
+    "2024": {
+      "days": 366,
+      "total": 6564
+    },
+    "2025": {
+      "days": 365,
+      "total": 6388
+    },
+    "2026": {
+      "days": 306,
+      "total": 4773
+    }
+  },
+  "generator": {
+    "seed": 20240101,
+    "firstDate": "2023-01-01",
+    "lastDate": "2026-11-02",
+    "step": "one UTC day",
+    "recurrence": "seed=(seed*1664525+1013904223) mod 2^32; seed continues across year boundaries",
+    "section": "floor(dayIndexWithinCalendarYear/7) mod 13",
+    "count": "section<3 ? (seed%3==0 ? 1 : 0) : section<6 ? 1+seed%5 : section<10 ? 6+seed%20 : 25+seed%61"
+  },
+  "camera": {
+    "overview": "Production default fit after three yearly fills completed; no manual camera transform",
+    "closeup": "Production Expand button, then four zoom-in button clicks (1.25^4), centered, no pan; same canvas; no CSS resizing of production scene"
+  },
+  "runtimeArtifacts": {
+    "entry.js": {
+      "bytes": 10254,
+      "sha256": "0ccf5a290d446b0505d6c9759e44adc39085237799c47f6313a8a891d9b669e9"
+    },
+    "content.js": {
+      "bytes": 46540,
+      "sha256": "27a92472f17d4ddcb5eecb766f33eb02293358aed996b76a9335a8d79749e100"
+    },
+    "landscape.js": {
+      "bytes": 147044,
+      "sha256": "65723d318b832ffc5b5009349db7b205850b8896c07fa82b76f09312c4729f3c"
+    }
+  },
+  "files": [
+    {
+      "file": "01-overview.png",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 870258,
+      "sha256": "334d1414991f2fa9203270c1865d3bc1c6f02a581b231cd36f0b81e7a18914e8"
+    },
+    {
+      "file": "02-closeup.png",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 1535770,
+      "sha256": "d325290957df2d396f0839dcc7c4f6340220a3b088c4319b3d0adb2263c061ab"
+    }
+  ],
+  "limitations": [
+    "Controlled shell is not a real logged-in GitHub page or installed MV3 run.",
+    "Synthetic screenshot validation is not performance or hardware certification.",
+    "A/B login switching was explicitly removed from this release scope; not run.",
+    "Options page, new menu grouping and new keyboard controls are absent at the fixed source SHA.",
+    "Asset redistribution rights remain subject to maintainer review under ASSETS.md."
+  ]
+}
