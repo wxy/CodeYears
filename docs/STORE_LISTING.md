@@ -82,7 +82,15 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 单一用途 / Single purpose：在 GitHub 个人贡献区，将当前会话可见的每日贡献数量呈现为可切换的城市视图。Visualize the daily contribution counts visible to the current GitHub session as a switchable city in a profile's contribution section.
 
-建议主分类：Developer Tools（以提交时控制台实际选项为准）。界面/本地化目录：英文 `en`、简体中文 `zh_CN`。支持与反馈：[GitHub Issues](https://github.com/wxy/CodeYears/issues)。隐私政策候选链接：[PRIVACY.md](https://github.com/wxy/CodeYears/blob/main/PRIVACY.md)，上传前由维护者核对最终政策和公开链接。资料准备不等于已填写或提交隐私表单。
+建议主分类：Developer Tools（以提交时控制台实际选项为准）。界面/本地化目录：英文 `en`、简体中文 `zh_CN`。用户已要求将 CodeYears 登记到现有个人网站，官网、支持和隐私页由[网站 PR #51](https://github.com/wxy/xingyu.wang/pull/51)交付。以下是正式部署后使用的地址；该 PR 尚未合入，本地验收和预览不等于正式域名已上线，填写前需核对生产地址返回正常。
+
+| 商店字段 | 正式 URL（待网站部署） |
+| --- | --- |
+| 官方网站 | https://xingyu.wang/extensions/codeyears |
+| 支持 | https://xingyu.wang/extensions/codeyears/about |
+| 隐私政策 | https://xingyu.wang/extensions/codeyears/privacy |
+
+中文对应地址在路径前加 `/zh`。这些页面提供产品介绍、支持和政策，不建设独立贡献数据网站。公开源码仍以 [PRIVACY.md](https://github.com/wxy/CodeYears/blob/main/PRIVACY.md)保留隐私说明，问题反馈使用 [GitHub Issues](https://github.com/wxy/CodeYears/issues)。资料准备不等于已填写或提交隐私表单。
 
 | 项目 | 对应行为 |
 | --- | --- |
@@ -138,7 +146,7 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 | 名称/短说明 | CodeYears；英文81字符、简体中文40字符，均与包内词库一致且不超过132。详细说明与当前City功能一致。 |
 | 商店图标 | `public/icons/codeyears-128.png`，128×128 RGBA PNG；与包内图标一致。 |
 | 截图 | 两张1280×800 RGB PNG，字节/哈希与screenshots.json一致；均标注示例数据，不含真实私有活动。 |
-| 隐私与支持 | GitHub API已确认仓库public、main的PRIVACY.md存在、Issues启用；不建设独立网站。尚未通过控制台预览核对链接，上传时连同账户联系信息检查。 |
+| 隐私与支持 | GitHub API已确认仓库public、main的PRIVACY.md存在、Issues启用。现有个人网站新增官网/支持/专属隐私页见网站PR #51，双语六路由本地200、完整GEO 62项通过；待合入部署核对正式URL，不建设独立贡献数据网站。尚未通过控制台预览核对链接，上传时连同账户联系信息检查。 |
 | 当前账户 | 用户2026-11-03确认能登录且已打开控制台，明确项目创建由用户自行完成。工具仍无法读取控制台；发布者资料、邮箱验证及可发布状态未独立核实，不继续要求用户重复登录。 |
 | 最终动作 | 本任务未创建商店项目、上传ZIP/图片、填写控制台、接受条款或付款、提交审核/发布。用户侧项目进度不由此推断。 |
 
