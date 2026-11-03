@@ -2,7 +2,9 @@
 
 **代码岁月，自成风景。**
 
-CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中当前会话可见的真实每日贡献呈现为一座城市。当前准备 Chrome 0.1.0 候选版，尚未发布；Edge 尚待独立验收。
+CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中当前会话可见的真实每日贡献呈现为一座城市。当前里程碑为 **0.1.0 City**；用户已于2026-11-03提交 Chrome Web Store 审核，尚未确认商店上架。Edge 尚待独立验收。
+
+[官网](https://xingyu.wang/extensions/codeyears) · [隐私政策](https://xingyu.wang/extensions/codeyears/privacy) · [GitHub 版本与安装包](https://github.com/wxy/CodeYears/releases) · [0.1.0 里程碑说明](docs/releases/v0.1.0.md)
 
 ![CodeYears 城市总览：示例数据 / Demo data，受控页面外壳](docs/store/city-0.1.0/01-overview.png)
 
@@ -77,6 +79,6 @@ npm run build
 
 ## 当前状态与许可
 
-#37–#45已合入，#35独立分享实验已关闭。首发仅提供City；未上线的视图或主题不属于当前功能。完整性能预算、真实MV3最终组合、安装/更新提示与Edge结果以当前版本报告为准，不继承旧原型约60FPS的结论。用户已取消专门隔离账户和A/B登录切换验收；该范围未覆盖，不再作为索取第二账户的条件。
+#46–#54已合入，首发运行代码未因后续文档和媒体更新而改变；#35独立分享实验已关闭。首发仅提供City；未上线的视图或主题不属于当前功能。紧凑缩放工具条（全景图标、比例、最大图标）按用户决定留到下一版本，目前仍使用原有加减与全景按钮。性能、真实MV3和安装/更新提示以对应版本报告为准，不继承旧原型约60FPS的结论。用户已取消专门隔离账户和A/B登录切换验收；该范围未覆盖，不再作为索取第二账户的条件。
 
-仓库 [wxy/CodeYears](https://github.com/wxy/CodeYears) 已公开，尚无商店下载链接。代码采用 [MIT](LICENSE)；[素材分发边界](ASSETS.md) 与 [第三方依赖许可](THIRD_PARTY_NOTICES.md) 分开说明。本地#46已追溯59张运行图并更新ASSETS.md所载现行条款；来源登记不等于对所有第三方权益作法律保证，也不授予位图独立MIT许可。本轮仅准备候选，不执行商店上传、提交审核或发布。
+仓库 [wxy/CodeYears](https://github.com/wxy/CodeYears) 已公开，尚无已核实的商店下载链接。商店提交状态来自用户确认；GitHub里程碑与Chrome审核结果分别记录，GitHub安装包不表示商店已通过。代码采用 [MIT](LICENSE)；[素材分发边界](ASSETS.md) 与 [第三方依赖许可](THIRD_PARTY_NOTICES.md) 分开说明。来源登记不等于对所有第三方权益作法律保证，也不授予位图独立MIT许可。
