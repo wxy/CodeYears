@@ -14,5 +14,5 @@
     "noUnusedParameters": true,
     "types": ["chrome", "node"]
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "scripts/city-assets"]
 }

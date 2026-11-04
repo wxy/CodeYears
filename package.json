@@ -13,6 +13,7 @@
     "build": "npm run check && node scripts/build.mjs",
     "package:city": "npm run build && python3 scripts/package-city.py",
     "dev": "node scripts/build.mjs --watch",
+    "bake:city": "node scripts/bake-city-assets.mjs",
     "preview:city": "vite --config probes/city/vite.config.ts",
     "preview:units": "vite --config probes/city-units/vite.config.ts"
   },
