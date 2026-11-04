@@ -25,7 +25,7 @@ CodeYears 在 GitHub 个人主页的贡献区提供“城市 / 贡献图”标�
 
 先看到完整空场地与道路，再随已校验的年度数据填入地块。未知、尚未返回和未来日期不会被填成零贡献。读取、取消、警告与失败状态在画布浮层中显示，正常完成后隐藏。
 
-从多年全景到建筑近景，支持滚轮缩放和拖动平移；聚焦城市画布后可用方向键平移、按 + 放大、- 缩小。右下角工具条提供全景图标、当前比例和最大倍率图标；100%表示完整城市适配当前画布。可在当前页面内展开和收起，展开后按 Esc 或点击遮罩返回。缩放不会改变真实数量或重新决定建筑合并。
+从多年全景到建筑近景，支持滚轮缩放和拖动平移；聚焦城市画布后可用方向键平移、按 + 放大、- 缩小。右下角工具条提供全景图标、当前比例和最大倍率图标；100%表示默认取景，允许适当裁切；全景图标用于查看完整城市。可在当前页面内展开和收起，展开后按 Esc 或点击遮罩返回。缩放不会改变真实数量或重新决定建筑合并。
 
 零贡献区域以自然地块或城市邻域铺装表达；少量正贡献从平房开始，逐步对应低层住宅、公寓、办公楼与大厦。道路、河道和城郊景观只作装饰。年份按 ISO 完整周组织，边界日期可能归入相邻周年，因此所选周年合计可能与 GitHub 公历年统计不同。
 
@@ -63,7 +63,7 @@ CodeYears adds City and Contributions tabs to the contribution section of a GitH
 
 A complete empty site and road network appear first. Validated yearly data then fills the city. Unknown, pending and future dates are never treated as zero contributions. Loading, cancellation, warnings and errors appear in an overlay on the canvas, which hides after normal completion.
 
-Explore a multi-year overview or zoom into individual buildings. Use the wheel to zoom and drag to pan. When the city canvas is focused, use arrow keys to pan, + to zoom in, and - to zoom out. The compact toolbar offers Fit view, the current percentage and Maximum zoom; 100% fits the full city to the current canvas. Expand the same canvas within the page, then press Esc or click the backdrop to return. Zooming does not change the underlying counts or replan merged buildings.
+Explore a multi-year overview or zoom into individual buildings. Use the wheel to zoom and drag to pan. When the city canvas is focused, use arrow keys to pan, + to zoom in, and - to zoom out. The compact toolbar offers Fit view, the current percentage and Maximum zoom; 100% is the default framing and may crop the edges. Fit view shows the full city. Expand the same canvas within the page, then press Esc or click the backdrop to return. Zooming does not change the underlying counts or replan merged buildings.
 
 Zero-contribution areas use natural plots or paving near urban neighborhoods. Positive contributions begin with small houses, then progress through low-rise homes, apartments, offices and towers. Roads, rivers and scenery outside the city are decorative. The city groups complete ISO weeks, so year-boundary dates and totals can differ from GitHub's calendar-year statistics.
 

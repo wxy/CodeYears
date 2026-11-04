@@ -60,7 +60,7 @@
     "message": "$1% zoom"
   },
   "zoomFitHelp": {
-    "message": "100% fits the full city to the current canvas."
+    "message": "100% is the default framing. Fit view shows the full city."
   },
   "fitView": {
     "message": "Fit view"
