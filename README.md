@@ -2,11 +2,11 @@
 
 **代码岁月，自成风景。**
 
-CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中当前会话可见的真实每日贡献呈现为一座城市。当前里程碑为 **0.1.0 City**；用户已于2026-11-03提交 Chrome Web Store 审核，尚未确认商店上架。Edge 尚待独立验收。
+CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中当前会话可见的真实每日贡献呈现为一座城市。**0.1.0 City 已在 Chrome Web Store 上架；当前源码为0.1.1**，包含紧凑缩放工具条、初始150%取景和约93%的包体缩减。0.1.1商店上传与审核状态由维护者另行确认。Edge 尚待独立验收。
 
-[官网](https://xingyu.wang/extensions/codeyears) · [隐私政策](https://xingyu.wang/extensions/codeyears/privacy) · [GitHub 版本与安装包](https://github.com/wxy/CodeYears/releases) · [0.1.0 里程碑说明](docs/releases/v0.1.0.md)
+[官网](https://xingyu.wang/extensions/codeyears) · [隐私政策](https://xingyu.wang/extensions/codeyears/privacy) · [GitHub 版本与安装包](https://github.com/wxy/CodeYears/releases) · [0.1.1 版本说明](docs/releases/v0.1.1.md)
 
-![CodeYears 城市总览：示例数据 / Demo data，受控页面外壳](docs/store/city-0.1.0/01-overview.png)
+![CodeYears 城市总览：示例数据，受控页面外壳](docs/store/city-0.1.1/localized/zh_CN/01-city-overview.jpg)
 
 ## 使用方式
 
@@ -28,7 +28,7 @@ CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中�
 
 无需GitHub Token或独立登录，没有后端、广告或遥测。年度日期/数量在浏览器本地按访问者、主页与年份隔离缓存；身份无法确认时不复用缓存。只向GitHub请求，不自动上传图片。详见 [隐私说明](PRIVACY.md) 与 [数据边界](docs/DATA_AND_PRIVACY.md)。
 
-截图是正式City渲染器与入口在受控外壳中的合成示例，不是真实登录主页或私有活动。[图片来源、对应提交和复现方法](docs/store/city-0.1.0/README.md)。最终候选版本和验收范围见 [本地报告](docs/reports/CITY-FIRST-RELEASE-LOCAL.md)。
+截图是正式City渲染器与入口在受控外壳中的合成示例，不是真实登录主页或私有活动。[图片来源、对应版本和复现方法](docs/store/city-0.1.1/README.md)。0.1.1素材与验收范围见 [预烘焙报告](docs/reports/CITY-PREBAKED-ASSETS.md)。
 
 ## 文档入口
 
@@ -73,7 +73,7 @@ npm run build
 
 在Chrome的 `chrome://extensions` 加载 `dist/`，允许扩展在GitHub运行。修改后重新构建并重载扩展；`npm run dev` 可监听构建，不向扩展注入开发服务器代码。City使用Canvas 2D和包内透明素材，点击后按需加载；静止停止连续帧，离开释放资源。
 
-制作本地发行候选需要Python3：`npm run package:city` 生成 `release/codeyears-0.1.0-city.zip` 与SHA-256。产物不提交Git，打包不等于验收、商店上传或发布。ZIP内容和最终运行检查由 [首发收尾](docs/tasks/CITY-FIRST-RELEASE-2026-11-02.md) 与 [发布清单](docs/RELEASE_READINESS.md) 记录。
+制作本地发行候选需要Python3：`npm run package:city` 生成 `release/codeyears-0.1.1-city.zip` 与SHA-256。产物不提交Git，打包不等于验收、商店上传或发布。ZIP内容和最终运行检查由 [发布清单](docs/RELEASE_READINESS.md) 记录；旧0.1.0冻结包保留。
 
 素材检查可运行 `npm run preview:units`，打开 [本地标定预览](http://127.0.0.1:4176/)。`probes/` 中的历史体验/负载工具包含旧播放控件，只用于开发；不代表正式入口功能或支持范围。[菜单与键盘PR #47](https://github.com/wxy/CodeYears/pull/47) 的分组、菜单外部/Esc关闭、同一画布展开返回和方向键平移已在本地真实Chrome验证。[选项页PR #48](https://github.com/wxy/CodeYears/pull/48) 已由用户从原生“选项”切换English，看到Saved并确认刷新后保留、GitHub入口联动英文。英文菜单边界、点击遮罩收起与Esc焦点恢复也已在真实Chrome复核。每日数据表已按用户决定从首发界面移除，精确数据继续供内部渲染与校验。具体版本、性能与未测范围见 [本地报告](docs/reports/CITY-FIRST-RELEASE-LOCAL.md)。
 
