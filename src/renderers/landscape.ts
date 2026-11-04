@@ -20,13 +20,13 @@ export interface ContributionLandscape {
   dispose(): void;
 }
 
-/** 两种引擎共享播放/缩放/平移；缩放通知以默认取景为1。City不创建WebGL。 */
+/** 两种引擎共享播放/缩放/平移；缩放通知按面板的100%基准归一化。City不创建WebGL。 */
 export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void): ContributionLandscape {
   const progressiveCity=initialView==="city"&&reservedYears!==undefined;
-  // 正式City默认比完整适配放大一档，允许裁切；全景仍使用原始适配比例。
+  // 保留100%的取景基准，正式City初始显示150%；全景仍使用原始适配比例。
   const zoomBase=progressiveCity?1.25:1;
   let currentDays=days,revealedDays=0,revealFrom=0,revealStarted=0;
-  const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:zoomBase,panX:0,panY:0,dark:false};
+  const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:progressiveCity?zoomBase*1.5:1,panX:0,panY:0,dark:false};
   let view=initialView,layer:LandscapeView|undefined,images:CityImages|undefined,assetPromise:Promise<CityImages>|undefined;
   let cityScene:CityScene|undefined;const assetAbort=new AbortController();
   let disposed=false,blocked=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
