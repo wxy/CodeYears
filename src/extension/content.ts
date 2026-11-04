@@ -41,8 +41,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
-      .view-tools { position:absolute; right:10px; bottom:10px; display:flex; gap:4px; padding:4px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:var(--bgColor-default,#fff); }
-      .view-tools button { border:0; min-width:30px; }
+      .view-tools { position:absolute; right:10px; bottom:10px; display:flex; align-items:center; padding:3px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:var(--bgColor-default,#fff); }
+      .view-tools button { display:grid; place-items:center; width:30px; height:30px; padding:6px; border:0; background:transparent; }
+      .view-tools button:hover { background:var(--bgColor-muted,#f6f8fa); }
+      .view-tools svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+      .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }
       .more-panel { position:absolute; z-index:3; right:0; top:100%; width:390px; max-width:100%; max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
@@ -68,7 +71,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       <div id="expanded-controls"></div>
       <div class="scene-wrap"><div id="scene" tabindex="0" role="region" data-i18n-label="canvasKeyboardLabel"></div>
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
-        <div class="view-tools" hidden><button id="zoom-out" type="button" data-i18n-label="zoomOut">−</button><button id="zoom-in" type="button" data-i18n-label="zoomIn">＋</button><button id="reset-view" type="button" data-i18n="fitView"></button></div>
+        <div class="view-tools" hidden>
+          <button id="reset-view" type="button" data-i18n-label="fitView"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3v5H3m18 0h-5V3M3 16h5v5m8 0v-5h5M8 8 3 3m13 5 5-5M8 16l-5 5m13-5 5 5"/></svg></button>
+          <span id="zoom-level" class="zoom-level">100%</span>
+          <button id="max-zoom" type="button" data-i18n-label="maxZoom"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5.5 5.5M7 10h6m-3-3v6"/></svg></button>
+        </div>
       </div>
     </section><dialog closedby="any" data-i18n-label="expandedCity"></dialog>`;
   controls.innerHTML = `<style>${styles}
@@ -104,6 +111,14 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
   const more = get<HTMLDetailsElement>("#more");
   const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), feedback = get<HTMLElement>(".status");
+  const zoomLevel = get<HTMLElement>("#zoom-level"), fitView = get<HTMLButtonElement>("#reset-view"), maxZoom = get<HTMLButtonElement>("#max-zoom");
+  let currentZoom = 1;
+  const showZoom = (zoom: number) => {
+    currentZoom = zoom;
+    const percent = numberText(language, Math.round(zoom * 100));
+    zoomLevel.textContent = `${percent}%`;
+    zoomLevel.setAttribute("aria-label", t("zoomLevel", [percent]));
+  };
   const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
@@ -159,6 +174,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   const resetResult = () => {
     city?.dispose(); city = undefined; cityHost.replaceChildren();
+    showZoom(1);
     setSummary(() => "");
     updateControls();
   };
@@ -186,7 +202,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (!active || controller !== request) return;
         if (error) { renderFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears);
+      }, "city", undefined, true, reservedYears, showZoom);
       fieldCreated = true;
       return city;
     };
@@ -242,9 +258,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   refresh.onclick = () => { void load(true); };
   retry.onclick = () => { void load(false); };
   cancel.onclick = () => controller?.abort();
-  get<HTMLButtonElement>("#zoom-out").onclick = () => city?.zoomBy(.8);
-  get<HTMLButtonElement>("#zoom-in").onclick = () => city?.zoomBy(1.25);
-  get<HTMLButtonElement>("#reset-view").onclick = () => city?.resetView();
+  fitView.onclick = () => city?.resetView();
+  maxZoom.onclick = () => city?.zoomToMax();
   clear.onclick = async () => {
     if (!active || busy) return;
     const request = new AbortController(); controller = request;
@@ -265,6 +280,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const setLanguage = (next: Language, selected: LanguagePreference) => {
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
+    fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
     cityHost.setAttribute("aria-description", t("keyboardControls"));
     expand.textContent = t(dialog.open ? "collapse" : "expand");
     languageSelect.value = preference; languageSelect.setAttribute("aria-label", t("language"));

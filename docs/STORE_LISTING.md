@@ -25,7 +25,7 @@ CodeYears 在 GitHub 个人主页的贡献区提供“城市 / 贡献图”标�
 
 先看到完整空场地与道路，再随已校验的年度数据填入地块。未知、尚未返回和未来日期不会被填成零贡献。读取、取消、警告与失败状态在画布浮层中显示，正常完成后隐藏。
 
-从多年全景到建筑近景，支持滚轮或按钮缩放、拖动平移、聚焦城市画布后用方向键平移、“全景”恢复取景，以及在当前页面内展开和收起。展开后可按 Esc 或点击遮罩返回。缩放不会改变真实数量或重新决定建筑合并。
+从多年全景到建筑近景，支持滚轮缩放和拖动平移；聚焦城市画布后可用方向键平移、按 + 放大、- 缩小。右下角工具条提供全景图标、当前比例和最大倍率图标；100%表示默认取景，允许适当裁切；全景图标用于查看完整城市。可在当前页面内展开和收起，展开后按 Esc 或点击遮罩返回。缩放不会改变真实数量或重新决定建筑合并。
 
 零贡献区域以自然地块或城市邻域铺装表达；少量正贡献从平房开始，逐步对应低层住宅、公寓、办公楼与大厦。道路、河道和城郊景观只作装饰。年份按 ISO 完整周组织，边界日期可能归入相邻周年，因此所选周年合计可能与 GitHub 公历年统计不同。
 
@@ -63,7 +63,7 @@ CodeYears adds City and Contributions tabs to the contribution section of a GitH
 
 A complete empty site and road network appear first. Validated yearly data then fills the city. Unknown, pending and future dates are never treated as zero contributions. Loading, cancellation, warnings and errors appear in an overlay on the canvas, which hides after normal completion.
 
-Explore a multi-year overview or zoom into individual buildings. Use the wheel or zoom buttons, drag to pan, use the arrow keys when the city canvas is focused, select Fit view to restore the overview, or expand the same canvas within the page. Press Esc or click the backdrop to return from the expanded view. Zooming does not change the underlying counts or replan merged buildings.
+Explore a multi-year overview or zoom into individual buildings. Use the wheel to zoom and drag to pan. When the city canvas is focused, use arrow keys to pan, + to zoom in, and - to zoom out. The compact toolbar offers Fit view, the current percentage and Maximum zoom; 100% is the default framing and may crop the edges. Fit view shows the full city. Expand the same canvas within the page, then press Esc or click the backdrop to return. Zooming does not change the underlying counts or replan merged buildings.
 
 Zero-contribution areas use natural plots or paving near urban neighborhoods. Positive contributions begin with small houses, then progress through low-rise homes, apartments, offices and towers. Roads, rivers and scenery outside the city are decorative. The city groups complete ISO weeks, so year-boundary dates and totals can differ from GitHub's calendar-year statistics.
 
@@ -175,4 +175,4 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 本次重新读取官方[发布流程](https://developer.chrome.com/docs/webstore/publish)、[清单短说明](https://developer.chrome.com/docs/extensions/reference/manifest/description)、[商店字段](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)、[图片规范](https://developer.chrome.com/docs/webstore/images)、[隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy)与[账户设置](https://developer.chrome.com/docs/webstore/set-up-account)。正式包低于官方2GB上限；所需图形为128px图标及至少一张截图，宣传图/视频可选，本轮不为它们扩大素材制作。控制台当前字段与用户账户条件仍需实际核对。
 
-新反馈的“全景图标｜比例｜最大图标、去掉加减”工具条仍为后置规格，未实现，不写入本轮可复制功能说明；见[路线图](ROADMAP.md)。
+上述可复制正文已同步紧凑工具条和新的默认取景，源码与真实Chrome重载验收经[PR #59](https://github.com/wxy/CodeYears/pull/59)交付，实际证据见[工具条报告](reports/CITY-COMPACT-ZOOM-TOOLBAR.md)。未发布商店新版，不能作为线上0.1.0说明直接覆盖。新截图仍待下一版界面定稿后制作；历史0.1.0媒体不改。

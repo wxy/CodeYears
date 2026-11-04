@@ -9,6 +9,7 @@ import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 export interface ContributionLandscape {
   setView(view: ViewMode): void;
   zoomBy(factor: number): void;
+  zoomToMax(): void;
   resetView(): void;
   pause(): void;
   resume(): void;
@@ -19,11 +20,13 @@ export interface ContributionLandscape {
   dispose(): void;
 }
 
-/** 两种引擎共享播放/缩放/平移；City 不加载 Three.js、不创建 WebGL。 */
-export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[]): ContributionLandscape {
+/** 两种引擎共享播放/缩放/平移；缩放通知以默认取景为1。City不创建WebGL。 */
+export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void): ContributionLandscape {
   const progressiveCity=initialView==="city"&&reservedYears!==undefined;
+  // 正式City默认比完整适配放大一档，允许裁切；全景仍使用原始适配比例。
+  const zoomBase=progressiveCity?1.25:1;
   let currentDays=days,revealedDays=0,revealFrom=0,revealStarted=0;
-  const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:1,panX:0,panY:0,dark:false};
+  const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:zoomBase,panX:0,panY:0,dark:false};
   let view=initialView,layer:LandscapeView|undefined,images:CityImages|undefined,assetPromise:Promise<CityImages>|undefined;
   let cityScene:CityScene|undefined;const assetAbort=new AbortController();
   let disposed=false,blocked=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
@@ -88,7 +91,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       schedule();notify();
     }catch(error){if(!disposed&&token===generation){playing=false;preparationError=error instanceof Error?error.message:"风景加载失败，请重新生成。";notify(preparationError)}}
   }
-  const resize=()=>{viewport.width=Math.max(host.clientWidth,1);viewport.height=Math.max(host.clientHeight,1);schedule()};
+  const resize=()=>{viewport.width=Math.max(host.clientWidth,1);viewport.height=Math.max(host.clientHeight,1);zoomAt(1)};
   const observer=new ResizeObserver(resize);observer.observe(host);
   const preference=matchMedia("(prefers-color-scheme: dark)");
   const theme=()=>{
@@ -100,11 +103,15 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const down=(event:PointerEvent)=>{if(pointer)return;pointer={id:event.pointerId,x:event.clientX,y:event.clientY};host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"};
   const move=(event:PointerEvent)=>{if(!pointer||pointer.id!==event.pointerId)return;viewport.panX+=event.clientX-pointer.x;viewport.panY+=event.clientY-pointer.y;pointer.x=event.clientX;pointer.y=event.clientY;schedule()};
   const up=(event:PointerEvent)=>{if(pointer?.id!==event.pointerId)return;pointer=undefined;host.style.cursor="grab"};
-  const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const next=Math.min(layer?.maxZoom?.(viewport)??5,Math.max(.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;schedule()};
+  const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const next=Math.min(layer?.maxZoom?.(viewport)??5,Math.max(.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule()};
   const wheel=(event:WheelEvent)=>{event.preventDefault();const rect=host.getBoundingClientRect();zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2)};
   // Only the stable, focused scene host owns arrows; inputs and browser shortcuts keep theirs.
   const keydown=(event:KeyboardEvent)=>{
-    if(disposed||view!=="city"||event.target!==host||!host.matches(":focus")||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    if(disposed||view!=="city"||event.target!==host||!host.matches(":focus")||event.altKey||event.ctrlKey||event.metaKey)return;
+    if(event.key==='+'||event.key==='='||event.key==='-'){
+      event.preventDefault();event.stopPropagation();zoomAt(event.key==='-'?.8:1.25);return;
+    }
+    if(event.shiftKey)return;
     const delta:Record<string,[number,number]>={ArrowLeft:[-40,0],ArrowRight:[40,0],ArrowUp:[0,-40],ArrowDown:[0,40]};
     const move=delta[event.key];if(!move)return;
     event.preventDefault();event.stopPropagation();viewport.panX+=move[0];viewport.panY+=move[1];schedule();
@@ -115,7 +122,8 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   return{
     setView(next){if(disposed||next===view||progressiveCity)return;view=next;void prepare()},
     zoomBy:zoomAt,
-    resetView(){viewport.zoom=1;viewport.panX=viewport.panY=0;schedule()},
+    zoomToMax(){zoomAt((layer?.maxZoom?.(viewport)??5)/viewport.zoom)},
+    resetView(){viewport.zoom=1;viewport.panX=viewport.panY=0;onZoomChange?.(1/zoomBase);schedule()},
     pause,
     resume(){if(disposed||blocked||state().status==="completed")return;playing=true;anchored=false;schedule()},
     skip(){if(disposed)return;playing=false;if(progressiveCity){revealedDays=currentDays.length;labelCity()}else timeline.skip();schedule();notify()},

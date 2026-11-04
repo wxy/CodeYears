@@ -53,11 +53,14 @@
   "expandedCity": {
     "message": "Expanded Contribution City"
   },
-  "zoomOut": {
-    "message": "Zoom out"
+  "maxZoom": {
+    "message": "Maximum zoom"
   },
-  "zoomIn": {
-    "message": "Zoom in"
+  "zoomLevel": {
+    "message": "$1% zoom"
+  },
+  "zoomFitHelp": {
+    "message": "100% is the default framing. Fit view shows the full city."
   },
   "fitView": {
     "message": "Fit view"
@@ -327,10 +330,10 @@
     "message": "Help and data"
   },
   "keyboardControls": {
-    "message": "Focus the city and use arrow keys to pan. Use the zoom buttons to zoom."
+    "message": "Focus the city and use arrow keys to pan, + to zoom in, and - to zoom out."
   },
   "canvasKeyboardLabel": {
-    "message": "Contribution City. Use arrow keys to pan, drag to pan, and the zoom buttons or scroll wheel to zoom."
+    "message": "Contribution City. Use arrow keys or drag to pan, and +, - or the scroll wheel to zoom."
   },
   "settingsTitle": {
     "message": "CodeYears settings"

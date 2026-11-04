@@ -53,11 +53,14 @@
   "expandedCity": {
     "message": "展开的贡献之城"
   },
-  "zoomOut": {
-    "message": "缩小城市"
+  "maxZoom": {
+    "message": "放大至最大倍率"
   },
-  "zoomIn": {
-    "message": "放大城市"
+  "zoomLevel": {
+    "message": "当前缩放比例：$1%"
+  },
+  "zoomFitHelp": {
+    "message": "100%表示默认取景；点击“全景”可查看完整城市。"
   },
   "fitView": {
     "message": "全景"
@@ -327,10 +330,10 @@
     "message": "使用与数据说明"
   },
   "keyboardControls": {
-    "message": "聚焦城市后可用方向键平移，使用缩放按钮调整比例。"
+    "message": "聚焦城市后用方向键平移，按 + 放大、- 缩小。"
   },
   "canvasKeyboardLabel": {
-    "message": "贡献之城。可用方向键或拖动平移，通过缩放按钮或滚轮缩放。"
+    "message": "贡献之城。聚焦后可用方向键或拖动平移，按 +、- 或使用滚轮缩放。"
   },
   "settingsTitle": {
     "message": "CodeYears 设置"
