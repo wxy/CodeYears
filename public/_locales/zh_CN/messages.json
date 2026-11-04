@@ -1,4 +1,7 @@
 {
+  "extensionName": {
+    "message": "CodeYears：GitHub 贡献之城"
+  },
   "extensionDescription": {
     "message": "免费的 GitHub 贡献历史可视化扩展。选择年份，用真实每日贡献生成贡献之城。"
   },

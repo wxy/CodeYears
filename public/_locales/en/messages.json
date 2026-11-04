@@ -1,4 +1,7 @@
 {
+  "extensionName": {
+    "message": "CodeYears: GitHub Contribution City"
+  },
   "extensionDescription": {
     "message": "A free GitHub contribution visualizer. Turn real daily contributions into a city."
   },

@@ -63,7 +63,7 @@ def verify(archive, build):
             messages = [catalog[key]['message'] for catalog in catalogs]
             require(all(isinstance(message, str) and message for message in messages), f'empty locale message: {key}')
             require(set(re.findall(r'\$[1-9]', messages[0])) == set(re.findall(r'\$[1-9]', messages[1])), f'locale substitutions differ: {key}')
-        for value in (manifest['description'], manifest['action']['default_title']):
+        for value in (manifest['name'], manifest['description'], manifest['action']['default_title']):
             match = re.fullmatch(r'__MSG_(\w+)__', value)
             require(match and match[1] in catalogs[0], 'missing localized manifest message')
 
