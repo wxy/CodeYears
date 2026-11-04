@@ -1,13 +1,13 @@
-# City 0.1.0 商店材料候选
+# CodeYears 商店材料
 
-更新：2026-11-03。#46–#54已合入，运行代码仍对应`7498d32`，后续为文档和媒体。用户已确认完成Chrome Web Store提交，当前仍在审核；工具未独立读取控制台或逐项核对实际填入内容。本文为准备材料及其来源记录，不冒充商店实际表单副本。名称和短说明已同步冻结ZIP，当前推荐媒体见[中英文媒体包](store/city-0.1.0/media-2026-11-03/README.md)。
+更新：2026-11-04。0.1.0已上架，[公开详情页](https://chromewebstore.google.com/detail/codeyears/mhbphbpbjbndjhodbdmijdopidhcibia)可见版本0.1.0、更新日期11月4日和安装入口。下方可复制名称已按下一版要求同步源码词库，尚未进入上架包；冻结0.1.0 ZIP仍叫CodeYears，不重打或替换。下一版截图须按[分组与验收约定](#下一版截图与上传验收)重新准备；[11月3日媒体包](store/city-0.1.0/media-2026-11-03/README.md)仅为首版历史素材。实际核对见[报告](reports/STORE-LOCALIZATION-2026-11-04.md)，本文不冒充控制台表单副本。
 
 ## 简体中文 · 可复制
 
-名称：
+名称（来自下一版软件包）：
 
 ```text
-CodeYears
+CodeYears：GitHub 贡献之城
 ```
 
 简短说明：
@@ -37,15 +37,15 @@ CodeYears 在 GitHub 个人主页的贡献区提供“城市 / 贡献图”标�
 
 完全免费，无需 GitHub Token 或独立登录。没有后端、广告或遥测。贡献日期与数量按访问者、主页和年份在本机浏览器缓存；身份无法确认时不复用缓存。仅请求 GitHub，不自动上传城市图片。
 
-GitHub 贡献页面不是稳定公开 API。页面语言、结构或访问权限变化可能导致获取停止；失败和缺失数据不会当作零。当前为 Chrome 的 0.1.0 候选版；Edge 尚未完成独立验收。商店示例图使用明确标记的合成日期与数量，不代表任何真实账户。
+GitHub 贡献页面不是稳定公开 API。页面语言、结构或访问权限变化可能导致获取停止；失败和缺失数据不会当作零。适用于 Chrome；Edge 尚未完成独立验收。商店示例图使用明确标记的合成日期与数量，不代表任何真实账户。
 ```
 
 ## English · Copy-ready
 
-Name:
+Name (from the next package):
 
 ```text
-CodeYears
+CodeYears: GitHub Contribution City
 ```
 
 Short description:
@@ -75,7 +75,7 @@ After adjusting the view, right-click the canvas to use your browser's native im
 
 Free to use, with no GitHub token or separate sign-in. No backend, ads or telemetry. Contribution dates and counts are cached locally by viewer, profile and year; the cache is not reused when viewer identity cannot be confirmed. Requests go only to GitHub, and city images are not uploaded automatically.
 
-GitHub's contribution pages are not a stable public API. Changes to page language, structure or access may stop loading. Missing or failed data is not replaced with zeros. This is a Chrome 0.1.0 candidate; Edge has not completed separate validation. Store examples use clearly labeled synthetic dates and counts, not a real account.
+GitHub's contribution pages are not a stable public API. Changes to page language, structure or access may stop loading. Missing or failed data is not replaced with zeros. Available for Chrome; Edge has not completed separate validation. Store examples use clearly labeled synthetic dates and counts, not a real account.
 ```
 
 ## 字段、链接与隐私填写依据
@@ -119,9 +119,32 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 数据披露按当前实际字段核对：处理GitHub用户名/登录状态、当前主页及年度贡献URL、贡献日期/数量和本地缓存元信息。未读取Chrome浏览历史列表、密码、Token或Cookie值；复用浏览器已有会话不等于提取凭证。不能因“本地处理”勾选“不处理用户数据”：Chrome官方[用户数据FAQ](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq)明确本地处理也需要披露。最终数据类型和Limited Use声明由提交者对照真实字段确认；此处不自动作认证。
 
-## 图片与当前官方规范
+## 下一版名称
 
-当前推荐集为[2026-11-03媒体包](store/city-0.1.0/media-2026-11-03/README.md)：全球英文全景、English当地近景、简体中文当地操作各一张1280×800 JPEG，以及440×280小型和1400×560顶部宣传PNG。按用户控制台要求，全球与各当地语言均至少一张，避免用同图重复占位。用户实际上传项未由工具独立读取。下方两张PNG为2026-11-02的历史候选，来源见[旧截图说明](store/city-0.1.0/README.md)：
+商店标题取自包内 `manifest.json.name`，不是详细说明的首行。源码现使用 `__MSG_extensionName__`，由 `_locales/en/messages.json` 和 `_locales/zh_CN/messages.json` 提供上述两种名称；`default_locale: en`保留，未单独支持语言回退英文。名称随浏览器/商店语言选择，不跟随扩展“更多”内的界面语言偏好。品牌仍为CodeYears。
+
+两种名称均少于官方75字符上限；冒号是本项目采用的表达方式，不是商店强制格式。功能短语只描述已有的GitHub贡献城市可视化，不添加无关关键词，也不承诺搜索排名效果。[名称字段](https://developer.chrome.com/docs/extensions/reference/manifest/name)、[元数据与关键词政策](https://developer.chrome.com/docs/webstore/program-policies/listing-requirements)。上传新包并通过审核后才会更新线上名称；发布前再确定版本号，本轮不覆盖0.1.0冻结包。
+
+## 下一版截图与上传验收
+
+2026-11-04实际核对：中文页只显示中文操作图，英文页只显示英文近景，未单独支持的法语页显示全球英文全景。本地化截图没有与全球组拼接。官方[商店本地化说明](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)确认可分别上传当地截图，但其中的排列说明不能当作两组会合并的保证；本项目按当前线上结果准备完整的独立分组。
+
+下一版界面确定后，为每个已支持语言制作以下三个不同场景；当前尚未制作这些新图：
+
+| 顺序 | 简体中文组 `zh_CN` | English组 `en` | 全球组 |
+| --- | --- | --- | --- |
+| 01 | 中文多年城市全景 | 英文多年城市全景 | 与英文01同一文件 |
+| 02 | 中文展开街区近景 | 英文展开街区近景 | 与英文02同一文件 |
+| 03 | 中文页内标签与操作 | 英文页内标签与操作 | 与英文03同一文件 |
+
+- 每组完整上传三张1280×800 RGB PNG/JPEG，组内画面不同；界面、标题和示例说明使用对应语言。不用一张当地截图搭配全球组来补足场景。
+- 全球组与English组必须使用同一套英文成品，数量、顺序和文件SHA-256一致。跨这两组复用是明确要求，不为避免重复而删减。小型和顶部宣传图块为全球素材，不能替代截图。
+- 保留示例数据标记和真实功能边界。新版本界面变化后重截，不把0.1.0历史截图直接当作新版素材；以后新增语言也提供完整的同场景组。
+- 上传后先在控制台逐组核对；发布后分别打开 `?hl=zh-CN`、`?hl=en` 和 `?hl=fr` 的公开详情页，确认每页三张、顺序及语言正确，法语回退整套英文全球组。同时核对中英文标题及未支持语言的英文回退。记录实际结果后才算商店验收完成。
+
+## 0.1.0历史图片与官方规格
+
+[2026-11-03媒体包](store/city-0.1.0/media-2026-11-03/README.md)包含全球英文全景、English当地近景、简体中文当地操作各一张1280×800 JPEG，以及440×280小型和1400×560顶部宣传PNG。各组一张造成线上每种语言只看到一个场景，不再作为下一版完整上传方案。下方两张PNG为2026-11-02的历史候选，来源见[旧截图说明](store/city-0.1.0/README.md)：
 
 1. [多年总览与页内标签](store/city-0.1.0/01-overview.png)
 2. [同一画布展开近景](store/city-0.1.0/02-closeup.png)
