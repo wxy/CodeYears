@@ -1,6 +1,6 @@
 {
   "name": "codeyears",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "MIT",
   "description": "免费的 GitHub 贡献历史可视化浏览器扩展",

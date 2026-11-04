@@ -1,0 +1,109 @@
+{
+  "version": "0.1.1",
+  "date": "2026-11-04",
+  "browser": "Chrome 156.0.8078.80",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "source": "formal dist with local demo location/fetch/storage adapters",
+  "input": "seed 20240101; 2023-01-01 through 2026-11-04; same section algorithm as city-0.1.0 README",
+  "visibleDays": 1039,
+  "syntheticTotal": 17730,
+  "files": [
+    {
+      "file": "global/01-city-overview.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 204815,
+      "sha256": "c54a02d900cc98f4124561d0260d001ff408b8df5e52f015838360312f107cc4"
+    },
+    {
+      "file": "global/02-neighborhood-detail.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 210669,
+      "sha256": "4064fe0128efc9af979c8e0a38d9c13ee1671e5d55ce2684bdeed7f0d7390f09"
+    },
+    {
+      "file": "global/03-profile-controls.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 130252,
+      "sha256": "10fc7003fe23df6d3c3e2ac5a1840ceb14efe2d37e397a998500ad00c2ea8b44"
+    },
+    {
+      "file": "global/marquee-promo.png",
+      "width": 1400,
+      "height": 560,
+      "mode": "RGB",
+      "bytes": 1227924,
+      "sha256": "b4b2ea65038e6581a94ef18d7092e5837be4472bd015420bfdb1fa92c169b304"
+    },
+    {
+      "file": "global/small-promo.png",
+      "width": 440,
+      "height": 280,
+      "mode": "RGB",
+      "bytes": 219009,
+      "sha256": "ece453000157811dfa484e87a6f01a003806c708c1e40c371b4cd01ff96a5846"
+    },
+    {
+      "file": "localized/en/01-city-overview.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 204815,
+      "sha256": "c54a02d900cc98f4124561d0260d001ff408b8df5e52f015838360312f107cc4"
+    },
+    {
+      "file": "localized/en/02-neighborhood-detail.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 210669,
+      "sha256": "4064fe0128efc9af979c8e0a38d9c13ee1671e5d55ce2684bdeed7f0d7390f09"
+    },
+    {
+      "file": "localized/en/03-profile-controls.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 130252,
+      "sha256": "10fc7003fe23df6d3c3e2ac5a1840ceb14efe2d37e397a998500ad00c2ea8b44"
+    },
+    {
+      "file": "localized/zh_CN/01-city-overview.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 203940,
+      "sha256": "bd0672400a91c4a1d4953bc5724dedb296e06b13ded4d43ef854f7630d968022"
+    },
+    {
+      "file": "localized/zh_CN/02-neighborhood-detail.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 209785,
+      "sha256": "6a655b6587ed7270cfbdbf1ed445f552d37d38e7d5a7190a42141b1a3d31a99d"
+    },
+    {
+      "file": "localized/zh_CN/03-profile-controls.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 128493,
+      "sha256": "7ec750c177c7f91e1cc04bcf9140790658fecd13bb6dbe0006c85ced5d9ac30e"
+    }
+  ],
+  "sourceModules": {
+    "entry.js": "0ccf5a290d446b0505d6c9759e44adc39085237799c47f6313a8a891d9b669e9",
+    "content.js": "7511eb8dde0bab5ac3f6805d37331c1e7e5cd4cf586ddb55dd0c5a5c2bcc8a84",
+    "landscape.js": "dbbd3d5f0d3610852370a412d30b3482e433720ac2666fbd6ab1224ed6f91c26"
+  },
+  "promotionalTiles": "Byte-identical copies from city-0.1.0/media-2026-11-03/global"
+}
