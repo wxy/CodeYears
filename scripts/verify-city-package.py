@@ -67,7 +67,7 @@ def verify(archive, build):
             match = re.fullmatch(r'__MSG_(\w+)__', value)
             require(match and match[1] in catalogs[0], 'missing localized manifest message')
 
-        # Same distribution boundary as package-city.py, with public PNG inventory
+        # Same distribution boundary as package-city.py, with runtime PNG inventory
         # independent of dist, so a missing copied/dynamically named image fails too.
         icons = {f'icons/codeyears-{size}.png' for size in (16, 32, 48, 128)}
         require(set(manifest['icons'].values()) == icons
@@ -76,8 +76,11 @@ def verify(archive, build):
         for locale in ('en', 'zh_CN'):
             name = f'_locales/{locale}/messages.json'
             expected[name] = ROOT / 'public' / name
-        for path in (ROOT / 'public/assets/city').glob('*.png'):
-            name = path.relative_to(ROOT / 'public').as_posix()
+        sprites = read_json(ROOT / 'src/renderers/city-baked-catalog.json')
+        runtime = ROOT / 'public/assets/city-runtime'
+        require({p.name for p in runtime.glob('*.png')} == {sprite['file'] for sprite in sprites.values()}, 'baked catalog/image inventory mismatch')
+        for path in runtime.glob('*.png'):
+            name = 'assets/city/' + path.name
             expected[name] = build / name
         for pattern in ('assets/popup-*.js', 'assets/options-*.js', 'assets/shared-*.js', 'chunks/*.js'):
             paths = list(build.glob(pattern))
@@ -115,9 +118,7 @@ def verify(archive, build):
                     }:
                         continue
                     reference(name, target)
-                # Catalog also carries non-runtime candidate paths; only bare
-                # PNG names are actual legacy local resources. unit-${id}.png
-                # and outskirts templates are covered by the full PNG inventory.
+                # Baked catalog filenames are package-local resources.
                 for target in re.findall(r'''["'`]([\w-]+\.png)["'`]''', text):
                     reference(name, 'assets/city/' + target, True)
             require(expected[name].is_file(), f'missing build/source file: {name}')

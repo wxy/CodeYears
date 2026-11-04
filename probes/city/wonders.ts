@@ -41,7 +41,7 @@ function show() {
     cities.push(createLandscape($<HTMLElement>(`#${id}`), days, (state, error, detail) => {
       $(`#${id}-status`).textContent = error ?? `景观生长 · ${Math.round(state.revealedDays / state.totalDays * 100)}%`;
       $(`#${id}-detail`).textContent = detail ?? '';
-    }, 'city', new URL('/assets/city/', location.href).href, enabled));
+    }, 'city', new URL('/assets/city-runtime/', location.href).href, enabled));
   }
 }
 range.onchange = density.onchange = show;

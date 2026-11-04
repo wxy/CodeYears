@@ -43,7 +43,7 @@ function show() {
     pause.textContent = paused ? "继续" : "暂停";
     pause.disabled = state.status === "completed";
     progress.textContent = error ?? `景观生长 · ${Math.round(state.revealedDays / state.totalDays * 100)}%`;
-  }, view.value as ViewMode, new URL("/assets/city/", location.href).href);
+  }, view.value as ViewMode, new URL("/assets/city-runtime/", location.href).href);
 }
 pause.onclick = () => paused ? city?.resume() : city?.pause();
 document.querySelector<HTMLButtonElement>("#skip")!.onclick = () => city?.skip();

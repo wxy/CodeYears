@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>City 素材预烘焙</title>
+<style>
+body{font:14px system-ui;margin:28px;color:#182d29;background:#edf1ed}button{font:inherit;padding:10px 16px;margin-right:12px}output{display:block;white-space:pre-wrap;margin:16px 0}table{border-collapse:collapse;margin:20px 0}td,th{padding:6px 12px;border:1px solid #b5c1bb;text-align:left}.samples{display:grid;grid-template-columns:repeat(2,minmax(360px,1fr));gap:18px}.sample{padding:16px;border:1px solid #c0cdc5;background:#fff}.pair{display:flex;gap:12px;align-items:flex-end}.pair>div{min-width:0;flex:1}.pair canvas{display:block;max-width:100%;height:auto;background:repeating-conic-gradient(#e0e7dc 0 25%,#9cad9b 0 50%) 0/20px 20px}.near{margin-top:16px;max-height:420px;overflow:auto;background:#182d29}.near canvas{display:block;max-width:none}h2{font-size:17px}
+</style></head><body>
+<h1>城市素材预烘焙</h1><p>复用当前源图标定流程；PNG重新载入后的RGBA必须与当前运行贴图逐字节一致，才写入指定目录。原图不会改写。</p>
+<button id="sample">生成并核对四类样本</button><button id="all">生成并核对全部素材</button><button id="compare">核对已安装运行图的城市场景</button>
+<output id="status" role="status">待开始</output><table><thead><tr><th>素材</th><th>原PNG bytes</th><th>运行PNG bytes</th><th>尺寸</th><th>RGBA差异像素</th><th>Alpha差异像素</th></tr></thead><tbody id="rows"></tbody></table>
+<output id="scene-result" role="status"></output><div id="scenes"></div>
+<div class="samples" id="samples"></div><script type="module" src="/main.ts"></script></body></html>
