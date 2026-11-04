@@ -175,4 +175,4 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 
 本次重新读取官方[发布流程](https://developer.chrome.com/docs/webstore/publish)、[清单短说明](https://developer.chrome.com/docs/extensions/reference/manifest/description)、[商店字段](https://developer.chrome.com/docs/webstore/cws-dashboard-listing)、[图片规范](https://developer.chrome.com/docs/webstore/images)、[隐私字段](https://developer.chrome.com/docs/webstore/cws-dashboard-privacy)与[账户设置](https://developer.chrome.com/docs/webstore/set-up-account)。正式包低于官方2GB上限；所需图形为128px图标及至少一张截图，宣传图/视频可选，本轮不为它们扩大素材制作。控制台当前字段与用户账户条件仍需实际核对。
 
-上述可复制正文已同步本功能分支的紧凑工具条；源码实现与受控验证见[工具条报告](reports/CITY-COMPACT-ZOOM-TOOLBAR.md)，尚未合入或发布商店新版，不能作为线上0.1.0说明直接覆盖。新截图仍待下一版界面定稿后制作；历史0.1.0媒体不改。
+上述可复制正文已同步紧凑工具条和新的默认取景，源码与真实Chrome重载验收经[PR #59](https://github.com/wxy/CodeYears/pull/59)交付，实际证据见[工具条报告](reports/CITY-COMPACT-ZOOM-TOOLBAR.md)。未发布商店新版，不能作为线上0.1.0说明直接覆盖。新截图仍待下一版界面定稿后制作；历史0.1.0媒体不改。
