@@ -58,7 +58,7 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true,res
   return {weekly,layout,items:visibleItems,keys,parkStarts,width,depth,roadNetwork};
 }
 
-export function createCityView(scene:CityScene,images:CityImages,previouslyRevealedDays?:number):LandscapeView {
+export function createCityView(scene:CityScene,images:CityImages,previouslyRevealedDays?:number,groundOverride?:(context:CanvasRenderingContext2D)=>void):LandscapeView {
   const {weekly,layout,items,parkStarts,width,depth,roadNetwork}=scene;
   const progressive=previouslyRevealedDays!==undefined;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
@@ -182,7 +182,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   groundPaint.push({after:0,paint:createCityBridgePainter(roadNetwork.bridges)});
   groundPaint.push({after:0,paint:createCityVehiclePainter(roadNetwork.vehicles)});
   groundPaint.push({after:0,paint:createCityYearMarkers(layout)});
-  const overlayPaint=groundPaint.slice(overlayStart);
+  if(groundOverride) groundPaint.splice(0,groundPaint.length,{after:0,paint:groundOverride});
+  const overlayPaint=groundPaint.slice(groundOverride?0:overlayStart);
 
   // 二十年细节平移已在同环境对照；保留统一顺序，本轮不扩建剔除框架。
   let cachedPrefix=progressive?previouslyRevealedDays!:Infinity;
