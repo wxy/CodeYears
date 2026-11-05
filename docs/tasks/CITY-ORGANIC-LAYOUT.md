@@ -1,5 +1,6 @@
 # 城市轮廓与长期空档分城原型
 
+交付：[PR #63](https://github.com/wxy/CodeYears/pull/63)（base main，待审查，未合入）。
 工作日期：2026-11-05（Asia/Shanghai）。状态：已实现并完成云端候选预览检查，独立 PR 交付；未合入、未发布，阈值与布局未定案。
 
 启动时从 origin/main 核实并建立 `codex/city-organic-layout-prototype`，完整基线为 `0fa96154405d64ce3fd7dde1f37448e008307d7d`，与委派提供的本机 main 一致。初始工作区干净，未覆盖其他工作。
