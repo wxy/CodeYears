@@ -138,7 +138,7 @@ declare global {
         if (disposed || token !== selection || !active) return;
         panel ??= module.mountCityPanel(panelHost, toolbarHost, languageSettings());
         status.hidden = feedback.hidden = true;
-        await panel.activate();
+        if (!document.hidden) await panel.activate();
       } catch {
         if (disposed || token !== selection || !active) return;
         modulePromise = undefined; panel?.deactivate(); panelHost.hidden = true;
@@ -162,6 +162,10 @@ declare global {
       root, native, grid, heading, nativeStats, host, bodyHost, profile, sync, localize,
       open() { host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
       deactivate: selectNative,
+      visibility(hidden: boolean) {
+        if (!active || disposed) return;
+        if (hidden) panel?.deactivate(); else void panel?.activate();
+      },
       dispose() {
         disposed = true; selection++; panel?.dispose(); restoreNative();
         if (nativeSettings) {
@@ -203,7 +207,7 @@ declare global {
   document.addEventListener('turbo:before-render', beforeNavigate);
   document.addEventListener('turbo:render', afterNavigate);
   document.addEventListener('turbo:load', afterNavigate);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) mounted?.deactivate(); });
+  document.addEventListener('visibilitychange', () => { mounted?.visibility(document.hidden); });
   window.addEventListener('popstate', reconcile);
   window.addEventListener('pagehide', () => { beforeNavigate(); observer.disconnect(); });
   window.addEventListener('pageshow', () => { observe(); afterNavigate(); });

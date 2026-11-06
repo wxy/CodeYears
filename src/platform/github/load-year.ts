@@ -11,7 +11,7 @@ interface LoadedYear {
   readonly warning: string;
 }
 
-function sameContext(left: GitHubPageContext, right: GitHubPageContext): boolean {
+export function sameContext(left: GitHubPageContext, right: GitHubPageContext): boolean {
   const identity = (context: GitHubPageContext) => context.viewer.state === "unknown" ? "unknown" :
     context.viewer.identity.kind === "signed-out" ? "signed-out" : `user:${context.viewer.identity.login.toLowerCase()}`;
   return left.profileLogin.toLowerCase() === right.profileLogin.toLowerCase() && identity(left) === identity(right);
@@ -22,7 +22,7 @@ function ensureCurrent(context: GitHubPageContext, signal: AbortSignal, currentC
   if (!sameContext(context, currentContext())) throw new Error("主页或访问者身份已改变，请刷新页面后重新打开诊断。");
 }
 
-async function confirmViewer(context: GitHubPageContext, signal: AbortSignal): Promise<void> {
+export async function confirmViewer(context: GitHubPageContext, signal: AbortSignal): Promise<void> {
   const live = await readLivePageContext(context.profileLogin, signal);
   if (live.viewer.state === "unknown" || !sameContext(context, live)) throw new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
 }
