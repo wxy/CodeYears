@@ -1,0 +1,7 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>CodeYears 住宅候选审查</title>
+<style>body{margin:24px;background:#e9e8de;color:#29382b;font:15px system-ui}button,select{font:inherit;margin:5px;padding:7px}#stage canvas{width:100%;height:600px;touch-action:none}#gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}article{background:#faf9f2;padding:12px}article canvas{width:100%;height:320px;background:repeating-conic-gradient(#e0e0db 0% 25%,#fafaf5 0% 50%) 0/20px 20px}pre{white-space:pre-wrap;font-size:12px}h2{font-size:20px}</style>
+<h1>住宅 / 沿街商铺 · 独立候选审查</h1><p>正式 CityView 绘制器；仅在本预览替换兼容地块。未接入正式 catalog。拖动平移，滚轮缩放。下面单图支持地面包络/落点审查。</p>
+<select id="years"><option>1</option><option>3</option><option>20</option></select> 年
+<button id="fit">全景</button><button id="near">150%</button><button id="max">当前最大倍率</button><button id="close">释放</button><button id="open">重开</button>
+<p id="status">加载中</p><div id="stage"></div><pre id="audit"></pre><h2>实际候选素材 · 固定 192 CSS px / 格</h2><div id="gallery"></div>
+<script type="module" src="./main.ts"></script></html>
