@@ -123,7 +123,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
-  let reusable: { context: typeof context; range: string; expiresAt: number; status: () => string } | undefined;
+  let reusable: { context: typeof context; range: string; expiresAt: number; status: () => string; summary: () => string } | undefined;
   let statusMessage = () => "", summaryMessage = () => "";
   const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
   const setStatus = (message: () => string) => { statusMessage = message; status.textContent = message(); updateFeedback(); };
@@ -251,7 +251,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
       setSummary(() => t("totalContributions", [numberText(language, total)]));
-      if (context.viewer.state === "known") reusable = { context, range, expiresAt, status: statusMessage };
+      if (context.viewer.state === "known") reusable = { context, range, expiresAt, status: statusMessage, summary: summaryMessage };
     } catch (error) {
       if (!active || controller !== request) return;
       const cancelled = request.signal.aborted && !renderFailure;
@@ -289,6 +289,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     cityHost.hidden = true;
     if (reusable && city) { city.setVisible(false); city.skip(); }
     else resetResult();
+    setSummary(() => "");
     more.open = false; retry.hidden = true; setStatus(() => "");
     get<HTMLElement>("#identity").textContent = ""; setBusy(false);
   };
@@ -323,7 +324,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         request.signal.throwIfAborted();
         if (!active || disposed || controller !== request) return;
         if (!sameContext(nextContext, currentContext())) throw new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
-        context = nextContext; cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status);
+        context = nextContext; cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
       } catch (error) {
         if (!active || controller !== request) return;
         resetResult(); cityHost.hidden = false; retry.hidden = false;
