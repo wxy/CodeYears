@@ -9,7 +9,7 @@
 ```sh
 npm ci
 npx vite --config probes/city-models-culture-transit/vite.config.ts
-# 打开 http://127.0.0.1:4187/
+# 打开 http://127.0.0.1:4192/
 ```
 
 选择 1 / 3 / 20 年，分别切换全景、150%、当前最大倍率；再用“定位”逐栋查看六款陈列。拖动平移、“明暗底”和“落地网格”用于检查透明边与包络。六款陈列不属于日期；密集替换仅是素材压力排布，不是正式公共建筑出现比例。页面直接导入正式 `createCityView` / `planCityScene`，保留其深度排序、按需图片加载、逐级预滤波、视口剔除、最大倍率和 DPR 1.5 上限；地面用独立纯色网格，以便检查边缘，不新增交通或道路算法。正式 organic 城市与扩展入口未接入。
@@ -34,7 +34,7 @@ npx vite --config probes/city-models-culture-transit/vite.config.ts
 - `calibration.json`：人工选择的可见地面包络 L/F/R、主边和竖向参考，标注误差及隐藏后角推断。`calibration-results.json` 是正式 `calibrate` 的实际结果。双轴映射为 ±0.5，竖边保持竖直，每边至少约 0.1 格退让；目标高度是上限，不能通过拉高填满占地。
 - `catalog.json` 与 `public/assets/city-candidates-culture-transit/` 一一对应，只由本预览显式使用；不写正式 catalog。`specifications.json` 保留真实像素、字节、alpha 边和 SHA256。
 
-关闭 4187 预览后，可用已安装的 Chromium（Linux 云端已实跑；其他平台用 `CHROMIUM_BIN` 指向本机浏览器）：
+关闭 4192 预览后，可用已安装的 Chromium（Linux 云端已实跑；其他平台用 `CHROMIUM_BIN` 指向本机浏览器）：
 
 ```sh
 node probes/city-models-culture-transit/bake.mjs

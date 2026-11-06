@@ -14,7 +14,7 @@ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH??'
 try{
   const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1.5});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:4187/');await page.waitForLoadState('networkidle');
+  await page.goto('http://127.0.0.1:4193/');await page.waitForLoadState('networkidle');
   if(values.bake){
     const entries=await page.evaluate(async()=> (await import('/bake.ts')).bakeCandidates());
     const folder=resolve('public/assets/city-candidates-residential');await mkdir(folder,{recursive:true});
