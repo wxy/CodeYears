@@ -21,7 +21,7 @@ export interface ContributionLandscape {
 }
 
 /** 两种引擎共享播放/缩放/平移；缩放通知按面板的100%基准归一化。City不创建WebGL。 */
-export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void): ContributionLandscape {
+export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void, namingOriginYear?: number): ContributionLandscape {
   const progressiveCity=initialView==="city"&&reservedYears!==undefined;
   // 保留100%的取景基准，正式City初始显示150%；全景仍使用原始适配比例。
   const zoomBase=progressiveCity?1.25:1;
@@ -65,7 +65,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     try{
       if(view==="city"){
         if(progressiveCity){
-          const plan=planOrganicCity(days,90,reservedYears!,cityWonders),ground=createOrganicGround(plan);
+          const plan=planOrganicCity(days,90,reservedYears!,cityWonders,namingOriginYear),ground=createOrganicGround(plan);
           cityScene=plan.scene;
           images={};layer=createCityView(cityScene,images,0,ground);configureCanvas(layer);host.append(layer.canvas);
           layer.draw(1,viewport);labelCity();schedule();notify();
@@ -138,7 +138,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       await new Promise<void>(resolve=>setTimeout(resolve,0));
       assetAbort.signal.throwIfAborted();
       if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
-      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders);
+      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders,namingOriginYear);
       const nextScene=organic.scene;
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{

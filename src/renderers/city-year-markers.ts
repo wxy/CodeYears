@@ -29,24 +29,27 @@ export function createCityYearMarkers(layout: CityLayout): (context: CanvasRende
   };
 }
 
-/** 对应年份仅写在左侧直道路面，不另设路牌。 */
-export interface CityRoadYearLabel {year:number;x:number;z:number;lanes:2|4|8;span:number}
+/** 街区、大道及季度路的路面标识；不另设路牌。 */
+export interface CityRoadLabel {
+  year:number;text:string;kind:'block'|'avenue'|'road';
+  x:number;z:number;lanes:2|4|8;span:number;horizontal:boolean;side:-1|1;
+}
 
-export function createCityRoadYearLabels(labels:readonly CityRoadYearLabel[]):(context:CanvasRenderingContext2D)=>void {
+export function createCityRoadLabels(labels:readonly CityRoadLabel[]):(context:CanvasRenderingContext2D)=>void {
   return context=>{
-    for(const {year,x,z,lanes,span} of labels){
-      const name=String(year),half=lanes*.4/2;
-      let font=Math.min(.88,half*.45);
-      // 路面字沿外侧车流方向，留在一个方向的道路范围内，不覆盖中央分隔线。
+    for(const {text,kind,x,z,lanes,span,horizontal,side} of labels){
+      const half=lanes*.4/2,weight=kind==='block'?800:kind==='avenue'?700:600;
+      let font=Math.min(kind==='block'?1:kind==='avenue'?.6:.3,half*.45);
+      // 文字顺路面排列；占一侧路幅，避开中央分隔线和路缘线。
       context.save();context.transform(.5,.25,-.5,.25,0,0);
-      context.translate(x-half*.5,z);context.rotate(-Math.PI/2);
-      context.font=`700 ${font}px system-ui`;
-      font*=Math.min(1,(span-.2)/context.measureText(name).width);
-      context.font=`700 ${font}px system-ui`;context.textAlign='center';context.textBaseline='middle';
-      const width=context.measureText(name).width;
+      context.translate(x+(horizontal?0:side*half*.5),z+(horizontal?side*half*.5:0));
+      if(!horizontal)context.rotate(-Math.PI/2);
+      context.font=`${weight} ${font}px system-ui`;
+      font*=Math.min(1,(span-.2)/context.measureText(text).width);
+      context.font=`${weight} ${font}px system-ui`;context.textAlign='center';context.textBaseline='middle';
+      const width=context.measureText(text).width;
       context.fillStyle='#626d68';context.fillRect(-width/2-.08,-font/2-.03,width+.16,font+.06);
-      context.fillStyle='#e0e5d9';context.fillText(name,0,0);context.restore();
-
+      context.fillStyle='#e0e5d9';context.fillText(text,0,0);context.restore();
     }
   };
 }

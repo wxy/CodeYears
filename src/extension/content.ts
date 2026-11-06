@@ -203,7 +203,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (!active || controller !== request) return;
         if (error) { renderFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears, showZoom);
+      }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!);
       fieldCreated = true;
       return city;
     };

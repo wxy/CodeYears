@@ -1,19 +1,19 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
 import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP } from './city-layout';
-import { createCityRoadYearLabels, type CityRoadYearLabel } from './city-year-markers';
+import { createCityRoadLabels, type CityRoadLabel } from './city-year-markers';
 import { createCityRoadPainter, planRoadGeometry, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
 export interface OrganicRegion { block: number; segment: number; left: number; right: number }
 export interface OrganicCity {
-  scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[]; labels:CityRoadYearLabel[];
+  scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[]; labels:CityRoadLabel[];
   rivers: { left: number; right: number; z: number }[];
 }
 
 /** City轮廓候选。输入沿用已校验date/count；阈值不是产品默认值。 */
-export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true): OrganicCity {
+export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true, namingOriginYear = years[0]): OrganicCity {
   const original = planCityScene(days, wonders, years);
   const ordered = days.map((day, index) => ({ ...day, index, time: Date.parse(day.date) })).sort((a,b)=>a.time-b.time);
   const gaps: OrganicGap[] = [];
@@ -161,23 +161,6 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
   const rings=roads.filter(route=>route.id.startsWith('organic-ring'));
   // 连接路沿荒地向西接入最近片区；未相交的支路在城外共用一条纵向道路。
   connectSettlements(rings,(horizontal,at,start,end,kind)=>road(horizontal,at,start,end,2,kind));
-  const labels:CityRoadYearLabel[]=original.layout.districts.flatMap((district,block)=>{
-    const region=regions.filter(r=>r.block===block).sort((a,b)=>(b.right-b.left)-(a.right-a.left))[0];
-    if(!region)return [];
-    const {left,right}=region;
-    const ring=rings.find(r=>contains(r.points,(left+right)/2,district.z+3.5))!;
-    // 左侧直道先扣掉切线圆角和实际横向路口，再放道路名称。
-    const spaces=planRoadGeometry(ring).straights.flatMap(({a,b})=>{
-      if(a[0]!==b[0]||a[0]>=left)return [];
-      let spans:[number,number][]=[[Math.max(district.z,Math.min(a[1],b[1])),Math.min(district.z+7,Math.max(a[1],b[1]))]];
-      for(const line of lines.values())if(line.horizontal&&line.spans.some(span=>a[0]>=span.start&&a[0]<=span.end)){
-        const clearance=line.lanes*.4/2+.25;
-        spans=spans.flatMap(([from,to])=>[[from,Math.min(to,line.at-clearance)],[Math.max(from,line.at+clearance),to]] as [number,number][]).filter(([from,to])=>to>from);
-      }
-      return spans.filter(([from,to])=>to>from).map(([from,to])=>({x:a[0],z:(from+to)/2,span:to-from}));
-    }).sort((a,b)=>b.span-a.span||b.x-a.x);
-    return [{year:district.year,lanes:ring.lanes,...spaces[0]}];
-  });
   for(const line of lines.values()){
     const merged:{start:number;end:number}[]=[];
     for(const span of line.spans.sort((a,b)=>a.start-b.start)){
@@ -194,9 +177,59 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     const x=c[0],z=a[1];
     if(x>=Math.min(a[0],b[0])&&x<=Math.max(a[0],b[0])&&z>=Math.min(c[1],d[1])&&z<=Math.max(c[1],d[1]))junctions.push({x,z,radius:.9});
   }
+  const labels=planRoadLabels(original,regions,roads,namingOriginYear);
   const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges:[],vehicles:[]}};
   const shown=new Set(items.flatMap(item=>item.parcel!.indices));
   return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,rivers};
+}
+
+/** 所有标识以已完成的真实路段定位，编号基于主页最早可展示年份。 */
+function planRoadLabels(scene:CityScene,regions:readonly OrganicRegion[],roads:readonly CityRoadRoute[],originYear:number):CityRoadLabel[] {
+  const labels:CityRoadLabel[]=[],districts=scene.layout.districts;
+  const segments=roads.flatMap(road=>planRoadGeometry(road).straights.map(edge=>({...edge,road})));
+  const free=(edge:typeof segments[number],from:number,to:number)=>{
+    const {a,b,road}=edge,horizontal=a[1]===b[1],at=horizontal?a[1]:a[0];
+    let spans:[number,number][]=[[Math.max(from,Math.min(horizontal?a[0]:a[1],horizontal?b[0]:b[1])),
+      Math.min(to,Math.max(horizontal?a[0]:a[1],horizontal?b[0]:b[1]))]];
+    for(const other of segments){
+      if(other.road===road||(horizontal?other.a[0]!==other.b[0]:other.a[1]!==other.b[1]))continue;
+      if(at<Math.min(horizontal?other.a[1]:other.a[0],horizontal?other.b[1]:other.b[0])||
+        at>Math.max(horizontal?other.a[1]:other.a[0],horizontal?other.b[1]:other.b[0]))continue;
+      const crossing=horizontal?other.a[0]:other.a[1],clearance=other.road.lanes*.4/2+.25;
+      spans=spans.flatMap(([start,end])=>[[start,Math.min(end,crossing-clearance)],[Math.max(start,crossing+clearance),end]] as [number,number][]).filter(([start,end])=>end>start);
+    }
+    return spans.filter(([start,end])=>end-start>.2).map(([start,end])=>({x:horizontal?(start+end)/2:at,z:horizontal?at:(start+end)/2,span:end-start,lanes:road.lanes}));
+  };
+  const place=(year:number,text:string,kind:CityRoadLabel['kind'],horizontal:boolean,side:-1|1,spaces:ReturnType<typeof free>)=>{
+    const best=spaces.sort((a,b)=>b.span-a.span||a.x-b.x||a.z-b.z)[0];
+    if(best)labels.push({year,text,kind,horizontal,side,...best});
+  };
+  districts.forEach((district,block)=>{
+    // 街区整体右侧：选择该年份最靠右的保留区域及其外环。
+    const region=regions.filter(r=>r.block===block).sort((a,b)=>b.right-a.right)[0];
+    if(region){
+      const ring=roads.find(road=>road.id.startsWith('organic-ring')&&contains(road.points,(region.left+region.right)/2,district.z+3.5))!;
+      place(district.year,`${district.year} BLK`,'block',false,1,
+        segments.filter(edge=>edge.road===ring&&edge.a[0]===edge.b[0]&&edge.a[0]>region.right)
+          .flatMap(edge=>free(edge,district.z,district.z+7)));
+    }
+    CITY_QUARTER_ROADS.forEach((axis,index)=>{
+      const x=Math.round((axis+CITY_ROAD_WIDTH/2)*1000)/1000;
+      place(district.year,['W RD','C RD','E RD'][index],'road',false,-1,
+        segments.filter(edge=>!edge.road.closed&&edge.road.lanes===2&&edge.a[0]===x&&edge.b[0]===x)
+          .flatMap(edge=>free(edge,district.z,district.z+7)));
+    });
+    const next=districts[block+1];if(!next)return;
+    const number=district.year-originYear+1;
+    const suffix=number%100>=11&&number%100<=13?'TH':number%10===1?'ST':number%10===2?'ND':number%10===3?'RD':'TH';
+    // 五年带的两岸属于同一年度边界，不拆成两个大道编号。
+    const axes=[district.z+7+CITY_YEAR_GAP/2];if(next.z-district.z>10)axes.push(next.z-CITY_YEAR_GAP/2);
+    const zs=axes.map(z=>Math.round(z*1000)/1000);
+    place(district.year,`${number}${suffix} AVE`,'avenue',true,-1,
+      segments.filter(edge=>!edge.road.closed&&edge.road.lanes===4&&edge.a[1]===edge.b[1]&&zs.includes(edge.a[1]))
+        .flatMap(edge=>free(edge,-Infinity,Infinity)));
+  });
+  return labels;
 }
 
 /** 年度/季度路先收齐到实际交点；内收圆角旁用短支路接到切线，不留悬空端。 */
@@ -282,7 +315,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
     [project(region.left-.12,z-.12),project(region.right+.12,z-.12),project(region.right+.12,z+7.12),project(region.left-.12,z+7.12)].forEach((p,i)=>i?path.lineTo(...p):path.moveTo(...p));
     path.closePath();return path;
   });
-  const paintYears=createCityRoadYearLabels(plan.labels);
+  const paintLabels=createCityRoadLabels(plan.labels);
   const paintRoads=createCityRoadPainter(plan.scene.roadNetwork.roads,plan.scene.roadNetwork.junctions);
   return context=>{
     context.save();
@@ -293,7 +326,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
       context.strokeStyle='#699c9c';context.lineWidth=.8;context.stroke(river);
     }
     paintRoads(context);
-    paintYears(context);
+    paintLabels(context);
     context.restore();
   };
 }
