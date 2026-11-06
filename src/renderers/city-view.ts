@@ -113,7 +113,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const image=(p:{sprite:CityImages[string];left:number;top:number;width:number;height:number})=>{
     groundPaint.push({after:revealAfter,paint:target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height)});
   };
-  if(!progressive||CITY_OUTSKIRT_IDS.every(id=>images[id]))groundPaint.push({after:0,paint:createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images)});
+  if(!groundOverride&&(!progressive||CITY_OUTSKIRT_IDS.every(id=>images[id])))groundPaint.push({after:0,paint:createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images)});
   // 静态地面与路网分层；路面/车道线只在缓存构建时提交。
   for(let edge=6;edge>0;edge--)polygon(-roadNetwork.ringOuter-edge*.05,-roadNetwork.ringOuter-edge*.05,width+roadNetwork.ringOuter*2+edge*.1,depth+roadNetwork.ringOuter*2+edge*.1,'rgba(130,152,117,0.025)');
   layout.districts.forEach(({z,quarterPadding})=>{
@@ -127,6 +127,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       polygon(x-quarterPadding[index]-.1,z,.1,7,'#d2cbb6');polygon(x+ROAD,z,.1,7,'#d2cbb6');
     });
   });
+  const parcelGroundStart=groundPaint.length;
   // 只沿建筑邻接的完整地块边界留窄步道；共享边去重，不切开合并建筑。
   const edges=new Map<string,{points:[number,number,number,number];after:number}>();
   for(const p of placed)if(p.item.parcel?.kind==='building'){
@@ -182,7 +183,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   groundPaint.push({after:0,paint:createCityBridgePainter(roadNetwork.bridges)});
   groundPaint.push({after:0,paint:createCityVehiclePainter(roadNetwork.vehicles)});
   groundPaint.push({after:0,paint:createCityYearMarkers(layout)});
-  if(groundOverride) groundPaint.splice(0,groundPaint.length,{after:0,paint:groundOverride});
+  if(groundOverride) groundPaint.splice(0,groundPaint.length,{after:0,paint:groundOverride},...groundPaint.slice(parcelGroundStart,overlayStart));
   const overlayPaint=groundPaint.slice(groundOverride?0:overlayStart);
 
   // 二十年细节平移已在同环境对照；保留统一顺序，本轮不扩建剔除框架。

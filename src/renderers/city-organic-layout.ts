@@ -1,11 +1,14 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP } from './city-layout';
+import { createCityRoadPainter, type CityRoadRoute, type CityRoadJunction } from './city-roads';
 
 const DAY = 86400000;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
-export interface OrganicRegion { block: number; segment: number; columns: { x: number; top: number; bottom: number }[] }
+export interface OrganicRegion { block: number; segment: number; left: number; right: number }
 export interface OrganicCity {
   scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[];
+  rivers: { left: number; right: number; z: number }[];
   /** false表示待填充快照：不根据尚未到达的数据推断边界。 */
   settled: boolean;
 }
@@ -13,7 +16,7 @@ export interface OrganicCity {
 /** 独立预览候选。输入沿用已校验date/count；阈值不是产品默认值。 */
 export function planOrganicCity(days: readonly DailyContribution[], threshold: number, complete: boolean, years: readonly number[]): OrganicCity {
   const original = planCityScene(days, true, years);
-  if (!complete) return { scene: original, gaps: [], omitted: [], regions: [], settled: false };
+  if (!complete) return { scene: original, gaps: [], omitted: [], regions: [], rivers: [], settled: false };
   const ordered = days.map((day, index) => ({ ...day, index, time: Date.parse(day.date) })).sort((a,b)=>a.time-b.time);
   const gaps: OrganicGap[] = [];
   let run: typeof ordered = [];
@@ -44,98 +47,87 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     // 只有已知连续段的首尾退让；不跨缺失日期填补地面。
     if (times && day.time>=times[0]-7*DAY && day.time<=times.at(-1)!+7*DAY) retained.add(day.index);
   }
-  // 年度边缘依附近真实贡献的星期行退让；内部短空档保留通道。
-  for(const cell of original.weekly.cells) if(cell.count===0 && retained.has(cell.indices[0])) {
-    const nearby=original.weekly.cells.filter(c=>c.count>0&&c.block===cell.block&&Math.abs(c.x-cell.x)<=2);
-    if(nearby.length && (cell.z<Math.min(...nearby.map(c=>c.z))-1 || cell.z>Math.max(...nearby.map(c=>c.z))+1)) retained.delete(cell.indices[0]);
-  }
   const items=original.items.filter(item=>item.parcel && (item.parcel.count>0 || item.parcel.indices.every(i=>retained.has(i))));
-  // 按真实保留地块构造列包络；邻列外扩取并集，圆润退让不能裁掉建筑。
+  // 仅按时间段裁切整周范围，保留完整七天行，不根据路口附近的星期分布制造凹口。
   const groups=new Map<string, OrganicRegion>();
   for (const item of items) {
-    const parcel=item.parcel!, s=segments.get(parcel.indices[0])!;
+    const parcel=item.parcel!, member=parcel.indices.find(i=>days[i].count>0)??parcel.indices[0], s=segments.get(member)!;
     const key=`${parcel.block}:${s}`;
     let region=groups.get(key);
-    if (!region) { region={block:parcel.block,segment:s,columns:[]}; groups.set(key,region); }
-    for(let dx=0;dx<parcel.w;dx++) {
-      const x=original.layout.districts[parcel.block].weekX(parcel.x+dx);
-      let col=region.columns.find(c=>c.x===x);
-      if(!col){col={x,top:item.z,bottom:item.z+parcel.d};region.columns.push(col)}
-      col.top=Math.min(col.top,item.z);col.bottom=Math.max(col.bottom,item.z+parcel.d);
-    }
+    if (!region) { region={block:parcel.block,segment:s,left:item.x,right:item.x+item.w}; groups.set(key,region); }
+    region.left=Math.min(region.left,item.x);region.right=Math.max(region.right,item.x+item.w);
   }
   const regions=[...groups.values()];
-  for(const region of regions) {
-    region.columns.sort((a,b)=>a.x-b.x);
-    const before=region.columns.map(c=>({...c}));
-    region.columns.forEach((c,i)=>{
-      const neighbors=before.slice(Math.max(0,i-1),i+2);
-      c.top=Math.min(...neighbors.map(n=>n.top))-1;
-      c.bottom=Math.max(...neighbors.map(n=>n.bottom))+1;
-    });
+  // 混排52/53周年时，短年末端既有道路余量不变成额外缺口。
+  for(const region of regions){
+    const district=original.layout.districts[region.block], weeks=original.weekly.districts[region.block].weeks;
+    if(region.right>=district.weekX(weeks-1)+1)region.right=original.width;
   }
-  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])]};
+  // 年度主路沿原中心线布置，同轴重叠区间先合并，避免每年各画一条平行环路。
+  const lines=new Map<string,{horizontal:boolean;at:number;lanes:2|4;spans:{start:number;end:number}[]}>();
+  const fixed=(value:number)=>Math.round(value*1000)/1000;
+  const road=(horizontal:boolean,at:number,start:number,end:number,lanes:2|4)=>{
+    at=fixed(at);const key=`${horizontal}:${at}:${lanes}`;
+    let line=lines.get(key);if(!line){line={horizontal,at,lanes,spans:[]};lines.set(key,line)}
+    line.spans.push({start:fixed(start),end:fixed(end)});
+  };
+  const side=CITY_ROAD_WIDTH/2;
+  for(const region of regions){
+    const z=original.layout.districts[region.block].z, top=z-CITY_YEAR_GAP/2,bottom=z+7+CITY_YEAR_GAP/2;
+    for(const at of [top,bottom])road(true,at,region.left-side,region.right+side,4);
+    for(const x of new Set([region.left-side,region.right+side,...CITY_QUARTER_ROADS.map(x=>x+side)])){
+      if(x>=region.left-side&&x<=region.right+side)road(false,x,top,bottom,2);
+    }
+  }
+  const rivers: {left:number;right:number;z:number}[]=[];
+  for(const region of regions) for(const next of regions) {
+    if(next.block!==region.block+1 || next.segment!==region.segment)continue;
+    const beforeZ=original.layout.districts[region.block].z, afterZ=original.layout.districts[next.block].z;
+    if(afterZ-beforeZ>10) {
+      const left=Math.max(region.left,next.left),right=Math.min(region.right,next.right);
+      if(right>left)rivers.push({left,right,z:(beforeZ+7+afterZ)/2});
+      for(const x of CITY_QUARTER_ROADS.map(x=>x+side))if(x>=left&&x<=right)road(false,x,beforeZ+7+CITY_YEAR_GAP/2,afterZ-CITY_YEAR_GAP/2,2);
+    }
+  }
+  const roads:CityRoadRoute[]=[];
+  for(const line of lines.values()){
+    const merged:{start:number;end:number}[]=[];
+    for(const span of line.spans.sort((a,b)=>a.start-b.start)){
+      const last=merged.at(-1);if(last&&span.start<=last.end)last.end=Math.max(last.end,span.end);else merged.push({...span});
+    }
+    for(const span of merged)roads.push({id:`organic-${roads.length}`,lanes:line.lanes,points:line.horizontal?[[span.start,line.at],[span.end,line.at]]:[[line.at,span.start],[line.at,span.end]]});
+  }
+  const junctions:CityRoadJunction[]=[];
+  for(const a of roads)if(a.points[0][1]===a.points[1][1])for(const b of roads)if(b.points[0][0]===b.points[1][0]){
+    const x=b.points[0][0],z=a.points[0][1];
+    if(x>=a.points[0][0]&&x<=a.points[1][0]&&z>=b.points[0][1]&&z<=b.points[1][1])junctions.push({x,z,radius:.9});
+  }
+  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges:[],vehicles:[]}};
   const shown=new Set(items.flatMap(item=>item.parcel!.indices));
-  return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,settled:true};
+  return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,rivers,settled:true};
 }
 
-/** 年度地面与周边道路共用轮廓；没有穿过空档的旧矩形环路/景观/桥梁。 */
+/** 地块保留完整星期行；年度主路只绘制一次，共用道路不被分成两条环路。 */
 export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderingContext2D)=>void {
+  const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
   const paths=plan.regions.map(region=>{
-    const path=new Path2D(), cols=region.columns;
-    const point=(x:number,z:number,first=false)=>first?path.moveTo((x-z)*.5,(x+z)*.25):path.lineTo((x-z)*.5,(x+z)*.25);
-    const left=cols[0].x-1, right=cols.at(-1)!.x+2;
-    point(left,cols[0].top,true);
-    cols.forEach((c,i)=>{const next=cols[i+1];point(next?(c.x+1+next.x)/2:right,c.top);if(next)point((c.x+1+next.x)/2,next.top)});
-    point(right,cols.at(-1)!.bottom);
-    [...cols].reverse().forEach((c,i)=>{const prev=cols[cols.length-i-2];point(prev?(prev.x+1+c.x)/2:left,c.bottom);if(prev)point((prev.x+1+c.x)/2,prev.bottom)});
+    const z=plan.scene.layout.districts[region.block].z,path=new Path2D();
+    [project(region.left-.12,z-.12),project(region.right+.12,z-.12),project(region.right+.12,z+7.12),project(region.left-.12,z+7.12)].forEach((p,i)=>i?path.lineTo(...p):path.moveTo(...p));
     path.closePath();return path;
   });
-  const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
-  const links: {from:[number,number];to:[number,number]}[]=[];
-  const rivers: {left:number;right:number;z:number}[]=[];
-  for(const region of plan.regions) for(const next of plan.regions) {
-    if(next.block!==region.block+1 || next.segment!==region.segment)continue;
-    const beforeZ=plan.scene.layout.districts[region.block].z, afterZ=plan.scene.layout.districts[next.block].z;
-    if(afterZ-beforeZ>10) {
-      const left=Math.max(region.columns[0].x,next.columns[0].x), right=Math.min(region.columns.at(-1)!.x+1,next.columns.at(-1)!.x+1);
-      if(right>left)rivers.push({left,right,z:(beforeZ+7+afterZ)/2});
-    }
-    for(const x of [13.4,27.2,41]) {
-      const a=region.columns.find(c=>Math.abs(c.x-x)<1.5), b=next.columns.find(c=>Math.abs(c.x-x)<1.5);
-      // 只有同一时间段两岸均保留的季度轴才连接；不跨长期中断。
-      if(a && b && a.bottom>=beforeZ+7 && b.top<=afterZ) links.push({from:[x,a.bottom],to:[x,b.top]});
-    }
-  }
+  const paintRoads=createCityRoadPainter(plan.scene.roadNetwork.roads,plan.scene.roadNetwork.junctions);
   return context=>{
-    context.save();context.lineJoin='round';
-    for(const {left,right,z} of rivers){
+    context.save();
+    for(const path of paths){context.fillStyle='#b3b4a2';context.fill(path);context.strokeStyle='#d2cbb6';context.lineWidth=.12;context.stroke(path)}
+    for(const {left,right,z} of plan.rivers){
       const river=new Path2D();river.moveTo(...project(left,z));river.lineTo(...project(right,z));
       context.strokeStyle='#98a88a';context.lineWidth=1.5;context.stroke(river);
       context.strokeStyle='#699c9c';context.lineWidth=.8;context.stroke(river);
     }
-    for(const {from,to} of links){
-      const path=new Path2D();path.moveTo(...project(...from));path.lineTo(...project(...to));
-      context.strokeStyle='#d2cbb6';context.lineWidth=.7;context.stroke(path);
-      context.strokeStyle='#606967';context.lineWidth=.4;context.stroke(path);
-      context.strokeStyle='#d6b96d';context.lineWidth=.025;context.stroke(path);
-    }
-    for(const [i,path] of paths.entries()){
-      context.fillStyle='#b3b4a2';context.fill(path);
-      context.strokeStyle='#d2cbb6';context.lineWidth=.72;context.stroke(path);
-      context.strokeStyle='#606967';context.lineWidth=.45;context.stroke(path);
-      context.strokeStyle='#d6b96d';context.lineWidth=.025;context.setLineDash([.2,.16]);context.stroke(path);context.setLineDash([]);
-      context.save();context.clip(path);
-      const region=plan.regions[i];
-      for(const x of [13.4,27.2,41]) {
-        const col=region.columns.find(c=>Math.abs(c.x-x)<1.5);
-        if(!col)continue;
-        const road=new Path2D();road.moveTo(...project(x,col.top));road.lineTo(...project(x,col.bottom));
-        context.strokeStyle='#606967';context.lineWidth=.4;context.stroke(road);
-      }
-      context.restore();
-      const regionYear=plan.scene.layout.districts[region.block].year, first=region.columns[0];
-      context.fillStyle='#384e3b';context.font='.55px system-ui';context.fillText(String(regionYear),...project(first.x,first.top+.8));
+    paintRoads(context);
+    for(const region of plan.regions){
+      const district=plan.scene.layout.districts[region.block];
+      context.fillStyle='#384e3b';context.font='.55px system-ui';context.fillText(String(district.year),...project(region.left,district.z+.55));
     }
     context.restore();
   };
