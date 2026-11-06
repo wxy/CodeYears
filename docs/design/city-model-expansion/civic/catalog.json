@@ -1,0 +1,173 @@
+[
+  {
+    "id": "civic-library",
+    "file": "/assets/city-candidates-civic/civic-library.png",
+    "left": -0.8662763064434297,
+    "top": -0.4724526128868594,
+    "width": 1.279766210045662,
+    "height": 1.1664535768645354,
+    "nativeWidth": 1,
+    "nativeDepth": 2,
+    "baselineHeight": 1,
+    "sampleId": "civic-library",
+    "pixels": [
+      384,
+      350
+    ],
+    "name": "图书馆",
+    "origin": "本轮新生成",
+    "calibration": {
+      "mappedW": 0.5,
+      "mappedD": -0.5,
+      "clearance": [
+        0.21770370370370368,
+        0.1463926940639273
+      ],
+      "actualHeight": 1
+    }
+  },
+  {
+    "id": "civic-clinic",
+    "file": "/assets/city-candidates-civic/civic-clinic.png",
+    "left": -0.3633105970558959,
+    "top": -0.5542243316773251,
+    "width": 0.7653732681076647,
+    "height": 1.084514151119348,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 0.9934570703698761,
+    "sampleId": "civic-clinic",
+    "pixels": [
+      271,
+      384
+    ],
+    "name": "社区诊所",
+    "origin": "本轮新生成",
+    "calibration": {
+      "mappedW": 0.5,
+      "mappedD": -0.5,
+      "clearance": [
+        0.09999999999999992,
+        0.22214553732061448
+      ],
+      "actualHeight": 0.9934570703698761
+    }
+  },
+  {
+    "id": "civic-school",
+    "file": "/assets/city-candidates-civic/civic-school.png",
+    "left": -0.3005135947978052,
+    "top": -0.62546854975276,
+    "width": 1.1273372485267221,
+    "height": 1.361312903881325,
+    "nativeWidth": 2,
+    "nativeDepth": 1,
+    "baselineHeight": 1,
+    "sampleId": "civic-school",
+    "pixels": [
+      318,
+      384
+    ],
+    "name": "小学校舍",
+    "origin": "本轮新生成",
+    "calibration": {
+      "mappedW": 0.5000000000000001,
+      "mappedD": -0.5000000000000001,
+      "clearance": [
+        0.3674774774774776,
+        0.14600000000000013
+      ],
+      "actualHeight": 1
+    }
+  },
+  {
+    "id": "civic-post",
+    "file": "/assets/city-candidates-civic/civic-post.png",
+    "left": -0.31290958705174143,
+    "top": -0.768864193193263,
+    "width": 0.6608023095120977,
+    "height": 1.275116014334902,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 1,
+    "sampleId": "civic-post",
+    "pixels": [
+      199,
+      384
+    ],
+    "name": "邮局",
+    "origin": "本轮新生成",
+    "calibration": {
+      "mappedW": 0.49999999999999994,
+      "mappedD": -0.5,
+      "clearance": [
+        0.14738095238095233,
+        0.30200934579439254
+      ],
+      "actualHeight": 1
+    }
+  },
+  {
+    "id": "civic-center",
+    "file": "/assets/city-candidates-civic/civic-center.png",
+    "left": -0.636221045772993,
+    "top": -0.499522644025264,
+    "width": 1.3121858337922534,
+    "height": 1.4907673377994832,
+    "nativeWidth": 2,
+    "nativeDepth": 2,
+    "baselineHeight": 1,
+    "sampleId": "civic-center",
+    "pixels": [
+      338,
+      384
+    ],
+    "name": "社区服务中心",
+    "origin": "本轮新生成",
+    "calibration": {
+      "mappedW": 0.5,
+      "mappedD": -0.5,
+      "clearance": [
+        0.23875934230194318,
+        0.5502905982905983
+      ],
+      "actualHeight": 1
+    }
+  },
+  {
+    "left": -0.3638489631310648,
+    "top": -0.20458841194160007,
+    "width": 1.2444914904082638,
+    "height": 0.9042008484997542,
+    "nativeWidth": 2,
+    "nativeDepth": 1,
+    "baselineHeight": 0.5753271028037384,
+    "sampleId": "fire-b",
+    "id": "civic-fire-b",
+    "name": "消防站",
+    "origin": "原有精绘复用（非新增）",
+    "file": "/assets/city-runtime/fire-b.png",
+    "pixels": [
+      384,
+      279
+    ]
+  },
+  {
+    "left": -0.3708604049978459,
+    "top": -0.19363377854373134,
+    "width": 1.249530374838432,
+    "height": 0.9013539422662649,
+    "nativeWidth": 2,
+    "nativeDepth": 1,
+    "baselineHeight": 0.6062042223179668,
+    "sampleId": "police-a",
+    "id": "civic-police-a",
+    "name": "警务小站（补充）",
+    "origin": "原有精绘复用（非新增）",
+    "file": "/assets/city-runtime/police-a.png",
+    "pixels": [
+      384,
+      277
+    ]
+  }
+]
