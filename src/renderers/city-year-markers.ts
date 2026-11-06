@@ -42,8 +42,8 @@ export function createCityRoadLabels(labels:readonly CityRoadLabel[]):(context:C
   return context=>{
     for(const {text,kind,x,z,lanes,horizontal,side} of labels){
       const half=lanes*.4/2,weight=kind==='block'?800:kind==='avenue'?700:600;
-      const font=CITY_ROAD_LABEL_SIZE[kind],offset=font+.06>half?0:side*half*.5;
-      // 文字顺路面排列；占一侧路幅，避开中央分隔线和路缘线。
+      const font=CITY_ROAD_LABEL_SIZE[kind],offset=kind==='road'||font+.06>half?0:side*half*.5;
+      // 窄季度路用整幅路面居中，底色清出双黄线，避免长单词与标线重叠。
       context.save();context.transform(.5,.25,-.5,.25,0,0);
       context.translate(x+(horizontal?0:offset),z+(horizontal?offset:0));
       if(!horizontal)context.rotate(-Math.PI/2);

@@ -2,8 +2,9 @@ import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
 import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
-import { createCityVehiclePainter, type CityVehicle, type CityVehicleKind } from './city-vehicles';
-import { createCityTrafficSignalPainter, type CityTrafficSignal } from './city-traffic-signals';
+import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
+import { planCityTransport, type CityTrafficSignal } from './city-transport';
+import type { CityBridge } from './city-road-network';
 import { createCityRoadPainter, planRoadGeometry, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
@@ -11,7 +12,7 @@ export interface OrganicGap { from: string; to: string; days: number; indices: n
 export interface OrganicRegion { block: number; segment: number; left: number; right: number }
 export interface OrganicCity {
   scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[]; labels:CityRoadLabel[]; signals:CityTrafficSignal[];
-  rivers: { left: number; right: number; z: number }[];
+  rivers: { left: number; right: number; z: number; top:number; bottom:number }[];
 }
 
 /** City轮廓候选。输入沿用已校验date/count；阈值不是产品默认值。 */
@@ -103,7 +104,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       if(x>region.left&&x<region.right)road(false,x,z-ringHalf,z+7+ringHalf,2);
     }
   }
-  const rivers: {left:number;right:number;z:number}[]=[];
+  const rivers: OrganicCity['rivers']=[],bridges:CityBridge[]=[];
   for(const region of regions) for(const next of regions) {
     if(next.block!==region.block+1)continue;
     const beforeZ=original.layout.districts[region.block].z, afterZ=original.layout.districts[next.block].z;
@@ -111,12 +112,16 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     if(right<=left)continue;
     if(afterZ-beforeZ>10) {
       if(next.segment>=0&&region.segment>=0&&next.segment!==region.segment)continue;
-      rivers.push({left,right,z:(beforeZ+7+afterZ)/2});
+      const top=beforeZ+7+CITY_YEAR_GAP/2,bottom=afterZ-CITY_YEAR_GAP/2;
+      rivers.push({left,right,z:(top+bottom)/2,top,bottom});
       // 景观带属于城内；外环沿两岸共同范围跨过它，不给每五年另围一圈。
       footprints.push({left:left-ringHalf,right:right+ringHalf,top:beforeZ+7,bottom:afterZ});
       road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
       road(true,afterZ-CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
-      for(const x of CITY_QUARTER_ROADS.map(x=>x+side))if(x>left&&x<right)road(false,x,beforeZ+7+CITY_YEAR_GAP/2,afterZ-CITY_YEAR_GAP/2,2);
+      CITY_QUARTER_ROADS.forEach((axis,index)=>{const x=fixed(axis+side);if(x>left&&x<right){
+        road(false,x,top,bottom,2);
+        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/5)-1,quarter:index+1,from:[x,top],to:[x,bottom]});
+      }});
     } else road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
   }
   // 坐标压缩后只沿占用格与外部的分界走线；内部共边不会进入外环。
@@ -219,13 +224,15 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       const offset=(.2+.4*(seed%(road.lanes/2)))*direction;
       const x=a[0]+dx*fraction+dz/length*offset,z=a[1]+dz*fraction-dx/length*offset;
       if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+.8)||
+        bridges.some(bridge=>Math.abs(x-bridge.from[0])<.8&&z>bridge.from[1]-.6&&z<bridge.to[1]+.6)||
         labels.some(label=>Math.hypot(label.x-x,label.z-z)<cityRoadLabelLength(label.text,label.kind)/2+.65)||
         vehicles.some(v=>Math.hypot(v.x-x,v.z-z)<1.1))continue;
       vehicles.push({x,z,angle:Math.atan2(dz,dx)+(direction===-1?Math.PI:0),kind:kinds[(seed+(direction===1?0:1))%4],color:colors[seed%colors.length]});
     }
   }
-  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges:[],vehicles}};
-  const shown=new Set(items.flatMap(item=>item.parcel!.indices));
+  items.push(...planCityTransport(vehicles,signals,bridges));
+  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges,vehicles}};
+  const shown=new Set(items.flatMap(item=>item.parcel?.indices??[]));
   return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,signals,rivers};
 }
 
@@ -271,7 +278,7 @@ function planRoadLabels(scene:CityScene,regions:readonly OrganicRegion[],roads:r
     }
     CITY_QUARTER_ROADS.forEach((axis,index)=>{
       const x=Math.round((axis+CITY_ROAD_WIDTH/2)*1000)/1000;
-      place(district.year,['W RD','C RD','E RD'][index],'road',false,-1,
+      place(district.year,['WEST RD','CENTRAL RD','EAST RD'][index],'road',false,-1,
         segments.filter(edge=>!edge.road.closed&&edge.road.lanes===2&&edge.a[0]===x&&edge.b[0]===x)
           .flatMap(edge=>free(edge,district.z,district.z+7)));
     });
@@ -374,18 +381,42 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
   });
   const paintLabels=createCityRoadLabels(plan.labels);
   const paintRoads=createCityRoadPainter(plan.scene.roadNetwork.roads,plan.scene.roadNetwork.junctions);
-  const paintVehicles=createCityVehiclePainter(plan.scene.roadNetwork.vehicles),paintSignals=createCityTrafficSignalPainter(plan.signals);
+  const water=plan.rivers.map(({left,right,z,top,bottom})=>{
+    const half=(bottom-top)/2-.8,samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
+      const x=left+(right-left)*i/Math.ceil((right-left)*4),wave=.06*Math.sin(x*1.7+z);
+      return {x,near:z-half+wave,far:z+half+wave*.6};
+    });
+    const bank=(side:'near'|'far')=>{const path=new Path2D();samples.forEach((p,i)=>i?path.lineTo(...project(p.x,p[side])):path.moveTo(...project(p.x,p[side])));return path};
+    const path=new Path2D(bank('near'));for(const p of [...samples].reverse())path.lineTo(...project(p.x,p.far));path.closePath();
+    const ripples=new Path2D(),stones=new Path2D();
+    for(let x=left+.5;x<right-.5;x+=.67){
+      for(const offset of [-.63,-.17,.38,.76]){
+        const start=x+.21*Math.sin(x*7+offset*13),length=.1+.17*(1+Math.sin(x*9+offset*17))/2;
+        const dz=offset+.09*Math.sin(x*2.1+offset*7),a=project(start,z+dz),b=project(start+length,z+dz-.015);
+        ripples.moveTo(...a);ripples.quadraticCurveTo(...project(start+length*.5,z+dz-.035),...b);
+      }
+      for(const side of [-1,1]){const p=project(x,z+side*(half+.1)),radius=.06+.015*Math.sin(x);stones.moveTo(p[0]+radius*Math.cos(side*.4),p[1]+radius*Math.sin(side*.4));stones.ellipse(p[0],p[1],radius,.026,side*.4,0,Math.PI*2)}
+    }
+    // 渐变沿投影河岸的法线，不能沿斜投影Z轴，否则长河的两端会变成大块纯色。
+    const center=project((left+right)/2,z);
+    return {path,near:bank('near'),far:bank('far'),ripples,stones,
+      from:[center[0]+half*.2,center[1]-half*.4] as [number,number],
+      to:[center[0]-half*.2,center[1]+half*.4] as [number,number]};
+  });
   return context=>{
     context.save();
     for(const path of paths){context.fillStyle='#b3b4a2';context.fill(path);context.strokeStyle='#d2cbb6';context.lineWidth=.12;context.stroke(path)}
-    for(const {left,right,z} of plan.rivers){
-      const river=new Path2D();river.moveTo(...project(left,z));river.lineTo(...project(right,z));
-      context.strokeStyle='#98a88a';context.lineWidth=1.5;context.stroke(river);
-      context.strokeStyle='#699c9c';context.lineWidth=.8;context.stroke(river);
+    for(const river of water){
+      context.strokeStyle='#8f9f85';context.lineWidth=.28;context.stroke(river.near);context.stroke(river.far);
+      const gradient=context.createLinearGradient(...river.from,...river.to);
+      gradient.addColorStop(0,'#829e8c');gradient.addColorStop(.2,'#608f8b');gradient.addColorStop(.55,'#497c81');gradient.addColorStop(.82,'#689c96');gradient.addColorStop(1,'#91aa94');
+      context.fillStyle=gradient;context.fill(river.path);
+      context.strokeStyle='#c2d0b4';context.lineWidth=.035;context.stroke(river.near);context.stroke(river.far);
+      context.strokeStyle='#d5e7d840';context.lineWidth=.012;context.stroke(river.ripples);
+      context.fillStyle='#b2b49a';context.fill(river.stones);
     }
     paintRoads(context);
     paintLabels(context);
-    paintVehicles(context);paintSignals(context);
     context.restore();
   };
 }
