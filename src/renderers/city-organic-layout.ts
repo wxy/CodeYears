@@ -1,6 +1,6 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
-import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP } from './city-layout';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_DEPTH } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { planCityTransport, type CityTrafficSignal } from './city-transport';
@@ -121,7 +121,8 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       road(true,afterZ-CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
       CITY_QUARTER_ROADS.forEach((axis,index)=>{const x=fixed(axis+side);if(x>left&&x<right){
         road(false,x,top,bottom,2);
-        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/5)-1,quarter:index+1,from:[x,top],to:[x,bottom]});
+        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/5)-1,quarter:index+1,
+          from:[x,fixed(top+CITY_PAINTED_BRIDGE_APPROACH)],to:[x,fixed(bottom-CITY_PAINTED_BRIDGE_APPROACH)]});
       }});
     } else road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
   }
@@ -381,27 +382,42 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
     path.closePath();return path;
   });
   const paintLabels=createCityRoadLabels(plan.labels);
-  const paintRoads=createCityRoadPainter(plan.scene.roadNetwork.roads,plan.scene.roadNetwork.junctions);
+  // 桥与引桥替代这段路面，不能在桥拱下再铺一条穿水的地面公路。
+  const groundRoads=plan.scene.roadNetwork.roads.flatMap(route=>{
+    if(route.closed||route.points[0][0]!==route.points[1][0])return [route];
+    const x=route.points[0][0];
+    let spans:[number,number][]=[[Math.min(route.points[0][1],route.points[1][1]),Math.max(route.points[0][1],route.points[1][1])]];
+    for(const bridge of plan.scene.roadNetwork.bridges)if(bridge.from[0]===x){
+      const from=bridge.from[1]-CITY_PAINTED_BRIDGE_APPROACH,to=bridge.to[1]+CITY_PAINTED_BRIDGE_APPROACH;
+      spans=spans.flatMap(([start,end])=>[[start,Math.min(end,from)],[Math.max(start,to),end]] as [number,number][]).filter(([start,end])=>end>start);
+    }
+    return spans.map(([start,end])=>({...route,points:[[x,start],[x,end]] as RoadPoint[]}));
+  });
+  const paintRoads=createCityRoadPainter(groundRoads,plan.scene.roadNetwork.junctions);
   const paintApproaches=createCityBridgeApproachPainter(plan.scene.roadNetwork.bridges);
   const water=plan.rivers.map(({left,right,z,top,bottom})=>{
-    const half=(bottom-top)/2-.8,samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
+    const half=(bottom-top)/2-CITY_PAINTED_BRIDGE_APPROACH,samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
       const x=left+(right-left)*i/Math.ceil((right-left)*4),wave=.06*Math.sin(x*1.7+z);
       return {x,near:z-half+wave,far:z+half+wave*.6};
     });
     const bank=(side:'near'|'far')=>{const path=new Path2D();samples.forEach((p,i)=>i?path.lineTo(...project(p.x,p[side])):path.moveTo(...project(p.x,p[side])));return path};
-    const path=new Path2D(bank('near'));for(const p of [...samples].reverse())path.lineTo(...project(p.x,p.far));path.closePath();
+    const lower=(x:number,z:number):[number,number]=>{const p=project(x,z);return [p[0],p[1]+CITY_RIVER_DEPTH*.5]};
+    const path=new Path2D();samples.forEach((p,i)=>i?path.lineTo(...lower(p.x,p.near)):path.moveTo(...lower(p.x,p.near)));
+    for(const p of [...samples].reverse())path.lineTo(...lower(p.x,p.far));path.closePath();
+    const walls=(side:'near'|'far')=>{const wall=new Path2D(bank(side));for(const p of [...samples].reverse())wall.lineTo(...lower(p.x,p[side]));wall.closePath();return wall};
     const ripples=new Path2D(),stones=new Path2D();
     for(let x=left+.5;x<right-.5;x+=.67){
-      for(const offset of [-.63,-.17,.38,.76]){
+      for(const fraction of [-.7,-.23,.32,.74]){
+        const offset=fraction*half;
         const start=x+.21*Math.sin(x*7+offset*13),length=.1+.17*(1+Math.sin(x*9+offset*17))/2;
-        const dz=offset+.09*Math.sin(x*2.1+offset*7),a=project(start,z+dz),b=project(start+length,z+dz-.015);
-        ripples.moveTo(...a);ripples.quadraticCurveTo(...project(start+length*.5,z+dz-.035),...b);
+        const dz=offset+.09*Math.sin(x*2.1+offset*7),a=lower(start,z+dz),b=lower(start+length,z+dz-.015);
+        ripples.moveTo(...a);ripples.quadraticCurveTo(...lower(start+length*.5,z+dz-.035),...b);
       }
       for(const side of [-1,1]){const p=project(x,z+side*(half+.1)),radius=.06+.015*Math.sin(x);stones.moveTo(p[0]+radius*Math.cos(side*.4),p[1]+radius*Math.sin(side*.4));stones.ellipse(p[0],p[1],radius,.026,side*.4,0,Math.PI*2)}
     }
     // 渐变沿投影河岸的法线，不能沿斜投影Z轴，否则长河的两端会变成大块纯色。
-    const center=project((left+right)/2,z);
-    return {path,near:bank('near'),far:bank('far'),ripples,stones,
+    const center=lower((left+right)/2,z);
+    return {path,near:bank('near'),far:bank('far'),nearWall:walls('near'),farWall:walls('far'),ripples,stones,
       from:[center[0]+half*.2,center[1]-half*.4] as [number,number],
       to:[center[0]-half*.2,center[1]+half*.4] as [number,number]};
   });
@@ -413,6 +429,8 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
       const gradient=context.createLinearGradient(...river.from,...river.to);
       gradient.addColorStop(0,'#829e8c');gradient.addColorStop(.2,'#608f8b');gradient.addColorStop(.55,'#497c81');gradient.addColorStop(.82,'#689c96');gradient.addColorStop(1,'#91aa94');
       context.fillStyle=gradient;context.fill(river.path);
+      context.fillStyle='#7f8e77';context.fill(river.nearWall);
+      context.fillStyle='#6c7967';context.fill(river.farWall);
       context.strokeStyle='#c2d0b4';context.lineWidth=.035;context.stroke(river.near);context.stroke(river.far);
       context.strokeStyle='#d5e7d840';context.lineWidth=.012;context.stroke(river.ripples);
       context.fillStyle='#b2b49a';context.fill(river.stones);

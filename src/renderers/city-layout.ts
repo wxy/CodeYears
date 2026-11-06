@@ -2,7 +2,8 @@ import type { WeeklyCity } from './city-parcels';
 
 export const CITY_ROAD_WIDTH = .8;
 export const CITY_YEAR_GAP = 1.6;
-export const CITY_PARK_DEPTH = 4;
+export const CITY_PARK_DEPTH = 7.2;
+export const CITY_RIVER_DEPTH = .45;
 const QUARTER_COLUMNS = 13;
 export const CITY_QUARTER_ROADS = [13, 26.8, 40.6] as const;
 export const CITY_YEAR_WIDTH = QUARTER_COLUMNS * 4 + CITY_ROAD_WIDTH * 3;

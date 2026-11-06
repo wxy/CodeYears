@@ -1,9 +1,9 @@
 import { sampleCityBridge, type CityBridge } from './city-road-network';
 
 export const CITY_PAINTED_BRIDGE_ELEVATION=.18;
-export const CITY_PAINTED_BRIDGE_APPROACH=.8;
+export const CITY_PAINTED_BRIDGE_APPROACH=1.6;
 
-/** 引桥从年度大道外侧路缘起坡，终点与精绘桥面的高度及轴线一致。 */
+/** 引桥从年度大道轴起坡，经岸带连接桥面；桥墩不占两岸的行车道。 */
 export function createCityBridgeApproachPainter(bridges:readonly CityBridge[]):(context:CanvasRenderingContext2D)=>void {
   const commands:{path:Path2D;color:string;width?:number}[]=[];
   for(const bridge of bridges)for(const near of [false,true]){
