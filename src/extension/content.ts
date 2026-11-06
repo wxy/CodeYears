@@ -322,7 +322,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         await confirmViewer(nextContext, request.signal);
         request.signal.throwIfAborted();
         if (!active || disposed || controller !== request) return;
-        if (!sameContext(nextContext, currentContext())) throw new Error("主页或访问者身份已改变，请刷新页面后重试。");
+        if (!sameContext(nextContext, currentContext())) throw new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
         context = nextContext; cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status);
       } catch (error) {
         if (!active || controller !== request) return;
