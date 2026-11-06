@@ -1,0 +1,80 @@
+{
+  "ct-bus-station": {
+    "pixels": [
+      282,
+      384
+    ],
+    "mode": "RGBA",
+    "bytes": 170055,
+    "rgbaBytes": 433152,
+    "transparentPixels": 50729,
+    "nonzeroAlphaPixels": 57559,
+    "outer2pxMaxAlpha": 0,
+    "sha256": "df43a931aeae82cea1cc9e9ac3611da83a168378e77cf0976eddabb1b453cedf"
+  },
+  "ct-clock-culture": {
+    "pixels": [
+      152,
+      384
+    ],
+    "mode": "RGBA",
+    "bytes": 87938,
+    "rgbaBytes": 233472,
+    "transparentPixels": 28270,
+    "nonzeroAlphaPixels": 30098,
+    "outer2pxMaxAlpha": 0,
+    "sha256": "42bc627490aa406f333cc38397c9727b7872120570fe0c5876150c194c7e798f"
+  },
+  "ct-community-gym": {
+    "pixels": [
+      277,
+      384
+    ],
+    "mode": "RGBA",
+    "bytes": 214414,
+    "rgbaBytes": 425472,
+    "transparentPixels": 29282,
+    "nonzeroAlphaPixels": 77086,
+    "outer2pxMaxAlpha": 0,
+    "sha256": "11928a0e63c2a40eab05d79d37db63dbff08fc87400eddac1a1d6cc24677e852"
+  },
+  "ct-market-hall": {
+    "pixels": [
+      242,
+      384
+    ],
+    "mode": "RGBA",
+    "bytes": 174019,
+    "rgbaBytes": 371712,
+    "transparentPixels": 35313,
+    "nonzeroAlphaPixels": 57615,
+    "outer2pxMaxAlpha": 0,
+    "sha256": "96dc9cb184544c70e28fb1d562b6b8f828dd145e39481d27463422c108aef49d"
+  },
+  "ct-museum": {
+    "pixels": [
+      253,
+      384
+    ],
+    "mode": "RGBA",
+    "bytes": 187859,
+    "rgbaBytes": 388608,
+    "transparentPixels": 31967,
+    "nonzeroAlphaPixels": 65185,
+    "outer2pxMaxAlpha": 0,
+    "sha256": "0568b590f48e549c4a66579b4ae6ba8347e41efbaf744bc9c70464c34c0cb20d"
+  },
+  "ct-music-hall": {
+    "pixels": [
+      254,
+      384
+    ],
+    "mode": "RGBA",
+    "bytes": 207463,
+    "rgbaBytes": 390144,
+    "transparentPixels": 25829,
+    "nonzeroAlphaPixels": 71707,
+    "outer2pxMaxAlpha": 0,
+    "sha256": "c1dc6b6cd8e8c3a83983f9b58df18e1e2f3a5e0b7e999a42707fa2ad0bee48ca"
+  }
+}
