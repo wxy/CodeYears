@@ -195,7 +195,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   return {
     canvas,
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
-    description:()=> `固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
+    description:()=> groundOverride?`固定视角 · ${wonderCount} 处奇观 · 沿街区外缘环路 / 内部共用道路 · 拖动平移`:`固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
     draw(progress,viewport:LandscapeViewport){
       const prefix=progress===1?weekly.cells.length:Math.floor(progress*weekly.cells.length);
       // 新批次只有短填入期间逐帧画增量地面；完成后恢复整块缓存，不续连续帧。

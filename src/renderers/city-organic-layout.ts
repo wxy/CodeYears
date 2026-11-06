@@ -13,9 +13,9 @@ export interface OrganicCity {
   settled: boolean;
 }
 
-/** 独立预览候选。输入沿用已校验date/count；阈值不是产品默认值。 */
-export function planOrganicCity(days: readonly DailyContribution[], threshold: number, complete: boolean, years: readonly number[]): OrganicCity {
-  const original = planCityScene(days, true, years);
+/** City轮廓候选。输入沿用已校验date/count；阈值不是产品默认值。 */
+export function planOrganicCity(days: readonly DailyContribution[], threshold: number, complete: boolean, years: readonly number[], wonders = true): OrganicCity {
+  const original = planCityScene(days, wonders, years);
   if (!complete) return { scene: original, gaps: [], omitted: [], regions: [], rivers: [], settled: false };
   const ordered = days.map((day, index) => ({ ...day, index, time: Date.parse(day.date) })).sort((a,b)=>a.time-b.time);
   const gaps: OrganicGap[] = [];
@@ -57,7 +57,26 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     if (!region) { region={block:parcel.block,segment:s,left:item.x,right:item.x+item.w}; groups.set(key,region); }
     region.left=Math.min(region.left,item.x);region.right=Math.max(region.right,item.x+item.w);
   }
-  const regions=[...groups.values()];
+  // 请求完成不代表周年的未来日期已经存在：缺少任一天的周仍保留空场地，不补零。
+  const knownDates=new Set(days.map(day=>day.date)), bounds=[...groups.values()];
+  original.weekly.districts.forEach((district,block)=>{
+    let reserved:OrganicRegion|undefined;
+    for(let week=0;week<district.weeks;week++){
+      const missing=Array.from({length:7},(_,weekday)=>new Date(district.monday+(week*7+weekday)*DAY).toISOString().slice(0,10)).some(date=>!knownDates.has(date));
+      if(!missing){reserved=undefined;continue}
+      const layout=original.layout.districts[block];
+      if(reserved)reserved.right=layout.weekX(week)+1;
+      else{reserved={block,segment:-1,left:layout.weekX(week),right:layout.weekX(week)+1};bounds.push(reserved)}
+    }
+  });
+  const regions:OrganicRegion[]=[];
+  for(const region of bounds.sort((a,b)=>a.block-b.block||a.left-b.left)){
+    const previous=regions.at(-1);
+    if(previous&&previous.block===region.block&&region.left<=previous.right){
+      previous.right=Math.max(previous.right,region.right);
+      if(previous.segment!==region.segment)previous.segment=-1;
+    }else regions.push({...region});
+  }
   // 混排52/53周年时，短年末端既有道路余量不变成额外缺口。
   for(const region of regions){
     const district=original.layout.districts[region.block], weeks=original.weekly.districts[region.block].weeks;
@@ -90,7 +109,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     const left=Math.max(region.left,next.left),right=Math.min(region.right,next.right);
     if(right<=left)continue;
     if(afterZ-beforeZ>10) {
-      if(next.segment!==region.segment)continue;
+      if(next.segment>=0&&region.segment>=0&&next.segment!==region.segment)continue;
       rivers.push({left,right,z:(beforeZ+7+afterZ)/2});
       // 景观带属于城内；外环沿两岸共同范围跨过它，不给每五年另围一圈。
       footprints.push({left:left-ringHalf,right:right+ringHalf,top:beforeZ+7,bottom:afterZ});

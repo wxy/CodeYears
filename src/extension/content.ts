@@ -237,6 +237,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       if (!active || !host.isConnected) return;
       const visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
       if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
+      await field.updateDays(visibleDays, true);
+      request.signal.throwIfAborted();
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
       setSummary(() => t("totalContributions", [numberText(language, total)]));
