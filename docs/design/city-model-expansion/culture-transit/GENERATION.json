@@ -1,0 +1,15 @@
+{
+  "tool": "内置 image_gen.imagegen（未调用收费API，未新增、索要或扫描API key）",
+  "status": "六款实际新图，均为独立候选；正式映射未接入",
+  "requestedSize": "1536×1024 atlas",
+  "actualSize": [
+    1536,
+    1024
+  ],
+  "format": "PNG RGBA; alpha 0..254",
+  "source": "sources/atlas-original.png",
+  "prompt": "Six distinct finely hand painted miniature city building sprites in a 3 column by 2 row atlas, each separated completely by transparent space. Transparent background. Top row: small bus waiting station cream masonry terracotta roof; compact museum limestone with skylight sawtooth roof; small music theater red brick with curved copper auditorium roof. Bottom row: community sports gym modest timber barrel roof tall windows; market hall green iron glass roof brick arched stalls; small civic clock tower cream stone with a low attached cultural room. No labels, no text, no roads, no people, no vehicles, no surrounding landscape or diamond slabs. All six fully visible. Match premium detailed isometric city game sprites. Fixed orthographic 2:1 isometric ground axes +/-0.5, vertical edges vertical, warm upper-left sunlight. Compact rectangular footprints, no giant stadium or railway terminal. Each building unique massing facade windows and roof. Generous transparent space between six sprites for extraction. 1536x1024 atlas if supported.",
+  "extraction": "三个512宽区域；前两列按y=512分行；第三列按y=490分行保留钟楼尖顶，剧院512×490、钟楼512×534。分离仅裁切，不变色、不拉伸、不重命名旧图。",
+  "unused": "两次单体站房探索和一次透明修订生成未选入本次候选。交付中的六款全部追溯至上述原始图集；没有把探索次数算作模型数。",
+  "reference": "本仓库既有精绘 PNG 风格与 docs/design/CITY_UNIT_SPEC.md；未复制外部游戏资产。"
+}
