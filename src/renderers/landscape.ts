@@ -15,6 +15,8 @@ export interface ContributionLandscape {
   resume(): void;
   skip(): void;
   replay(): void;
+  /** 隐藏时停止绘制，保留当前场景、素材和取景。 */
+  setVisible(visible: boolean): void;
   /** 渐进City：该批素材就绪并交换画面后resolve，不等待短填入动画。 */
   updateDays(days: readonly DailyContribution[]): Promise<void>;
   dispose(): void;
@@ -29,7 +31,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:progressiveCity?zoomBase*1.5:1,panX:0,panY:0,dark:false};
   let view=initialView,layer:LandscapeView|undefined,images:CityImages|undefined,assetPromise:Promise<CityImages>|undefined;
   let cityScene:CityScene|undefined;const assetAbort=new AbortController();
-  let disposed=false,blocked=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
+  let disposed=false,blocked=false,suspended=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
   let preparationError: string | undefined;
   const state=():TimelineState=>progressiveCity?{status:revealedDays>=currentDays.length?"completed":playing?"playing":"paused",revealedDays:Math.floor(revealedDays),totalDays:currentDays.length}:timeline.getState();
   const notify=(error?:string)=>onChange(state(),error,preparationError??layer?.description()??`正在准备${view==="city"?"建筑素材":"连续山脉"}…`);
@@ -42,9 +44,9 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
     next.canvas.setAttribute("aria-label",`${view==="city"?"贡献之城":"连续时光山脉"}，固定视角。拖动平移，滚轮缩放。`);
   };
-  const schedule=()=>{if(!disposed&&!blocked&&!document.hidden&&!raf)raf=requestAnimationFrame(tick)};
+  const schedule=()=>{if(!disposed&&!blocked&&!suspended&&!document.hidden&&!raf)raf=requestAnimationFrame(tick)};
   function tick(now:number){
-    raf=0;if(disposed||blocked||document.hidden||!layer)return;
+    raf=0;if(disposed||blocked||suspended||document.hidden||!layer)return;
     if(progressiveCity){
       if(playing){
         if(!anchored){revealFrom=revealedDays;revealStarted=now;anchored=true}
@@ -91,7 +93,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       schedule();notify();
     }catch(error){if(!disposed&&token===generation){playing=false;preparationError=error instanceof Error?error.message:"风景加载失败，请重新生成。";notify(preparationError)}}
   }
-  const resize=()=>{viewport.width=Math.max(host.clientWidth,1);viewport.height=Math.max(host.clientHeight,1);zoomAt(1)};
+  const resize=()=>{if(suspended)return;viewport.width=Math.max(host.clientWidth,1);viewport.height=Math.max(host.clientHeight,1);zoomAt(1)};
   const observer=new ResizeObserver(resize);observer.observe(host);
   const preference=matchMedia("(prefers-color-scheme: dark)");
   const theme=()=>{
@@ -120,6 +122,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
+    setVisible(visible){if(disposed)return;suspended=!visible;if(suspended){cancelAnimationFrame(raf);raf=0;pointer=undefined;host.style.cursor="grab"}else resize()},
     setView(next){if(disposed||next===view||progressiveCity)return;view=next;void prepare()},
     zoomBy:zoomAt,
     zoomToMax(){zoomAt((layer?.maxZoom?.(viewport)??5)/viewport.zoom)},

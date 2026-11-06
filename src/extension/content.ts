@@ -1,10 +1,11 @@
 import { text, externalText, localize, numberText, type Language, type LanguagePreference, type LanguageSettings, type MessageKey } from "./i18n";
 import { cityLegendStyles, createCityLegend } from "./city-legend";
 import { readPageContext } from "../platform/github/probe";
-import { clearContributionCache } from "../platform/github/load-year";
+import { clearContributionCache, confirmViewer, sameContext } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
 import { isoYearStart } from "../data/iso-week";
 import type { ContributionLandscape } from "../renderers/landscape";
+import type { DailyContribution } from "../data/types";
 
 export interface CityPanel {
   activate(): Promise<void>;
@@ -122,6 +123,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
+  let reusable: { context: typeof context; range: string; expiresAt: number; status: () => string; summary: () => string } | undefined;
   let statusMessage = () => "", summaryMessage = () => "";
   const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
   const setStatus = (message: () => string) => { statusMessage = message; status.textContent = message(); updateFeedback(); };
@@ -173,6 +175,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     clear.disabled = busy || context.viewer.state === "unknown"; updateControls();
   };
   const resetResult = () => {
+    reusable = undefined;
     city?.dispose(); city = undefined; cityHost.replaceChildren();
     showZoom(1);
     setSummary(() => "");
@@ -190,13 +193,15 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
     const range = selectedRange();
     const request = new AbortController(); controller = request;
-    resetResult(); setBusy(true); more.open = false; retry.hidden = true;
+    resetResult(); cityHost.hidden = false; setBusy(true); more.open = false; retry.hidden = true;
     setStatus(() => t("readingData"));
     const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
     let renderer: typeof import("../renderers/landscape") | undefined;
     let renderFailure: Error | undefined;
     let fieldCreated = false;
-    let painting = Promise.resolve();
+    let painting: Promise<void> | undefined;
+    let pendingDays: readonly DailyContribution[] | undefined;
+    let expiresAt = Infinity;
     const mountEmptyField = () => {
       city = renderer!.createLandscape(cityHost, [], (_state, error) => {
         if (!active || controller !== request) return;
@@ -217,19 +222,25 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       if (!active || !host.isConnected) return;
       const field = mountEmptyField();
       request.signal.addEventListener("abort", () => field.dispose(), { once: true });
-      const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
-        if (request.signal.aborted) return;
-        if (result.warning) warnings.add(result.warning);
-        const available = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
-        setStatus(() => t("readingRange", [range]));
-        painting = painting.then(async () => {
-          if (!active || controller !== request || request.signal.aborted) return;
-          await field.updateDays(available);
-        }).catch(error => {
+      const paint = async () => {
+        try {
+          while (pendingDays && active && controller === request && !request.signal.aborted) {
+            const latest = pendingDays; pendingDays = undefined;
+            await field.updateDays(latest);
+          }
+        } catch (error) {
           if (request.signal.aborted) return;
           renderFailure = error instanceof Error ? error : new Error("城市素材加载失败，请重试。");
           request.abort();
-        });
+        } finally { painting = undefined; }
+      };
+      const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
+        if (request.signal.aborted) return;
+        if (result.warning) warnings.add(result.warning);
+        expiresAt = Math.min(expiresAt, result.expiresAt);
+        pendingDays = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
+        setStatus(() => t("readingRange", [range]));
+        painting ??= paint();
       });
       await painting;
       if (renderFailure) throw renderFailure;
@@ -240,6 +251,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
       setSummary(() => t("totalContributions", [numberText(language, total)]));
+      if (context.viewer.state === "known") reusable = { context, range, expiresAt, status: statusMessage, summary: summaryMessage };
     } catch (error) {
       if (!active || controller !== request) return;
       const cancelled = request.signal.aborted && !renderFailure;
@@ -274,7 +286,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   const deactivate = () => {
     active = false; controller?.abort(); controller = undefined; collapse(false);
-    resetResult(); more.open = false; retry.hidden = true; setStatus(() => "");
+    cityHost.hidden = true;
+    if (reusable && city) { city.setVisible(false); city.skip(); }
+    else resetResult();
+    setSummary(() => "");
+    more.open = false; retry.hidden = true; setStatus(() => "");
     get<HTMLElement>("#identity").textContent = ""; setBusy(false);
   };
   const setLanguage = (next: Language, selected: LanguagePreference) => {
@@ -293,8 +309,29 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   setLanguage(language, preference);
   return {
     setLanguage,
-    async activate() { if (disposed || active) return; active = true; await load(false); },
+    async activate() {
+      if (disposed || active) return;
+      active = true;
+      const nextContext = currentContext(), cached = reusable, field = city;
+      if (!cached || !field || cached.range !== selectedRange() || Date.now() >= cached.expiresAt ||
+          nextContext.viewer.state === "unknown" || !sameContext(cached.context, nextContext)) {
+        await load(false); return;
+      }
+      const request = new AbortController(); controller = request; setBusy(true); retry.hidden = true;
+      setStatus(() => t("readingData"));
+      try {
+        await confirmViewer(nextContext, request.signal);
+        request.signal.throwIfAborted();
+        if (!active || disposed || controller !== request) return;
+        if (!sameContext(nextContext, currentContext())) throw new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
+        context = nextContext; cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
+      } catch (error) {
+        if (!active || controller !== request) return;
+        resetResult(); cityHost.hidden = false; retry.hidden = false;
+        setStatus(() => error instanceof Error ? externalText(language, error.message) : t("readFailedDetail"));
+      } finally { if (controller === request) { controller = undefined; setBusy(false); } }
+    },
     deactivate,
-    dispose() { if (disposed) return; deactivate(); disposed = true; document.removeEventListener("pointerdown", outsidePointer, true); document.removeEventListener("keydown", escapeMenu, true); shadow.replaceChildren(); controls.replaceChildren(); },
+    dispose() { if (disposed) return; deactivate(); resetResult(); disposed = true; document.removeEventListener("pointerdown", outsidePointer, true); document.removeEventListener("keydown", escapeMenu, true); shadow.replaceChildren(); controls.replaceChildren(); },
   };
 }
