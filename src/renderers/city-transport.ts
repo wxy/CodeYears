@@ -2,6 +2,7 @@ import catalog from './city-baked-catalog.json';
 import type { CitySceneItem } from './city-view';
 import type { CityVehicle } from './city-vehicles';
 import type { CityBridge } from './city-road-network';
+import { CITY_PAINTED_BRIDGE_ELEVATION } from './city-bridges';
 
 export interface CityTrafficSignal {x:number;z:number;heads:('x'|'z')[]}
 
@@ -18,6 +19,6 @@ export function planCityTransport(vehicles:readonly CityVehicle[],signals:readon
       return item(`transport-${vehicle.kind}-${['xp','zp','xm','zm'][angle]}`,vehicle.x,vehicle.z);
     }),
     ...signals.map(signal=>item(`transport-signal-${signal.heads.length>1?'dual':signal.heads[0]}`,signal.x,signal.z)),
-    ...bridges.map(bridge=>item('transport-bridge-arch',(bridge.from[0]+bridge.to[0])/2,(bridge.from[1]+bridge.to[1])/2)),
+    ...bridges.map(bridge=>({...item('transport-bridge-arch',(bridge.from[0]+bridge.to[0])/2,(bridge.from[1]+bridge.to[1])/2),elevation:CITY_PAINTED_BRIDGE_ELEVATION})),
   ];
 }

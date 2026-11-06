@@ -45,6 +45,9 @@ for(const [row,direction]of config.vehicles.rows.entries())for(const [column,veh
 const signals=await load('signals.png');
 for(const [index,id]of config.signals.ids.entries())await cell(signals,2,2,index%2,Math.floor(index/2),`transport-signal-${id}`,...config.signals.footprint,config.signals.maxPixels,config.signals.height);
 const bridge=await load('bridge.png'),spec=config.bridge,[w,d]=spec.footprint,[ax,ay]=spec.farRoadCenter,[bx,by]=spec.nearRoadCenter;
+// 原画的近端沥青竖直封口会盖住引桥，按标定只裁掉车行面封口，保留侧墙与栏杆。
+const bridgeContext=bridge.getContext('2d');bridgeContext.save();bridgeContext.globalCompositeOperation='destination-out';bridgeContext.beginPath();
+spec.nearEndFace.forEach(([x,y],index)=>index?bridgeContext.lineTo(x,y):bridgeContext.moveTo(x,y));bridgeContext.closePath();bridgeContext.fill();bridgeContext.restore();
 const a=(-d/2)/(bx-ax),slope=(by-ay)/(bx-ax),vertical=a/(spec.crossRoadSlope-slope),shear=-(spec.crossRoadSlope+slope)*vertical/2;
 const tx=w/4-a*ax,ty=w/8-shear*ax-vertical*ay;
 const points=[[0,0],[bridge.width,0],[bridge.width,bridge.height],[0,bridge.height]].map(([x,y])=>[a*x+tx,shear*x+vertical*y+ty]);

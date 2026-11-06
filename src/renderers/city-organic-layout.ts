@@ -5,6 +5,7 @@ import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from '.
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { planCityTransport, type CityTrafficSignal } from './city-transport';
 import type { CityBridge } from './city-road-network';
+import { createCityBridgeApproachPainter, CITY_PAINTED_BRIDGE_APPROACH } from './city-bridges';
 import { createCityRoadPainter, planRoadGeometry, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
@@ -224,7 +225,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       const offset=(.2+.4*(seed%(road.lanes/2)))*direction;
       const x=a[0]+dx*fraction+dz/length*offset,z=a[1]+dz*fraction-dx/length*offset;
       if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+.8)||
-        bridges.some(bridge=>Math.abs(x-bridge.from[0])<.8&&z>bridge.from[1]-.6&&z<bridge.to[1]+.6)||
+        bridges.some(bridge=>Math.abs(x-bridge.from[0])<.8&&z>bridge.from[1]-CITY_PAINTED_BRIDGE_APPROACH-.6&&z<bridge.to[1]+CITY_PAINTED_BRIDGE_APPROACH+.6)||
         labels.some(label=>Math.hypot(label.x-x,label.z-z)<cityRoadLabelLength(label.text,label.kind)/2+.65)||
         vehicles.some(v=>Math.hypot(v.x-x,v.z-z)<1.1))continue;
       vehicles.push({x,z,angle:Math.atan2(dz,dx)+(direction===-1?Math.PI:0),kind:kinds[(seed+(direction===1?0:1))%4],color:colors[seed%colors.length]});
@@ -381,6 +382,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
   });
   const paintLabels=createCityRoadLabels(plan.labels);
   const paintRoads=createCityRoadPainter(plan.scene.roadNetwork.roads,plan.scene.roadNetwork.junctions);
+  const paintApproaches=createCityBridgeApproachPainter(plan.scene.roadNetwork.bridges);
   const water=plan.rivers.map(({left,right,z,top,bottom})=>{
     const half=(bottom-top)/2-.8,samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
       const x=left+(right-left)*i/Math.ceil((right-left)*4),wave=.06*Math.sin(x*1.7+z);
@@ -416,6 +418,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
       context.fillStyle='#b2b49a';context.fill(river.stones);
     }
     paintRoads(context);
+    paintApproaches(context);
     paintLabels(context);
     context.restore();
   };

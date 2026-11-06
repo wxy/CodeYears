@@ -14,7 +14,7 @@ import { createCityOutskirtsPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } f
 import type { LandscapeView, LandscapeViewport } from './types';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
-export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean }
+export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number }
 export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
@@ -72,7 +72,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     if(progressive&&!sprite)return [];
     const offsetX=(item.w-sprite.nativeWidth*item.factor)/2,offsetZ=(item.d-sprite.nativeDepth*item.factor)/2;
     const [x,y]=project(item.x+offsetX,item.z+offsetZ);
-    const left=x+sprite.left*item.factor,top=y+sprite.top*item.factor;
+    const left=x+sprite.left*item.factor,top=y+sprite.top*item.factor-(item.elevation??0)*.5;
     // 所有成员已在本批真实days中，融合地块按首个成员进入呈现前缀时整体出现。
     return [{item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1],after:progressive&&item.parcel?Math.min(...item.parcel.indices)+1:0}];
   }).sort((a,b)=>a.groundY-b.groundY||a.left-b.left);
