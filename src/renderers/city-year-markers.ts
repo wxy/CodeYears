@@ -34,19 +34,21 @@ export interface CityRoadLabel {
   year:number;text:string;kind:'block'|'avenue'|'road';
   x:number;z:number;lanes:2|4|8;span:number;horizontal:boolean;side:-1|1;
 }
+export const CITY_ROAD_LABEL_SIZE={block:.56,avenue:.4,road:.28} as const;
+/** 等宽字形加固定横向压缩；规划预留相同的固定字幅，不按路段缩字。 */
+export const cityRoadLabelLength=(text:string,kind:CityRoadLabel['kind'])=>text.length*CITY_ROAD_LABEL_SIZE[kind]*.64*.8+.2;
 
 export function createCityRoadLabels(labels:readonly CityRoadLabel[]):(context:CanvasRenderingContext2D)=>void {
   return context=>{
-    for(const {text,kind,x,z,lanes,span,horizontal,side} of labels){
+    for(const {text,kind,x,z,lanes,horizontal,side} of labels){
       const half=lanes*.4/2,weight=kind==='block'?800:kind==='avenue'?700:600;
-      let font=Math.min(kind==='block'?1:kind==='avenue'?.6:.3,half*.45);
+      const font=CITY_ROAD_LABEL_SIZE[kind],offset=font+.06>half?0:side*half*.5;
       // 文字顺路面排列；占一侧路幅，避开中央分隔线和路缘线。
       context.save();context.transform(.5,.25,-.5,.25,0,0);
-      context.translate(x+(horizontal?0:side*half*.5),z+(horizontal?side*half*.5:0));
+      context.translate(x+(horizontal?0:offset),z+(horizontal?offset:0));
       if(!horizontal)context.rotate(-Math.PI/2);
-      context.font=`${weight} ${font}px system-ui`;
-      font*=Math.min(1,(span-.2)/context.measureText(text).width);
-      context.font=`${weight} ${font}px system-ui`;context.textAlign='center';context.textBaseline='middle';
+      context.scale(.8,1);
+      context.font=`${weight} ${font}px monospace`;context.textAlign='center';context.textBaseline='middle';
       const width=context.measureText(text).width;
       context.fillStyle='#626d68';context.fillRect(-width/2-.08,-font/2-.03,width+.16,font+.06);
       context.fillStyle='#e0e5d9';context.fillText(text,0,0);context.restore();

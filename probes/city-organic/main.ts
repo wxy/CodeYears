@@ -1,3 +1,4 @@
+import { CITY_ROAD_LABEL_SIZE, cityRoadLabelLength } from '../../src/renderers/city-year-markers';
 import { isoYearStart } from '../../src/data/iso-week';
 import type { DailyContribution } from '../../src/data/types';
 import { planCityScene, createCityView } from '../../src/renderers/city-view';
@@ -42,12 +43,14 @@ async function show(keepCamera=false){
   const roundaboutClearance=roundabouts.length?roundabouts.reduce((closest,j)=>plan.scene.items.reduce((distance,item)=>
     Math.min(distance,Math.hypot(Math.max(item.x-j.x,0,j.x-item.x-item.w),Math.max(item.z-j.z,0,j.z-item.z-item.d))-j.radius),closest),Infinity):null;
   const mapping=(scene:typeof before)=>JSON.stringify(scene.items.filter(i=>i.parcel?.count).map(i=>[i.id,i.x,i.z,i.w,i.d,i.parcel!.indices]));
-  audit={sample,years,threshold,complete:sample!=='partial'||filledPartial,inputDays:days.length,total:days.reduce((s,d)=>s+d.count,0),nonzero:nonzero.length,mapped:mapped.length,uniqueMapped:new Set(mapped).size,conserved:nonzero.length===mapped.length&&nonzero.every(i=>mapped.includes(i)),buildingMappingIdentical:mapping(before)===mapping(plan.scene),mappedTotal:plan.scene.items.reduce((s,i)=>s+(i.parcel?.count??0),0),regions:plan.regions.length,omittedZeroDays:plan.omitted.length,gaps:plan.gaps.map(({indices:_,...g})=>g),omittedDates:plan.omitted.map(i=>days[i].date),namingOriginYear:2006,roundaboutClearance,roadLabels:plan.labels,junctions:plan.scene.roadNetwork.junctions,candidateRoads:plan.scene.roadNetwork.roads.map(({id,points,lanes,closed,cornerRadius})=>({id,points,lanes,closed,cornerRadius})),rule:'ISO窗口逐日生成；稀疏=周二至四且i%3=0，count=1+i%23；密集=6+i*17%65；中断=150天零值，gap中点插入1；跨年从末年ISO起点前50天开始。未完成有31天缺口及未来未提供。边缘荒地=密集样本中末年13至39周置零，多年时首年首13周也置零。候选按整周裁切，外环取街区并集并圆角，小聚落双向两车道；片区连接与四向出口不代表贡献，年度主路仅保留共同区间。散点=窗口第20天、中点后20天、倒数30天各1次。Q3=2026末年、1+i*7%19，2025周年第182至272天置零；内部空档四车道并对齐年度主路，主路接环路用紧凑环岛。'};
+  audit={sample,years,threshold,complete:sample!=='partial'||filledPartial,inputDays:days.length,total:days.reduce((s,d)=>s+d.count,0),nonzero:nonzero.length,mapped:mapped.length,uniqueMapped:new Set(mapped).size,conserved:nonzero.length===mapped.length&&nonzero.every(i=>mapped.includes(i)),buildingMappingIdentical:mapping(before)===mapping(plan.scene),mappedTotal:plan.scene.items.reduce((s,i)=>s+(i.parcel?.count??0),0),regions:plan.regions.length,omittedZeroDays:plan.omitted.length,gaps:plan.gaps.map(({indices:_,...g})=>g),omittedDates:plan.omitted.map(i=>days[i].date),namingOriginYear:2006,roundaboutClearance,labelSizes:CITY_ROAD_LABEL_SIZE,labelFits:plan.labels.every(l=>l.span>=cityRoadLabelLength(l.text,l.kind)),signals:plan.signals,vehicles:plan.scene.roadNetwork.vehicles,roadLabels:plan.labels,junctions:plan.scene.roadNetwork.junctions,candidateRoads:plan.scene.roadNetwork.roads.map(({id,points,lanes,closed,cornerRadius})=>({id,points,lanes,closed,cornerRadius})),rule:'ISO窗口逐日生成；稀疏=周二至四且i%3=0，count=1+i%23；密集=6+i*17%65；中断=150天零值，gap中点插入1；跨年从末年ISO起点前50天开始。未完成有31天缺口及未来未提供。边缘荒地=密集样本中末年13至39周置零，多年时首年首13周也置零。候选按整周裁切，外环取街区并集并圆角，小聚落双向两车道；片区连接与四向出口不代表贡献，年度主路仅保留共同区间。散点=窗口第20天、中点后20天、倒数30天各1次。Q3=2026末年、1+i*7%19，2025周年第182至272天置零；内部空档四车道并对齐年度主路，主路接环路用紧凑环岛。'};
   document.querySelector('#audit')!.textContent=JSON.stringify(audit,null,2);
   document.querySelector('#status')!.textContent=`${days.length} 天 / ${audit.total} 次 · 省略显示 ${plan.omitted.length} 个零值日期 · ${plan.gaps.length} 段长期空档 · ${sample!=='partial'||filledPartial?'已规划':'未完成快照：同一规划，未知周保留空位'}`;
   try{
     images=await loadCityImages(new URL('/assets/city-runtime/',location.href).href,[...new Set([...before.keys,...plan.scene.keys])],request.signal);
     if(request.signal.aborted)return;
+    audit.texture={pixels:[images['natural-ground'].canvas.width,images['natural-ground'].canvas.height],world:[images['natural-ground'].width,images['natural-ground'].height]};
+    document.querySelector('#audit')!.textContent=JSON.stringify(audit,null,2);
     views=[createCityView(before,images),createCityView(plan.scene,images,undefined,createOrganicGround(plan))];
     views.forEach((view,i)=>{
       document.querySelector(i?'#new':'#old')!.replaceChildren(view.canvas);

@@ -619,10 +619,10 @@
     "file": "natural-ground.png",
     "left": 0,
     "top": 0,
-    "width": 128,
-    "height": 128,
-    "nativeWidth": 128,
-    "nativeDepth": 128,
+    "width": 32,
+    "height": 32,
+    "nativeWidth": 32,
+    "nativeDepth": 32,
     "baselineHeight": 0,
     "sampleId": "natural-ground"
   }

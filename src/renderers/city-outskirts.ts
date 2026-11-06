@@ -16,14 +16,14 @@ export async function loadCityOutskirtsImages(base:string,signal?:AbortSignal):P
       try {
         signal?.throwIfAborted();
         if(id==='natural-ground'){
-          const canvas=document.createElement('canvas');canvas.width=canvas.height=512;
-          images[id]={canvas,left:0,top:0,width:128,height:128,nativeWidth:128,nativeDepth:128,baselineHeight:0,sampleId:id};
+          const canvas=document.createElement('canvas');canvas.width=canvas.height=2048;
+          images[id]={canvas,left:0,top:0,width:32,height:32,nativeWidth:32,nativeDepth:32,baselineHeight:0,sampleId:id};
           const context=canvas.getContext('2d');if(!context)throw new Error('无法创建自然地面缓存。');
           context.imageSmoothingQuality='high';
-          // 镜像接续保留图边连续；只构造一次512px缓存，不生成无限地块。
+          // 保留源图细节后镜像接续；32格的2048px缓存，不生成无限地块。
           for(let x=0;x<2;x++)for(let y=0;y<2;y++){
-            context.save();context.translate(x?512:0,y?512:0);context.scale(x?-1:1,y?-1:1);
-            context.drawImage(source.clean,0,0,256,256);context.restore();
+            context.save();context.translate(x?2048:0,y?2048:0);context.scale(x?-1:1,y?-1:1);
+            context.drawImage(source.clean,0,0,1024,1024);context.restore();
           }
           continue;
         }

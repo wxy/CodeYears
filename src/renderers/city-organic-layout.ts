@@ -1,14 +1,16 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
 import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP } from './city-layout';
-import { createCityRoadLabels, type CityRoadLabel } from './city-year-markers';
+import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
+import { createCityVehiclePainter, type CityVehicle, type CityVehicleKind } from './city-vehicles';
+import { createCityTrafficSignalPainter, type CityTrafficSignal } from './city-traffic-signals';
 import { createCityRoadPainter, planRoadGeometry, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
 export interface OrganicRegion { block: number; segment: number; left: number; right: number }
 export interface OrganicCity {
-  scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[]; labels:CityRoadLabel[];
+  scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[]; labels:CityRoadLabel[]; signals:CityTrafficSignal[];
   rivers: { left: number; right: number; z: number }[];
 }
 
@@ -196,9 +198,35 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       !junctions.some(j=>Math.hypot(j.x-x,j.z-z)<=j.radius))junctions.push({x,z,radius:.9});
   }
   const labels=planRoadLabels(original,regions,roads,junctions,namingOriginYear);
-  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges:[],vehicles:[]}};
+  const straights=roads.flatMap(road=>planRoadGeometry(road).straights.map(edge=>({...edge,road})));
+  const signals:CityTrafficSignal[]=junctions.filter(j=>j.roundabout).map(({x,z})=>({x,z,heads:['x','z']}));
+  for(const item of original.items)if(item.id.startsWith('traffic-signal')){
+    const x=item.x+.125,z=item.z+.125;
+    if(junctions.some(j=>j.roundabout&&Math.hypot(j.x-x,j.z-z)<j.radius+.6))continue;
+    if(straights.some(({a,b,road})=>Math.hypot(x-Math.max(Math.min(a[0],b[0]),Math.min(Math.max(a[0],b[0]),x)),
+      z-Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z)))<=road.lanes*.4/2+.35))
+      signals.push({x,z,heads:[item.id==='traffic-signal-w'?'x':'z']});
+  }
+  // 只在最终圆角直道的车道内布车，避开环岛、文字和彼此；缩放不重新布置。
+  const vehicles:CityVehicle[]=[],kinds:CityVehicleKind[]=['sedan','suv','van','bus'];
+  const colors=['#b65f4f','#52768b','#dbbd62','#e1ded1','#647e70','#7d6b88'];
+  for(const {a,b,road} of straights){
+    const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);if(length<3)continue;
+    let seed=2166136261;for(const c of road.id)seed=Math.imul(seed^c.charCodeAt(0),16777619)>>>0;
+    for(const direction of [1,-1]){
+      if(vehicles.length>=180)break;
+      const fraction=direction===1?.32+(seed%13)/100:.62+(seed%11)/100;
+      const offset=(.2+.4*(seed%(road.lanes/2)))*direction;
+      const x=a[0]+dx*fraction+dz/length*offset,z=a[1]+dz*fraction-dx/length*offset;
+      if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+.8)||
+        labels.some(label=>Math.hypot(label.x-x,label.z-z)<cityRoadLabelLength(label.text,label.kind)/2+.65)||
+        vehicles.some(v=>Math.hypot(v.x-x,v.z-z)<1.1))continue;
+      vehicles.push({x,z,angle:Math.atan2(dz,dx)+(direction===-1?Math.PI:0),kind:kinds[(seed+(direction===1?0:1))%4],color:colors[seed%colors.length]});
+    }
+  }
+  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges:[],vehicles}};
   const shown=new Set(items.flatMap(item=>item.parcel!.indices));
-  return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,rivers};
+  return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,signals,rivers};
 }
 
 /** 所有标识以已完成的真实路段定位，编号基于主页最早可展示年份。 */
@@ -223,8 +251,14 @@ function planRoadLabels(scene:CityScene,regions:readonly OrganicRegion[],roads:r
     return spans.filter(([start,end])=>end-start>.2).map(([start,end])=>({x:horizontal?(start+end)/2:at,z:horizontal?at:(start+end)/2,span:end-start,lanes:road.lanes}));
   };
   const place=(year:number,text:string,kind:CityRoadLabel['kind'],horizontal:boolean,side:-1|1,spaces:ReturnType<typeof free>)=>{
-    const best=spaces.sort((a,b)=>b.span-a.span||a.x-b.x||a.z-b.z)[0];
-    if(best)labels.push({year,text,kind,horizontal,side,...best});
+    const fits=spaces.filter(space=>space.span>=cityRoadLabelLength(text,kind)).sort((a,b)=>b.span-a.span||a.x-b.x||a.z-b.z);
+    for(const space of kind==='block'?fits.slice(0,1):fits){
+      const copies=Math.max(1,Math.floor(space.span/10));
+      for(let i=0;i<copies;i++){
+        const shift=space.span*((i+.5)/copies-.5);
+        labels.push({year,text,kind,horizontal,side,...space,x:space.x+(horizontal?shift:0),z:space.z+(horizontal?0:shift),span:space.span/copies});
+      }
+    }
   };
   districts.forEach((district,block)=>{
     // 街区整体右侧：选择该年份最靠右的保留区域及其外环。
@@ -340,6 +374,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
   });
   const paintLabels=createCityRoadLabels(plan.labels);
   const paintRoads=createCityRoadPainter(plan.scene.roadNetwork.roads,plan.scene.roadNetwork.junctions);
+  const paintVehicles=createCityVehiclePainter(plan.scene.roadNetwork.vehicles),paintSignals=createCityTrafficSignalPainter(plan.signals);
   return context=>{
     context.save();
     for(const path of paths){context.fillStyle='#b3b4a2';context.fill(path);context.strokeStyle='#d2cbb6';context.lineWidth=.12;context.stroke(path)}
@@ -350,6 +385,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
     }
     paintRoads(context);
     paintLabels(context);
+    paintVehicles(context);paintSignals(context);
     context.restore();
   };
 }
