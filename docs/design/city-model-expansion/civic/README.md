@@ -35,7 +35,7 @@ npm ci
 npx vite --config probes/city-models-civic/vite.config.ts
 ```
 
-打开 `http://127.0.0.1:4187/`，选择1/3/20年，切换候选隔离/完整混排，依次全景、150%、当前最大倍率，拖动至候选；页面下方提供透明棋盘上的全部实际PNG，审计区显示实际使用次数、CSS/DPR尺寸、守恒与映射。预览只替换兼容占地的外观，不重排原 parcel。
+打开 `http://127.0.0.1:4191/`，选择1/3/20年，切换候选隔离/完整混排，依次全景、150%、当前最大倍率，拖动至候选；页面下方提供透明棋盘上的全部实际PNG，审计区显示实际使用次数、CSS/DPR尺寸、守恒与映射。预览只替换兼容占地的外观，不重排原 parcel。
 
 `?bake` 是离线制作入口，不用于正常验收，结果保存在 `window.civicBake`；正式预览只读小PNG，不重新烘焙源板。复现制作可用 `node probes/city-models-civic/bake-candidates.cjs`（先启动上方Vite服务，需要已安装的 Playwright：`PLAYWRIGHT_MODULE=/已安装/playwright-core CHROMIUM_PATH=/浏览器路径 node probes/city-models-civic/bake-candidates.cjs`；不新增项目依赖）。
 

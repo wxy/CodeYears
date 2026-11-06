@@ -1,3 +1,8 @@
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
-export default defineConfig({root:fileURLToPath(new URL('.',import.meta.url)),publicDir:fileURLToPath(new URL('../../public',import.meta.url)),server:{host:'127.0.0.1',port:4187,strictPort:true},build:{outDir:'/tmp/codeyears-civic-build',emptyOutDir:false}});
+import { parseArgs } from 'node:util';
+export default defineConfig(({command})=>{
+ const {values}=parseArgs({options:{outDir:{type:'string'}},strict:false,allowPositionals:true});
+ if(command==='build'&&!values.outDir)throw new Error('请用 --outDir 指定系统临时目录');
+ return {root:fileURLToPath(new URL('.',import.meta.url)),publicDir:fileURLToPath(new URL('../../public',import.meta.url)),server:{host:'127.0.0.1',port:4191,strictPort:true},build:{outDir:typeof values.outDir==='string'?values.outDir:undefined,emptyOutDir:false,copyPublicDir:false}};
+});

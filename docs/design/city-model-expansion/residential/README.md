@@ -9,7 +9,7 @@ npm ci
 npx vite --config probes/city-models-residential/vite.config.ts
 ```
 
-打开 http://127.0.0.1:4187/ 。选择1、3、20年，依次全景、150%、当前最大倍率；拖动平移、滚轮缩放。下方八张透明单图带固定192 CSS px/格的地面轮廓。正式 `createCityView` 保持原深度排序、预滤波、倍率和DPR上限；只在此入口按相同band/W/D替换地块贴图，factor固定1。
+打开 http://127.0.0.1:4193/ 。选择1、3、20年，依次全景、150%、当前最大倍率；拖动平移、滚轮缩放。下方八张透明单图带固定192 CSS px/格的地面轮廓。正式 `createCityView` 保持原深度排序、预滤波、倍率和DPR上限；只在此入口按相同band/W/D替换地块贴图，factor固定1。
 
 | ID | 造型 | 占地 | band / 主墙参考高度 |
 | --- | --- | --- | --- |
