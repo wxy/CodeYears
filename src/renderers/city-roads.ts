@@ -1,6 +1,6 @@
 export type RoadPoint=[number,number];
 export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;closed?:boolean;leftShoulder?:number;cornerRadius?:number}
-export interface CityRoadJunction {x:number;z:number;radius:number}
+export interface CityRoadJunction {x:number;z:number;radius:number;roundabout?:boolean}
 export const CITY_LANE_WIDTH=.4;
 
 /** 绘制、接路和路面年份共用圆角后的真实切线，避免各自猜测拐角位置。 */
@@ -25,13 +25,14 @@ export function planRoadGeometry(route:CityRoadRoute) {
 export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:readonly CityRoadJunction[]):(context:CanvasRenderingContext2D)=>void {
   const surfaces:{path:Path2D;width:number}[]=[];
   const markings:{path:Path2D;color:string;width:number;dash:number[];phase:number}[]=[];
+  const geometry=routes.map(route=>({route,...planRoadGeometry(route)}));
   // 路口只清除两条实际相交车行面的重叠区；圆形半径会误伤邻近弯道。
-  const crossings=junctions.map(({x,z})=>{
+  const roundabouts=junctions.filter(j=>j.roundabout);
+  const crossings=junctions.filter(j=>!j.roundabout).map(({x,z})=>{
     let left=x,right=x,top=z,bottom=z;
-    for(const route of routes){
-      const count=route.closed?route.points.length:route.points.length-1;
-      for(let i=0;i<count;i++){
-        const a=route.points[i],b=route.points[(i+1)%route.points.length],half=route.lanes*CITY_LANE_WIDTH/2,shoulder=route.leftShoulder??0;
+    for(const {route,straights} of geometry){
+      for(const {a,b} of straights){
+        const half=route.lanes*CITY_LANE_WIDTH/2,shoulder=route.leftShoulder??0;
         if(a[1]===b[1]&&Math.abs(z-a[1])<1e-6&&x>=Math.min(a[0],b[0])-1e-6&&x<=Math.max(a[0],b[0])+1e-6){
           const extra=Math.sign(b[0]-a[0])*shoulder;top=Math.min(top,z-half+Math.min(0,extra));bottom=Math.max(bottom,z+half+Math.max(0,extra));
         }
@@ -42,8 +43,7 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
     }
     return {left,right,top,bottom};
   });
-  for(const route of routes){
-    const {points,count,directions,radii}=planRoadGeometry(route);
+  for(const {route,points,count,directions,radii} of geometry){
     if(points.length<2)continue;
     // 单侧拓宽只用于当前两点直线支路；行车中心与贯通轴保持原位。
     const shoulder=route.leftShoulder??0,shift=shoulder/2,first=directions[0];
@@ -84,6 +84,15 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
         const a=parallel[i],b=parallel[(i+1)%parallel.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
         if(length<1e-6)continue;
         const cuts:[number,number][]=[];
+        for(const {x,z,radius} of roundabouts){
+          // 对实际圆形车行面裁段，避免矩形清线区误伤附近弯道。
+          const ox=a[0]-x,oz=a[1]-z,dot=ox*dx+oz*dz,square=length*length;
+          const discriminant=dot*dot-square*(ox*ox+oz*oz-radius*radius);
+          if(discriminant>0){
+            const root=Math.sqrt(discriminant),start=Math.max(0,(-dot-root)/square),end=Math.min(1,(-dot+root)/square);
+            if(end>start)cuts.push([start,end]);
+          }
+        }
         for(const crossing of crossings){
           let start=0,end=1;
           for(const [origin,delta,min,max]of [[a[0],dx,crossing.left,crossing.right],[a[1],dz,crossing.top,crossing.bottom]]){
@@ -116,6 +125,12 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
       }
     }
   }
+  const circles=roundabouts.map(({x,z,radius})=>{
+    const outer=new Path2D(),island=new Path2D(),edge=new Path2D();
+    const inner=radius*.28;
+    outer.arc(x,z,radius,0,Math.PI*2);island.arc(x,z,inner,0,Math.PI*2);edge.arc(x,z,inner+.07,0,Math.PI*2);
+    return {outer,island,edge};
+  });
   return context=>{
     context.save();
     // 用世界坐标实际宽度描边，再整体做固定2:1等轴测投影。
@@ -123,8 +138,14 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
     // 所有路缘先画、所有路面随后覆盖交叉处，最后才提交标线。
     context.strokeStyle='#a7b0a1';for(const {path,width}of surfaces){context.lineWidth=width+.12;context.stroke(path)}
     context.strokeStyle='#626d68';for(const {path,width}of surfaces){context.lineWidth=width;context.stroke(path)}
+    context.fillStyle='#626d68';for(const {outer}of circles)context.fill(outer);
     context.lineCap='butt';
     for(const marking of markings){context.strokeStyle=marking.color;context.lineWidth=marking.width;context.setLineDash(marking.dash);context.lineDashOffset=marking.phase;context.stroke(marking.path)}
+    context.setLineDash([]);context.lineWidth=.035;
+    for(const {island,edge}of circles){
+      context.fillStyle='#8fa17b';context.fill(island);context.strokeStyle='#d2cbb6';context.stroke(island);
+      context.strokeStyle='#d6b96d';context.stroke(edge);
+    }
     context.restore();
   };
 }
