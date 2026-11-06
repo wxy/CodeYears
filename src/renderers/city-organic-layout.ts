@@ -1,7 +1,7 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
 import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP } from './city-layout';
-import { createCityRoadPainter, type CityRoadRoute, type CityRoadJunction } from './city-roads';
+import { createCityRoadPainter, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
@@ -63,7 +63,13 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     const district=original.layout.districts[region.block], weeks=original.weekly.districts[region.block].weeks;
     if(region.right>=district.weekX(weeks-1)+1)region.right=original.width;
   }
-  // 年度主路沿原中心线布置，同轴重叠区间先合并，避免每年各画一条平行环路。
+  // 外环取所有街区的并集边界，不能逐年围圈，否则边缘空档仍被道路圈住。
+  const ringHalf=1.6, side=CITY_ROAD_WIDTH/2;
+  const footprints=regions.map(region=>{
+    const z=original.layout.districts[region.block].z;
+    return {left:region.left-ringHalf,right:region.right+ringHalf,top:z-ringHalf,bottom:z+7+ringHalf};
+  });
+  // 年度主路只保留相邻街区共用的部分，外露部分由八车道外环承担。
   const lines=new Map<string,{horizontal:boolean;at:number;lanes:2|4;spans:{start:number;end:number}[]}>();
   const fixed=(value:number)=>Math.round(value*1000)/1000;
   const road=(horizontal:boolean,at:number,start:number,end:number,lanes:2|4)=>{
@@ -71,25 +77,63 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     let line=lines.get(key);if(!line){line={horizontal,at,lanes,spans:[]};lines.set(key,line)}
     line.spans.push({start:fixed(start),end:fixed(end)});
   };
-  const side=CITY_ROAD_WIDTH/2;
   for(const region of regions){
-    const z=original.layout.districts[region.block].z, top=z-CITY_YEAR_GAP/2,bottom=z+7+CITY_YEAR_GAP/2;
-    for(const at of [top,bottom])road(true,at,region.left-side,region.right+side,4);
-    for(const x of new Set([region.left-side,region.right+side,...CITY_QUARTER_ROADS.map(x=>x+side)])){
-      if(x>=region.left-side&&x<=region.right+side)road(false,x,top,bottom,2);
+    const z=original.layout.districts[region.block].z;
+    for(const x of CITY_QUARTER_ROADS.map(x=>x+side)){
+      if(x>region.left&&x<region.right)road(false,x,z-ringHalf,z+7+ringHalf,2);
     }
   }
   const rivers: {left:number;right:number;z:number}[]=[];
   for(const region of regions) for(const next of regions) {
-    if(next.block!==region.block+1 || next.segment!==region.segment)continue;
+    if(next.block!==region.block+1)continue;
     const beforeZ=original.layout.districts[region.block].z, afterZ=original.layout.districts[next.block].z;
+    const left=Math.max(region.left,next.left),right=Math.min(region.right,next.right);
+    if(right<=left)continue;
     if(afterZ-beforeZ>10) {
-      const left=Math.max(region.left,next.left),right=Math.min(region.right,next.right);
-      if(right>left)rivers.push({left,right,z:(beforeZ+7+afterZ)/2});
-      for(const x of CITY_QUARTER_ROADS.map(x=>x+side))if(x>=left&&x<=right)road(false,x,beforeZ+7+CITY_YEAR_GAP/2,afterZ-CITY_YEAR_GAP/2,2);
-    }
+      if(next.segment!==region.segment)continue;
+      rivers.push({left,right,z:(beforeZ+7+afterZ)/2});
+      // 景观带属于城内；外环沿两岸共同范围跨过它，不给每五年另围一圈。
+      footprints.push({left:left-ringHalf,right:right+ringHalf,top:beforeZ+7,bottom:afterZ});
+      road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
+      road(true,afterZ-CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
+      for(const x of CITY_QUARTER_ROADS.map(x=>x+side))if(x>left&&x<right)road(false,x,beforeZ+7+CITY_YEAR_GAP/2,afterZ-CITY_YEAR_GAP/2,2);
+    } else road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
+  }
+  // 坐标压缩后只沿占用格与外部的分界走线；内部共边不会进入外环。
+  const xs=[...new Set(footprints.flatMap(r=>[fixed(r.left),fixed(r.right)]))].sort((a,b)=>a-b);
+  const zs=[...new Set(footprints.flatMap(r=>[fixed(r.top),fixed(r.bottom)]))].sort((a,b)=>a-b);
+  const columns=xs.length-1, rows=zs.length-1;
+  const occupied=new Set<number>();
+  for(const rect of footprints){
+    const left=xs.indexOf(fixed(rect.left)),right=xs.indexOf(fixed(rect.right));
+    const top=zs.indexOf(fixed(rect.top)),bottom=zs.indexOf(fixed(rect.bottom));
+    for(let z=top;z<bottom;z++)for(let x=left;x<right;x++)occupied.add(z*columns+x);
+  }
+  const boundary=new Map<string,RoadPoint>();
+  const pointKey=([x,z]:RoadPoint)=>`${x}:${z}`;
+  const edge=(a:RoadPoint,b:RoadPoint)=>boundary.set(pointKey(a),b);
+  const filled=(x:number,z:number)=>x>=0&&x<columns&&z>=0&&z<rows&&occupied.has(z*columns+x);
+  for(let z=0;z<rows;z++)for(let x=0;x<columns;x++)if(filled(x,z)){
+    if(!filled(x,z-1))edge([xs[x],zs[z]],[xs[x+1],zs[z]]);
+    if(!filled(x+1,z))edge([xs[x+1],zs[z]],[xs[x+1],zs[z+1]]);
+    if(!filled(x,z+1))edge([xs[x+1],zs[z+1]],[xs[x],zs[z+1]]);
+    if(!filled(x-1,z))edge([xs[x],zs[z+1]],[xs[x],zs[z]]);
   }
   const roads:CityRoadRoute[]=[];
+  while(boundary.size){
+    const start=boundary.keys().next().value!,points:RoadPoint[]=[];
+    let key=start;
+    do{
+      const point=key.split(':').map(Number) as RoadPoint, next=boundary.get(key)!;
+      points.push(point);boundary.delete(key);key=pointKey(next);
+    }while(key!==start);
+    const corners=points.filter((p,i)=>{
+      const a=points[(i+points.length-1)%points.length],b=points[(i+1)%points.length];
+      return (p[0]-a[0])*(b[1]-p[1])!==(p[1]-a[1])*(b[0]-p[0]);
+    });
+    const area=corners.reduce((sum,p,i)=>{const q=corners[(i+1)%corners.length];return sum+p[0]*q[1]-q[0]*p[1]},0);
+    roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes:area>0?8:2,closed:true,points:corners});
+  }
   for(const line of lines.values()){
     const merged:{start:number;end:number}[]=[];
     for(const span of line.spans.sort((a,b)=>a.start-b.start)){
@@ -98,16 +142,19 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     for(const span of merged)roads.push({id:`organic-${roads.length}`,lanes:line.lanes,points:line.horizontal?[[span.start,line.at],[span.end,line.at]]:[[line.at,span.start],[line.at,span.end]]});
   }
   const junctions:CityRoadJunction[]=[];
-  for(const a of roads)if(a.points[0][1]===a.points[1][1])for(const b of roads)if(b.points[0][0]===b.points[1][0]){
-    const x=b.points[0][0],z=a.points[0][1];
-    if(x>=a.points[0][0]&&x<=a.points[1][0]&&z>=b.points[0][1]&&z<=b.points[1][1])junctions.push({x,z,radius:.9});
+  const roadSegments=roads.flatMap(route=>Array.from({length:route.points.length-(route.closed?0:1)},(_,i)=>({
+    a:route.points[i],b:route.points[(i+1)%route.points.length],route,
+  })));
+  for(const {a,b,route} of roadSegments)if(a[1]===b[1])for(const {a:c,b:d,route:other} of roadSegments)if(c[0]===d[0]&&route!==other){
+    const x=c[0],z=a[1];
+    if(x>=Math.min(a[0],b[0])&&x<=Math.max(a[0],b[0])&&z>=Math.min(c[1],d[1])&&z<=Math.max(c[1],d[1]))junctions.push({x,z,radius:.9});
   }
   const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges:[],vehicles:[]}};
   const shown=new Set(items.flatMap(item=>item.parcel!.indices));
   return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,rivers,settled:true};
 }
 
-/** 地块保留完整星期行；年度主路只绘制一次，共用道路不被分成两条环路。 */
+/** 地块保留完整星期行；外环沿城市并集内收，年度道路只保留共用部分。 */
 export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderingContext2D)=>void {
   const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
   const paths=plan.regions.map(region=>{
