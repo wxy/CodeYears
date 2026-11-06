@@ -4,7 +4,6 @@ import type { TimelineState } from "../timeline/types";
 import { closeCityImages, loadCityImages, type CityImages } from "./city-assets";
 import { createCityView, planCityScene, type CityScene } from "./city-view";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
-import { CITY_OUTSKIRT_IDS } from "./city-outskirts";
 import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface ContributionLandscape {
@@ -16,8 +15,8 @@ export interface ContributionLandscape {
   resume(): void;
   skip(): void;
   replay(): void;
-  /** 渐进City：交换画面后resolve；complete表示源年读取完成，未来/缺失日期仍预留。 */
-  updateDays(days: readonly DailyContribution[], complete?: boolean): Promise<void>;
+  /** 渐进City：该批素材就绪并交换画面后resolve，不等待短填入动画。 */
+  updateDays(days: readonly DailyContribution[]): Promise<void>;
   dispose(): void;
 }
 
@@ -65,19 +64,21 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     const token=++generation;layer?.dispose();layer=undefined;timeline.pause();anchored=false;blocked=false;preparationError=undefined;notify();
     try{
       if(view==="city"){
-        cityScene??=planCityScene(days,cityWonders,reservedYears);
         if(progressiveCity){
-          images={};layer=createCityView(cityScene,images,0);configureCanvas(layer);host.append(layer.canvas);
+          const plan=planOrganicCity(days,90,reservedYears!,cityWonders),ground=createOrganicGround(plan);
+          cityScene=plan.scene;
+          images={};layer=createCityView(cityScene,images,0,ground);configureCanvas(layer);host.append(layer.canvas);
           layer.draw(1,viewport);labelCity();schedule();notify();
           // 场地先同步显示；本地自然图片独立于网络贡献加载，且与后续批次共用。
-          assetPromise=loadCityImages(assetBase,CITY_OUTSKIRT_IDS,assetAbort.signal).then(ready=>{
+          assetPromise=loadCityImages(assetBase,["natural-ground"],assetAbort.signal).then(ready=>{
             if(disposed){closeCityImages(ready);throw new DOMException('城市已关闭。','AbortError')}
             Object.assign(images!,ready);return ready;
           });
           await assetPromise;if(disposed||token!==generation)return;
-          const previous=layer;layer=createCityView(cityScene,images,0);previous.canvas.replaceWith(layer.canvas);previous.dispose();
+          const previous=layer;layer=createCityView(cityScene,images,0,ground);previous.canvas.replaceWith(layer.canvas);previous.dispose();
         }
         else{
+          cityScene??=planCityScene(days,cityWonders,reservedYears);
           assetPromise??=loadCityImages(assetBase,cityScene.keys,assetAbort.signal);const ready=await assetPromise;
           if(disposed||token!==generation)return;
           images=ready;layer=createCityView(cityScene,ready);
@@ -129,7 +130,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     resume(){if(disposed||blocked||state().status==="completed")return;playing=true;anchored=false;schedule()},
     skip(){if(disposed)return;playing=false;if(progressiveCity){revealedDays=currentDays.length;labelCity()}else timeline.skip();schedule();notify()},
     replay(){if(disposed||progressiveCity)return;timeline.replay(performance.now());timeline.pause();playing=true;anchored=false;schedule();notify()},
-    async updateDays(nextDays,complete=false){
+    async updateDays(nextDays){
       if(!progressiveCity)throw new Error("逐年填入仅适用于预留年份的City。");
       if(disposed)throw new DOMException("城市已关闭。","AbortError");
       const token=++generation;
@@ -137,9 +138,8 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       await new Promise<void>(resolve=>setTimeout(resolve,0));
       assetAbort.signal.throwIfAborted();
       if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
-      // 本机轮廓候选使用90天比较值；只有年度请求全部完成才退界。
-      const organic=complete?planOrganicCity(nextDays,90,true,reservedYears!,cityWonders):undefined;
-      const nextScene=organic?.scene??planCityScene(nextDays,cityWonders,reservedYears);
+      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders);
+      const nextScene=organic.scene;
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{
         await assetPromise;
@@ -150,7 +150,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         images??={};if(added)Object.assign(images,added);merged=true;
         const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
         const prefix=reduced?nextDays.length:Math.min(Math.floor(revealedDays),nextDays.length);
-        next=createCityView(nextScene,images,prefix,organic?createOrganicGround(organic):undefined);configureCanvas(next);
+        next=createCityView(nextScene,images,prefix,createOrganicGround(organic));configureCanvas(next);
         // 新层先完成一次绘制再交换，素材准备期间原图和取景始终保留。
         next.draw(nextDays.length?prefix/nextDays.length:1,viewport);
         const previous=layer;

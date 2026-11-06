@@ -29,13 +29,13 @@ export function createCityYearMarkers(layout: CityLayout): (context: CanvasRende
   };
 }
 
-/** 年份即道路名称；统一RD.格式，不随界面语言切换。 */
+/** 对应年份仅写在左侧直道路面，不另设路牌。 */
 export interface CityRoadYearLabel {year:number;x:number;z:number;lanes:2|4|8;span:number}
 
 export function createCityRoadYearLabels(labels:readonly CityRoadYearLabel[]):(context:CanvasRenderingContext2D)=>void {
   return context=>{
     for(const {year,x,z,lanes,span} of labels){
-      const name=`RD.${year}`,half=lanes*.4/2;
+      const name=String(year),half=lanes*.4/2;
       let font=Math.min(.88,half*.45);
       // 路面字沿外侧车流方向，留在一个方向的道路范围内，不覆盖中央分隔线。
       context.save();context.transform(.5,.25,-.5,.25,0,0);
@@ -46,14 +46,7 @@ export function createCityRoadYearLabels(labels:readonly CityRoadYearLabel[]):(c
       const width=context.measureText(name).width;
       context.fillStyle='#626d68';context.fillRect(-width/2-.08,-font/2-.03,width+.16,font+.06);
       context.fillStyle='#e0e5d9';context.fillText(name,0,0);context.restore();
-      // 小型路牌靠路缘落地，不再为年份另铺绿带或雕塑底座。
-      const postX=x-half-.35,px=(postX-z)*.5,py=(postX+z)*.25;
-      context.save();context.strokeStyle='#bbc5ba';context.lineWidth=.06;
-      context.beginPath();context.moveTo(px,py);context.lineTo(px,py-1.1);context.stroke();
-      context.translate(px,py-1.1);context.beginPath();context.roundRect(-1.3,-.38,2.6,.76,.1);
-      context.fillStyle='#345b4d';context.fill();context.strokeStyle='#c0cfc1';context.lineWidth=.045;context.stroke();
-      context.font='600 .46px system-ui';context.textAlign='center';context.textBaseline='middle';
-      context.fillStyle='#eef3e9';context.fillText(name,0,0);context.restore();
+
     }
   };
 }
