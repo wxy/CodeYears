@@ -27,6 +27,7 @@ async function show(keepCamera=false){
       if(sample==='gap'&&time===midpoint+75*86400000)count=1;
     }
     if(sample==='edge'&&((time>=isoYearStart(last)+91*86400000&&time<isoYearStart(last)+273*86400000)||(n>1&&time<start+91*86400000)))count=0;
+    if(sample==='islands')count=[20,Math.floor((end-start)/86400000/2)+20,Math.floor((end-start)/86400000)-30].includes(i)?1:0;
     if(sample==='zero')count=0;
     // 2025-09之后未提供；另有31天缺口；complete=false不作空闲推断。
     if(sample==='partial'&&!filledPartial&&(time>=Date.UTC(last,8,1)||(time>=Date.UTC(last,2,1)&&time<Date.UTC(last,3,1))))continue;
@@ -35,7 +36,7 @@ async function show(keepCamera=false){
   const before=planCityScene(days,true,years),plan=planOrganicCity(days,threshold,sample!=='partial'||filledPartial,years);
   const nonzero=days.flatMap((d,i)=>d.count>0?[i]:[]),mapped=plan.scene.items.flatMap(item=>item.parcel?.count?item.parcel.indices.filter(i=>days[i].count>0):[]);
   const mapping=(scene:typeof before)=>JSON.stringify(scene.items.filter(i=>i.parcel?.count).map(i=>[i.id,i.x,i.z,i.w,i.d,i.parcel!.indices]));
-  audit={sample,years,threshold,complete:plan.settled,inputDays:days.length,total:days.reduce((s,d)=>s+d.count,0),nonzero:nonzero.length,mapped:mapped.length,uniqueMapped:new Set(mapped).size,conserved:nonzero.length===mapped.length&&nonzero.every(i=>mapped.includes(i)),buildingMappingIdentical:mapping(before)===mapping(plan.scene),mappedTotal:plan.scene.items.reduce((s,i)=>s+(i.parcel?.count??0),0),regions:plan.regions.length,omittedZeroDays:plan.omitted.length,gaps:plan.gaps.map(({indices:_,...g})=>g),omittedDates:plan.omitted.map(i=>days[i].date),candidateRoads:plan.settled?plan.scene.roadNetwork.roads.map(({points,lanes})=>({points,lanes})):[],rule:'ISO窗口逐日生成；稀疏=周二至四且i%3=0，count=1+i%23；密集=6+i*17%65；中断=150天零值，gap中点插入1；跨年从末年ISO起点前50天开始。未完成有31天缺口及未来未提供。边缘荒地=密集样本中末年13至39周置零，多年时首年首13周也置零。候选按整周裁切，八车道外环取街区并集，年度主路仅保留共同区间。'};
+  audit={sample,years,threshold,complete:plan.settled,inputDays:days.length,total:days.reduce((s,d)=>s+d.count,0),nonzero:nonzero.length,mapped:mapped.length,uniqueMapped:new Set(mapped).size,conserved:nonzero.length===mapped.length&&nonzero.every(i=>mapped.includes(i)),buildingMappingIdentical:mapping(before)===mapping(plan.scene),mappedTotal:plan.scene.items.reduce((s,i)=>s+(i.parcel?.count??0),0),regions:plan.regions.length,omittedZeroDays:plan.omitted.length,gaps:plan.gaps.map(({indices:_,...g})=>g),omittedDates:plan.omitted.map(i=>days[i].date),roadYearLabels:plan.labels,candidateRoads:plan.settled?plan.scene.roadNetwork.roads.map(({id,points,lanes,closed,cornerRadius})=>({id,points,lanes,closed,cornerRadius})):[],rule:'ISO窗口逐日生成；稀疏=周二至四且i%3=0，count=1+i%23；密集=6+i*17%65；中断=150天零值，gap中点插入1；跨年从末年ISO起点前50天开始。未完成有31天缺口及未来未提供。边缘荒地=密集样本中末年13至39周置零，多年时首年首13周也置零。候选按整周裁切，外环取街区并集并圆角，小聚落双向两车道；片区连接与四向出口不代表贡献，年度主路仅保留共同区间。散点=窗口第20天、中点后20天、倒数30天各1次。'};
   document.querySelector('#audit')!.textContent=JSON.stringify(audit,null,2);
   document.querySelector('#status')!.textContent=`${days.length} 天 / ${audit.total} 次 · 省略显示 ${plan.omitted.length} 个零值日期 · ${plan.gaps.length} 段长期空档 · ${plan.settled?'候选已规划':'未完成快照，保留矩形待填场地，不推断空闲'}`;
   try{

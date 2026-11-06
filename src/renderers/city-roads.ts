@@ -30,15 +30,16 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
     const count=route.closed?points.length:points.length-1;
     const directions=Array.from({length:count},(_,i)=>{
       const a=points[i],b=points[(i+1)%points.length],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
-      return {x:(b[0]-a[0])/length,z:(b[1]-a[1])/length};
+      return {x:(b[0]-a[0])/length,z:(b[1]-a[1])/length,length};
     });
     // 单侧拓宽只用于当前两点直线支路；行车中心与贯通轴保持原位。
     const shoulder=route.leftShoulder??0,shift=shoulder/2,first=directions[0];
     const path=new Path2D(),radius=route.cornerRadius??0;
+    // 内凹和短台阶同样取切线圆弧；半径不超过相邻路段各一半。
+    const radii=route.closed?points.map((_,i)=>Math.min(radius,directions[(i-1+count)%count].length/2,directions[i].length/2)):[];
     if(radius&&route.closed){
-      // 当前圆弧路线是正交闭合外环；路面用真正的切线圆弧，不只是round join。
-      const prev=directions.at(-1)!;path.moveTo(points[0][0]-prev.x*radius,points[0][1]-prev.z*radius);
-      points.forEach(([x,z],i)=>{const next=directions[i];path.arcTo(x,z,x+next.x*radius,z+next.z*radius,radius)});
+      const prev=directions.at(-1)!;path.moveTo(points[0][0]-prev.x*radii[0],points[0][1]-prev.z*radii[0]);
+      points.forEach(([x,z],i)=>{const next=directions[i];path.arcTo(x,z,x+next.x*radii[i],z+next.z*radii[i],radii[i])});
       path.closePath();
     }else{
       points.forEach(([x,z],i)=>{const px=x-first.z*shift,pz=z+first.x*shift;i?path.lineTo(px,pz):path.moveTo(px,pz)});
@@ -62,7 +63,7 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
       const parallel:RoadPoint[]=radius&&route.closed?corners.flatMap(([x,z],i)=>{
         const prev=directions[(i-1+count)%count],next=directions[i],turn=prev.x*next.z-prev.z*next.x;
         // 内外车道共用圆心，半径按侧向偏移调整；与直线切向连接。
-        const r=radius-offset*turn,cx=x-prev.x*r+next.x*r,cz=z-prev.z*r+next.z*r;
+        const r=Math.max(0,radii[i]-offset*turn),cx=x-prev.x*r+next.x*r,cz=z-prev.z*r+next.z*r;
         const start=Math.atan2(-next.z,-next.x);
         // 每个90度弧12段，只供既有路口裁段；路面仍由上方arcTo绘制。
         return Array.from({length:13},(_,step):RoadPoint=>{const angle=start+turn*Math.PI/2*step/12;return [cx+Math.cos(angle)*r,cz+Math.sin(angle)*r]});
