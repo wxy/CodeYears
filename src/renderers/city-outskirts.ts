@@ -1,4 +1,4 @@
-import type { CityRoadRoute } from './city-roads';
+import { cityRoadWidth, type CityRoadRoute } from './city-roads';
 import type { CityImages } from './city-assets';
 import { loadUnit } from './unit-calibration';
 
@@ -56,7 +56,7 @@ export function createCityOutskirtsPainter(width:number,depth:number,ringOuter:n
     const count=route.closed?route.points.length:route.points.length-1;
     for(let i=0;i<count;i++){
       const a=route.points[i],b=route.points[(i+1)%route.points.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);if(!length)continue;
-      const ux=dx/length,uz=dz/length,clearance=route.lanes*.4/2+.55;
+      const ux=dx/length,uz=dz/length,clearance=cityRoadWidth(route)/2+.55;
       clips.push(exclusion(path([[a[0]-ux*clearance-uz*clearance,a[1]-uz*clearance+ux*clearance],[b[0]+ux*clearance-uz*clearance,b[1]+uz*clearance+ux*clearance],[b[0]+ux*clearance+uz*clearance,b[1]+uz*clearance-ux*clearance],[a[0]-ux*clearance+uz*clearance,a[1]-uz*clearance-ux*clearance]])));
     }
   }
@@ -76,7 +76,7 @@ export function createCityOutskirtsPainter(width:number,depth:number,ringOuter:n
         if(i===route.points.length-1&&!route.closed)return false;
         const b=route.points[(i+1)%route.points.length],dx=b[0]-a[0],dz=b[1]-a[1],length=dx*dx+dz*dz;
         const u=length?Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/length)):0;
-        return Math.hypot(x-a[0]-u*dx,z-a[1]-u*dz)<route.lanes*.4/2+7.5*factor;
+        return Math.hypot(x-a[0]-u*dx,z-a[1]-u*dz)<cityRoadWidth(route)/2+7.5*factor;
       }));
       if(nearExit)continue;
       const id=(group+side)%2?'outskirts-forest':'outskirts-hills',sprite=images[id];

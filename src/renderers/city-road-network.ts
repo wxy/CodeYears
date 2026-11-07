@@ -1,10 +1,10 @@
-import { CITY_QUARTER_ROADS, type CityLayout } from './city-layout';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_STREET_LANE_WIDTH, type CityLayout } from './city-layout';
 import { CITY_OUTSKIRT_MARGIN } from './city-outskirts';
 import type { CityRoadJunction, CityRoadRoute, RoadPoint } from './city-roads';
 import type { CityVehicle, CityVehicleKind } from './city-vehicles';
 
 export interface CityBridge {
-  id: string; band: number; quarter: number; from: RoadPoint; to: RoadPoint;
+  id: string; band: number; quarter: number; style:'stone'|'girder'; from: RoadPoint; to: RoadPoint;
 }
 export interface CityRoadNetwork {
   roads: CityRoadRoute[]; junctions: CityRoadJunction[]; bridges: CityBridge[];
@@ -28,13 +28,13 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
   const { width } = layout;
   const roads: CityRoadRoute[] = [], junctions: CityRoadJunction[] = [], bridges: CityBridge[] = [];
   const districts = layout.districts.map(({ z,quarterPadding }) => ({ z,quarterPadding,
-    quarters: CITY_QUARTER_ROADS.map((x, index) => ({ quarter: index + 1, x: x + .4,shoulder:quarterPadding[index] })) }));
+    quarters: CITY_QUARTER_ROADS.map((x, index) => ({ quarter: index + 1, x: x + CITY_ROAD_WIDTH/2,shoulder:quarterPadding[index] })) }));
   roads.push({ id: 'ring', lanes: 8, closed: true, cornerRadius:2.4, points: [
     [-CITY_RING_CENTER, -CITY_RING_CENTER], [width + CITY_RING_CENTER, -CITY_RING_CENTER],
     [width + CITY_RING_CENTER, depth + CITY_RING_CENTER], [-CITY_RING_CENTER, depth + CITY_RING_CENTER],
   ] });
   // 出城路继续沿已有主路/季度轴，穿过环路进入外围自然地景。
-  const exitX=CITY_QUARTER_ROADS[1]+.4,exitZ=districts[Math.floor((districts.length-1)/2)].z-.8;
+  const halfYear=CITY_YEAR_GAP/2,exitX=CITY_QUARTER_ROADS[1]+CITY_ROAD_WIDTH/2,exitZ=districts[Math.floor((districts.length-1)/2)].z-halfYear;
   const reach=CITY_RING_OUTER+CITY_OUTSKIRT_MARGIN;
   roads.push(
     {id:'exit-north',lanes:4,points:[[exitX,-CITY_RING_CENTER],[exitX,-reach]]},
@@ -44,24 +44,24 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
   );
   const avenues = new Set<number>();
   districts.forEach(({ z, quarters,quarterPadding }, block) => {
-    for (const avenueZ of [z - .8, z + 7.8]) avenues.add(Math.round(avenueZ * 1000) / 1000);
+    for (const avenueZ of [z - halfYear, z + 7 + halfYear]) avenues.add(Math.round(avenueZ * 1000) / 1000);
     for (const { quarter, x,shoulder } of quarters) {
-      const fromZ = block === 0 ? -CITY_RING_CENTER : z - .8;
-      const toZ = block === districts.length - 1 ? depth + CITY_RING_CENTER : z + 7.8;
-      roads.push({ id: `quarter-${block}-${quarter}`, lanes: 2, leftShoulder:shoulder,points: [[x, fromZ], [x, toZ]] });
-      for (const junctionZ of [z - .8, z + 7.8]) junctions.push({ x, z: junctionZ, radius: shoulder?2.05:.9 });
+      const fromZ = block === 0 ? -CITY_RING_CENTER : z - halfYear;
+      const toZ = block === districts.length - 1 ? depth + CITY_RING_CENTER : z + 7 + halfYear;
+      roads.push({ id: `quarter-${block}-${quarter}`, lanes: 2, laneWidth:CITY_STREET_LANE_WIDTH,leftShoulder:shoulder,points: [[x, fromZ], [x, toZ]] });
+      for (const junctionZ of [z - halfYear, z + 7 + halfYear]) junctions.push({ x, z: junctionZ, radius: shoulder?2.05:1.2 });
       if (block === 0) junctions.push({ x, z: -CITY_RING_CENTER, radius: 1.7+shoulder*.5 });
       if (block === districts.length - 1) junctions.push({ x, z: depth + CITY_RING_CENTER, radius: 1.7+shoulder*.5 });
     }
     // 最后一季的余量沿街区外侧形成边路，并与两端年度主路相接。
     if(quarterPadding[3]){
       const x=width-.4;
-      roads.push({id:`year-edge-${block}`,lanes:2,leftShoulder:quarterPadding[3]-.8,points:[[x,z-.8],[x,z+7.8]]});
-      for(const junctionZ of [z-.8,z+7.8])junctions.push({x,z:junctionZ,radius:1.1});
+      roads.push({id:`year-edge-${block}`,lanes:2,leftShoulder:quarterPadding[3]-.8,points:[[x,z-halfYear],[x,z+7+halfYear]]});
+      for(const junctionZ of [z-halfYear,z+7+halfYear])junctions.push({x,z:junctionZ,radius:1.1});
     }
   });
   for (const z of avenues) {
-    roads.push({ id: `avenue-${z}`, lanes: 4, points: [[-CITY_RING_CENTER, z], [width + CITY_RING_CENTER, z]] });
+    roads.push({ id: `avenue-${z}`, lanes: 4, laneWidth:CITY_STREET_LANE_WIDTH,points: [[-CITY_RING_CENTER, z], [width + CITY_RING_CENTER, z]] });
     junctions.push({ x: -CITY_RING_CENTER, z, radius: 1.7 }, { x: width + CITY_RING_CENTER, z, radius: 1.7 });
   }
   parkStarts.forEach((_, band) => {
@@ -69,7 +69,8 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
     for (const from of before.quarters) {
       const to = after.quarters.find(q => q.quarter === from.quarter);
       if (to) bridges.push({ id: `bridge-${band}-${from.quarter}`, band, quarter: from.quarter,
-        from: [from.x, before.z + 7.8], to: [to.x, after.z - .8] });
+        style:(layout.districts[block].year+from.quarter)%2===0?'stone':'girder',
+        from: [from.x, before.z + 7 + halfYear], to: [to.x, after.z - halfYear] });
     }
   });
 

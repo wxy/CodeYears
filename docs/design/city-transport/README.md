@@ -1,3 +1,5 @@
+2026-11-07更新：正式桥梁已改用[v2两种桥型](v2/README.md)，引桥从岸路路缘接出；下方v1记录为历史素材规格。
+
 # 城市精绘交通设施 v1
 
 正式 City 的交通设施沿用建筑的透明 PNG 加载、近远预滤波、视口剔除与深度排序。本目录中的 PNG 是正式美术输入，不是测试截图；运行素材在 `public/assets/city-runtime/transport-*.png`，空间元数据在 `src/renderers/city-baked-catalog.json`。素材按需加载，车辆仍为静态布置，没有增加交通动画。

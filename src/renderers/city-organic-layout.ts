@@ -1,12 +1,12 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
-import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_DEPTH } from './city-layout';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { planCityTransport, type CityTrafficSignal } from './city-transport';
 import type { CityBridge } from './city-road-network';
 import { createCityBridgeApproachPainter, CITY_PAINTED_BRIDGE_APPROACH } from './city-bridges';
-import { createCityRoadPainter, planRoadGeometry, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
+import { createCityRoadPainter, planRoadGeometry, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
@@ -111,17 +111,18 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     const beforeZ=original.layout.districts[region.block].z, afterZ=original.layout.districts[next.block].z;
     const left=Math.max(region.left,next.left),right=Math.min(region.right,next.right);
     if(right<=left)continue;
-    if(afterZ-beforeZ>10) {
+    if(afterZ-beforeZ>7+CITY_YEAR_GAP+.001) {
       if(next.segment>=0&&region.segment>=0&&next.segment!==region.segment)continue;
-      const top=beforeZ+7+CITY_YEAR_GAP/2,bottom=afterZ-CITY_YEAR_GAP/2;
+      const top=beforeZ+7+CITY_YEAR_GAP,bottom=afterZ-CITY_YEAR_GAP;
       rivers.push({left,right,z:(top+bottom)/2,top,bottom});
       // 景观带属于城内；外环沿两岸共同范围跨过它，不给每五年另围一圈。
       footprints.push({left:left-ringHalf,right:right+ringHalf,top:beforeZ+7,bottom:afterZ});
       road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
       road(true,afterZ-CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
       CITY_QUARTER_ROADS.forEach((axis,index)=>{const x=fixed(axis+side);if(x>left&&x<right){
-        road(false,x,top,bottom,2);
+        road(false,x,top-CITY_YEAR_GAP/2,bottom+CITY_YEAR_GAP/2,2);
         bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/5)-1,quarter:index+1,
+          style:(original.layout.districts[next.block].year+index)%2===0?'stone':'girder',
           from:[x,fixed(top+CITY_PAINTED_BRIDGE_APPROACH)],to:[x,fixed(bottom-CITY_PAINTED_BRIDGE_APPROACH)]});
       }});
     } else road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
@@ -173,7 +174,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
         if(axis!==undefined)point[1]=axis;
       }
     }
-    roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,cornerRadius:lanes===8?2.4:1.2,closed:true,points:corners});
+    roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,...(area<0?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),cornerRadius:lanes===8?2.4:1.2,closed:true,points:corners});
   }
   const rings=roads.filter(route=>route.id.startsWith('organic-ring'));
   // 连接路沿荒地向西接入最近片区；未相交的支路在城外共用一条纵向道路。
@@ -183,7 +184,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     for(const span of line.spans.sort((a,b)=>a.start-b.start)){
       const last=merged.at(-1);if(last&&span.start<=last.end)last.end=Math.max(last.end,span.end);else merged.push({...span});
     }
-    for(const span of merged)roads.push({id:`organic-${line.kind}-${roads.length}`,lanes:line.lanes,points:line.horizontal?[[span.start,line.at],[span.end,line.at]]:[[line.at,span.start],[line.at,span.end]]});
+    for(const span of merged)roads.push({id:`organic-${line.kind}-${roads.length}`,lanes:line.lanes,...(line.kind==='street'?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),points:line.horizontal?[[span.start,line.at],[span.end,line.at]]:[[line.at,span.start],[line.at,span.end]]});
   }
   const junctions:CityRoadJunction[]=[];
   // 主路接环路用紧凑环岛吸收车幅和方向变化，外径不超出较宽道路的预留车幅。
@@ -192,10 +193,10 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       const b=other.points[(i+1)%other.points.length];
       const px=Math.max(Math.min(a[0],b[0]),Math.min(Math.max(a[0],b[0]),x));
       const pz=Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z));
-      return {x:px,z:pz,distance:Math.hypot(px-x,pz-z),lanes:other.lanes};
+      return {x:px,z:pz,distance:Math.hypot(px-x,pz-z),width:cityRoadWidth(other)};
     })).filter(hit=>hit.distance<=CITY_YEAR_GAP/2+1e-6).sort((a,b)=>a.distance-b.distance)[0];
     if(contact&&!junctions.some(j=>j.x===contact.x&&j.z===contact.z))
-      junctions.push({x:contact.x,z:contact.z,radius:Math.max(road.lanes,contact.lanes)*.4/2,roundabout:true});
+      junctions.push({x:contact.x,z:contact.z,radius:Math.max(cityRoadWidth(road),contact.width)/2,roundabout:true});
   }
   joinOrganicStreets(roads,junctions);
   const roadSegments=roads.flatMap(route=>planRoadGeometry(route).straights.map(edge=>({...edge,route})));
@@ -211,7 +212,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     const x=item.x+.125,z=item.z+.125;
     if(junctions.some(j=>j.roundabout&&Math.hypot(j.x-x,j.z-z)<j.radius+.6))continue;
     if(straights.some(({a,b,road})=>Math.hypot(x-Math.max(Math.min(a[0],b[0]),Math.min(Math.max(a[0],b[0]),x)),
-      z-Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z)))<=road.lanes*.4/2+.35))
+      z-Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z)))<=cityRoadWidth(road)/2+.35))
       signals.push({x,z,heads:[item.id==='traffic-signal-w'?'x':'z']});
   }
   // 只在最终圆角直道的车道内布车，避开环岛、文字和彼此；缩放不重新布置。
@@ -223,7 +224,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     for(const direction of [1,-1]){
       if(vehicles.length>=180)break;
       const fraction=direction===1?.32+(seed%13)/100:.62+(seed%11)/100;
-      const offset=(.2+.4*(seed%(road.lanes/2)))*direction;
+      const laneWidth=cityRoadWidth(road)/road.lanes,offset=laneWidth*(.5+seed%(road.lanes/2))*direction;
       const x=a[0]+dx*fraction+dz/length*offset,z=a[1]+dz*fraction-dx/length*offset;
       if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+.8)||
         bridges.some(bridge=>Math.abs(x-bridge.from[0])<.8&&z>bridge.from[1]-CITY_PAINTED_BRIDGE_APPROACH-.6&&z<bridge.to[1]+CITY_PAINTED_BRIDGE_APPROACH+.6)||
@@ -250,14 +251,14 @@ function planRoadLabels(scene:CityScene,regions:readonly OrganicRegion[],roads:r
       if(other.road===road||(horizontal?other.a[0]!==other.b[0]:other.a[1]!==other.b[1]))continue;
       if(at<Math.min(horizontal?other.a[1]:other.a[0],horizontal?other.b[1]:other.b[0])||
         at>Math.max(horizontal?other.a[1]:other.a[0],horizontal?other.b[1]:other.b[0]))continue;
-      const crossing=horizontal?other.a[0]:other.a[1],clearance=other.road.lanes*.4/2+.25;
+      const crossing=horizontal?other.a[0]:other.a[1],clearance=cityRoadWidth(other.road)/2+.25;
       spans=spans.flatMap(([start,end])=>[[start,Math.min(end,crossing-clearance)],[Math.max(start,crossing+clearance),end]] as [number,number][]).filter(([start,end])=>end>start);
     }
     for(const junction of junctions)if(junction.roundabout&&Math.abs(at-(horizontal?junction.z:junction.x))<junction.radius){
       const crossing=horizontal?junction.x:junction.z,clearance=junction.radius+.25;
       spans=spans.flatMap(([start,end])=>[[start,Math.min(end,crossing-clearance)],[Math.max(start,crossing+clearance),end]] as [number,number][]).filter(([start,end])=>end>start);
     }
-    return spans.filter(([start,end])=>end-start>.2).map(([start,end])=>({x:horizontal?(start+end)/2:at,z:horizontal?at:(start+end)/2,span:end-start,lanes:road.lanes}));
+    return spans.filter(([start,end])=>end-start>.2).map(([start,end])=>({x:horizontal?(start+end)/2:at,z:horizontal?at:(start+end)/2,span:end-start,lanes:road.lanes,laneWidth:road.laneWidth}));
   };
   const place=(year:number,text:string,kind:CityRoadLabel['kind'],horizontal:boolean,side:-1|1,spaces:ReturnType<typeof free>)=>{
     const fits=spaces.filter(space=>space.span>=cityRoadLabelLength(text,kind)).sort((a,b)=>b.span-a.span||a.x-b.x||a.z-b.z);
@@ -288,7 +289,7 @@ function planRoadLabels(scene:CityScene,regions:readonly OrganicRegion[],roads:r
     const number=district.year-originYear+1;
     const suffix=number%100>=11&&number%100<=13?'TH':number%10===1?'ST':number%10===2?'ND':number%10===3?'RD':'TH';
     // 五年带的两岸属于同一年度边界，不拆成两个大道编号。
-    const axes=[district.z+7+CITY_YEAR_GAP/2];if(next.z-district.z>10)axes.push(next.z-CITY_YEAR_GAP/2);
+    const axes=[district.z+7+CITY_YEAR_GAP/2];if(next.z-district.z>7+CITY_YEAR_GAP+.001)axes.push(next.z-CITY_YEAR_GAP/2);
     const zs=axes.map(z=>Math.round(z*1000)/1000);
     place(district.year,`${number}${suffix} AVE`,'avenue',true,-1,
       segments.filter(edge=>!edge.road.closed&&edge.road.lanes===4&&edge.a[1]===edge.b[1]&&zs.includes(edge.a[1]))

@@ -19,6 +19,6 @@ export function planCityTransport(vehicles:readonly CityVehicle[],signals:readon
       return item(`transport-${vehicle.kind}-${['xp','zp','xm','zm'][angle]}`,vehicle.x,vehicle.z);
     }),
     ...signals.map(signal=>item(`transport-signal-${signal.heads.length>1?'dual':signal.heads[0]}`,signal.x,signal.z)),
-    ...bridges.map(bridge=>({...item('transport-bridge-arch',(bridge.from[0]+bridge.to[0])/2,(bridge.from[1]+bridge.to[1])/2),elevation:CITY_PAINTED_BRIDGE_ELEVATION})),
+    ...bridges.map(bridge=>({...item(`transport-bridge-${bridge.style}`,(bridge.from[0]+bridge.to[0])/2,(bridge.from[1]+bridge.to[1])/2),elevation:CITY_PAINTED_BRIDGE_ELEVATION})),
   ];
 }

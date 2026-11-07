@@ -1,4 +1,5 @@
 import type { CityLayout } from './city-layout';
+import { cityRoadWidth } from './city-roads';
 
 /** 绿篱年份雕塑随两侧绿化带方向落地，一次进入地面缓存。 */
 export function createCityYearMarkers(layout: CityLayout): (context: CanvasRenderingContext2D) => void {
@@ -32,25 +33,27 @@ export function createCityYearMarkers(layout: CityLayout): (context: CanvasRende
 /** 街区、大道及季度路的路面标识；不另设路牌。 */
 export interface CityRoadLabel {
   year:number;text:string;kind:'block'|'avenue'|'road';
-  x:number;z:number;lanes:2|4|8;span:number;horizontal:boolean;side:-1|1;
+  x:number;z:number;lanes:2|4|8;laneWidth?:number;span:number;horizontal:boolean;side:-1|1;
 }
-export const CITY_ROAD_LABEL_SIZE={block:.56,avenue:.4,road:.28} as const;
+export const CITY_ROAD_LABEL_SIZE={block:.56,avenue:.48,road:.36} as const;
 /** 等宽字形加固定横向压缩；规划预留相同的固定字幅，不按路段缩字。 */
 export const cityRoadLabelLength=(text:string,kind:CityRoadLabel['kind'])=>text.length*CITY_ROAD_LABEL_SIZE[kind]*.64*.8+.2;
 
 export function createCityRoadLabels(labels:readonly CityRoadLabel[]):(context:CanvasRenderingContext2D)=>void {
   return context=>{
-    for(const {text,kind,x,z,lanes,horizontal,side} of labels){
-      const half=lanes*.4/2,weight=kind==='block'?800:kind==='avenue'?700:600;
+    for(const label of labels){
+      const {text,kind,x,z,horizontal,side}=label;
+      const half=cityRoadWidth(label)/2,weight=kind==='block'?800:kind==='avenue'?700:600;
       const font=CITY_ROAD_LABEL_SIZE[kind],offset=kind==='road'||font+.06>half?0:side*half*.5;
       // 窄季度路用整幅路面居中，底色清出双黄线，避免长单词与标线重叠。
       context.save();context.transform(.5,.25,-.5,.25,0,0);
       context.translate(x+(horizontal?0:offset),z+(horizontal?offset:0));
       if(!horizontal)context.rotate(-Math.PI/2);
-      context.scale(.8,1);
-      context.font=`${weight} ${font}px monospace`;context.textAlign='center';context.textBaseline='middle';
+      // 使用常规像素字号再缩回世界单位，避免字体引擎对不足1px字号取整。
+      context.scale(.8/100,1/100);
+      context.font=`${weight} ${font*100}px monospace`;context.textAlign='center';context.textBaseline='middle';
       const width=context.measureText(text).width;
-      context.fillStyle='#626d68';context.fillRect(-width/2-.08,-font/2-.03,width+.16,font+.06);
+      context.fillStyle='#626d68';context.fillRect(-width/2-8,-font*50-3,width+16,font*100+6);
       context.fillStyle='#e0e5d9';context.fillText(text,0,0);context.restore();
     }
   };

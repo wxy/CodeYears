@@ -1,7 +1,8 @@
 export type RoadPoint=[number,number];
-export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;closed?:boolean;leftShoulder?:number;cornerRadius?:number}
+export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;laneWidth?:number;closed?:boolean;leftShoulder?:number;cornerRadius?:number}
 export interface CityRoadJunction {x:number;z:number;radius:number;roundabout?:boolean}
 export const CITY_LANE_WIDTH=.4;
+export const cityRoadWidth=(route:Pick<CityRoadRoute,'lanes'|'laneWidth'>)=>route.lanes*(route.laneWidth??CITY_LANE_WIDTH);
 
 /** 绘制、接路和路面年份共用圆角后的真实切线，避免各自猜测拐角位置。 */
 export function planRoadGeometry(route:CityRoadRoute) {
@@ -32,7 +33,7 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
     let left=x,right=x,top=z,bottom=z;
     for(const {route,straights} of geometry){
       for(const {a,b} of straights){
-        const half=route.lanes*CITY_LANE_WIDTH/2,shoulder=route.leftShoulder??0;
+        const half=cityRoadWidth(route)/2,shoulder=route.leftShoulder??0;
         if(a[1]===b[1]&&Math.abs(z-a[1])<1e-6&&x>=Math.min(a[0],b[0])-1e-6&&x<=Math.max(a[0],b[0])+1e-6){
           const extra=Math.sign(b[0]-a[0])*shoulder;top=Math.min(top,z-half+Math.min(0,extra));bottom=Math.max(bottom,z+half+Math.max(0,extra));
         }
@@ -56,9 +57,9 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
       points.forEach(([x,z],i)=>{const px=x-first.z*shift,pz=z+first.x*shift;i?path.lineTo(px,pz):path.moveTo(px,pz)});
       if(route.closed)path.closePath();
     }
-    const half=route.lanes*CITY_LANE_WIDTH/2;surfaces.push({path,width:half*2+shoulder});
+    const laneWidth=route.laneWidth??CITY_LANE_WIDTH,half=cityRoadWidth(route)/2;surfaces.push({path,width:half*2+shoulder});
     const offsets=[{offset:-.05,kind:'central'},{offset:.05,kind:'central'},
-      ...Array.from({length:route.lanes/2-1},(_,i)=>(i+1)*CITY_LANE_WIDTH).flatMap(d=>[{offset:-d,kind:'lane'},{offset:d,kind:'lane'}]),
+      ...Array.from({length:route.lanes/2-1},(_,i)=>(i+1)*laneWidth).flatMap(d=>[{offset:-d,kind:'lane'},{offset:d,kind:'lane'}]),
       ...(shoulder>0?[{offset:half-.055,kind:'edge'}]:[]),
       {offset:-half+.055,kind:'edge'},{offset:half+shoulder-.055,kind:'edge'}];
     for(const {offset,kind}of offsets){
