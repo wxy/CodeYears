@@ -1,0 +1,128 @@
+{
+  "models": [
+    {
+      "id": "res-mono-limestone",
+      "file": "public/assets/city-candidates-residential/res-mono-limestone.png",
+      "width": 107,
+      "height": 171,
+      "mode": "RGBA",
+      "bytes": 28606,
+      "pixels": 18297,
+      "rgbaBytes": 73188,
+      "sha256": "a7a0933b73877ad687238b8a44774df83050cef27559fb2cc325659356123e47",
+      "alphaRange": [
+        0,
+        253
+      ]
+    },
+    {
+      "id": "res-vault-brick",
+      "file": "public/assets/city-candidates-residential/res-vault-brick.png",
+      "width": 120,
+      "height": 180,
+      "mode": "RGBA",
+      "bytes": 34197,
+      "pixels": 21600,
+      "rgbaBytes": 86400,
+      "sha256": "38f44431f5a5e532274d1e21103e1cf6e349f02796c36707a4160b99829621b9",
+      "alphaRange": [
+        0,
+        253
+      ]
+    },
+    {
+      "id": "res-mansard-stucco",
+      "file": "public/assets/city-candidates-residential/res-mansard-stucco.png",
+      "width": 175,
+      "height": 304,
+      "mode": "RGBA",
+      "bytes": 97274,
+      "pixels": 53200,
+      "rgbaBytes": 212800,
+      "sha256": "d9baa3276d88a1810f72b734cc7968d4464c659cf92cf7e5d1a597825139b3e6",
+      "alphaRange": [
+        0,
+        254
+      ]
+    },
+    {
+      "id": "res-sawtooth-duplex",
+      "file": "public/assets/city-candidates-residential/res-sawtooth-duplex.png",
+      "width": 230,
+      "height": 384,
+      "mode": "RGBA",
+      "bytes": 148716,
+      "pixels": 88320,
+      "rgbaBytes": 353280,
+      "sha256": "0220ab41d3e4b36a515064ce8f0f325334836df7840cc4b21f4b3abd68f7bc97",
+      "alphaRange": [
+        0,
+        253
+      ]
+    },
+    {
+      "id": "res-grocer-wide",
+      "file": "public/assets/city-candidates-residential/res-grocer-wide.png",
+      "width": 283,
+      "height": 362,
+      "mode": "RGBA",
+      "bytes": 155775,
+      "pixels": 102446,
+      "rgbaBytes": 409784,
+      "sha256": "fdc87859c0a373171d1698ae46060fd9b01bc7547fb9cf139d04608cfd3f0e04",
+      "alphaRange": [
+        0,
+        254
+      ]
+    },
+    {
+      "id": "res-bakery-deep",
+      "file": "public/assets/city-candidates-residential/res-bakery-deep.png",
+      "width": 214,
+      "height": 288,
+      "mode": "RGBA",
+      "bytes": 109995,
+      "pixels": 61632,
+      "rgbaBytes": 246528,
+      "sha256": "3ce297f3d9af8d8ef7ee8f5335bd85cf06211548edfa47c04f310594e9bfe3e0",
+      "alphaRange": [
+        0,
+        254
+      ]
+    },
+    {
+      "id": "res-terracotta-apartment",
+      "file": "public/assets/city-candidates-residential/res-terracotta-apartment.png",
+      "width": 192,
+      "height": 384,
+      "mode": "RGBA",
+      "bytes": 137727,
+      "pixels": 73728,
+      "rgbaBytes": 294912,
+      "sha256": "df37a3e7dd34eb7dfb95f18bb6826c755ad84bc63560cb38f5d8b1a99f966fd0",
+      "alphaRange": [
+        0,
+        253
+      ]
+    },
+    {
+      "id": "res-limestone-bay",
+      "file": "public/assets/city-candidates-residential/res-limestone-bay.png",
+      "width": 187,
+      "height": 384,
+      "mode": "RGBA",
+      "bytes": 133146,
+      "pixels": 71808,
+      "rgbaBytes": 287232,
+      "sha256": "8434a2dd3e78ae0704e1bdea4d7beea931e4d791aa50888b1883fe1af3f5414c",
+      "alphaRange": [
+        0,
+        253
+      ]
+    }
+  ],
+  "runtimeBytes": 845436,
+  "runtimePixels": 491031,
+  "rgbaBytes": 1964124,
+  "sourceBytes": 10162467
+}

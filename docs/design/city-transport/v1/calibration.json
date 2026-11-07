@@ -1,0 +1,6 @@
+{
+  "alphaCutoff": 32,
+  "vehicles": {"rows": ["xp", "zp", "xm", "zm"], "columns": [{"kind":"sedan","length":0.55,"width":0.25},{"kind":"suv","length":0.62,"width":0.27},{"kind":"van","length":0.72,"width":0.27},{"kind":"bus","length":1,"width":0.28}], "maxPixels":256},
+  "signals": {"ids":["x","z","dual"], "footprint":[0.16,0.16], "height":0.46,"maxPixels":384},
+  "bridge": {"footprint":[1.2,4],"farRoadCenter":[1486,240],"nearRoadCenter":[230,638],"nearEndFace":[[130,574],[355,718],[355,761],[130,617]],"crossRoadSlope":0.640625,"maxPixels":768,"height":0.35,"basis":"upper deck edge between yellow-line bends; remove vertical carriageway end cap for ramp connection; preserve verticals, calibrate projected road axes to +/-0.5"}
+}

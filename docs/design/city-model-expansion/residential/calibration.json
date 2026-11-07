@@ -1,0 +1,709 @@
+{
+  "basis": "人工近似量测；正式标定器校正±0.5，退让至少0.1格；2026-11-07候选",
+  "assets": [
+    {
+      "id": "res-mono-limestone",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-mono-limestone.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.3,
+      "crop": [
+        0,
+        0,
+        380,
+        421
+      ],
+      "anchor": [
+        174,
+        411
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              17,
+              352
+            ],
+            [
+              174,
+              411
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              174,
+              411
+            ],
+            [
+              356,
+              353
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          175,
+          375
+        ],
+        "top": [
+          175,
+          226
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          17,
+          352
+        ],
+        "F": [
+          174,
+          411
+        ],
+        "R": [
+          356,
+          353
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/generated-sheet.png",
+        "crop": [
+          30,
+          20,
+          410,
+          441
+        ]
+      }
+    },
+    {
+      "id": "res-vault-brick",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-vault-brick.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.3,
+      "crop": [
+        0,
+        0,
+        396,
+        407
+      ],
+      "anchor": [
+        188,
+        400
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              24,
+              341
+            ],
+            [
+              188,
+              400
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              188,
+              400
+            ],
+            [
+              369,
+              341
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          188,
+          362
+        ],
+        "top": [
+          188,
+          226
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          24,
+          341
+        ],
+        "F": [
+          188,
+          400
+        ],
+        "R": [
+          369,
+          341
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/generated-sheet.png",
+        "crop": [
+          465,
+          35,
+          861,
+          442
+        ]
+      }
+    },
+    {
+      "id": "res-mansard-stucco",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-mansard-stucco.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        0,
+        0,
+        389,
+        442
+      ],
+      "anchor": [
+        192,
+        433
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              22,
+              379
+            ],
+            [
+              192,
+              433
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              192,
+              433
+            ],
+            [
+              361,
+              377
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          191,
+          405
+        ],
+        "top": [
+          191,
+          177
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          22,
+          379
+        ],
+        "F": [
+          192,
+          433
+        ],
+        "R": [
+          361,
+          377
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/generated-sheet.png",
+        "crop": [
+          920,
+          1,
+          1309,
+          443
+        ]
+      }
+    },
+    {
+      "id": "res-sawtooth-duplex",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-sawtooth-duplex.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        0,
+        0,
+        400,
+        442
+      ],
+      "anchor": [
+        180,
+        432
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              30,
+              376
+            ],
+            [
+              180,
+              432
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              180,
+              432
+            ],
+            [
+              368,
+              375
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          179,
+          409
+        ],
+        "top": [
+          179,
+          230
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          30,
+          376
+        ],
+        "F": [
+          180,
+          432
+        ],
+        "R": [
+          368,
+          375
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/generated-sheet.png",
+        "crop": [
+          1350,
+          1,
+          1750,
+          443
+        ]
+      }
+    },
+    {
+      "id": "res-grocer-wide",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-grocer-wide.png",
+      "kind": "building",
+      "footprint": [
+        2,
+        1
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        0,
+        0,
+        795,
+        765
+      ],
+      "anchor": [
+        648,
+        735
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              47,
+              546
+            ],
+            [
+              648,
+              735
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              648,
+              735
+            ],
+            [
+              761,
+              677
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          647,
+          697
+        ],
+        "top": [
+          647,
+          334
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          47,
+          546
+        ],
+        "F": [
+          648,
+          735
+        ],
+        "R": [
+          761,
+          677
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/shops-transparent.png",
+        "crop": [
+          1025,
+          25,
+          1820,
+          790
+        ]
+      }
+    },
+    {
+      "id": "res-bakery-deep",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-bakery-deep.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        2
+      ],
+      "targetHeight": 0.8,
+      "crop": [
+        0,
+        0,
+        820,
+        670
+      ],
+      "anchor": [
+        189,
+        640
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              34,
+              590
+            ],
+            [
+              189,
+              640
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              189,
+              640
+            ],
+            [
+              773,
+              469
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          189,
+          612
+        ],
+        "top": [
+          189,
+          242
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          34,
+          590
+        ],
+        "F": [
+          189,
+          640
+        ],
+        "R": [
+          773,
+          469
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/shops-transparent.png",
+        "crop": [
+          110,
+          105,
+          930,
+          775
+        ]
+      }
+    },
+    {
+      "id": "res-terracotta-apartment",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-terracotta-apartment.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 2,
+      "crop": [
+        0,
+        0,
+        390,
+        442
+      ],
+      "anchor": [
+        186,
+        431
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              22,
+              385
+            ],
+            [
+              186,
+              431
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              186,
+              431
+            ],
+            [
+              351,
+              385
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          186,
+          399
+        ],
+        "top": [
+          186,
+          90
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          22,
+          385
+        ],
+        "F": [
+          186,
+          431
+        ],
+        "R": [
+          351,
+          385
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/generated-sheet.png",
+        "crop": [
+          920,
+          445,
+          1310,
+          887
+        ]
+      }
+    },
+    {
+      "id": "res-limestone-bay",
+      "file": "docs/design/city-model-expansion/residential/sources/units/res-limestone-bay.png",
+      "kind": "building",
+      "footprint": [
+        1,
+        1
+      ],
+      "targetHeight": 2,
+      "crop": [
+        0,
+        0,
+        374,
+        442
+      ],
+      "anchor": [
+        172,
+        437
+      ],
+      "axes": {
+        "W": {
+          "points": [
+            [
+              25,
+              393
+            ],
+            [
+              172,
+              437
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        },
+        "D": {
+          "points": [
+            [
+              172,
+              437
+            ],
+            [
+              343,
+              390
+            ]
+          ],
+          "basis": "人工可见地面支撑边，端点误差约±4px"
+        }
+      },
+      "heightReference": {
+        "base": [
+          172,
+          406
+        ],
+        "top": [
+          172,
+          78
+        ],
+        "basis": "同一竖墙的主墙高度；不含烟囱与屋顶设备，约±8px"
+      },
+      "supportEnvelope": {
+        "L": [
+          25,
+          393
+        ],
+        "F": [
+          172,
+          437
+        ],
+        "R": [
+          343,
+          390
+        ],
+        "basis": "可见接地包络，隐藏角由平行边外推；台阶/花盆纳入"
+      },
+      "notes": [
+        "候选，等待用户造型与高度审查",
+        "只用正式calibrate方向校正和等比缩放，不拉高或镜像",
+        "标定坐标为单款源图局部像素；sourceRegion保留原总板裁切框，隐藏角点为外推"
+      ],
+      "sourceRegion": {
+        "file": "docs/design/city-model-expansion/residential/sources/generated-sheet.png",
+        "crop": [
+          1365,
+          445,
+          1739,
+          887
+        ]
+      }
+    }
+  ]
+}
