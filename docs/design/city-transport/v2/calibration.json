@@ -10,6 +10,7 @@
       "crossRoadSlope": 0.8092783505154639,
       "carriageway": 0.6488294314381271,
       "deckWidth": 0.96,
+      "supportFeet": [[540, 835], [1454, 645]],
       "curb": "#c5b397",
       "maxPixels": 764,
       "height": 0.35
@@ -23,10 +24,11 @@
       "crossRoadSlope": 0.8552036199095022,
       "carriageway": 0.7978339350180506,
       "deckWidth": 1.2,
+      "supportFeet": [[943, 837]],
       "curb": "#c1c5b7",
       "maxPixels": 764,
       "height": 0.35
     }
   },
-  "basis": "Road deck upper edges; preserve verticals, map both road centers to fixed 4-unit span; remove near vertical asphalt cap; ramps meet measured carriageway and outer deck."
+  "basis": "Road deck upper edges; preserve verticals and both road anchors. Support references mark visible footing centers; correct only below the front deck edge onto the shared river water plane. Paired footings share transverse position and equal longitudinal shore clearance; the single footing is at midspan."
 }

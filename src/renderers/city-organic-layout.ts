@@ -399,7 +399,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
   const water=plan.rivers.map(({left,right,z,top,bottom})=>{
     const half=(bottom-top)/2-CITY_PAINTED_BRIDGE_APPROACH,samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
       const x=left+(right-left)*i/Math.ceil((right-left)*4),wave=.06*Math.sin(x*1.7+z);
-      return {x,near:z-half+wave,far:z+half+wave*.6};
+      return {x,near:z-half+wave,far:z+half-wave};
     });
     const bank=(side:'near'|'far')=>{const path=new Path2D();samples.forEach((p,i)=>i?path.lineTo(...project(p.x,p[side])):path.moveTo(...project(p.x,p[side])));return path};
     const lower=(x:number,z:number):[number,number]=>{const p=project(x,z);return [p[0],p[1]+CITY_RIVER_DEPTH*.5]};
@@ -430,10 +430,10 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
       const gradient=context.createLinearGradient(...river.from,...river.to);
       gradient.addColorStop(0,'#829e8c');gradient.addColorStop(.2,'#608f8b');gradient.addColorStop(.55,'#497c81');gradient.addColorStop(.82,'#689c96');gradient.addColorStop(1,'#91aa94');
       context.fillStyle=gradient;context.fill(river.path);
+      context.strokeStyle='#d5e7d840';context.lineWidth=.012;context.stroke(river.ripples);
       context.fillStyle='#7f8e77';context.fill(river.nearWall);
       context.fillStyle='#6c7967';context.fill(river.farWall);
       context.strokeStyle='#c2d0b4';context.lineWidth=.035;context.stroke(river.near);context.stroke(river.far);
-      context.strokeStyle='#d5e7d840';context.lineWidth=.012;context.stroke(river.ripples);
       context.fillStyle='#b2b49a';context.fill(river.stones);
     }
     paintRoads(context);

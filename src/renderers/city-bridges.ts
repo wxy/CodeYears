@@ -1,8 +1,9 @@
 import { sampleCityBridge, type CityBridge } from './city-road-network';
 import { CITY_ROAD_WIDTH } from './city-layout';
 import catalog from './city-baked-catalog.json';
+import bridgeLevels from './city-bridge-levels.json';
 
-export const CITY_PAINTED_BRIDGE_ELEVATION=.18;
+export const CITY_PAINTED_BRIDGE_ELEVATION=bridgeLevels.deckElevation;
 export const CITY_PAINTED_BRIDGE_APPROACH=1.6;
 
 /** 引桥由年度大道的靠河路缘向外起坡，不能覆盖岸路的任何一条车道。 */

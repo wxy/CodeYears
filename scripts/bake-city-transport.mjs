@@ -47,6 +47,7 @@ for(const [index,id]of config.signals.ids.entries())await cell(signals,2,2,index
 // 两款桥共享同一套道路端点/竖向标定，原始源图保持不变。
 const bridgeRoot=resolve(root,'docs/design/city-transport/v2');
 const bridgeConfig=JSON.parse(await readFile(resolve(bridgeRoot,'calibration.json'),'utf8'));
+const levels=JSON.parse(await readFile(resolve(root,'src/renderers/city-bridge-levels.json'),'utf8'));
 delete catalog['transport-bridge-arch'];
 for(const [style,spec]of Object.entries(bridgeConfig.bridges)){
   const raw=await loadImage(resolve(bridgeRoot,spec.file)),bridge=createCanvas(raw.width,raw.height),bridgeContext=bridge.getContext('2d');
@@ -58,11 +59,43 @@ for(const [style,spec]of Object.entries(bridgeConfig.bridges)){
   spec.nearEndFace.forEach(([x,y],index)=>index?bridgeContext.lineTo(x,y):bridgeContext.moveTo(x,y));bridgeContext.closePath();bridgeContext.fill();bridgeContext.restore();
   const a=(-d/2)/(bx-ax),slope=(by-ay)/(bx-ax),vertical=a/(spec.crossRoadSlope-slope),shear=-(spec.crossRoadSlope+slope)*vertical/2;
   const tx=w/4-a*ax,ty=w/8-shear*ax-vertical*ay;
+  const point=([x,y])=>[a*x+tx,shear*x+vertical*y+ty];
   const points=[[0,0],[bridge.width,0],[bridge.width,bridge.height],[0,bridge.height]].map(([x,y])=>[a*x+tx,shear*x+vertical*y+ty]);
   const left=Math.min(...points.map(p=>p[0])),top=Math.min(...points.map(p=>p[1])),right=Math.max(...points.map(p=>p[0])),bottom=Math.max(...points.map(p=>p[1]));
   const unit=spec.maxPixels/(right-left),canvas=createCanvas(Math.ceil((right-left)*unit)+4,Math.ceil((bottom-top)*unit)+4),c=canvas.getContext('2d');
   c.setTransform(a*unit,shear*unit,0,vertical*unit,(tx-left)*unit+2,(ty-top)*unit+2);c.imageSmoothingQuality='high';c.drawImage(bridge,0,0);
-  await save(`transport-bridge-${style}`,canvas,{left:left-2/unit,top:top-2/unit,width:canvas.width/unit,height:canvas.height/unit,nativeWidth:w,nativeDepth:d,baselineHeight:spec.height,carriageway:spec.carriageway,deckWidth:spec.deckWidth,curb:spec.curb});
+  // 原画下部结构的高度/透视未随桥面标定；按真实水位校准桥墩落点。
+  // X不动、上部桥面不动；只在前侧桥面以下沿竖直方向调整，保持引桥端点。
+  const feet=spec.supportFeet.map(point).sort((p,q)=>p[0]-q[0]);
+  const supportW=d/2+2*feet.reduce((sum,p)=>sum+p[0],0)/feet.length;
+  const underDeck=x=>(w+spec.deckWidth)/4-x/2;
+  const waterDrop=(levels.deckElevation+levels.riverDepth)/2;
+  const anchors=feet.map(([x,y])=>{
+    const z=supportW-2*x,target=(supportW+z)/4+waterDrop,edge=underDeck(x);
+    return {x,y,z,target,scale:(target-edge)/(y-edge)};
+  });
+  const originalPixels=c.getImageData(0,0,canvas.width,canvas.height),rgba=originalPixels.data,columns=[];
+  let correctedHeight=canvas.height;
+  for(let column=0;column<canvas.width;column++){
+    const x=left+(column-2)/unit,first=anchors[0],last=anchors.at(-1);
+    const scale=anchors.length===1?first.scale:first.scale+(last.scale-first.scale)*(x-first.x)/(last.x-first.x);
+    const cut=Math.max(0,Math.min(canvas.height,(underDeck(x)-top)*unit+2));
+    columns.push({column,cut,scale});
+    // 延长的桥脚也必须完整留在输出图内，保留透明边。
+    for(let row=canvas.height-1;row>=cut;row--)if(rgba[(row*canvas.width+column)*4+3]){
+      correctedHeight=Math.max(correctedHeight,Math.ceil(cut+(row+1-cut)*scale)+4);break;
+    }
+  }
+  const corrected=createCanvas(canvas.width,correctedHeight),target=corrected.getContext('2d');
+  target.imageSmoothingQuality='high';target.putImageData(originalPixels,0,0);
+  for(const {column,cut,scale}of columns)if(cut<canvas.height){
+    target.clearRect(column,Math.floor(cut),1,canvas.height-Math.floor(cut));
+    target.drawImage(canvas,column,cut,1,canvas.height-cut,column,cut,1,(canvas.height-cut)*scale);
+  }
+  await save(`transport-bridge-${style}`,corrected,{left:left-2/unit,top:top-2/unit,width:corrected.width/unit,height:corrected.height/unit,nativeWidth:w,nativeDepth:d,baselineHeight:spec.height,carriageway:spec.carriageway,deckWidth:spec.deckWidth,curb:spec.curb});
+  report.at(-1).supports=anchors.map(({x,y,z,target,scale})=>({reference:[x,y],scale,
+    before:{w:x+2*y-waterDrop*2,z:-x+2*y-waterDrop*2},
+    after:{w:x+2*target-waterDrop*2,z:-x+2*target-waterDrop*2},targetZ:z}));
 }
 await writeFile(resolve(values.outDir,'catalog.json'),JSON.stringify(catalog,null,2)+'\n');
 await writeFile(resolve(values.outDir,'report.json'),JSON.stringify(report,null,2)+'\n');
