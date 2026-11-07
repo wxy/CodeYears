@@ -3,30 +3,30 @@
   "bridges": {
     "stone": {
       "file": "bridge-stone-wide.png",
-      "footprint": [1.6, 4],
+      "footprint": [2.0936542669584246, 5.234135667396061],
       "farRoadCenter": [1464, 244],
       "nearRoadCenter": [268, 599],
       "nearEndFace": [[171, 521], [365, 678], [365, 704], [171, 547]],
       "crossRoadSlope": 0.8092783505154639,
-      "carriageway": 0.6488294314381271,
-      "deckWidth": 0.96,
+      "carriageway": 0.8490153172866521,
+      "deckWidth": 1.2561925601750548,
       "supportFeet": [[540, 835], [1454, 645]],
       "curb": "#c5b397",
-      "maxPixels": 764,
+      "maxPixels": 1148,
       "height": 0.35
     },
     "girder": {
       "file": "bridge-girder-compact.png",
-      "footprint": [1.6, 4],
+      "footprint": [1.92, 4.8],
       "farRoadCenter": [1434, 279],
       "nearRoadCenter": [326, 565],
       "nearEndFace": [[216, 471], [437, 660], [437, 682], [216, 493]],
       "crossRoadSlope": 0.8552036199095022,
-      "carriageway": 0.7978339350180506,
-      "deckWidth": 1.2,
+      "carriageway": 0.9574007220216606,
+      "deckWidth": 1.44,
       "supportFeet": [[943, 837]],
       "curb": "#c1c5b7",
-      "maxPixels": 764,
+      "maxPixels": 1148,
       "height": 0.35
     }
   },

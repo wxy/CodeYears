@@ -1046,30 +1046,46 @@
   },
   "transport-bridge-stone": {
     "file": "transport-bridge-stone.png",
-    "left": -2.0559263863839328,
-    "top": -0.2967391302607993,
-    "width": 2.9820868864802392,
-    "height": 2.1084286189567316,
-    "nativeWidth": 1.6,
-    "nativeDepth": 4,
+    "left": -2.686850311454037,
+    "top": -0.38489412072836127,
+    "width": 3.895363642601728,
+    "height": 2.6679183281360794,
+    "nativeWidth": 2.0936542669584246,
+    "nativeDepth": 5.234135667396061,
     "baselineHeight": 0.35,
-    "carriageway": 0.6488294314381271,
-    "deckWidth": 0.96,
+    "carriageway": 0.8490153172866521,
+    "deckWidth": 1.2561925601750548,
     "curb": "#c5b397",
+    "supportAnchors": [
+      {
+        "w": 1.620131291028446,
+        "z": 4.61706783369803
+      },
+      {
+        "w": 1.620131291028446,
+        "z": 0.6170678336980306
+      }
+    ],
     "sampleId": "transport-bridge-stone"
   },
   "transport-bridge-girder": {
     "file": "transport-bridge-girder.png",
-    "left": -2.196830287107566,
-    "top": -0.4252995542030615,
-    "width": 3.2189313323378763,
-    "height": 2.3136068951178483,
-    "nativeWidth": 1.6,
-    "nativeDepth": 4,
+    "left": -2.632831607944754,
+    "top": -0.5069947284593483,
+    "width": 3.8559881256368005,
+    "height": 2.7714914653014504,
+    "nativeWidth": 1.92,
+    "nativeDepth": 4.8,
     "baselineHeight": 0.35,
-    "carriageway": 0.7978339350180506,
-    "deckWidth": 1.2,
+    "carriageway": 0.9574007220216606,
+    "deckWidth": 1.44,
     "curb": "#c1c5b7",
+    "supportAnchors": [
+      {
+        "w": 1.2329241877256316,
+        "z": 2.4
+      }
+    ],
     "sampleId": "transport-bridge-girder"
   }
 }

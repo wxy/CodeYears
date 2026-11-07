@@ -4,9 +4,10 @@ import bridgeLevels from './city-bridge-levels.json';
 export const CITY_STREET_LANE_WIDTH = .6;
 export const CITY_ROAD_WIDTH = CITY_STREET_LANE_WIDTH * 2;
 export const CITY_YEAR_GAP = CITY_STREET_LANE_WIDTH * 4;
-// 河带含两岸大道的半幅；引桥从路缘起坡后仍保留4格桥身。
+// 河带含两岸大道的半幅、岸带和4格水面；桥身长度按基础落点确定。
 export const CITY_PARK_DEPTH = 9.6;
 export const CITY_RIVER_DEPTH = bridgeLevels.riverDepth;
+export const CITY_RIVER_BANK_DEPTH = 1.6;
 const QUARTER_COLUMNS = 13;
 export const CITY_QUARTER_ROADS = [13, 26 + CITY_ROAD_WIDTH, 39 + CITY_ROAD_WIDTH * 2] as const;
 export const CITY_YEAR_WIDTH = QUARTER_COLUMNS * 4 + CITY_ROAD_WIDTH * 3;

@@ -1,11 +1,12 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
-import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_DEPTH, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { planCityTransport, type CityTrafficSignal } from './city-transport';
 import type { CityBridge } from './city-road-network';
-import { createCityBridgeApproachPainter, CITY_PAINTED_BRIDGE_APPROACH } from './city-bridges';
+import { createCityBridgeApproachPainter } from './city-bridges';
+import catalog from './city-baked-catalog.json';
 import { createCityRoadPainter, planRoadGeometry, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
@@ -121,9 +122,12 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       road(true,afterZ-CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
       CITY_QUARTER_ROADS.forEach((axis,index)=>{const x=fixed(axis+side);if(x>left&&x<right){
         road(false,x,top-CITY_YEAR_GAP/2,bottom+CITY_YEAR_GAP/2,2);
-        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/5)-1,quarter:index+1,
-          style:(original.layout.districts[next.block].year+index)%2===0?'stone':'girder',
-          from:[x,fixed(top+CITY_PAINTED_BRIDGE_APPROACH)],to:[x,fixed(bottom-CITY_PAINTED_BRIDGE_APPROACH)]});
+        const style=(original.layout.districts[next.block].year+index)%2===0?'stone':'girder';
+        const profile=catalog[`transport-bridge-${style}`],waterNear=top+CITY_RIVER_BANK_DEPTH,waterFar=bottom-CITY_RIVER_BANK_DEPTH;
+        const from=style==='stone'?waterNear-Math.min(...profile.supportAnchors.map(p=>p.z)):(waterNear+waterFar)/2-profile.supportAnchors[0].z;
+        // 桥身跨过两岸，桥跨由模型基础间距决定；引桥使用余下岸带接回路缘。
+        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/5)-1,quarter:index+1,style,
+          from:[x,from],to:[x,from+profile.nativeDepth],landings:{from:[x,top],to:[x,bottom]}});
       }});
     } else road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,4);
   }
@@ -227,7 +231,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       const laneWidth=cityRoadWidth(road)/road.lanes,offset=laneWidth*(.5+seed%(road.lanes/2))*direction;
       const x=a[0]+dx*fraction+dz/length*offset,z=a[1]+dz*fraction-dx/length*offset;
       if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+.8)||
-        bridges.some(bridge=>Math.abs(x-bridge.from[0])<.8&&z>bridge.from[1]-CITY_PAINTED_BRIDGE_APPROACH-.6&&z<bridge.to[1]+CITY_PAINTED_BRIDGE_APPROACH+.6)||
+        bridges.some(bridge=>Math.abs(x-bridge.from[0])<catalog[`transport-bridge-${bridge.style}`].nativeWidth/2+.3&&z>bridge.landings.from[1]-.6&&z<bridge.landings.to[1]+.6)||
         labels.some(label=>Math.hypot(label.x-x,label.z-z)<cityRoadLabelLength(label.text,label.kind)/2+.65)||
         vehicles.some(v=>Math.hypot(v.x-x,v.z-z)<1.1))continue;
       vehicles.push({x,z,angle:Math.atan2(dz,dx)+(direction===-1?Math.PI:0),kind:kinds[(seed+(direction===1?0:1))%4],color:colors[seed%colors.length]});
@@ -389,7 +393,7 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
     const x=route.points[0][0];
     let spans:[number,number][]=[[Math.min(route.points[0][1],route.points[1][1]),Math.max(route.points[0][1],route.points[1][1])]];
     for(const bridge of plan.scene.roadNetwork.bridges)if(bridge.from[0]===x){
-      const from=bridge.from[1]-CITY_PAINTED_BRIDGE_APPROACH,to=bridge.to[1]+CITY_PAINTED_BRIDGE_APPROACH;
+      const from=bridge.landings.from[1],to=bridge.landings.to[1];
       spans=spans.flatMap(([start,end])=>[[start,Math.min(end,from)],[Math.max(start,to),end]] as [number,number][]).filter(([start,end])=>end>start);
     }
     return spans.map(([start,end])=>({...route,points:[[x,start],[x,end]] as RoadPoint[]}));
@@ -397,8 +401,13 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
   const paintRoads=createCityRoadPainter(groundRoads,plan.scene.roadNetwork.junctions);
   const paintApproaches=createCityBridgeApproachPainter(plan.scene.roadNetwork.bridges);
   const water=plan.rivers.map(({left,right,z,top,bottom})=>{
-    const half=(bottom-top)/2-CITY_PAINTED_BRIDGE_APPROACH,samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
-      const x=left+(right-left)*i/Math.ceil((right-left)*4),wave=.06*Math.sin(x*1.7+z);
+    const half=(bottom-top)/2-CITY_RIVER_BANK_DEPTH;
+    const crossings=plan.scene.roadNetwork.bridges.filter(b=>b.landings.from[1]===top&&b.landings.to[1]===bottom);
+    const samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
+      const x=left+(right-left)*i/Math.ceil((right-left)*4);
+      // 桥台范围修成直岸，桥脚与两岸接触处不能再被装饰性波动挪开。
+      const bankBlend=crossings.reduce((blend,b)=>Math.min(blend,Math.max(0,Math.min(1,Math.abs(x-b.from[0])-catalog[`transport-bridge-${b.style}`].nativeWidth/2-.25))),1);
+      const wave=.06*Math.sin(x*1.7+z)*bankBlend;
       return {x,near:z-half+wave,far:z+half-wave};
     });
     const bank=(side:'near'|'far')=>{const path=new Path2D();samples.forEach((p,i)=>i?path.lineTo(...project(p.x,p[side])):path.moveTo(...project(p.x,p[side])));return path};

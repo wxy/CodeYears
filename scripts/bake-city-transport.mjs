@@ -65,7 +65,7 @@ for(const [style,spec]of Object.entries(bridgeConfig.bridges)){
   const unit=spec.maxPixels/(right-left),canvas=createCanvas(Math.ceil((right-left)*unit)+4,Math.ceil((bottom-top)*unit)+4),c=canvas.getContext('2d');
   c.setTransform(a*unit,shear*unit,0,vertical*unit,(tx-left)*unit+2,(ty-top)*unit+2);c.imageSmoothingQuality='high';c.drawImage(bridge,0,0);
   // 原画下部结构的高度/透视未随桥面标定；按真实水位校准桥墩落点。
-  // X不动、上部桥面不动；只在前侧桥面以下沿竖直方向调整，保持引桥端点。
+  // 在本轮桥跨的标定坐标内，仅修正前侧桥面以下的竖直投影；实际桥位由规划器按基础落岸。
   const feet=spec.supportFeet.map(point).sort((p,q)=>p[0]-q[0]);
   const supportW=d/2+2*feet.reduce((sum,p)=>sum+p[0],0)/feet.length;
   const underDeck=x=>(w+spec.deckWidth)/4-x/2;
@@ -92,7 +92,7 @@ for(const [style,spec]of Object.entries(bridgeConfig.bridges)){
     target.clearRect(column,Math.floor(cut),1,canvas.height-Math.floor(cut));
     target.drawImage(canvas,column,cut,1,canvas.height-cut,column,cut,1,(canvas.height-cut)*scale);
   }
-  await save(`transport-bridge-${style}`,corrected,{left:left-2/unit,top:top-2/unit,width:corrected.width/unit,height:corrected.height/unit,nativeWidth:w,nativeDepth:d,baselineHeight:spec.height,carriageway:spec.carriageway,deckWidth:spec.deckWidth,curb:spec.curb});
+  await save(`transport-bridge-${style}`,corrected,{left:left-2/unit,top:top-2/unit,width:corrected.width/unit,height:corrected.height/unit,nativeWidth:w,nativeDepth:d,baselineHeight:spec.height,carriageway:spec.carriageway,deckWidth:spec.deckWidth,curb:spec.curb,supportAnchors:anchors.map(({z})=>({w:supportW,z}))});
   report.at(-1).supports=anchors.map(({x,y,z,target,scale})=>({reference:[x,y],scale,
     before:{w:x+2*y-waterDrop*2,z:-x+2*y-waterDrop*2},
     after:{w:x+2*target-waterDrop*2,z:-x+2*target-waterDrop*2},targetZ:z}));

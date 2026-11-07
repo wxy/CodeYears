@@ -5,6 +5,7 @@ import type { CityVehicle, CityVehicleKind } from './city-vehicles';
 
 export interface CityBridge {
   id: string; band: number; quarter: number; style:'stone'|'girder'; from: RoadPoint; to: RoadPoint;
+  landings: { from: RoadPoint; to: RoadPoint };
 }
 export interface CityRoadNetwork {
   roads: CityRoadRoute[]; junctions: CityRoadJunction[]; bridges: CityBridge[];
@@ -70,7 +71,8 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
       const to = after.quarters.find(q => q.quarter === from.quarter);
       if (to) bridges.push({ id: `bridge-${band}-${from.quarter}`, band, quarter: from.quarter,
         style:(layout.districts[block].year+from.quarter)%2===0?'stone':'girder',
-        from: [from.x, before.z + 7 + halfYear], to: [to.x, after.z - halfYear] });
+        from: [from.x, before.z + 7 + halfYear], to: [to.x, after.z - halfYear],
+        landings:{from:[from.x,before.z+7+halfYear],to:[to.x,after.z-halfYear]} });
     }
   });
 

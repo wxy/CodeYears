@@ -4,16 +4,15 @@ import catalog from './city-baked-catalog.json';
 import bridgeLevels from './city-bridge-levels.json';
 
 export const CITY_PAINTED_BRIDGE_ELEVATION=bridgeLevels.deckElevation;
-export const CITY_PAINTED_BRIDGE_APPROACH=1.6;
 
 /** 引桥由年度大道的靠河路缘向外起坡，不能覆盖岸路的任何一条车道。 */
 export function createCityBridgeApproachPainter(bridges:readonly CityBridge[]):(context:CanvasRenderingContext2D)=>void {
   const commands:{path:Path2D;color:string;width?:number}[]=[];
   for(const bridge of bridges)for(const near of [false,true]){
     const profile=catalog[`transport-bridge-${bridge.style}`];
-    const [x,z]=near?bridge.to:bridge.from;
+    const from=near?bridge.to:bridge.landings.from,to=near?bridge.landings.to:bridge.from;
     const point=(t:number,offset:number,ground=false):[number,number]=>{
-      const along=near?z+t*CITY_PAINTED_BRIDGE_APPROACH:z+(t-1)*CITY_PAINTED_BRIDGE_APPROACH;
+      const x=from[0]+(to[0]-from[0])*t,along=from[1]+(to[1]-from[1])*t;
       const blend=t*t*(3-2*t),height=ground?0:CITY_PAINTED_BRIDGE_ELEVATION*(near?1-blend:blend);
       return [(x+offset-along)*.5,(x+offset+along)*.25-height*.5];
     };
