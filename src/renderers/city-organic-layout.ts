@@ -7,7 +7,7 @@ import { planCityTransport, type CityTrafficSignal } from './city-transport';
 import type { CityBridge } from './city-road-network';
 import { createCityBridgeApproachPainter } from './city-bridges';
 import catalog from './city-baked-catalog.json';
-import { createCityRoadPainter, planRoadGeometry, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
+import { createCityRoadPainter, planRoadGeometry, planSignalizedApproaches, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
 
 const DAY = 86400000;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
@@ -191,16 +191,24 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     for(const span of merged)roads.push({id:`organic-${line.kind}-${roads.length}`,lanes:line.lanes,...(line.kind==='street'?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),points:line.horizontal?[[span.start,line.at],[span.end,line.at]]:[[line.at,span.start],[line.at,span.end]]});
   }
   const junctions:CityRoadJunction[]=[];
-  // 主路接环路用紧凑环岛吸收车幅和方向变化，外径不超出较宽道路的预留车幅。
-  for(const road of roads)if(!road.closed&&road.lanes===4)for(const [x,z] of road.points){
-    const contact=roads.filter(other=>other.closed).flatMap(other=>other.points.map((a,i)=>{
-      const b=other.points[(i+1)%other.points.length];
-      const px=Math.max(Math.min(a[0],b[0]),Math.min(Math.max(a[0],b[0]),x));
-      const pz=Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z));
-      return {x:px,z:pz,distance:Math.hypot(px-x,pz-z),width:cityRoadWidth(other)};
-    })).filter(hit=>hit.distance<=CITY_YEAR_GAP/2+1e-6).sort((a,b)=>a.distance-b.distance)[0];
-    if(contact&&!junctions.some(j=>j.x===contact.x&&j.z===contact.z))
-      junctions.push({x:contact.x,z:contact.z,radius:Math.max(cityRoadWidth(road),contact.width)/2,roundabout:true});
+  // 年度大道按自身轴线接入环路。接入弯角只拉直弯外侧，不再叠加环岛。
+  for(const road of roads)if(!road.closed&&road.lanes===4){
+    const points=road.points.map(([x,z]):RoadPoint=>{
+      const contact=roads.filter(other=>other.closed).flatMap(other=>other.points.flatMap((a,i)=>{
+        const b=other.points[(i+1)%other.points.length];
+        if(a[0]!==b[0])return [];
+        const pz=Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z));
+        return [{road:other,x:a[0],distance:Math.hypot(a[0]-x,pz-z)}];
+      })).filter(hit=>hit.distance<=CITY_YEAR_GAP/2+1e-6).sort((a,b)=>a.distance-b.distance)[0];
+      if(!contact)return [x,z];
+      const geometry=planRoadGeometry(contact.road),corner=geometry.points.find((p,i)=>Math.hypot(p[0]-contact.x,p[1]-z)<=geometry.radii[i]+1e-6);
+      if(corner&&!contact.road.junctionCorners?.some(p=>p[0]===corner[0]&&p[1]===corner[1]))
+        contact.road.junctionCorners=[...contact.road.junctionCorners??[],corner];
+      if(!junctions.some(j=>j.x===contact.x&&j.z===z))
+        junctions.push({x:contact.x,z,radius:Math.max(cityRoadWidth(road),cityRoadWidth(contact.road))/2,signalized:true});
+      return [contact.x,z];
+    });
+    road.points=points;
   }
   joinOrganicStreets(roads,junctions);
   const roadSegments=roads.flatMap(route=>planRoadGeometry(route).straights.map(edge=>({...edge,route})));
@@ -211,15 +219,18 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
   }
   const labels=planRoadLabels(original,regions,roads,junctions,namingOriginYear);
   const straights=roads.flatMap(road=>planRoadGeometry(road).straights.map(edge=>({...edge,road})));
-  const signals:CityTrafficSignal[]=junctions.filter(j=>j.roundabout).map(({x,z})=>({x,z,heads:['x','z']}));
+  const signals:CityTrafficSignal[]=planSignalizedApproaches(roads,junctions).map(({x,z,dx,dz,half})=>({
+    x:x-dx*.18-dz*(half-.09),z:z-dz*.18+dx*(half-.09),heads:[dx!==0?'x':'z'],
+  }));
   for(const item of original.items)if(item.id.startsWith('traffic-signal')){
     const x=item.x+.125,z=item.z+.125;
-    if(junctions.some(j=>j.roundabout&&Math.hypot(j.x-x,j.z-z)<j.radius+.6))continue;
+    if(junctions.some(j=>(j.roundabout||j.signalized)&&Math.hypot(j.x-x,j.z-z)<j.radius+.6))continue;
+    if(signals.some(signal=>Math.hypot(signal.x-x,signal.z-z)<.8))continue;
     if(straights.some(({a,b,road})=>Math.hypot(x-Math.max(Math.min(a[0],b[0]),Math.min(Math.max(a[0],b[0]),x)),
       z-Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z)))<=cityRoadWidth(road)/2+.35))
       signals.push({x,z,heads:[item.id==='traffic-signal-w'?'x':'z']});
   }
-  // 只在最终圆角直道的车道内布车，避开环岛、文字和彼此；缩放不重新布置。
+  // 只在最终圆角直道的车道内布车，避开路口、文字和彼此；缩放不重新布置。
   const vehicles:CityVehicle[]=[],kinds:CityVehicleKind[]=['sedan','suv','van','bus'];
   const colors=['#b65f4f','#52768b','#dbbd62','#e1ded1','#647e70','#7d6b88'];
   for(const {a,b,road} of straights){
@@ -258,7 +269,7 @@ function planRoadLabels(scene:CityScene,regions:readonly OrganicRegion[],roads:r
       const crossing=horizontal?other.a[0]:other.a[1],clearance=cityRoadWidth(other.road)/2+.25;
       spans=spans.flatMap(([start,end])=>[[start,Math.min(end,crossing-clearance)],[Math.max(start,crossing+clearance),end]] as [number,number][]).filter(([start,end])=>end>start);
     }
-    for(const junction of junctions)if(junction.roundabout&&Math.abs(at-(horizontal?junction.z:junction.x))<junction.radius){
+    for(const junction of junctions)if((junction.roundabout||junction.signalized)&&Math.abs(at-(horizontal?junction.z:junction.x))<junction.radius){
       const crossing=horizontal?junction.x:junction.z,clearance=junction.radius+.25;
       spans=spans.flatMap(([start,end])=>[[start,Math.min(end,crossing-clearance)],[Math.max(start,crossing+clearance),end]] as [number,number][]).filter(([start,end])=>end>start);
     }
@@ -310,7 +321,7 @@ function joinOrganicStreets(roads:CityRoadRoute[],junctions:readonly CityRoadJun
     const points=road.points.map(p=>[...p] as RoadPoint),horizontal=points[0][1]===points[1][1];
     for(const end of [0,1]){
       const point=points[end];
-      if(junctions.some(j=>j.roundabout&&Math.hypot(j.x-point[0],j.z-point[1])<j.radius))continue;
+      if(junctions.some(j=>(j.roundabout||j.signalized)&&Math.hypot(j.x-point[0],j.z-point[1])<j.radius))continue;
       const crossings=segments.filter(segment=>segment.road!==road).flatMap(({a,b})=>{
         if(horizontal&&a[0]===b[0]&&point[1]>=Math.min(a[1],b[1])&&point[1]<=Math.max(a[1],b[1])&&Math.abs(a[0]-point[0])<=1)
           return [{point:[a[0],point[1]] as RoadPoint,distance:Math.abs(a[0]-point[0])}];
