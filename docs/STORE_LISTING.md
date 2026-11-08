@@ -1,5 +1,13 @@
 # CodeYears 商店材料
 
+## 0.1.2 上传交接 · 2026-11-08
+
+新版包为 `release/codeyears-0.1.2-city.zip`（118文件，23,502,810 bytes），校验值与验证范围见[发行报告](reports/CITY-0.1.2-RELEASE.md)。保留包内中英文名称和既有权限。工具没有完成后台上传或提审；用户上传后核对0.1.2，再检查数据用途与隐私政策链接，提交和商店上线另行确认。0.1.1的正式媒体仍保留，本次未重新拍摄。
+
+本版新增按需读取建筑成员日的仓库名和活动数量，摘要用于解释时间规律及项目，不读取仓库文件、PR正文或提交说明，不提取具体PR/Issue标题；活动详情仅存五分钟页内内存。选中最早年份时最多额外查询首个非零日以确认Joined GitHub事件。没有新增账户、Token、后端、遥测、权限或地图本地持久化。商店数据披露须按这个实际读取范围核对，不能因为权限不变就沿用“只读贡献日期与数量”的说法。最新说明以[PRIVACY.md](../PRIVACY.md)为准。
+
+下方是同步后的可复制说明，历史提交状态仅保留对应日期。
+
 2026-11-04提审后：用户已确认提交0.1.1商店审核。该状态来自维护者确认，不是工具读取后台的结果；尚未确认审核通过或商店0.1.1上线。
 
 2026-11-04本轮准备：0.1.1安装包及[完整上传材料](store/city-0.1.1/README.md)已制作并核验，中文、英文各三张，全球完整复用英文组；宣传图块不变。包内本地化名称、150%初始取景与新工具条均已反映到新图。浏览器工具禁止控制商店后台，本次未修改表单或提交审核，上传与最终提交由用户操作。下方0.1.0内容为已上架基线与历史核对。
@@ -29,9 +37,13 @@ CodeYears 在 GitHub 个人主页的贡献区提供“城市 / 贡献图”标�
 
 先看到完整空场地与道路，再随已校验的年度数据填入地块。未知、尚未返回和未来日期不会被填成零贡献。读取、取消、警告与失败状态在画布浮层中显示，正常完成后隐藏。
 
-从多年全景到建筑近景，支持滚轮缩放和拖动平移；聚焦城市画布后可用方向键平移、按 + 放大、- 缩小。右下角工具条提供全景图标、当前比例和最大倍率图标；初始缩放为150%，允许适当裁切边缘；全景图标用于查看完整城市。可在当前页面内展开和收起，展开后按 Esc 或点击遮罩返回。缩放不会改变真实数量或重新决定建筑合并。
+从多年街区到建筑近景，支持滚轮缩放和拖动平移；聚焦城市画布后可用方向键平移、按 + 放大、- 缩小。右下角工具条提供全景图标、当前比例和最大倍率图标；初始100%对应旧版150%的取景，最小50%、最大不超过2000%，较小城市受素材细节上限约束；全景图标缩到允许的下限并居中。可在当前页面内展开和收起，展开后按 Esc 或点击遮罩返回。缩放不会改变真实数量或重新决定建筑合并。
 
 零贡献区域以自然地块或城市邻域铺装表达；少量正贡献从平房开始，逐步对应低层住宅、公寓、办公楼与大厦。道路、河道和城郊景观只作装饰。年份按 ISO 完整周组织，边界日期可能归入相邻周年，因此所选周年合计可能与 GitHub 公历年统计不同。
+
+城市轮廓随活动地块变化，长空闲区保留为野外，分离街区通过道路连接。更多住宅、商铺和公共建筑、英文路名、静态车辆与红绿灯及两种桥梁丰富街景。悬停建筑可查看时间规律、相关仓库和大致的提交、PR、评审与Issue数量汇总；详情按需读取，在同页内存中复用五分钟，不代表完整统计。明确确认加入GitHub的单日事件时，以一座高塔纪念。
+
+切回官方贡献图或其他标签页后，先核对身份与缓存期限，条件未变则复用已生成地图和画布，避免重新计算与绘制。离开主页或刷新、清除、身份失败时释放。数据加载最多并行读取两个源年。
 
 “更多”将主页操作与帮助分组，帮助和图例可折叠；点击菜单外部或按 Esc 可关闭菜单。可查看数据与操作帮助，刷新或清除当前主页缓存，并选择英文、简体中文或跟随浏览器。界面双语不等于 GitHub 网页任意语言均可解析：当前贡献来源主要验证英文页面。
 
@@ -67,9 +79,13 @@ CodeYears adds City and Contributions tabs to the contribution section of a GitH
 
 A complete empty site and road network appear first. Validated yearly data then fills the city. Unknown, pending and future dates are never treated as zero contributions. Loading, cancellation, warnings and errors appear in an overlay on the canvas, which hides after normal completion.
 
-Explore a multi-year overview or zoom into individual buildings. Use the wheel to zoom and drag to pan. When the city canvas is focused, use arrow keys to pan, + to zoom in, and - to zoom out. The compact toolbar offers Fit view, the current percentage and Maximum zoom. The city starts at 150% zoom and may crop the edges. Fit view shows the full city. Expand the same canvas within the page, then press Esc or click the backdrop to return. Zooming does not change the underlying counts or replan merged buildings.
+Explore multiple neighborhoods or zoom into individual buildings. Use the wheel to zoom and drag to pan. When the city canvas is focused, use arrow keys to pan, + to zoom in, and - to zoom out. The compact toolbar offers Fit view, the current percentage and Maximum zoom. The initial 100% view corresponds to the former 150% view, with a 50% minimum and a 2000% ceiling, also constrained by artwork detail for smaller cities. Fit view centers the city at the allowed minimum. Expand the same canvas within the page, then press Esc or click the backdrop to return. Zooming does not change the underlying counts or replan merged buildings.
 
 Zero-contribution areas use natural plots or paving near urban neighborhoods. Positive contributions begin with small houses, then progress through low-rise homes, apartments, offices and towers. Roads, rivers and scenery outside the city are decorative. The city groups complete ISO weeks, so year-boundary dates and totals can differ from GitHub's calendar-year statistics.
+
+Active plots shape irregular neighborhoods, with wilderness during long quiet periods and roads connecting separated districts. More homes, shops and public buildings, English road labels, static vehicles and signals, and two bridge styles enrich the city. Hover over a building for time patterns, related repositories and approximate commit, PR, review and issue totals. Details load on demand and reuse a five-minute page-local cache; they are not complete statistics. An explicitly confirmed single-day Joined GitHub event is marked by a distinctive tower.
+
+Returning from the original graph or another browser tab checks identity and cache validity, then reuses the existing map and unchanged canvas. Leaving the profile, refreshing or clearing data, or an identity-check failure releases the city. Up to two source years load in parallel.
 
 More groups profile actions and help, with collapsible help and legend sections. Click outside the menu or press Esc to close it. Open More for data and viewing help, refresh and cache removal, and the interface language setting: English, Simplified Chinese or the browser language. A bilingual interface does not mean every GitHub page language can be parsed. The contribution source has primarily been validated on English pages.
 
