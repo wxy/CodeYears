@@ -1,0 +1,1 @@
+{"extends":"../../tsconfig.json","compilerOptions":{"types":["vite/client","node","chrome"]},"include":["*.ts","../../src","../../docs/design/city-model-expansion/culture-transit/*.json"]}

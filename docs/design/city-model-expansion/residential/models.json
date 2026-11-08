@@ -1,0 +1,90 @@
+[
+  {
+    "id": "res-mono-limestone",
+    "name": "斜顶石材平房",
+    "band": 0,
+    "footprint": [
+      1,
+      1
+    ],
+    "source": "generated-sheet.png",
+    "status": "candidate"
+  },
+  {
+    "id": "res-vault-brick",
+    "name": "拱顶砖砌小住宅",
+    "band": 0,
+    "footprint": [
+      1,
+      1
+    ],
+    "source": "generated-sheet.png",
+    "status": "candidate"
+  },
+  {
+    "id": "res-mansard-stucco",
+    "name": "孟莎顶抹灰住宅",
+    "band": 1,
+    "footprint": [
+      1,
+      1
+    ],
+    "source": "generated-sheet.png",
+    "status": "candidate"
+  },
+  {
+    "id": "res-sawtooth-duplex",
+    "name": "锯齿顶砖砌双户住宅",
+    "band": 1,
+    "footprint": [
+      1,
+      1
+    ],
+    "source": "generated-sheet.png",
+    "status": "candidate"
+  },
+  {
+    "id": "res-grocer-wide",
+    "name": "横向拱窗杂货店",
+    "band": 1,
+    "footprint": [
+      2,
+      1
+    ],
+    "source": "shops-transparent.png",
+    "status": "candidate"
+  },
+  {
+    "id": "res-bakery-deep",
+    "name": "纵向转角面包店",
+    "band": 1,
+    "footprint": [
+      1,
+      2
+    ],
+    "source": "shops-transparent.png",
+    "status": "candidate"
+  },
+  {
+    "id": "res-terracotta-apartment",
+    "name": "赤陶阳台公寓",
+    "band": 2,
+    "footprint": [
+      1,
+      1
+    ],
+    "source": "generated-sheet.png",
+    "status": "candidate"
+  },
+  {
+    "id": "res-limestone-bay",
+    "name": "浅石凸窗公寓",
+    "band": 2,
+    "footprint": [
+      1,
+      1
+    ],
+    "source": "generated-sheet.png",
+    "status": "candidate"
+  }
+]

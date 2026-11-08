@@ -1,0 +1,56 @@
+{
+  "ct-bus-station": {
+    "mappedW": 0.5000000000000001,
+    "mappedD": -0.5,
+    "clearance": [
+      0.3360612409347301,
+      0.1572162386081195
+    ],
+    "actualHeight": 1.2
+  },
+  "ct-museum": {
+    "mappedW": 0.5,
+    "mappedD": -0.5,
+    "clearance": [
+      0.6586032478480786,
+      0.28062827225130904
+    ],
+    "actualHeight": 1.3999999999999997
+  },
+  "ct-music-hall": {
+    "mappedW": 0.5,
+    "mappedD": -0.5,
+    "clearance": [
+      0.09999999999999992,
+      0.548571428571428
+    ],
+    "actualHeight": 1.211295748802121
+  },
+  "ct-community-gym": {
+    "mappedW": 0.5,
+    "mappedD": -0.4999999999999999,
+    "clearance": [
+      0.15141146429514835,
+      0.46356097560975607
+    ],
+    "actualHeight": 1.3999999999999997
+  },
+  "ct-market-hall": {
+    "mappedW": 0.5,
+    "mappedD": -0.5,
+    "clearance": [
+      0.7519713261648747,
+      0.09999999999999992
+    ],
+    "actualHeight": 0.8267232570934523
+  },
+  "ct-clock-culture": {
+    "mappedW": 0.5,
+    "mappedD": -0.5,
+    "clearance": [
+      0.24418770503494502,
+      0.18846621504255695
+    ],
+    "actualHeight": 2
+  }
+}

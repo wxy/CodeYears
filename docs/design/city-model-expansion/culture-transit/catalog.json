@@ -1,0 +1,68 @@
+{
+  "ct-bus-station": {
+    "file": "ct-bus-station.png",
+    "left": -0.7910037618816933,
+    "top": -0.7812752262845488,
+    "width": 1.075201953277833,
+    "height": 1.4641047874421556,
+    "nativeWidth": 1,
+    "nativeDepth": 2,
+    "baselineHeight": 1.2,
+    "sampleId": "ct-bus-station"
+  },
+  "ct-museum": {
+    "file": "ct-museum.png",
+    "left": -0.5537553418553925,
+    "top": -0.7929114337890156,
+    "width": 1.1055862846841122,
+    "height": 1.6780440052122494,
+    "nativeWidth": 2,
+    "nativeDepth": 2,
+    "baselineHeight": 1.3999999999999997,
+    "sampleId": "ct-museum"
+  },
+  "ct-music-hall": {
+    "file": "ct-music-hall.png",
+    "left": -0.699868789621112,
+    "top": -0.7181859084963921,
+    "width": 0.8904791390240313,
+    "height": 1.346236178682,
+    "nativeWidth": 1,
+    "nativeDepth": 2,
+    "baselineHeight": 1.211295748802121,
+    "sampleId": "ct-music-hall"
+  },
+  "ct-community-gym": {
+    "file": "ct-community-gym.png",
+    "left": -0.710905493945306,
+    "top": -0.6765370427698194,
+    "width": 0.937935301668806,
+    "height": 1.3002424398585615,
+    "nativeWidth": 1,
+    "nativeDepth": 2,
+    "baselineHeight": 1.3999999999999997,
+    "sampleId": "ct-community-gym"
+  },
+  "ct-market-hall": {
+    "file": "ct-market-hall.png",
+    "left": -0.08689314891714933,
+    "top": -0.5301724230113939,
+    "width": 0.6909527394051856,
+    "height": 1.0963878178991375,
+    "nativeWidth": 2,
+    "nativeDepth": 1,
+    "baselineHeight": 0.8267232570934523,
+    "sampleId": "ct-market-hall"
+  },
+  "ct-clock-culture": {
+    "file": "ct-clock-culture.png",
+    "left": -0.29403739779423527,
+    "top": -1.0357237294569266,
+    "width": 0.5951987753332458,
+    "height": 1.5036600639997788,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 2,
+    "sampleId": "ct-clock-culture"
+  }
+}

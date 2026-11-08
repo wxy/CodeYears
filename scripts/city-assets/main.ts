@@ -9,6 +9,7 @@ import type { LandscapeViewport } from '../../src/renderers/types';
 
 declare const __BAKE_TOKEN__: string;
 const sampleIds = ['office-h3-a', 'forest-2x2-a', 'grass-1x1-a', 'natural-ground'];
+const naturalButton = document.querySelector<HTMLButtonElement>('#natural')!;
 const sampleButton = document.querySelector<HTMLButtonElement>('#sample')!;
 const allButton = document.querySelector<HTMLButtonElement>('#all')!;
 const status = document.querySelector<HTMLOutputElement>('#status')!;
@@ -18,7 +19,7 @@ const compareButton = document.querySelector<HTMLButtonElement>('#compare')!;
 const pngBlob = (canvas: HTMLCanvasElement) => new Promise<Blob>((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG编码失败。')), 'image/png'));
 
 async function generate(ids: string[]) {
-  sampleButton.disabled = allButton.disabled = compareButton.disabled = true;
+  naturalButton.disabled = sampleButton.disabled = allButton.disabled = compareButton.disabled = true;
   rows.replaceChildren(); samples.replaceChildren();
   const entries = [], sources = new Map<string, number>(); let total = 0;
   try {
@@ -56,7 +57,7 @@ async function generate(ids: string[]) {
     const result = await response.json(), sourceBytes = [...sources.values()].reduce((a, b) => a + b, 0);
     status.textContent = `PASS：${ids.length}张，RGBA及Alpha差异为0。原图${sourceBytes} bytes → 运行图${total} bytes，减少${(100 * (1 - total / sourceBytes)).toFixed(2)}%。\n已写入：${result.output}`;
   } catch (error) { status.textContent = `FAIL：${String(error)}`; }
-  finally { sampleButton.disabled = allButton.disabled = compareButton.disabled = false; }
+  finally { naturalButton.disabled = sampleButton.disabled = allButton.disabled = compareButton.disabled = false; }
 }
 
 function showSample(id: string, original: HTMLCanvasElement, restored: HTMLCanvasElement) {
@@ -75,11 +76,12 @@ function showSample(id: string, original: HTMLCanvasElement, restored: HTMLCanva
   near.append(canvas); card.append(near); samples.append(card);
 }
 
+naturalButton.onclick = () => void generate(['natural-ground']);
 sampleButton.onclick = () => void generate(sampleIds);
 allButton.onclick = () => void generate([...Object.keys(CITY_UNIT_CATALOG), ...CITY_OUTSKIRT_IDS]);
 
 compareButton.onclick = async () => {
-  sampleButton.disabled = allButton.disabled = compareButton.disabled = true;
+  naturalButton.disabled = sampleButton.disabled = allButton.disabled = compareButton.disabled = true;
   const output = document.querySelector<HTMLOutputElement>('#scene-result')!, scenes = document.querySelector<HTMLElement>('#scenes')!;
   scenes.replaceChildren(); output.textContent = '正在比较完整场景…';
   let source: CityImages = {}, baked: CityImages = {};
@@ -123,6 +125,6 @@ compareButton.onclick = async () => {
   } catch (error) { output.textContent += `\nFAIL：${String(error)}`; }
   finally {
     closeCityImages(source); closeCityImages(baked);
-    sampleButton.disabled = allButton.disabled = compareButton.disabled = false;
+    naturalButton.disabled = sampleButton.disabled = allButton.disabled = compareButton.disabled = false;
   }
 };

@@ -1,0 +1,90 @@
+{
+  "res-mono-limestone": {
+    "file": "res-mono-limestone.png",
+    "left": -0.13559764863052706,
+    "top": -0.11563705414443352,
+    "width": 0.2786458333333333,
+    "height": 0.4453125,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 0.29999999999999993,
+    "sampleId": "res-mono-limestone"
+  },
+  "res-vault-brick": {
+    "file": "res-vault-brick.png",
+    "left": -0.15382365615529323,
+    "top": -0.1350287127762099,
+    "width": 0.3125,
+    "height": 0.46875,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 0.3,
+    "sampleId": "res-vault-brick"
+  },
+  "res-mansard-stucco": {
+    "file": "res-mansard-stucco.png",
+    "left": -0.22325225099382637,
+    "top": -0.4206699206465519,
+    "width": 0.4557291666666667,
+    "height": 0.7916666666666666,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 0.8000000000000002,
+    "sampleId": "res-mansard-stucco"
+  },
+  "res-sawtooth-duplex": {
+    "file": "res-sawtooth-duplex.png",
+    "left": -0.30620913748772277,
+    "top": -0.6102221332482521,
+    "width": 0.6167981465609823,
+    "height": 1.02978473164964,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 0.8000000000000002,
+    "sampleId": "res-sawtooth-duplex"
+  },
+  "res-grocer-wide": {
+    "file": "res-grocer-wide.png",
+    "left": -0.1237053964410147,
+    "top": -0.348287991155148,
+    "width": 0.7369791666666666,
+    "height": 0.9427083333333334,
+    "nativeWidth": 2,
+    "nativeDepth": 1,
+    "baselineHeight": 0.8000000000000002,
+    "sampleId": "res-grocer-wide"
+  },
+  "res-bakery-deep": {
+    "file": "res-bakery-deep.png",
+    "left": -0.5236509352370488,
+    "top": -0.20934358491279617,
+    "width": 0.5572916666666666,
+    "height": 0.75,
+    "nativeWidth": 1,
+    "nativeDepth": 2,
+    "baselineHeight": 0.8000000000000002,
+    "sampleId": "res-bakery-deep"
+  },
+  "res-terracotta-apartment": {
+    "file": "res-terracotta-apartment.png",
+    "left": -0.34509053545034446,
+    "top": -1.0040486340781092,
+    "width": 0.7232809166480664,
+    "height": 1.4465618332961327,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 2,
+    "sampleId": "res-terracotta-apartment"
+  },
+  "res-limestone-bay": {
+    "file": "res-limestone-bay.png",
+    "left": -0.32926318524166637,
+    "top": -0.9578495684470667,
+    "width": 0.670006009238819,
+    "height": 1.3758412168326553,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 2,
+    "sampleId": "res-limestone-bay"
+  }
+}

@@ -37,13 +37,14 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
       .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:min(24ch,100%); white-space:nowrap; }
       #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
-      .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:var(--bgColor-default,#fff); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
+      .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
-      .view-tools { position:absolute; right:10px; bottom:10px; display:flex; align-items:center; padding:3px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:var(--bgColor-default,#fff); }
+      .view-tools { position:absolute; right:10px; bottom:10px; display:flex; align-items:center; padding:3px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); }
+      .status button { background:transparent; }
       .view-tools button { display:grid; place-items:center; width:30px; height:30px; padding:6px; border:0; background:transparent; }
-      .view-tools button:hover { background:var(--bgColor-muted,#f6f8fa); }
+      .view-tools button:hover { background:color-mix(in srgb,var(--bgColor-muted,#f6f8fa) 70%,transparent); }
       .view-tools svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
       .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
@@ -202,12 +203,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (!active || controller !== request) return;
         if (error) { renderFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears, showZoom);
+      }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!);
       fieldCreated = true;
       return city;
     };
     const warnings = new Set<string>();
-    if (firstSource > firstNeeded || (lastSource < lastNeeded && lastNeeded <= calendarYear)) warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
     try {
       context = currentContext();
       showIdentity();
