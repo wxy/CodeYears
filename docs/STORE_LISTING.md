@@ -2,7 +2,7 @@
 
 ## 0.1.2 上传交接 · 2026-11-08
 
-新版包为 `release/codeyears-0.1.2-city.zip`（118文件，23,502,810 bytes），校验值与验证范围见[发行报告](reports/CITY-0.1.2-RELEASE.md)。保留包内中英文名称和既有权限。工具没有完成后台上传或提审；用户上传后核对0.1.2，再检查数据用途与隐私政策链接，提交和商店上线另行确认。0.1.1的正式媒体仍保留，本次未重新拍摄。
+新版包为 `release/codeyears-0.1.2-city.zip`（118文件，23,502,810 bytes），校验值与验证范围见[发行报告](reports/CITY-0.1.2-RELEASE.md)。保留包内中英文名称和既有权限。工具没有完成后台上传或提审；用户上传后核对0.1.2，再检查数据用途与隐私政策链接，提交和商店上线另行确认。[0.1.2新截图](store/city-0.1.2/README.md)已按维护者要求重拍本人真实贡献页：70%完整城市、800%建筑近景、400%公开项目悬停摘要，中英文各三张，全球组逐字节复用英文组；尚未替换商店或官网线上图片。旧正式媒体保留。
 
 本版新增按需读取建筑成员日的仓库名和活动数量，摘要用于解释时间规律及项目，不读取仓库文件、PR正文或提交说明，不提取具体PR/Issue标题；活动详情仅存五分钟页内内存。选中最早年份时最多额外查询首个非零日以确认Joined GitHub事件。没有新增账户、Token、后端、遥测、权限或地图本地持久化。商店数据披露须按这个实际读取范围核对，不能因为权限不变就沿用“只读贡献日期与数量”的说法。最新说明以[PRIVACY.md](../PRIVACY.md)为准。
 
@@ -16,7 +16,7 @@
 
 ## 简体中文 · 可复制
 
-名称（来自下一版软件包）：
+名称（来自当前软件包）：
 
 ```text
 CodeYears：GitHub 贡献之城
@@ -53,12 +53,12 @@ CodeYears 在 GitHub 个人主页的贡献区提供“城市 / 贡献图”标�
 
 完全免费，无需 GitHub Token 或独立登录。没有后端、广告或遥测。贡献日期与数量按访问者、主页和年份在本机浏览器缓存；身份无法确认时不复用缓存。仅请求 GitHub，不自动上传城市图片。
 
-GitHub 贡献页面不是稳定公开 API。页面语言、结构或访问权限变化可能导致获取停止；失败和缺失数据不会当作零。适用于 Chrome；Edge 尚未完成独立验收。商店示例图使用明确标记的合成日期与数量，不代表任何真实账户。
+GitHub 贡献页面不是稳定公开 API。页面语言、结构或访问权限变化可能导致获取停止；失败和缺失数据不会当作零。适用于 Chrome；Edge 尚未完成独立验收。新商店截图来自维护者本人GitHub贡献页的真实数据快照；你的城市会反映你自己的贡献。
 ```
 
 ## English · Copy-ready
 
-Name (from the next package):
+Name (from the current package):
 
 ```text
 CodeYears: GitHub Contribution City
@@ -95,7 +95,7 @@ After adjusting the view, right-click the canvas to use your browser's native im
 
 Free to use, with no GitHub token or separate sign-in. No backend, ads or telemetry. Contribution dates and counts are cached locally by viewer, profile and year; the cache is not reused when viewer identity cannot be confirmed. Requests go only to GitHub, and city images are not uploaded automatically.
 
-GitHub's contribution pages are not a stable public API. Changes to page language, structure or access may stop loading. Missing or failed data is not replaced with zeros. Available for Chrome; Edge has not completed separate validation. Store examples use clearly labeled synthetic dates and counts, not a real account.
+GitHub's contribution pages are not a stable public API. Changes to page language, structure or access may stop loading. Missing or failed data is not replaced with zeros. Available for Chrome; Edge has not completed separate validation. New store screenshots show the maintainer's own GitHub contribution history at capture time; your city will reflect your own activity.
 ```
 
 ## 字段、链接与隐私填写依据
@@ -117,7 +117,7 @@ GitHub's contribution pages are not a stable public API. Changes to page languag
 | GitHub 站点范围 | content_scripts.matches 为 https://github.com/*；自动挂轻量入口。点击城市前不请求贡献历史或读取贡献缓存，不预载建筑。不能填写为没有网站访问 |
 | activeTab / scripting | 工具栏点击后，在当前 GitHub 标签页执行包内入口并定位城市 |
 | storage | 本机语言偏好，以及按访问者/主页/源年隔离的日期数量缓存；提供刷新与清除 |
-| 数据处理 | 主页名、访问者用户名/登录状态、日期数量、所选范围和必要缓存元信息；本地处理也应按控制台实际分类披露 |
+| 数据处理 | 主页名、访问者用户名/登录状态、日期数量、所选范围和必要缓存元信息；按需读取建筑成员日的仓库名、活动类型、可读数量及用于去重的链接，以及最早年份的单日加入事件确认；详情仅在当前页内存复用五分钟。本地处理也应按控制台实际分类披露 |
 | 传输与代码 | 仅向 GitHub 请求页面；程序、词库与运行图片来自安装包，无远程执行代码、项目后台、遥测或自动图片上传 |
 
 以上是现有行为的填写依据，不替维护者选择法律分类或确认图片权利。用户已取消专门隔离账户与A/B登录切换验收；不再索取账号、密码或Cookie，不将未执行的身份矩阵写成通过。

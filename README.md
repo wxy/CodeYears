@@ -6,7 +6,7 @@ CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中�
 
 [官网](https://xingyu.wang/extensions/codeyears) · [隐私政策](PRIVACY.md) · [Chrome 商店](https://chromewebstore.google.com/detail/codeyears/mhbphbpbjbndjhodbdmijdopidhcibia) · [GitHub 版本与安装包](https://github.com/wxy/CodeYears/releases) · [0.1.2 版本说明](docs/releases/v0.1.2.md)
 
-![CodeYears 城市总览：示例数据，受控页面外壳](docs/store/city-0.1.1/localized/zh_CN/01-city-overview.jpg)
+![CodeYears：维护者2009–2026年的真实贡献之城](docs/store/city-0.1.2/localized/zh_CN/01-city-overview.jpg)
 
 ## 使用方式
 
@@ -30,7 +30,7 @@ CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中�
 
 无需GitHub Token或独立登录，没有后端、广告或遥测。年度日期/数量在浏览器本地按访问者、主页与年份隔离缓存；身份无法确认时不复用缓存。只向GitHub请求，不自动上传图片。详见 [隐私说明](PRIVACY.md) 与 [数据边界](docs/DATA_AND_PRIVACY.md)。
 
-上方截图保留0.1.1的正式City渲染器与入口示例，尚未反映0.1.2的新轮廓和素材；使用受控外壳与合成数据，不是真实登录主页或私有活动。[图片来源、对应版本和复现方法](docs/store/city-0.1.1/README.md)。0.1.2检查与验收边界见[发行报告](docs/reports/CITY-0.1.2-RELEASE.md)。
+上方截图来自维护者wxy自己的GitHub贡献页，使用正式0.1.2扩展在本机Chrome直接拍摄，展示2009–2026年的60,889次贡献快照。另有800%建筑近景及400%公开项目悬停摘要的完整中英文组。[图片来源、规格与拍摄方法](docs/store/city-0.1.2/README.md)。0.1.2检查与验收边界见[发行报告](docs/reports/CITY-0.1.2-RELEASE.md)。
 
 ## 文档入口
 
