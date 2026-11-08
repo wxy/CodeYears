@@ -36,10 +36,12 @@ export async function fetchProjectActivities(context: GitHubPageContext, date: s
       let commits:number|undefined;
       if(kind==='commits'){
         const count=clean(anchor).match(/^([\d,]+) commits?$/);
-        const next=new Date(Date.parse(date)+86400000).toISOString().slice(0,10);
-        if(!count||link.searchParams.get('since')!==date||link.searchParams.get('until')!==next)throw new Error('提交日期无法确认');
-        commits=Number(count[1].replaceAll(',',''));
-        if(!Number.isSafeInteger(commits)||commits<0)throw new Error('提交数量无法确认');
+        // 日期归属已由单日活动标题确认；提交列表过滤参数不是活动日期契约。
+        // 数量只用于大致分档，计数字样无法识别时仍保留项目与提交活动。
+        if(count){
+          commits=Number(count[1].replaceAll(',',''));
+          if(!Number.isSafeInteger(commits)||commits<0)throw new Error('提交数量无法确认');
+        }
       }
       if(!activities.some(a=>a.kind===kind&&a.url===link.href))activities.push({date,repository:match[1],kind,url:link.href,...(commits===undefined?{}:{commits})});
     }
