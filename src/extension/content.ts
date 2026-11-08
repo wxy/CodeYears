@@ -46,7 +46,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .building-hover { position:absolute; z-index:4; pointer-events:none; width:max-content; max-width:min(340px,calc(100% - 16px)); overflow:hidden; margin:0; padding:11px 13px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:color-mix(in srgb,var(--bgColor-default,#fff) 78%,transparent); backdrop-filter:blur(6px); box-shadow:0 6px 24px #0002; font-size:12px; line-height:1.65; overflow-wrap:anywhere; opacity:0; transition:opacity 90ms ease-out; }
       .building-hover[data-open] { opacity:1; transition-duration:120ms; }
       .building-hover-note { color:var(--fgColor-muted,#59636e); font-size:11px; }
-      .building-hover-example { color:var(--fgColor-muted,#59636e); font-size:11px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
       .building-hover-milestone { font-weight:600; }
       @media (prefers-reduced-motion:reduce) { .building-hover { transition:none; } }
       .building-hover-time { margin-bottom:5px; color:var(--fgColor-muted,#59636e); font-size:11px; }

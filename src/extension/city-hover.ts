@@ -37,7 +37,7 @@ function describeTime(days:readonly DailyContribution[],language:Language):strin
   return `${first.year} · `+entries.map(([monday,g])=>`${relative(monday)??(zh?`第${g.week}周`:`W${g.week}`)}${zh?'的':' · '}${weekdays(g.weekdays)}`).join(zh?'；':'; ');
 }
 
-function describeProjects(activities:readonly ProjectActivity[],language:Language,partial:boolean):{repository:string;text:string;example?:string}[] {
+function describeProjects(activities:readonly ProjectActivity[],language:Language,partial:boolean):{repository:string;text:string}[] {
   const zh=language==='zh-CN',groups=new Map<string,ProjectActivity[]>();
   for(const activity of activities){const key=activity.repository.toLowerCase(),list=groups.get(key)??[];if(!list.some(a=>a.kind===activity.kind&&a.url===activity.url&&a.date===activity.date))list.push(activity);groups.set(key,list)}
   return [...groups.values()].map(items=>{
@@ -49,7 +49,7 @@ function describeProjects(activities:readonly ProjectActivity[],language:Languag
     const amount=(value:number,incomplete=partial)=>`${incomplete?'≥':''}${value.toLocaleString(zh?'zh-CN':'en-US')}`;
     const metrics=[kind('commits')?(commits?`${amount(commits,partial||items.some(a=>a.kind==='commits'&&a.commits===undefined))}${zh?' 次提交':commits===1?' commit':' commits'}`:(zh?'提交代码（数量未列出）':'Code commits (count unavailable)')):'',
       prs?`${amount(prs)}${zh?' 个 PR':prs===1?' PR':' PRs'}`:'',reviews?(zh?`评审 ${amount(reviews)} 个 PR`:`Reviewed ${amount(reviews)} ${reviews===1?'PR':'PRs'}`):'',issues?`${amount(issues)}${zh?' 个 Issue':issues===1?' issue':' issues'}`:''].filter(Boolean);
-    return {repository:items[0].repository,text:metrics.join(' · '),example:items.find(a=>a.title)?.title,days,commits,links:items.length};
+    return {repository:items[0].repository,text:metrics.join(' · '),days,commits,links:items.length};
   }).sort((a,b)=>b.days-a.days||b.commits-a.commits||b.links-a.links||a.repository.localeCompare(b.repository));
 }
 
@@ -90,9 +90,8 @@ export function createCityHover(host:HTMLElement,options:{
     card.replaceChildren();const heading=document.createElement('div');heading.className='building-hover-time';heading.textContent=describeTime(days,language);card.append(heading);
     const projects=describeProjects(details.projects,language,partial);
     if(details.joinedGitHub){const milestone=document.createElement('p');milestone.className='building-hover-milestone';milestone.textContent=zh?'加入 GitHub · 开发旅程的起点':'Joined GitHub · The beginning of the journey';card.append(milestone)}
-    for(const [index,project]of projects.slice(0,2).entries()){
+    for(const project of projects.slice(0,2)){
       const row=document.createElement('p'),name=document.createElement('strong');name.textContent=project.repository;row.append(name,document.createElement('br'),document.createTextNode(project.text));card.append(row);
-      if(index===0&&project.example){const example=document.createElement('p');example.className='building-hover-example';example.textContent=`${zh?'例如：':'For example: '}${project.example}`;card.append(example)}
     }
     if(projects.length>2){const more=document.createElement('p');more.className='building-hover-note';more.textContent=zh?`另有 ${projects.length-2} 个项目`:`${projects.length-2} other projects`;card.append(more)}
     if(!projects.length&&!details.joinedGitHub){

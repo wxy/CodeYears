@@ -203,9 +203,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
     roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,...(area<0?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),cornerRadius:members.length&&members.every(region=>region.milestone) ? .45 : lanes===8?2.4:1.2,closed:true,points:corners});
   }
-  const rings=roads.filter(route=>route.id.startsWith('organic-ring'));
-  // 连接路沿荒地向西接入最近片区；未相交的支路在城外共用一条纵向道路。
-  connectSettlements(rings,(horizontal,at,start,end,kind)=>road(horizontal,at,start,end,2,kind));
+  connectSettlements(roads,footprints,(horizontal,at,start,end,kind)=>road(horizontal,at,start,end,2,kind));
   for(const line of lines.values()){
     const merged:{start:number;end:number}[]=[];
     for(const span of line.spans.sort((a,b)=>a.start-b.start)){
@@ -378,37 +376,67 @@ function contains(points:readonly RoadPoint[],x:number,z:number):boolean {
   return inside;
 }
 
-/** 西向射线只接入首先遇到的外环，不穿过建筑；城外纵路将各分支连成一网。 */
-function connectSettlements(rings:readonly CityRoadRoute[],road:(horizontal:boolean,at:number,start:number,end:number,kind:'link'|'exit')=>void):void {
+/** 在闭环直道上选最近的可行接点；最小生成树连通片区，不再统一绕到西侧。 */
+function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:readonly {left:number;right:number;top:number;bottom:number}[],road:(horizontal:boolean,at:number,start:number,end:number,kind:'link'|'exit')=>void):void {
+  const rings=boundaries.filter(ring=>ring.id.startsWith('organic-ring'));
   if(!rings.length)return;
-  const edges=rings.flatMap(ring=>planRoadGeometry(ring).straights.filter(({a,b})=>a[0]!==b[0]||a[1]!==b[1]).map(edge=>({...edge,ring})));
-  const vertical=edges.filter(({a,b})=>a[0]===b[0]), horizontal=edges.filter(({a,b})=>a[1]===b[1]);
-  const west=Math.min(...vertical.map(e=>e.a[0])),east=Math.max(...vertical.map(e=>e.a[0]));
-  const north=Math.min(...horizontal.map(e=>e.a[1])),south=Math.max(...horizontal.map(e=>e.a[1]));
-  const port=(edge:typeof edges[number])=>(edge.a[1]+edge.b[1])/2;
-  const terminals:{x:number;z:number}[]=[];
-  if(rings.length>1)for(const ring of rings){
-    const side=vertical.filter(e=>e.ring===ring).sort((a,b)=>a.a[0]-b.a[0]||Math.min(a.a[1],a.b[1])-Math.min(b.a[1],b.b[1]))[0];
-    const x=side.a[0],low=Math.min(side.a[1],side.b[1]),high=Math.max(side.a[1],side.b[1]);
-    const target=vertical.filter(e=>e.ring!==ring&&e.a[0]<x)
-      .map(e=>({edge:e,from:Math.max(low,Math.min(e.a[1],e.b[1])),to:Math.min(high,Math.max(e.a[1],e.b[1]))}))
-      .filter(e=>e.to>e.from).sort((a,b)=>b.edge.a[0]-a.edge.a[0])[0];
-    if(target)road(true,(target.from+target.to)/2,target.edge.a[0],x,'link');
-    else terminals.push({x,z:port(side)});
+  const area=(ring:CityRoadRoute)=>Math.abs(ring.points.reduce((sum,p,i)=>{const q=ring.points[(i+1)%ring.points.length];return sum+p[0]*q[1]-q[0]*p[1]},0));
+  const edges=boundaries.flatMap(ring=>{
+    // 庭院道路属于包围它的城区，庭院中的独立小片区可就近接到这里。
+    const owner=rings.indexOf(ring.id.startsWith('organic-ring')?ring:rings.filter(outer=>contains(outer.points,...ring.points[0])).sort((a,b)=>area(a)-area(b))[0]);
+    return planRoadGeometry(ring).straights.filter(({a,b})=>a[0]!==b[0]||a[1]!==b[1]).map(({a,b})=>{
+      const vertical=a[0]===b[0],low=Math.min(a[vertical?1:0],b[vertical?1:0]),high=Math.max(a[vertical?1:0],b[vertical?1:0]),inset=Math.min(.4,(high-low)/4);
+      return {a,b,owner,vertical,outer:ring.id.startsWith('organic-ring'),low:low+inset,high:high-inset};
+    });
+  });
+  const clear=(points:RoadPoint[],first:typeof edges[number],last:typeof edges[number])=>points.slice(1).every((end,i)=>{
+    let a=points[i],b=end;
+    // 庭院环路曾向年度轴线内移0.4格；接入路面中心这一步不能误判成穿越街区。
+    const length=Math.hypot(b[0]-a[0],b[1]-a[1]),dx=(b[0]-a[0])/length,dz=(b[1]-a[1])/length;
+    const reach=Math.min(.4,length/3);
+    if(i===0&&!first.outer)a=[a[0]+dx*reach,a[1]+dz*reach];
+    if(i===points.length-2&&!last.outer)b=[b[0]-dx*reach,b[1]-dz*reach];
+    return !footprints.some(r=>a[0]===b[0]
+      ?a[0]>r.left+1e-6&&a[0]<r.right-1e-6&&Math.max(a[1],b[1])>r.top+1e-6&&Math.min(a[1],b[1])<r.bottom-1e-6
+      :a[1]>r.top+1e-6&&a[1]<r.bottom-1e-6&&Math.max(a[0],b[0])>r.left+1e-6&&Math.min(a[0],b[0])<r.right-1e-6);
+  });
+  const candidates=new Map<string,{from:number;to:number;points:RoadPoint[];length:number}>();
+  const clamp=(value:number,low:number,high:number)=>Math.max(low,Math.min(high,value));
+  for(let i=0;i<edges.length;i++)for(let j=i+1;j<edges.length;j++){
+    const a=edges[i],b=edges[j];if(a.owner===b.owner)continue;
+    let points:RoadPoint[];
+    if(a.vertical===b.vertical){
+      const low=Math.max(a.low,b.low),high=Math.min(a.high,b.high);
+      const alongA=low<=high?(low+high)/2:clamp((b.low+b.high)/2,a.low,a.high),alongB=clamp(alongA,b.low,b.high);
+      const acrossA=a.a[a.vertical?0:1],acrossB=b.a[b.vertical?0:1],mid=(acrossA+acrossB)/2;
+      points=a.vertical?[[acrossA,alongA],[mid,alongA],[mid,alongB],[acrossB,alongB]]:[[alongA,acrossA],[alongA,mid],[alongB,mid],[alongB,acrossB]];
+    }else{
+      const vertical=a.vertical?a:b,horizontal=a.vertical?b:a;
+      const v:RoadPoint=[vertical.a[0],clamp(horizontal.a[1],vertical.low,vertical.high)],h:RoadPoint=[clamp(vertical.a[0],horizontal.low,horizontal.high),horizontal.a[1]];
+      points=[v,[h[0],v[1]],h];
+    }
+    // 归并共线和重复点，确保一个直连不会变成两个断开的半段。
+    points=points.filter((p,k)=>k===0||p[0]!==points[k-1][0]||p[1]!==points[k-1][1]);
+    points=points.filter((p,k)=>k===0||k===points.length-1||!((points[k-1][0]===p[0]&&p[0]===points[k+1][0])||(points[k-1][1]===p[1]&&p[1]===points[k+1][1])));
+    if(points.length<2||!clear(points,a.vertical===b.vertical||a.vertical?a:b,a.vertical===b.vertical||a.vertical?b:a))continue;
+    const length=points.slice(1).reduce((sum,p,k)=>sum+Math.abs(p[0]-points[k][0])+Math.abs(p[1]-points[k][1]),0);
+    const key=[a.owner,b.owner].sort((x,y)=>x-y).join(':'),previous=candidates.get(key);
+    if(!previous||length<previous.length-1e-6||Math.abs(length-previous.length)<1e-6&&points.length<previous.points.length)candidates.set(key,{from:a.owner,to:b.owner,points,length});
   }
-  if(terminals.length>1){
-    const spine=west-5;
-    for(const {x,z} of terminals)road(true,z,spine,x,'link');
-    road(false,spine,Math.min(...terminals.map(p=>p.z)),Math.max(...terminals.map(p=>p.z)),'link');
+  const parents=rings.map((_,i)=>i),root=(i:number):number=>parents[i]===i?i:parents[i]=root(parents[i]);
+  for(const link of [...candidates.values()].sort((a,b)=>a.length-b.length)){
+    const from=root(link.from),to=root(link.to);if(from===to)continue;
+    parents[from]=to;
+    link.points.slice(1).forEach((p,i)=>{const a=link.points[i];road(a[1]===p[1],a[1]===p[1]?a[1]:a[0],a[1]===p[1]?a[0]:a[1],a[1]===p[1]?p[0]:p[1],'link')});
   }
-  // 四向出口从全局最外沿出发，避免重新横穿内收后的荒地或其他街区。
-  for(const [x,reach] of [[west,west-12],[east,east+12]]){
-    const side=vertical.find(e=>e.a[0]===x)!;
-    road(true,port(side),x,reach,'exit');
+  // 四向出口仍从全局最外沿出发。
+  const outer=edges.filter(e=>e.outer);
+  const vertical=outer.filter(e=>e.vertical),horizontal=outer.filter(e=>!e.vertical);
+  for(const [side,sign]of [[vertical,-1],[vertical,1]] as const){
+    const edge=[...side].sort((a,b)=>sign*(b.a[0]-a.a[0]))[0],x=edge.a[0];road(true,(edge.low+edge.high)/2,x,x+sign*12,'exit');
   }
-  for(const [z,reach] of [[north,north-12],[south,south+12]]){
-    const side=horizontal.find(e=>e.a[1]===z)!;
-    road(false,(side.a[0]+side.b[0])/2,z,reach,'exit');
+  for(const sign of [-1,1]){
+    const edge=[...horizontal].sort((a,b)=>sign*(b.a[1]-a.a[1]))[0],z=edge.a[1];road(false,(edge.low+edge.high)/2,z,z+sign*12,'exit');
   }
 }
 

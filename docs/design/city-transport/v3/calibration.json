@@ -1,0 +1,7 @@
+{
+  "file": "bridge-stone-supports.png",
+  "farRoadCenter": [1228, 250],
+  "nearRoadCenter": [215, 763],
+  "crossRoadSlope": 0.5,
+  "basis": "Align the generated rigid masonry to the existing road anchors; retain every pixel above the original front fascia. Clip the front masonry at the shared water plane, without stretching the masonry. Keep v2 deck dimensions and support shore anchors."
+}

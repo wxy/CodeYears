@@ -74,6 +74,36 @@ for(const [style,spec]of Object.entries(bridgeConfig.bridges)){
     const z=supportW-2*x,target=(supportW+z)/4+waterDrop,edge=underDeck(x);
     return {x,y,z,target,scale:(target-edge)/(y-edge)};
   });
+  if(style==='stone'){
+    // 新石墩保持刚性2:1投影；水面裁掉入水部分，不能再逐列拉伸拱洞/石缝。
+    const editRoot=resolve(root,'docs/design/city-transport/v3');
+    const edit=JSON.parse(await readFile(resolve(editRoot,'calibration.json'),'utf8'));
+    const masonry=await loadImage(resolve(editRoot,edit.file));
+    const [ex,ey]=edit.farRoadCenter,[nx,ny]=edit.nearRoadCenter;
+    const ea=(-d/2)/(nx-ex),es=(ny-ey)/(nx-ex),ev=ea/(edit.crossRoadSlope-es),eh=-(edit.crossRoadSlope+es)*ev/2;
+    const etx=w/4-ea*ex,ety=w/8-eh*ex-ev*ey;
+    const lower=createCanvas(canvas.width,canvas.height),lc=lower.getContext('2d');
+    lc.setTransform(ea*unit,eh*unit,0,ev*unit,(etx-left)*unit+2,(ety-top)*unit+2);lc.imageSmoothingQuality='high';lc.drawImage(masonry,0,0);
+    const original=c.getImageData(0,0,canvas.width,canvas.height),replacement=lc.getImageData(0,0,canvas.width,canvas.height).data;
+    let submergedPixels=0;
+    for(let column=0;column<canvas.width;column++){
+      const x=left+(column-2)/unit;
+      // 前立面水线与桥的纵轴平行；只裁入水部分，保留拱洞连续轮廓。
+      const water=supportW/2-x/2+waterDrop;
+      const cut=(underDeck(x)-top)*unit+2,waterRow=(water-top)*unit+2;
+      for(let row=Math.max(0,Math.ceil(cut));row<canvas.height;row++){
+        const index=(row*canvas.width+column)*4;
+        if(row>waterRow||replacement[index+3]<bridgeConfig.alphaCutoff){
+          if(row>waterRow&&replacement[index+3])submergedPixels++;
+          original.data.fill(0,index,index+4);
+        }else original.data.set(replacement.subarray(index,index+4),index);
+      }
+    }
+    const corrected=createCanvas(canvas.width,canvas.height);corrected.getContext('2d').putImageData(original,0,0);
+    await save(`transport-bridge-${style}`,corrected,{left:left-2/unit,top:top-2/unit,width:corrected.width/unit,height:corrected.height/unit,nativeWidth:w,nativeDepth:d,baselineHeight:spec.height,carriageway:spec.carriageway,deckWidth:spec.deckWidth,curb:spec.curb,supportAnchors:anchors.map(({z})=>({w:supportW,z}))});
+    report.at(-1).masonry={rigid:true,submergedPixels};
+    continue;
+  }
   const originalPixels=c.getImageData(0,0,canvas.width,canvas.height),rgba=originalPixels.data,columns=[];
   let correctedHeight=canvas.height;
   for(let column=0;column<canvas.width;column++){

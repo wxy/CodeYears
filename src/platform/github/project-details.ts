@@ -7,7 +7,6 @@ export interface ProjectActivity {
   kind: 'commits' | 'pull-request' | 'review' | 'issue';
   url: string;
   commits?: number;
-  title?: string;
 }
 
 export interface DayActivities { projects:ProjectActivity[]; joinedGitHub:boolean }
@@ -47,8 +46,7 @@ export async function fetchProjectActivities(context: GitHubPageContext, date: s
           if(!Number.isSafeInteger(commits)||commits<0)throw new Error('提交数量无法确认');
         }
       }
-      const title=kind==='commits'?undefined:clean(anchor).replace(/^#\d+\s*/, '').slice(0,140)||undefined;
-      if(!activities.some(a=>a.kind===kind&&a.url===link.href))activities.push({date,repository:match[1],kind,url:link.href,...(commits===undefined?{}:{commits}),...(title?{title}:{})});
+      if(!activities.some(a=>a.kind===kind&&a.url===link.href))activities.push({date,repository:match[1],kind,url:link.href,...(commits===undefined?{}:{commits})});
     }
   }
   return {projects:activities,joinedGitHub};

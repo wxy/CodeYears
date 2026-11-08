@@ -60,7 +60,7 @@
     "message": "$1% zoom"
   },
   "zoomFitHelp": {
-    "message": "Starts at 150%. Fit view shows the full city."
+    "message": "Starts at 100%; minimum about 53%. Click “Fit view” to zoom out and center the city."
   },
   "fitView": {
     "message": "Fit view"
