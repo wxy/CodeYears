@@ -27,9 +27,9 @@ export interface ContributionLandscape {
 /** 两种引擎共享播放/缩放/平移；缩放通知按面板的100%基准归一化。City不创建WebGL。 */
 export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void, namingOriginYear?: number): ContributionLandscape {
   const progressiveCity=initialView==="city"&&reservedYears!==undefined;
-  // 原City的150%作为新100%；最低保留原80%，不再缩到大片填图。
+  // 原City的150%作为新100%；City缩放固定下限50%，上限不超过2000%。
   const zoomBase=progressiveCity?1.875:initialView==="city"?1.5:1;
-  const minZoom=progressiveCity?1:.8;
+  const minZoom=zoomBase*.5;
   let currentDays=days,revealedDays=0,revealFrom=0,revealStarted=0;
   const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:zoomBase,panX:0,panY:0,dark:false};
   let view=initialView,layer:LandscapeView|undefined,images:CityImages|undefined,assetPromise:Promise<CityImages>|undefined;
@@ -110,7 +110,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const down=(event:PointerEvent)=>{if(pointer)return;pointer={id:event.pointerId,x:event.clientX,y:event.clientY};host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"};
   const move=(event:PointerEvent)=>{if(!pointer||pointer.id!==event.pointerId)return;viewport.panX+=event.clientX-pointer.x;viewport.panY+=event.clientY-pointer.y;pointer.x=event.clientX;pointer.y=event.clientY;schedule()};
   const up=(event:PointerEvent)=>{if(pointer?.id!==event.pointerId)return;pointer=undefined;host.style.cursor="grab"};
-  const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const next=Math.min(layer?.maxZoom?.(viewport)??5,Math.max(view==="city"?minZoom:.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule()};
+  const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const max=Math.min(layer?.maxZoom?.(viewport)??5,view==="city"?zoomBase*20:5),next=Math.min(max,Math.max(view==="city"?minZoom:.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule()};
   const wheel=(event:WheelEvent)=>{event.preventDefault();const rect=host.getBoundingClientRect();zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2)};
   // Only the stable, focused scene host owns arrows; inputs and browser shortcuts keep theirs.
   const keydown=(event:KeyboardEvent)=>{

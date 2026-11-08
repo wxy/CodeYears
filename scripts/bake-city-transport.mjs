@@ -64,16 +64,12 @@ for(const [style,spec]of Object.entries(bridgeConfig.bridges)){
   const left=Math.min(...points.map(p=>p[0])),top=Math.min(...points.map(p=>p[1])),right=Math.max(...points.map(p=>p[0])),bottom=Math.max(...points.map(p=>p[1]));
   const unit=spec.maxPixels/(right-left),canvas=createCanvas(Math.ceil((right-left)*unit)+4,Math.ceil((bottom-top)*unit)+4),c=canvas.getContext('2d');
   c.setTransform(a*unit,shear*unit,0,vertical*unit,(tx-left)*unit+2,(ty-top)*unit+2);c.imageSmoothingQuality='high';c.drawImage(bridge,0,0);
-  // 原画下部结构的高度/透视未随桥面标定；按真实水位校准桥墩落点。
-  // 在本轮桥跨的标定坐标内，仅修正前侧桥面以下的竖直投影；实际桥位由规划器按基础落岸。
+  // 共享桥面/水位/支撑参考；两种桥的下部均保持刚性投影，不逐列伸缩。
   const feet=spec.supportFeet.map(point).sort((p,q)=>p[0]-q[0]);
   const supportW=d/2+2*feet.reduce((sum,p)=>sum+p[0],0)/feet.length;
   const underDeck=x=>(w+spec.deckWidth)/4-x/2;
   const waterDrop=(levels.deckElevation+levels.riverDepth)/2;
-  const anchors=feet.map(([x,y])=>{
-    const z=supportW-2*x,target=(supportW+z)/4+waterDrop,edge=underDeck(x);
-    return {x,y,z,target,scale:(target-edge)/(y-edge)};
-  });
+  const anchors=feet.map(([x])=>({z:supportW-2*x}));
   if(style==='stone'){
     // 新石墩保持刚性2:1投影；水面裁掉入水部分，不能再逐列拉伸拱洞/石缝。
     const editRoot=resolve(root,'docs/design/city-transport/v3');
@@ -104,28 +100,42 @@ for(const [style,spec]of Object.entries(bridgeConfig.bridges)){
     report.at(-1).masonry={rigid:true,submergedPixels};
     continue;
   }
-  const originalPixels=c.getImageData(0,0,canvas.width,canvas.height),rgba=originalPixels.data,columns=[];
-  let correctedHeight=canvas.height;
+  // 单墩梁桥的盖梁必须跨桥宽W；原图纵向T形不能靠压缩高度纠正。
+  const pierRoot=resolve(root,'docs/design/city-transport/v4');
+  const pier=JSON.parse(await readFile(resolve(pierRoot,'calibration.json'),'utf8'));
+  const material=await loadImage(resolve(pierRoot,pier.file));
+  const original=c.getImageData(0,0,canvas.width,canvas.height);
   for(let column=0;column<canvas.width;column++){
-    const x=left+(column-2)/unit,first=anchors[0],last=anchors.at(-1);
-    const scale=anchors.length===1?first.scale:first.scale+(last.scale-first.scale)*(x-first.x)/(last.x-first.x);
-    const cut=Math.max(0,Math.min(canvas.height,(underDeck(x)-top)*unit+2));
-    columns.push({column,cut,scale});
-    // 延长的桥脚也必须完整留在输出图内，保留透明边。
-    for(let row=canvas.height-1;row>=cut;row--)if(rgba[(row*canvas.width+column)*4+3]){
-      correctedHeight=Math.max(correctedHeight,Math.ceil(cut+(row+1-cut)*scale)+4);break;
-    }
+    const x=left+(column-2)/unit,cut=(underDeck(x)+pier.girderDrop-top)*unit+2;
+    for(let row=Math.max(0,Math.ceil(cut));row<canvas.height;row++)original.data.fill(0,(row*canvas.width+column)*4,(row*canvas.width+column)*4+4);
   }
-  const corrected=createCanvas(canvas.width,correctedHeight),target=corrected.getContext('2d');
-  target.imageSmoothingQuality='high';target.putImageData(originalPixels,0,0);
-  for(const {column,cut,scale}of columns)if(cut<canvas.height){
-    target.clearRect(column,Math.floor(cut),1,canvas.height-Math.floor(cut));
-    target.drawImage(canvas,column,cut,1,canvas.height-cut,column,cut,1,(canvas.height-cut)*scale);
-  }
+  const corrected=createCanvas(canvas.width,canvas.height),target=corrected.getContext('2d');
+  // 保留桥面、栏杆和纵梁；新支撑按深度放在它们后面，不能盖住桥面。
+  const project=(x,z,drop)=>[(x-z)/2,(x+z)/4+drop];
+  target.setTransform(unit,0,0,unit,-left*unit+2,-top*unit+2);target.imageSmoothingQuality='high';
+  const face=(points,shade)=>{
+    target.save();target.beginPath();points.forEach((p,i)=>i?target.lineTo(...p):target.moveTo(...p));target.closePath();target.clip();
+    target.fillStyle='#b9b2a2';target.fill();
+    const [a,b,,d]=points;
+    target.transform(b[0]-a[0],b[1]-a[1],d[0]-a[0],d[1]-a[1],a[0],a[1]);
+    target.drawImage(material,...pier.texture,0,0,1,1);
+    target.fillStyle=shade;target.fillRect(0,0,1,1);target.restore();
+    target.beginPath();points.forEach((p,i)=>i?target.lineTo(...p):target.moveTo(...p));target.closePath();target.strokeStyle='#746f6455';target.lineWidth=.003;target.stroke();
+  };
+  const z=d/2;
+  const box=(back,front,halfDepth,from,to)=>{
+    const a=project(back,z-halfDepth,from),b=project(front,z-halfDepth,from),cc=project(front,z+halfDepth,from),dd=project(back,z+halfDepth,from);
+    const lowB=project(front,z-halfDepth,to),lowC=project(front,z+halfDepth,to),lowD=project(back,z+halfDepth,to);
+    face([dd,cc,lowC,lowD],'#1723191a');face([cc,b,lowB,lowC],'#f4efdb16');face([a,b,cc,dd],'#fff8db22');
+  };
+  box(w-supportW,supportW,pier.shaftHalfDepth,pier.capBottom,waterDrop);
+  box((w-spec.deckWidth)/2,(w+spec.deckWidth)/2,pier.capHalfDepth,pier.capTop,pier.capBottom);
+  // 原素材含半透明像素，直接贴图会再次混色；逐像素保留桥面及纵梁原值。
+  const combined=target.getImageData(0,0,canvas.width,canvas.height);
+  for(let i=0;i<original.data.length;i+=4)if(original.data[i+3])combined.data.set(original.data.subarray(i,i+4),i);
+  target.putImageData(combined,0,0);
   await save(`transport-bridge-${style}`,corrected,{left:left-2/unit,top:top-2/unit,width:corrected.width/unit,height:corrected.height/unit,nativeWidth:w,nativeDepth:d,baselineHeight:spec.height,carriageway:spec.carriageway,deckWidth:spec.deckWidth,curb:spec.curb,supportAnchors:anchors.map(({z})=>({w:supportW,z}))});
-  report.at(-1).supports=anchors.map(({x,y,z,target,scale})=>({reference:[x,y],scale,
-    before:{w:x+2*y-waterDrop*2,z:-x+2*y-waterDrop*2},
-    after:{w:x+2*target-waterDrop*2,z:-x+2*target-waterDrop*2},targetZ:z}));
+  report.at(-1).pier={axis:'W',center:[w/2,d/2],waterDrop,capDrop:[pier.capTop,pier.capBottom],shaftHalfDepth:pier.shaftHalfDepth};
 }
 await writeFile(resolve(values.outDir,'catalog.json'),JSON.stringify(catalog,null,2)+'\n');
 await writeFile(resolve(values.outDir,'report.json'),JSON.stringify(report,null,2)+'\n');
