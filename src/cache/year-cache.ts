@@ -6,6 +6,13 @@ import type { ViewerIdentity, YearCacheRecord, YearCacheScope } from "./types";
 const SCHEMA_VERSION = 1;
 const DAY_MS = 86_400_000;
 
+/** 同一份已校验年度数据的磁盘缓存与页内画面共用到期时间。 */
+export function yearCacheExpiresAt(value: ContributionYear): number {
+  const fetchedAt = new Date(value.fetchedAt);
+  if (value.year !== fetchedAt.getFullYear()) return fetchedAt.getTime() + 30 * DAY_MS;
+  return Math.min(fetchedAt.getTime() + 3_600_000, new Date(fetchedAt.getFullYear(), fetchedAt.getMonth(), fetchedAt.getDate() + 1).getTime());
+}
+
 function profilePrefix(viewer: ViewerIdentity, profileLogin: string): string {
   const identity = viewer.kind === "authenticated" ? `user:${viewer.login.toLowerCase()}` : "signed-out";
   return `codeyears:year:${SCHEMA_VERSION}:${identity}:${profileLogin.toLowerCase()}:`;
@@ -34,8 +41,7 @@ function decode(raw: unknown, scope: YearCacheScope, now: Date): ContributionYea
   const fetchedAt = new Date(value.fetchedAt);
   const age = now.getTime() - fetchedAt.getTime();
   const fetchedDuringYear = value.year === fetchedAt.getFullYear();
-  if (!Number.isFinite(age) || age < 0 || age > (fetchedDuringYear ? 3_600_000 : 30 * DAY_MS) ||
-      (fetchedDuringYear && browserCalendarDate(fetchedAt) !== browserCalendarDate(now))) return;
+  if (!Number.isFinite(age) || age < 0 || now.getTime() >= yearCacheExpiresAt(value)) return;
   const start = Date.UTC(value.year, 0, 1);
   for (let index = 0; index < value.days.length; index++) {
     const day = value.days[index];
