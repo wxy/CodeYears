@@ -149,7 +149,7 @@ export function createCityHover(host:HTMLElement,options:{
       complete=true;if(loaded.size>published)await publish();
       if(!signal.aborted&&key===target){
         const details=collect();
-        if(!details.projects.length&&!details.joinedGitHub)console.warn(`[CodeYears] 建筑项目详情：${failures.length?[...new Set(failures)].join('；'):'单日活动已解析，但没有可展示的项目活动'}（成员日 ${dates.length}，已请求 ${cursor}，解析成功 ${loaded.size}）。`);
+        if(failures.length&&!details.projects.length&&!details.joinedGitHub)console.warn(`[CodeYears] 建筑项目详情：${[...new Set(failures)].join('；')}（成员日 ${dates.length}，已请求 ${cursor}，解析成功 ${loaded.size}）。`);
         render(days,details,false,partial());
       }
     }catch{if(!signal.aborted){cache.clear();hide();options.invalidate()}}

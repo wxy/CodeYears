@@ -61,3 +61,9 @@ macOS本机，Node26.7、Vite8.3.5、TypeScript7.0.2、独立Chrome157 headless�
 - ZIP118文件、23,482,435 bytes，SHA256 `733aa90804d0e5cc0cd6dba98cd64d51508c27ebad779fecd27c987a9b915dd5`
 
 真实GitHub登录页面、用户原截图的具体数据、完整浏览器可见性矩阵、Edge及硬件预算尚未验收；未更改详情缓存身份协议、未增加持久化、轮询、Token或后端。用户在扩展管理页重新加载CodeYears、刷新GitHub后，检查缩放、塔连接、摘要与石墩。临时驱动、响应、截图、Chrome资料、Canvas依赖、构建及ZIP记录后删除，仅保留本报告、正式源图/运行资源及在用dist。
+
+## 后续：正常空活动静默
+
+2026-11-08，取消“单日活动已解析，但没有可展示的项目活动”的控制台警告；这类成功空结果继续保留在页内缓存，浮层内容不变。只有发生实际请求/解析失败且没有可展示项目或注册事件时保留诊断。
+
+独立Chrome157生产createCityHover→fetchProjectActivities路径，unknown/omit受控2025-05-02 HTML：无项目但解析成功时警告1→0、首次请求1/再次0；Joined GitHub无警告、注册摘要保留；HTTP503仍输出失败诊断、失败结果不缓存。入口先等ResizeObserver完成，pointermove后500ms检查浮层，再移开120ms并重复停留；没有访问真实会话或增加单元测试。npm run build -- --outDir <临时目录>/dist（含check）通过。根dist115份匹配，仅content.js变化为66.05kB/gzip21.09，SHA256 179b6b93079a2b5c9568e7a2d0e09c2cb396f23099cd9ac9f11e60a9dcc178fc。临时驱动、响应、浏览器资料及构建记录后清理；真实GitHub需重载验收。
