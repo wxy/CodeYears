@@ -189,12 +189,16 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const paintGround=(target:CanvasRenderingContext2D)=>{for(const command of groundPaint)if(command.after<=cachedPrefix)command.paint(target)};
   const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);
   const detailGround=document.createElement('canvas');let detailKey='';
+  let frameKey='';
   const fitScale=(viewport:LandscapeViewport)=>Math.min(Math.max(1,viewport.width-32)/(maxX-minX),Math.max(1,viewport.height-24)/(maxY-minY));
   return {
     canvas,
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
     description:()=> `固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
     draw(progress,viewport:LandscapeViewport){
+      // 同一实例的数据已固定；恢复可见性时沿用已有像素，取景或进度变化才重画。
+      const nextFrameKey=[progress,viewport.width,viewport.height,viewport.dpr,viewport.zoom,viewport.panX,viewport.panY,viewport.dark].join(':');
+      if(nextFrameKey===frameKey)return;
       const prefix=progress===1?weekly.cells.length:Math.floor(progress*weekly.cells.length);
       // 新批次只有短填入期间逐帧画增量地面；完成后恢复整块缓存，不续连续帧。
       if(progressive&&prefix===weekly.cells.length&&cachedPrefix<prefix){
@@ -247,6 +251,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         }
         context.drawImage(source,x,y,w,h);context.restore();
       }
+      frameKey=nextFrameKey;
     },
     dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
   };
