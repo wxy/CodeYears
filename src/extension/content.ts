@@ -41,7 +41,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
       .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
-      #scene { width:100%; height:100%; background:transparent; }
+      #scene { position:relative; width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
       .building-hover { position:absolute; z-index:4; pointer-events:none; width:max-content; max-width:min(340px,calc(100% - 16px)); margin:0; padding:11px 13px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:color-mix(in srgb,var(--bgColor-default,#fff) 94%,transparent); box-shadow:0 6px 24px #0002; font-size:12px; line-height:1.65; overflow-wrap:anywhere; opacity:0; transition:opacity 90ms ease-out; }
       .building-hover[data-open] { opacity:1; transition-duration:120ms; }
@@ -160,6 +160,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const hover=createCityHover(cityHost,{
     pick:(x,y)=>active&&!busy?city?.buildingAt(x,y):undefined,
     context:()=>context,currentContext,language:()=>language,
+    highlight:point=>city?.highlightBuilding(point),
     invalidate(){resetResult();retry.hidden=false;setStatus(()=>language==='zh-CN'?'GitHub 会话已改变或暂时无法确认，请重新载入城市。':'The GitHub session changed or could not be confirmed. Reload the city.')},
   });
   const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;

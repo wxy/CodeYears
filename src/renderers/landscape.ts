@@ -8,6 +8,7 @@ import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface ContributionLandscape {
   buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
+  highlightBuilding(point?: {x:number;y:number}): void;
   setView(view: ViewMode): void;
   zoomBy(factor: number): void;
   zoomToMax(): void;
@@ -129,7 +130,11 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(disposed||suspended||!progressiveCity)return;
       return layer?.buildingAt?.(x,y,viewport)?.map(index=>currentDays[index]).filter(day=>day.count>0);
     },
-    setVisible(visible){if(disposed)return;suspended=!visible;if(suspended){cancelAnimationFrame(raf);raf=0;pointer=undefined;host.style.cursor="grab"}else resize()},
+    highlightBuilding(point){
+      if(disposed||suspended||!progressiveCity)return;
+      layer?.highlightBuilding?.(point,viewport);
+    },
+    setVisible(visible){if(disposed)return;suspended=!visible;if(suspended){layer?.highlightBuilding?.(undefined,viewport);cancelAnimationFrame(raf);raf=0;pointer=undefined;host.style.cursor="grab"}else resize()},
     setView(next){if(disposed||next===view||progressiveCity)return;view=next;void prepare()},
     zoomBy:zoomAt,
     zoomToMax(){zoomAt((layer?.maxZoom?.(viewport)??5)/viewport.zoom)},

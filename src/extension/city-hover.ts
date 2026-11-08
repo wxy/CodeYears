@@ -56,6 +56,7 @@ export function createCityHover(host:HTMLElement,options:{
   context():GitHubPageContext;
   currentContext():GitHubPageContext;
   language():Language;
+  highlight(point?:{x:number;y:number}):void;
   invalidate():void;
 }) {
   const card=document.createElement('aside');card.className='building-hover';card.id='building-hover';card.hidden=true;card.setAttribute('role','tooltip');
@@ -64,6 +65,7 @@ export function createCityHover(host:HTMLElement,options:{
   let cacheScope='',key='',timer=0,closeTimer=0,request:AbortController|undefined,anchor={x:0,y:0};
   const dismiss=(immediate:boolean)=>{
     clearTimeout(timer);timer=0;clearTimeout(closeTimer);request?.abort();request=undefined;key='';
+    options.highlight();
     card.removeAttribute('data-open');host.removeAttribute('aria-describedby');
     const finish=()=>{closeTimer=0;card.hidden=true;card.replaceChildren()};
     if(immediate||card.hidden||matchMedia('(prefers-reduced-motion: reduce)').matches)finish();
@@ -102,7 +104,7 @@ export function createCityHover(host:HTMLElement,options:{
     const dates=days.map(d=>d.date),missing=dates.filter(date=>!cache.has(date));
     const controller=new AbortController();request=controller;const signal=controller.signal;
     const confirm=async()=>{if(known)await confirmViewer(context,signal);signal.throwIfAborted();if(!sameContext(context,options.currentContext()))throw new Error('GitHub session changed')};
-    const loaded=new Map<string,ProjectActivity[]>();let cursor=0,published=0,complete=false,publishing:Promise<void>|undefined;
+    const loaded=new Map<string,ProjectActivity[]>(),failures:string[]=[];let cursor=0,published=0,complete=false,publishing:Promise<void>|undefined;
     const collect=()=>dates.flatMap(date=>loaded.get(date)??cache.get(date)?.activities??[]);
     const publish=()=>publishing??=(async()=>{
       await confirm();
@@ -120,13 +122,18 @@ export function createCityHover(host:HTMLElement,options:{
           const date=missing[cursor++];signal.throwIfAborted();
           let activities:ProjectActivity[];
           try{activities=await fetchProjectActivities(context,date,signal)}
-          catch{signal.throwIfAborted();return}
+          catch(error){signal.throwIfAborted();failures.push(error instanceof Error?error.message:'未知请求错误');return}
           loaded.set(date,activities);await publish();
         }
       }));
       complete=true;
       if(loaded.size>published)await publish();
-      if(!signal.aborted&&key===target)render(days,collect(),false);
+      if(!signal.aborted&&key===target){
+        const activities=collect();
+        // 仅记录本地阶段与数量，不输出日期、仓库名、响应正文或会话信息。
+        if(!activities.length)console.warn(`[CodeYears] 建筑项目详情：${failures.length?[...new Set(failures)].join('；'):'单日活动已解析，但没有可展示的项目活动'}（成员日 ${dates.length}，已请求 ${cursor}，解析成功 ${loaded.size}）。`);
+        render(days,activities,false);
+      }
     }catch{
       if(!signal.aborted){cache.clear();hide();options.invalidate()}
       return;
@@ -138,7 +145,7 @@ export function createCityHover(host:HTMLElement,options:{
     const next=days?.length?days.map(d=>d.date).join('|'):'';
     if(next===key)return;
     leave();if(!next||!days)return;
-    key=next;anchor={x,y};timer=window.setTimeout(()=>{timer=0;void show(days,next)},300);
+    key=next;anchor={x,y};options.highlight(anchor);timer=window.setTimeout(()=>{timer=0;void show(days,next)},300);
   };
   const visibility=()=>{if(document.hidden)hide()};
   const resize=new ResizeObserver(hide);resize.observe(host);

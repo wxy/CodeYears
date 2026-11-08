@@ -16,6 +16,7 @@ export interface LandscapeView {
   canvas: HTMLCanvasElement;
   /** 已显示建筑在创建此视图的数据快照中的成员索引。 */
   buildingAt?(x: number, y: number, viewport: LandscapeViewport): readonly number[] | undefined;
+  highlightBuilding?(point: {x:number;y:number} | undefined, viewport: LandscapeViewport): void;
   maxZoom?(viewport: LandscapeViewport): number;
   draw(progress: number, viewport: LandscapeViewport): void;
   description(): string;

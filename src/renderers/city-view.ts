@@ -196,29 +196,64 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const paintGround=(target:CanvasRenderingContext2D)=>{for(const command of groundPaint)if(command.after<=cachedPrefix)command.paint(target)};
   const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);
   const detailGround=document.createElement('canvas');let detailKey='';
+  const highlight=document.createElement('canvas');highlight.className='building-highlight';highlight.hidden=true;highlight.setAttribute('aria-hidden','true');
+  highlight.style.cssText='position:absolute;pointer-events:none;';
+  let highlighted=-1;
+  const clearHighlight=()=>{highlighted=-1;highlight.remove();highlight.hidden=true;highlight.width=highlight.height=0};
   let frameKey='',visiblePrefix=0;
   const fitScale=(viewport:LandscapeViewport)=>Math.min(Math.max(1,viewport.width-32)/(maxX-minX),Math.max(1,viewport.height-24)/(maxY-minY));
+  const hitItem=(x:number,y:number,viewport:LandscapeViewport)=>{
+    if(!frameKey)return -1;
+    const scale=fitScale(viewport)*viewport.zoom;
+    const px=(x-viewport.width/2-viewport.panX)/scale+(minX+maxX)/2;
+    const py=(y-viewport.height/2-viewport.panY)/scale+(minY+maxY)/2;
+    for(let i=placed.length-1;i>=0;i--){
+      const p=placed[i];
+      if(p.item.flat||(progressive&&p.after>visiblePrefix)||px<p.left||px>=p.left+p.width||py<p.top||py>=p.top+p.height)continue;
+      const source=p.sprite.canvas;
+      let mask=hitMasks.get(source);
+      if(!mask){
+        const rgba=source.getContext('2d')!.getImageData(0,0,source.width,source.height).data;
+        mask=new Uint8Array(Math.ceil(source.width*source.height/8));
+        for(let pixel=0;pixel<source.width*source.height;pixel++)if(rgba[pixel*4+3]>=64)mask[pixel>>3]|=1<<(pixel&7);
+        hitMasks.set(source,mask);
+      }
+      const pixel=Math.floor((py-p.top)/p.height*source.height)*source.width+Math.floor((px-p.left)/p.width*source.width);
+      if(mask[pixel>>3]&(1<<(pixel&7)))return p.item.parcel?.kind==='building'?i:-1;
+    }
+    return -1;
+  };
   return {
     canvas,
     buildingAt(x,y,viewport){
-      if(!frameKey)return;
+      return placed[hitItem(x,y,viewport)]?.item.parcel?.indices;
+    },
+    highlightBuilding(point,viewport){
+      const index=point?hitItem(point.x,point.y,viewport):-1;
+      if(index===highlighted)return;
+      clearHighlight();if(index<0||!canvas.parentElement)return;
+      highlighted=index;
+      const p=placed[index],padding=8;
       const scale=fitScale(viewport)*viewport.zoom;
-      const px=(x-viewport.width/2-viewport.panX)/scale+(minX+maxX)/2;
-      const py=(y-viewport.height/2-viewport.panY)/scale+(minY+maxY)/2;
-      for(let i=placed.length-1;i>=0;i--){
-        const p=placed[i];
-        if(p.item.flat||(progressive&&p.after>visiblePrefix)||px<p.left||px>=p.left+p.width||py<p.top||py>=p.top+p.height)continue;
-        const source=p.sprite.canvas;
-        let mask=hitMasks.get(source);
-        if(!mask){
-          const rgba=source.getContext('2d')!.getImageData(0,0,source.width,source.height).data;
-          mask=new Uint8Array(Math.ceil(source.width*source.height/8));
-          for(let pixel=0;pixel<source.width*source.height;pixel++)if(rgba[pixel*4+3]>=64)mask[pixel>>3]|=1<<(pixel&7);
-          hitMasks.set(source,mask);
-        }
-        const pixel=Math.floor((py-p.top)/p.height*source.height)*source.width+Math.floor((px-p.left)/p.width*source.width);
-        if(mask[pixel>>3]&(1<<(pixel&7)))return p.item.parcel?.kind==='building'?p.item.parcel.indices:undefined;
+      const left=viewport.width/2+viewport.panX+(p.left-(minX+maxX)/2)*scale-padding;
+      const top=viewport.height/2+viewport.panY+(p.top-(minY+maxY)/2)*scale-padding;
+      const w=p.width*scale,h=p.height*scale;
+      const x=Math.max(0,left),y=Math.max(0,top),right=Math.min(viewport.width,left+w+padding*2),bottom=Math.min(viewport.height,top+h+padding*2);
+      highlight.width=Math.ceil((right-x)*viewport.dpr);highlight.height=Math.ceil((bottom-y)*viewport.dpr);
+      Object.assign(highlight.style,{left:`${x}px`,top:`${y}px`,width:`${right-x}px`,height:`${bottom-y}px`});
+      const target=highlight.getContext('2d')!;target.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);target.imageSmoothingQuality='high';
+      target.shadowColor='rgba(255,233,153,.9)';target.shadowBlur=7*viewport.dpr;
+      target.drawImage(p.sprite.canvas,left-x+padding,top-y+padding,w,h);target.shadowBlur=0;
+      target.globalCompositeOperation='source-atop';target.fillStyle='rgba(255,247,205,.24)';target.fillRect(0,0,right-x,bottom-y);
+      // 前景设施与楼体仍遮住被选建筑，高光不能透过它们浮到最前面。
+      target.globalCompositeOperation='destination-out';
+      for(let i=index+1;i<placed.length;i++){
+        const front=placed[i];if(front.item.flat||(progressive&&front.after>visiblePrefix))continue;
+        const fx=left+(front.left-p.left)*scale+padding-x,fy=top+(front.top-p.top)*scale+padding-y,fw=front.width*scale,fh=front.height*scale;
+        if(fx+fw<0||fy+fh<0||fx>right-x||fy>bottom-y)continue;
+        target.drawImage(front.sprite.canvas,fx,fy,fw,fh);
       }
+      highlight.hidden=false;canvas.after(highlight);
     },
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
     description:()=> groundPainter?`固定视角 · ${wonderCount} 处奇观 · 沿街区外缘环路 / 内部共用道路 · 拖动平移`:`固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
@@ -226,6 +261,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       // 同一实例的数据已固定；恢复可见性时沿用已有像素，取景或进度变化才重画。
       const nextFrameKey=[progress,viewport.width,viewport.height,viewport.dpr,viewport.zoom,viewport.panX,viewport.panY,viewport.dark].join(':');
       if(nextFrameKey===frameKey)return;
+      clearHighlight();
       const prefix=progress===1?weekly.cells.length:Math.floor(progress*weekly.cells.length);
       // 新批次只有短填入期间逐帧画增量地面；完成后恢复整块缓存，不续连续帧。
       if(progressive&&prefix===weekly.cells.length&&cachedPrefix<prefix){
@@ -281,6 +317,6 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       frameKey=nextFrameKey;
       visiblePrefix=prefix;
     },
-    dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
+    dispose(){clearHighlight();canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
   };
 }
