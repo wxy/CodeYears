@@ -2,7 +2,7 @@
 
 **代码岁月，自成风景。**
 
-CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中当前会话可见的真实每日贡献呈现为一座城市。**当前版本为0.1.2**，增加随活动分布变化的城市轮廓、更多住宅与公共建筑、道路和桥梁细节、建筑悬停摘要，以及同页地图复用。保留 CodeYears 名称。Chrome Web Store 的上传、审核和上线状态与 GitHub 发布分别记录，见[发布清单](docs/RELEASE_READINESS.md)；Edge 尚待独立验收。
+CodeYears 是免费的 Manifest V3 浏览器扩展，将 GitHub 个人主页中当前会话可见的真实每日贡献呈现为一座城市。**当前版本为0.1.2**，增加随活动分布变化的城市轮廓、更多住宅与公共建筑、道路和桥梁细节、建筑悬停摘要，以及同页地图复用。保留 CodeYears 名称。维护者确认0.1.2已于2026-11-08提交Chrome商店审核，尚未确认审核通过或新版上线；GitHub发布与商店状态分别记录，见[发布清单](docs/RELEASE_READINESS.md)。Edge 尚待独立验收。
 
 [官网](https://xingyu.wang/extensions/codeyears) · [隐私政策](PRIVACY.md) · [Chrome 商店](https://chromewebstore.google.com/detail/codeyears/mhbphbpbjbndjhodbdmijdopidhcibia) · [GitHub 版本与安装包](https://github.com/wxy/CodeYears/releases) · [0.1.2 版本说明](docs/releases/v0.1.2.md)
 
