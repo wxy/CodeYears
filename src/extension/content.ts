@@ -1,5 +1,6 @@
 import { text, externalText, localize, numberText, type Language, type LanguagePreference, type LanguageSettings, type MessageKey } from "./i18n";
 import { cityLegendStyles, createCityLegend } from "./city-legend";
+import { createCityHover } from './city-hover';
 import { readPageContext } from "../platform/github/probe";
 import { clearContributionCache, confirmViewer, sameContext } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
@@ -42,6 +43,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
+      .building-hover { position:absolute; z-index:4; pointer-events:none; width:max-content; max-width:min(340px,calc(100% - 16px)); margin:0; padding:11px 13px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:color-mix(in srgb,var(--bgColor-default,#fff) 94%,transparent); box-shadow:0 6px 24px #0002; font-size:12px; line-height:1.65; overflow-wrap:anywhere; }
+      .building-hover-time { margin-bottom:5px; color:var(--fgColor-muted,#59636e); font-size:11px; }
+      .building-hover p { margin:4px 0 0; }
       .view-tools { position:absolute; right:10px; bottom:10px; display:flex; align-items:center; padding:3px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); }
       .status button { background:transparent; }
       .view-tools button { display:grid; place-items:center; width:30px; height:30px; padding:6px; border:0; background:transparent; }
@@ -150,6 +154,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   document.addEventListener("pointerdown", outsidePointer, true);
   document.addEventListener("keydown", escapeMenu, true);
   const currentContext = () => readPageContext(document, new URL(location.href));
+  const hover=createCityHover(cityHost,{
+    pick:(x,y)=>active&&!busy?city?.buildingAt(x,y):undefined,
+    context:()=>context,currentContext,language:()=>language,
+    invalidate(){resetResult();retry.hidden=false;setStatus(()=>language==='zh-CN'?'GitHub 会话已改变或暂时无法确认，请重新载入城市。':'The GitHub session changed or could not be confirmed. Reload the city.')},
+  });
   const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
   const collapse = (restoreFocus = true) => {
     if (!dialog.open) return;
@@ -172,10 +181,12 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     updateFeedback();
   };
   const setBusy = (value: boolean) => {
+    if(value)hover.hide();
     busy = value; run.disabled = refresh.disabled = select.disabled = startSelect.disabled = busy;
     clear.disabled = busy || context.viewer.state === "unknown"; updateControls();
   };
   const resetResult = () => {
+    hover.clear();
     reusable = undefined;
     city?.dispose(); city = undefined; cityHost.replaceChildren();
     showZoom(1);
@@ -285,6 +296,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     } finally { if (controller === request) { controller = undefined; setBusy(false); } }
   };
   const deactivate = () => {
+    hover.hide();
     active = false; controller?.abort(); controller = undefined; collapse(false);
     cityHost.hidden = true;
     if (reusable && city) { city.setVisible(false); city.skip(); }
@@ -294,6 +306,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     get<HTMLElement>("#identity").textContent = ""; setBusy(false);
   };
   const setLanguage = (next: Language, selected: LanguagePreference) => {
+    hover.hide();
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
     fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
@@ -332,6 +345,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       } finally { if (controller === request) { controller = undefined; setBusy(false); } }
     },
     deactivate,
-    dispose() { if (disposed) return; deactivate(); resetResult(); disposed = true; document.removeEventListener("pointerdown", outsidePointer, true); document.removeEventListener("keydown", escapeMenu, true); shadow.replaceChildren(); controls.replaceChildren(); },
+    dispose() { if (disposed) return; deactivate(); resetResult(); hover.dispose(); disposed = true; document.removeEventListener("pointerdown", outsidePointer, true); document.removeEventListener("keydown", escapeMenu, true); shadow.replaceChildren(); controls.replaceChildren(); },
   };
 }

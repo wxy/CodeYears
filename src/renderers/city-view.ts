@@ -14,6 +14,8 @@ import { createCityOutskirtsPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } f
 import type { LandscapeView, LandscapeViewport } from './types';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
+// 素材首次命中时生成共享的一位透明度掩码，后续移动只查掩码、不重画城市。
+const hitMasks=new WeakMap<HTMLCanvasElement,Uint8Array>();
 export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number }
 export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
@@ -194,10 +196,30 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const paintGround=(target:CanvasRenderingContext2D)=>{for(const command of groundPaint)if(command.after<=cachedPrefix)command.paint(target)};
   const g=ground.getContext('2d')!;g.setTransform(unit,0,0,unit,-minX*unit,-minY*unit);paintGround(g);
   const detailGround=document.createElement('canvas');let detailKey='';
-  let frameKey='';
+  let frameKey='',visiblePrefix=0;
   const fitScale=(viewport:LandscapeViewport)=>Math.min(Math.max(1,viewport.width-32)/(maxX-minX),Math.max(1,viewport.height-24)/(maxY-minY));
   return {
     canvas,
+    buildingAt(x,y,viewport){
+      if(!frameKey)return;
+      const scale=fitScale(viewport)*viewport.zoom;
+      const px=(x-viewport.width/2-viewport.panX)/scale+(minX+maxX)/2;
+      const py=(y-viewport.height/2-viewport.panY)/scale+(minY+maxY)/2;
+      for(let i=placed.length-1;i>=0;i--){
+        const p=placed[i];
+        if(p.item.flat||(progressive&&p.after>visiblePrefix)||px<p.left||px>=p.left+p.width||py<p.top||py>=p.top+p.height)continue;
+        const source=p.sprite.canvas;
+        let mask=hitMasks.get(source);
+        if(!mask){
+          const rgba=source.getContext('2d')!.getImageData(0,0,source.width,source.height).data;
+          mask=new Uint8Array(Math.ceil(source.width*source.height/8));
+          for(let pixel=0;pixel<source.width*source.height;pixel++)if(rgba[pixel*4+3]>=64)mask[pixel>>3]|=1<<(pixel&7);
+          hitMasks.set(source,mask);
+        }
+        const pixel=Math.floor((py-p.top)/p.height*source.height)*source.width+Math.floor((px-p.left)/p.width*source.width);
+        if(mask[pixel>>3]&(1<<(pixel&7)))return p.item.parcel?.kind==='building'?p.item.parcel.indices:undefined;
+      }
+    },
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
     description:()=> groundPainter?`固定视角 · ${wonderCount} 处奇观 · 沿街区外缘环路 / 内部共用道路 · 拖动平移`:`固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
     draw(progress,viewport:LandscapeViewport){
@@ -257,6 +279,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.drawImage(source,x,y,w,h);context.restore();
       }
       frameKey=nextFrameKey;
+      visiblePrefix=prefix;
     },
     dispose(){canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
   };

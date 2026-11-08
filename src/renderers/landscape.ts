@@ -7,6 +7,7 @@ import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface ContributionLandscape {
+  buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
   setView(view: ViewMode): void;
   zoomBy(factor: number): void;
   zoomToMax(): void;
@@ -124,6 +125,10 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
+    buildingAt(x,y){
+      if(disposed||suspended||!progressiveCity)return;
+      return layer?.buildingAt?.(x,y,viewport)?.map(index=>currentDays[index]).filter(day=>day.count>0);
+    },
     setVisible(visible){if(disposed)return;suspended=!visible;if(suspended){cancelAnimationFrame(raf);raf=0;pointer=undefined;host.style.cursor="grab"}else resize()},
     setView(next){if(disposed||next===view||progressiveCity)return;view=next;void prepare()},
     zoomBy:zoomAt,

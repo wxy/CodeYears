@@ -34,7 +34,7 @@ export async function readLivePageContext(profileLogin: string, signal: AbortSig
   return { profileLogin, viewer: readViewer(await requestHTML(url, signal, false)) };
 }
 
-async function requestHTML(url: URL, signal: AbortSignal, fragment: boolean): Promise<Document> {
+export async function requestHTML(url: URL, signal: AbortSignal, fragment: boolean): Promise<Document> {
   const headers: Record<string, string> = { Accept: "text/html" };
   if (fragment) headers["X-Requested-With"] = "XMLHttpRequest";
   const response = await fetch(url, { credentials: "same-origin", cache: "no-store", headers, signal });
