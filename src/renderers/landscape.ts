@@ -20,7 +20,7 @@ export interface ContributionLandscape {
   /** 隐藏时停止绘制，保留当前场景、素材和取景。 */
   setVisible(visible: boolean): void;
   /** 渐进City：该批素材就绪并交换画面后resolve，不等待短填入动画。 */
-  updateDays(days: readonly DailyContribution[]): Promise<void>;
+  updateDays(days: readonly DailyContribution[], joinedOn?:string): Promise<void>;
   dispose(): void;
 }
 
@@ -143,7 +143,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     resume(){if(disposed||blocked||state().status==="completed")return;playing=true;anchored=false;schedule()},
     skip(){if(disposed)return;playing=false;if(progressiveCity){revealedDays=currentDays.length;labelCity()}else timeline.skip();schedule();notify()},
     replay(){if(disposed||progressiveCity)return;timeline.replay(performance.now());timeline.pause();playing=true;anchored=false;schedule();notify()},
-    async updateDays(nextDays){
+    async updateDays(nextDays,joinedOn){
       if(!progressiveCity)throw new Error("逐年填入仅适用于预留年份的City。");
       if(disposed)throw new DOMException("城市已关闭。","AbortError");
       const token=++generation;
@@ -151,7 +151,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       await new Promise<void>(resolve=>setTimeout(resolve,0));
       assetAbort.signal.throwIfAborted();
       if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
-      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders,namingOriginYear);
+      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders,namingOriginYear,joinedOn);
       const nextScene=organic.scene;
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{

@@ -6,7 +6,7 @@
 
 - `public/icons/`：从项目原生 SVG 图标导出，母版及方法见 `docs/design/app-icon/v1/README.md`，随项目代码采用 MIT。
 - `public/assets/city/`：保留的设计源素材，包含项目专用的 AI 生成透明建筑、植被、地面、奇观和城郊图片。源文件不再直接进入下一版发行包；代码的 MIT 声明不另行承诺这些位图的独立复用授权。
-- `public/assets/city-runtime/`：由设计源素材及标定流程生成的97张运行PNG；发行时复制到`assets/city/`，保持原资源权限范围。包括幼树的独立标定结果，不分发目录未引用的旧候选图。
+- `public/assets/city-runtime/`：由设计源素材及标定流程生成的98张运行PNG；发行时复制到`assets/city/`，保持原资源权限范围。包括幼树的独立标定结果及注册纪念塔，不分发目录未引用的旧候选图。
 - SVG 投影模板、标定 JSON 与程序绘制道路属于项目代码；运行时只使用本地资源。
 
 生成提示、来源和标定分别保留在 `docs/design/city-buildings/`、`docs/design/city-units/v2/` 至 `v4/`、`docs/design/city-outskirts/`、`docs/design/city-transport/` 和 `docs/design/city-model-expansion/`。部分提示使用城市建造游戏作为质感参考，并要求不复制游戏素材、标志或受保护的特色建筑；没有将游戏图片打包。不能仅凭提示就宣称已完成第三方权利核查。
@@ -22,6 +22,10 @@
 ## 2026-11-07 桥梁扩充
 
 第二版精绘石拱桥与单桥墩现代梁桥替代旧运行桥图，新增两张、停用一张。两图为内置imagegen生成及编辑，含透明边长边不超过1152像素，合计1,208,377 bytes，较旧运行桥图净增801,596 bytes。源图、完整提示词及标定见`docs/design/city-transport/v2/`，不进入发行包；运行仍按场景选型按需解码。第一版源图保留。
+
+## 2026-11-08 注册纪念塔
+
+新增内置imagegen生成的加入GitHub纪念高塔，1×1占地，运行PNG为123×384透明RGBA、75,521 bytes；正式运行目录由97张增为98张。源图、完整生成/透明清理提示与标定保留在[素材记录](docs/design/github-joining-tower/README.md)，大尺寸源图不进入发行包。沿用按需解码及既有命中/预滤波/销毁，不在浏览器内生成图片。图中GitHub/Octocat标识不意味着获得其品牌的独立复用授权，位图分发仍沿用本文件的边界。
 
 ## 依赖
 

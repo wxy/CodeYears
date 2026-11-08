@@ -20,8 +20,8 @@ export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x
 export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
-export function planCityScene(days:readonly DailyContribution[],wonders=true,reservedYears?:readonly number[]):CityScene {
-  const weekly=planWeeklyCity(days,true,wonders,reservedYears),selectGround=createGroundSelector(weekly);
+export function planCityScene(days:readonly DailyContribution[],wonders=true,reservedYears?:readonly number[],joinedOn?:string):CityScene {
+  const weekly=planWeeklyCity(days,true,wonders,reservedYears,joinedOn),selectGround=createGroundSelector(weekly);
   const layout=createCityLayout(weekly);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
     const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);

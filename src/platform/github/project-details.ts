@@ -7,10 +7,13 @@ export interface ProjectActivity {
   kind: 'commits' | 'pull-request' | 'review' | 'issue';
   url: string;
   commits?: number;
+  title?: string;
 }
 
+export interface DayActivities { projects:ProjectActivity[]; joinedGitHub:boolean }
+
 /** 与建筑成员日一一对应，只解析同源活动区域，不展开仓库或PR正文。 */
-export async function fetchProjectActivities(context: GitHubPageContext, date: string, signal: AbortSignal): Promise<ProjectActivity[]> {
+export async function fetchProjectActivities(context: GitHubPageContext, date: string, signal: AbortSignal): Promise<DayActivities> {
   const url=new URL(`/${context.profileLogin}`,'https://github.com');
   url.search=new URLSearchParams({tab:'overview',from:date,to:date}).toString();
   // 身份未知仍可查匿名公开活动，不能把未知身份当作已确认登录或复用其缓存。
@@ -19,9 +22,10 @@ export async function fetchProjectActivities(context: GitHubPageContext, date: s
   const area=areas[0],clean=(node:Element|null)=>node?.textContent?.replace(/\s+/g,' ').trim()??'';
   const expected=new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'});
   if(clean(area.querySelector('h3'))!==expected)throw new Error('项目活动日期无法确认');
-  const activities:ProjectActivity[]=[];
+  const activities:ProjectActivity[]=[];let joinedGitHub=false;
   if(!area.querySelector('.TimelineItem')&&!clean(area).includes(`${context.profileLogin} had no activity during this period.`))throw new Error('项目活动结构无法确认');
   for(const item of area.querySelectorAll('.TimelineItem')){
+    if(clean(item.querySelector('.TimelineItem-body h4'))==='Joined GitHub'){joinedGitHub=true;continue}
     const summary=clean(item.querySelector('.TimelineItem-body > details-toggle > details > summary'));
     const kind:ProjectActivity['kind']|undefined=/^Created [\d,]+ commits? in /.test(summary)?'commits':
       /^Opened [\d,]+ (?:other )?pull requests? in /.test(summary)?'pull-request':
@@ -43,8 +47,9 @@ export async function fetchProjectActivities(context: GitHubPageContext, date: s
           if(!Number.isSafeInteger(commits)||commits<0)throw new Error('提交数量无法确认');
         }
       }
-      if(!activities.some(a=>a.kind===kind&&a.url===link.href))activities.push({date,repository:match[1],kind,url:link.href,...(commits===undefined?{}:{commits})});
+      const title=kind==='commits'?undefined:clean(anchor).replace(/^#\d+\s*/, '').slice(0,140)||undefined;
+      if(!activities.some(a=>a.kind===kind&&a.url===link.href))activities.push({date,repository:match[1],kind,url:link.href,...(commits===undefined?{}:{commits}),...(title?{title}:{})});
     }
   }
-  return activities;
+  return {projects:activities,joinedGitHub};
 }

@@ -11,6 +11,7 @@ const PUBLIC_VARIANTS:Record<string,readonly string[]>={
 
 /** 仅用于已规划的合法建筑地块；由调用方提供稳定 seed，不随缩放或播放变化。 */
 export function selectCityBuilding(parcel: CityParcel, seed: number): { id: string; factor: number } {
+  if(parcel.milestone==='joined-github')return {id:'github-joining-tower',factor:1};
   const variant = (seed >>> 0) % 2 === 0 ? 'a' : 'b';
   const { band, w, d } = parcel;
   const mixed=Math.imul(seed^(seed>>>16),0x45d9f3b),appearanceSeed=(mixed^(mixed>>>16))>>>0;

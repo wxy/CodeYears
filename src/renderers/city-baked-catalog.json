@@ -1087,5 +1087,16 @@
       }
     ],
     "sampleId": "transport-bridge-girder"
+  },
+  "github-joining-tower": {
+    "file": "github-joining-tower.png",
+    "left": -0.48025366365829686,
+    "top": -2.517053324099723,
+    "width": 0.9678583795013851,
+    "height": 3.0216066481994464,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 3,
+    "sampleId": "github-joining-tower"
   }
 }
