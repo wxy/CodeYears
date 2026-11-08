@@ -61,9 +61,17 @@ export function createCityHover(host:HTMLElement,options:{
   const card=document.createElement('aside');card.className='building-hover';card.id='building-hover';card.hidden=true;card.setAttribute('role','tooltip');
   host.parentElement!.append(card);
   const cache=new Map<string,{activities:ProjectActivity[];expires:number}>();
-  let cacheScope='',key='',timer=0,request:AbortController|undefined,anchor={x:0,y:0};
-  const hide=()=>{clearTimeout(timer);timer=0;request?.abort();request=undefined;key='';card.hidden=true;card.replaceChildren();host.removeAttribute('aria-describedby')};
-  const render=(days:readonly DailyContribution[],activities:readonly ProjectActivity[])=>{
+  let cacheScope='',key='',timer=0,closeTimer=0,request:AbortController|undefined,anchor={x:0,y:0};
+  const dismiss=(immediate:boolean)=>{
+    clearTimeout(timer);timer=0;clearTimeout(closeTimer);request?.abort();request=undefined;key='';
+    card.removeAttribute('data-open');host.removeAttribute('aria-describedby');
+    const finish=()=>{closeTimer=0;card.hidden=true;card.replaceChildren()};
+    if(immediate||card.hidden||matchMedia('(prefers-reduced-motion: reduce)').matches)finish();
+    else closeTimer=window.setTimeout(finish,100);
+  };
+  // 身份、导航和画面变化立即清除；普通移出才保留短暂的淡出。
+  const hide=()=>dismiss(true),leave=()=>dismiss(false);
+  const render=(days:readonly DailyContribution[],activities:readonly ProjectActivity[],pending:boolean)=>{
     const language=options.language(),zh=language==='zh-CN';
     card.replaceChildren();const heading=document.createElement('div');heading.className='building-hover-time';heading.textContent=describeTime(days,language);card.append(heading);
     const projects=describeProjects(activities,language);
@@ -74,55 +82,66 @@ export function createCityHover(host:HTMLElement,options:{
     else{
       const mean=days.reduce((sum,d)=>sum+d.count,0)/days.length,row=document.createElement('p');
       row.textContent=zh?(mean>=20?'这一时段贡献较集中。':mean>=6?'这一时段贡献较活跃。':'这一时段有一些贡献活动。'):(mean>=20?'Concentrated contribution activity.':mean>=6?'An active period of contributions.':'Some contribution activity during this period.');card.append(row);
+      const note=document.createElement('p');note.className='building-hover-note';note.textContent=pending?(zh?'正在补充相关项目…':'Finding related projects…'):(zh?'暂未取得相关项目。':'Related projects are not available yet.');card.append(note);
     }
+    clearTimeout(closeTimer);closeTimer=0;
     card.hidden=false;host.setAttribute('aria-describedby',card.id);
     const parent=host.parentElement!.getBoundingClientRect(),point=host.getBoundingClientRect();
     const x=anchor.x+point.left-parent.left,y=anchor.y+point.top-parent.top;
     card.style.left=`${Math.max(8,Math.min(parent.width-card.offsetWidth-8,x+16))}px`;
     card.style.top=`${Math.max(8,Math.min(parent.height-card.offsetHeight-8,y+16))}px`;
+    card.setAttribute('data-open','');
   };
   async function show(days:readonly DailyContribution[],target:string){
-    render(days,[]);
-    const context=options.context();if(context.viewer.state==='unknown')return;
-    if(!sameContext(context,options.currentContext())){hide();options.invalidate();return}
-    const identity=context.viewer.identity.kind==='signed-out'?'signed-out':`user:${context.viewer.identity.login.toLowerCase()}`;
+    render(days,[],true);
+    const context=options.context(),known=context.viewer.state==='known';
+    const identity=context.viewer.state==='unknown'?'public':context.viewer.identity.kind==='signed-out'?'signed-out':`user:${context.viewer.identity.login.toLowerCase()}`;
     const scope=`${identity}:${context.profileLogin.toLowerCase()}`;
-    if(cacheScope!==scope){cache.clear();cacheScope=scope}
+    if(!known||cacheScope!==scope){cache.clear();cacheScope=scope}
     for(const [date,entry]of cache)if(entry.expires<=Date.now())cache.delete(date);
     const dates=days.map(d=>d.date),missing=dates.filter(date=>!cache.has(date));
-    const collect=()=>dates.flatMap(date=>cache.get(date)?.activities??[]);
-    if(!missing.length){render(days,collect());return}
     const controller=new AbortController();request=controller;const signal=controller.signal;
-    const confirm=async()=>{await confirmViewer(context,signal);signal.throwIfAborted();if(!sameContext(context,options.currentContext()))throw new Error('GitHub session changed')};
-    const loaded:{date:string;activities:ProjectActivity[]}[]=[];let cursor=0;
+    const confirm=async()=>{if(known)await confirmViewer(context,signal);signal.throwIfAborted();if(!sameContext(context,options.currentContext()))throw new Error('GitHub session changed')};
+    const loaded=new Map<string,ProjectActivity[]>();let cursor=0,published=0,complete=false,publishing:Promise<void>|undefined;
+    const collect=()=>dates.flatMap(date=>loaded.get(date)??cache.get(date)?.activities??[]);
+    const publish=()=>publishing??=(async()=>{
+      await confirm();
+      if(signal.aborted||key!==target)return;
+      if(known)for(const [date,activities]of loaded)cache.set(date,{activities,expires:Date.now()+5*60000});
+      published=loaded.size;render(days,collect(),!complete);
+    })().finally(()=>{publishing=undefined});
     try{
       await confirm();
+      if(signal.aborted||key!==target)return;
+      if(!missing.length){render(days,collect(),false);return}
+      if(collect().length)render(days,collect(),true);
       await Promise.all(Array.from({length:Math.min(2,missing.length)},async()=>{
         while(cursor<missing.length){
           const date=missing[cursor++];signal.throwIfAborted();
-          try{loaded.push({date,activities:await fetchProjectActivities(context,date,signal)})}
+          let activities:ProjectActivity[];
+          try{activities=await fetchProjectActivities(context,date,signal)}
           catch{signal.throwIfAborted();return}
+          loaded.set(date,activities);await publish();
         }
       }));
-      await confirm();
+      complete=true;
+      if(loaded.size>published)await publish();
+      if(!signal.aborted&&key===target)render(days,collect(),false);
     }catch{
       if(!signal.aborted){cache.clear();hide();options.invalidate()}
       return;
     }
-    if(signal.aborted||key!==target)return;
-    for(const value of loaded)cache.set(value.date,{activities:value.activities,expires:Date.now()+5*60000});
-    render(days,collect());
   }
   const move=(event:PointerEvent)=>{
     if(event.buttons||event.pointerType==='touch'){hide();return}
     const rect=host.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top,days=options.pick(x,y);
     const next=days?.length?days.map(d=>d.date).join('|'):'';
     if(next===key)return;
-    hide();if(!next||!days)return;
+    leave();if(!next||!days)return;
     key=next;anchor={x,y};timer=window.setTimeout(()=>{timer=0;void show(days,next)},300);
   };
   const visibility=()=>{if(document.hidden)hide()};
   const resize=new ResizeObserver(hide);resize.observe(host);
-  host.addEventListener('pointermove',move);host.addEventListener('pointerleave',hide);host.addEventListener('pointerdown',hide);host.addEventListener('wheel',hide,{passive:true});host.addEventListener('keydown',hide);document.addEventListener('visibilitychange',visibility);
-  return {hide,clear(){hide();cache.clear()},dispose(){hide();cache.clear();resize.disconnect();card.remove();host.removeEventListener('pointermove',move);host.removeEventListener('pointerleave',hide);host.removeEventListener('pointerdown',hide);host.removeEventListener('wheel',hide);host.removeEventListener('keydown',hide);document.removeEventListener('visibilitychange',visibility)}};
+  host.addEventListener('pointermove',move);host.addEventListener('pointerleave',leave);host.addEventListener('pointerdown',hide);host.addEventListener('wheel',hide,{passive:true});host.addEventListener('keydown',hide);document.addEventListener('visibilitychange',visibility);
+  return {hide,clear(){hide();cache.clear()},dispose(){hide();cache.clear();resize.disconnect();card.remove();host.removeEventListener('pointermove',move);host.removeEventListener('pointerleave',leave);host.removeEventListener('pointerdown',hide);host.removeEventListener('wheel',hide);host.removeEventListener('keydown',hide);document.removeEventListener('visibilitychange',visibility)}};
 }
