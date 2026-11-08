@@ -1,0 +1,10 @@
+{
+  "file": "pier-material.png",
+  "texture": [768, 800, 20, 150],
+  "girderDrop": 0.16,
+  "capTop": 0.15,
+  "capBottom": 0.22,
+  "capHalfDepth": 0.16,
+  "shaftHalfDepth": 0.18,
+  "basis": "Screen drops relative to road deck. Crosshead spans local W (road width), centered at Z=nativeDepth/2. Vertical square shaft is centered at W=nativeWidth/2. Its bottom vertices end at the shared water plane; no exposed footing or tall opening. Generated image supplies concrete material only; geometry uses the same exact 2:1 projection as the deck."
+}

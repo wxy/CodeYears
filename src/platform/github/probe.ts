@@ -34,10 +34,10 @@ export async function readLivePageContext(profileLogin: string, signal: AbortSig
   return { profileLogin, viewer: readViewer(await requestHTML(url, signal, false)) };
 }
 
-async function requestHTML(url: URL, signal: AbortSignal, fragment: boolean): Promise<Document> {
+export async function requestHTML(url: URL, signal: AbortSignal, fragment: boolean, credentials: RequestCredentials = 'same-origin'): Promise<Document> {
   const headers: Record<string, string> = { Accept: "text/html" };
   if (fragment) headers["X-Requested-With"] = "XMLHttpRequest";
-  const response = await fetch(url, { credentials: "same-origin", cache: "no-store", headers, signal });
+  const response = await fetch(url, { credentials, cache: "no-store", headers, signal });
   if (!response.ok) throw new Error(`GitHub 请求失败（HTTP ${response.status}），没有将失败响应当作空数据。`);
   if (response.redirected || new URL(response.url).origin !== url.origin) throw new Error("请求发生重定向，请检查当前 GitHub 会话后重试。");
   if (!response.headers.get("content-type")?.includes("text/html")) throw new Error("GitHub 返回了不支持的响应格式。");

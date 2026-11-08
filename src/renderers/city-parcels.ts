@@ -8,6 +8,7 @@ export interface CityParcel {
   block: number; band: number; kind: CityKind;
   indices: number[]; count: number; mean: number;
   wonder?: 'wonder-stadium' | 'wonder-theater' | 'wonder-park';
+  milestone?: 'joined-github';
 }
 export interface WeeklyCity {
   columns: number; rows: number; blocks: number;
@@ -16,7 +17,7 @@ export interface WeeklyCity {
 }
 
 /** ISO周年一条街区，完整周一至周日同属一个block；只使用实际输入日期。 */
-export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false, wonders = false, reservedYears?: readonly number[]): WeeklyCity {
+export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRectangles = false, wonders = false, reservedYears?: readonly number[], joinedOn?:string): WeeklyCity {
   const dates = days.map(day => isoWeekDate(day.date));
   // 预留年份仅决定场地坐标；尚未收到的日期不生成零值cell。
   const years = [...(reservedYears ?? new Set(dates.map(date => date.year)))].sort((a,b)=>a-b);
@@ -28,7 +29,7 @@ export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRect
     const date = dates[index], block = byYear.get(date.year)!;
     const x = date.week - 1, z = date.weekday - 1;
     const key = `${block},${x},${z}`;
-    groups.set(key, { x, z, w: 1, d: 1, block, band: 0, kind: "grass", indices: [index], count: day.count, mean: day.count });
+    groups.set(key, { x, z, w: 1, d: 1, block, band: 0, kind: "grass", indices: [index], count: day.count, mean: day.count,...(day.date===joinedOn?{milestone:'joined-github' as const}:{}) });
   });
   const cells = [...groups.values()].sort((a, b) => a.block - b.block || a.z - b.z || a.x - b.x);
   for (const cell of cells) {
@@ -37,13 +38,13 @@ export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRect
     // 固定绝对档位；后到年份中的极值不改变已有日期的贡献级别。
     cell.band = cell.mean <= 2 ? 0 : cell.mean <= 5 ? 1 : cell.mean <= 19 ? 2 : cell.mean <= 49 ? 3 : 4;
   }
-  const parcels: CityParcel[] = wonders ? planCityWonders(cells, districts) : [];
+  const parcels: CityParcel[] = wonders ? planCityWonders(cells.filter(cell=>!cell.milestone), districts) : [];
   const reserved = new Set(parcels.flatMap(parcel => parcel.indices));
   const used = new Set(cells.filter(cell => reserved.has(cell.indices[0])));
   for (const cell of cells) {
     if (used.has(cell)) continue;
     // 新长条与素材/选择调用一起显式启用；默认保留原有合法占地。
-    const sizes: [number, number][] = cell.kind === "building"
+    const sizes: [number, number][] = cell.milestone?[[1,1]]:cell.kind === "building"
       ? cell.band === 0 ? [[1, 1]]
         : cell.band === 1 ? [[2, 1], [1, 2], [1, 1]]
         : cell.band === 2 ? [[2, 2], [1, 1]]
@@ -59,7 +60,7 @@ export function planWeeklyCity(days: readonly DailyContribution[], mergeTallRect
       for (let z = cell.z; z < cell.z + depth; z++) {
         for (let x = cell.x; x < cell.x + width; x++) {
           const next = groups.get(`${cell.block},${x},${z}`);
-          if (!next || used.has(next) || next.kind !== cell.kind || next.band !== cell.band) continue candidate;
+          if (!next || used.has(next) || next.kind !== cell.kind || next.band !== cell.band || next.milestone!==cell.milestone) continue candidate;
           rectangle.push(next);
         }
       }

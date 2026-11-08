@@ -1,0 +1,41 @@
+{
+  "footprint": [
+    1,
+    1
+  ],
+  "sourceCrop": [
+    320,
+    10,
+    705,
+    1525
+  ],
+  "sourceGround": {
+    "left": [
+      326,
+      1404
+    ],
+    "right": [
+      698,
+      1404
+    ],
+    "front": [
+      512,
+      1518
+    ]
+  },
+  "worldFootprintWidth": 0.9,
+  "worldFrontY": 0.475,
+  "pixelPadding": 2,
+  "runtimeLongEdge": 384,
+  "metadata": {
+    "file": "github-joining-tower.png",
+    "left": -0.48025366365829686,
+    "top": -2.517053324099723,
+    "width": 0.9678583795013851,
+    "height": 3.0216066481994464,
+    "nativeWidth": 1,
+    "nativeDepth": 1,
+    "baselineHeight": 3,
+    "sampleId": "github-joining-tower"
+  }
+}
