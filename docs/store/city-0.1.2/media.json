@@ -1,0 +1,145 @@
+{
+  "version": "0.1.2",
+  "sourceCommit": "ae88de94237f76c5f2d718abc3822832e7dc3753",
+  "capturedAt": "2026-11-08T12:47:24.080321+00:00",
+  "browser": "Google Chrome 157.0.8103.38",
+  "source": "Native macOS captures of the maintainer real GitHub profile, running reloaded unpacked CodeYears 0.1.2",
+  "profile": "https://github.com/wxy/",
+  "years": [
+    2009,
+    2026
+  ],
+  "displayedContributions": 60889,
+  "scenes": [
+    {
+      "file": "01-city-overview.jpg",
+      "zoomPercent": 70,
+      "description": "Complete multi-year city and joining tower"
+    },
+    {
+      "file": "02-neighborhood-detail.jpg",
+      "zoomPercent": 800,
+      "description": "Close view of buildings and streets"
+    },
+    {
+      "file": "03-building-activity.jpg",
+      "zoomPercent": 400,
+      "description": "Highlighted building and real project activity summary",
+      "project": "LCTT/TranslateProject",
+      "time": "2019 ISO week 35 Sunday",
+      "displayedSummary": {
+        "commits": 35,
+        "pullRequests": 7,
+        "reviewedPullRequests": 7
+      }
+    }
+  ],
+  "capture": {
+    "logicalRect": [
+      20,
+      137,
+      1280,
+      800
+    ],
+    "screenScale": 2,
+    "capturedPixels": [
+      2560,
+      1600
+    ],
+    "exportPixels": [
+      1280,
+      800
+    ],
+    "export": "sips uniform 0.5 resize, JPEG quality 90; no compositing, retouching or added UI"
+  },
+  "files": [
+    {
+      "file": "global/01-city-overview.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 611978,
+      "sha256": "39ee192fab91f7a1aa839fb429857a2ad65a43498459f80ea2bd78bd082593b4"
+    },
+    {
+      "file": "global/02-neighborhood-detail.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 597936,
+      "sha256": "0db55eb0c155f9127fa718400c393b7d33718220100311925af32336610a9b23"
+    },
+    {
+      "file": "global/03-building-activity.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 623750,
+      "sha256": "7526922716a54b58e587c1dd1ac0a34d828b4410ad5bc90a3f59979d05a9fab0"
+    },
+    {
+      "file": "global/marquee-promo.png",
+      "width": 1400,
+      "height": 560,
+      "mode": "RGB",
+      "bytes": 1227924,
+      "sha256": "b4b2ea65038e6581a94ef18d7092e5837be4472bd015420bfdb1fa92c169b304"
+    },
+    {
+      "file": "global/small-promo.png",
+      "width": 440,
+      "height": 280,
+      "mode": "RGB",
+      "bytes": 219009,
+      "sha256": "ece453000157811dfa484e87a6f01a003806c708c1e40c371b4cd01ff96a5846"
+    },
+    {
+      "file": "localized/en/01-city-overview.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 611978,
+      "sha256": "39ee192fab91f7a1aa839fb429857a2ad65a43498459f80ea2bd78bd082593b4"
+    },
+    {
+      "file": "localized/en/02-neighborhood-detail.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 597936,
+      "sha256": "0db55eb0c155f9127fa718400c393b7d33718220100311925af32336610a9b23"
+    },
+    {
+      "file": "localized/en/03-building-activity.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 623750,
+      "sha256": "7526922716a54b58e587c1dd1ac0a34d828b4410ad5bc90a3f59979d05a9fab0"
+    },
+    {
+      "file": "localized/zh_CN/01-city-overview.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 611372,
+      "sha256": "860a2e127d580d787617ad4532ecf14466361f013593f1f5818e2e4a067ac07d"
+    },
+    {
+      "file": "localized/zh_CN/02-neighborhood-detail.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 597330,
+      "sha256": "339bbe2ca3161a715ddf9355a1a5335067d6a543611a40da4236226cbfb98651"
+    },
+    {
+      "file": "localized/zh_CN/03-building-activity.jpg",
+      "width": 1280,
+      "height": 800,
+      "mode": "RGB",
+      "bytes": 625147,
+      "sha256": "8c13f35356fe1927fd963a49740be12465ac5adf842c4389b888506ff4deb230"
+    }
+  ]
+}
