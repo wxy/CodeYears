@@ -7,9 +7,10 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
     image.onerror = () => reject(new Error(`Unable to load prototype artwork: ${url}`));
     image.src = url;
   });
-  const [atlas, ground, catalog] = await Promise.all([
+  const [atlas, ground, catalog, formAtlas, formCatalog] = await Promise.all([
     loadImage(assetUrls.atlas), loadImage(assetUrls.ground),
     fetch(assetUrls.catalog).then(response => response.json()),
+    loadImage(assetUrls.forms), fetch(assetUrls.formCatalog).then(response => response.json()),
   ]);
   const canvas = document.createElement('canvas');
   canvas.width = options.width;
@@ -90,7 +91,7 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
     for(let x=riverX-.85;x<riverX+1.05;x+=.23)line([[x,y-.15],[x,y+.15]],'rgba(76,90,78,.35)',Math.max(1,unit*.012));
   }
 
-  const queue=[],metadata={profile:data.profile,asOf:data.asOf,source:'anonymous-public',mode:detail?'detail':'overview',years:[],drawnBuildings:0,decorations:0,pitch};
+  const queue=[],metadata={profile:data.profile,asOf:data.asOf,source:'anonymous-public',mode:detail?'detail':'overview',years:[],drawnUnits:0,decorations:0,pitch,forms:{},layouts:[]};
   const sprite = (frame, x, y, scale, kind, extra={}) => queue.push({frame,x,y,scale,kind,depth:x+y,...extra});
   const footpath=points=>{line(points,'rgba(113,106,73,.65)',unit*.21);line(points,'#b8ae87',unit*.15);};
   const fence=(a,b,stone=false)=>{
@@ -131,16 +132,19 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
       if(detail&&(parcel.y+parcel.h<=options.firstRow||parcel.y>=options.lastRow))continue;
       const px=ox+parcel.x*pitch,py=parcel.y*pitch,w=parcel.w*pitch,h=parcel.h*pitch;
       const seed=year.year*104729+parcel.x*1297+parcel.y*7919;
+      const form=window.planFantasyBuildingForm({...parcel,year:year.year},formCatalog,pitch);
+      const box={x:px+form.footprint.x,y:py+form.footprint.y,w:form.footprint.w,h:form.footprint.h};
+      const entryX=px+form.entry.x,entryY=py+form.entry.y;
       rectangle(px+.18,py+.18,w-.36,h-.36,parcel.tier<=1?'#8e985d':'#96a16e','rgba(75,92,60,.55)',Math.max(.8,unit*.018));
-      rectangle(px+.31,py+.33,Math.min(w-.62,1.3),1.02,parcel.tier<=1?'#aa9a70':'#b6b08a');
+      rectangle(box.x-.04,box.y-.04,box.w+.08,box.h+.08,parcel.tier<=1?'#aa9a70':'#b6b08a');
       if(parcel.mean>5){
-        const count=Math.round(parcel.w*parcel.h*12);
+        const count=Math.round(box.w*box.h*7);
         for(let i=0;i<count;i++){
-          const x=px+.36+hash(seed+i*13)*Math.min(w-.8,1.1),y=py+.38+hash(seed+i*31)*.85;
+          const x=box.x+hash(seed+i*13)*(box.w-.14),y=box.y+hash(seed+i*31)*(box.h-.12);
           rectangle(x,y,.12,.09,'rgba(224,213,177,.38)','rgba(123,123,95,.22)',Math.max(.5,unit*.008));
         }
       }
-      const houseX=px+Math.min(w/2,.96),houseY=py+.83,gateX=px+w/2,gateY=py+h;
+      const gateX=px+w/2,gateY=py+h;
       const stone=parcel.tier>=3;
       fence([px+.17,py+.17],[px+w-.17,py+.17],stone);
       fence([px+.17,py+.17],[px+.17,py+h-.17],stone);
@@ -148,13 +152,14 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
       fence([px+.17,py+h-.17],[gateX-.23,py+h-.17],stone);
       fence([gateX+.23,py+h-.17],[px+w-.17,py+h-.17],stone);
       footpath([[gateX,gateY-.17],[gateX,gateY],[ox+parcel.gateNode.x*pitch,parcel.gateNode.y*pitch]]);
-      footpath([[houseX-.12,houseY+.34],[houseX-.12,gateY-.38],[gateX,gateY-.38],[gateX,gateY-.17]]);
+      footpath([[entryX,entryY],[entryX,gateY-.38],[gateX,gateY-.38],[gateX,gateY-.17]]);
       // Planting beds use spare yard, with a clear centre route to the gate.
-      const farm=parcel.tier<=1&&parcel.w*parcel.h>=3;
+      const farm=form.family.includes('farmstead');
       if(parcel.w*parcel.h>1){
-        for(let y=py+.42;y<py+h-.7;y+=.52)for(let x=px+.29;x<px+w-.55;x+=.80){
-          if(x<px+1.6&&y<py+1.65)continue;
-          if(Math.abs(x+.15-gateX)<.28||Math.abs(x+.15-(houseX-.12))<.24)continue;
+        for(let y=py+.42;y<py+h-.7;y+=.52)for(let x=px+.29;x<px+w-.55;x+=.72){
+          if(x+.30>box.x-.12&&x<box.x+box.w+.12&&y+.30>box.y-.12&&y<box.y+box.h+.12)continue;
+          if(y+.30>entryY&&Math.abs(x+.15-entryX)<.24)continue;
+          if(y+.30>gateY-.5&&Math.abs(x+.15-gateX)<.28)continue;
           if(farm){
             rectangle(x,y,.30,.30,'#786944','#a18f58',unit*.009);
             for(let i=0;i<3;i++)line([[x+.03,y+.04+i*.09],[x+.27,y+.04+i*.09]],i%2?'#a4ad58':'#6f954f',unit*.025);
@@ -168,8 +173,9 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
           }
         }
       }
-      const frame=parcel.tier*2+(Math.floor(parcel.x/2)+year.year)%2;
-      sprite(frame,houseX,houseY,1,'building',{year:year.year,parcelId:parcel.id});
+      sprite(form.frame,px+form.anchor.x,py+form.anchor.y,form.scale,'building',{year:year.year,parcelId:parcel.id,form});
+      metadata.forms[form.family]=(metadata.forms[form.family]||0)+1;
+      metadata.layouts.push({year:year.year,id:parcel.id,family:form.family,footprint:form.footprint,parcel:{w,h},entry:form.entry});
     }
   }
   // Woodland surrounds the date grids; it is scenery and carries no contribution count.
@@ -186,20 +192,28 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
   // Smaller planting borders help the close view retain the same scene structure.
   for(const year of years){const ox=offsets.get(year.year);for(let i=0;i<year.rows;i++)if(hash(i+year.year)>.65)sprite(11,ox-.05,i*pitch+.3,.28,'scenery');}
   queue.sort((a,b)=>a.depth-b.depth||a.x-b.x);
-  const visibleBuildings=[];
+  const visibleUnits=[];
   for(const item of queue){
     if(item.kind==='fence'){item.draw();continue;}
-    const frame=catalog.frames[item.frame];
+    const compound=item.kind==='building'&&item.form.atlas==='forms';
+    const frame=(compound?formCatalog:catalog).frames[item.frame];
     const [x,y]=project(item.x,item.y);
-    const scale=unit*1.60/320*item.scale;
-    const dx=x-frame.footx*scale,dy=y-frame.footy*scale;
-    ctx.drawImage(atlas,frame.sx,frame.sy,frame.sw,frame.sh,dx,dy,frame.sw*scale,frame.sh*scale);
+    const scale=compound?unit/frame.pixelsPerUnit*item.scale:unit*1.60/320*item.scale;
+    const mirror=compound&&item.form.mirror;
+    const ax=compound?(mirror?frame.sw-frame.anchor[0]:frame.anchor[0]):frame.footx;
+    const ay=compound?frame.anchor[1]:frame.footy;
+    const dx=x-ax*scale,dy=y-ay*scale;
+    ctx.save();
+    if(mirror){ctx.translate(dx+frame.sw*scale,dy);ctx.scale(-1,1);}
+    else ctx.translate(dx,dy);
+    ctx.drawImage(compound?formAtlas:atlas,frame.sx,frame.sy,frame.sw,frame.sh,0,0,frame.sw*scale,frame.sh*scale);
+    ctx.restore();
     if(item.kind==='building'){
-      metadata.drawnBuildings++;
-      if(dx+frame.sw*scale>0&&dx<canvas.width&&dy+frame.sh*scale>header&&dy<canvas.height-footer)visibleBuildings.push({year:item.year,id:item.parcelId});
+      metadata.drawnUnits++;
+      if(dx+frame.sw*scale>0&&dx<canvas.width&&dy+frame.sh*scale>header&&dy<canvas.height-footer)visibleUnits.push({year:item.year,id:item.parcelId});
     }else metadata.decorations++;
   }
-  metadata.visibleBuildings=visibleBuildings.length;
+  metadata.visibleUnits=visibleUnits.length;
   if(!detail){
     for(const year of years){
       const [x,y]=project(offsets.get(year.year)+fieldWidth/2,-1.85);
@@ -209,13 +223,13 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
   }
   const topFade=ctx.createLinearGradient(0,0,0,header+90);topFade.addColorStop(0,'rgba(242,233,206,.98)');topFade.addColorStop(.6,'rgba(242,233,206,.93)');topFade.addColorStop(1,'rgba(242,233,206,0)');ctx.fillStyle=topFade;ctx.fillRect(0,0,canvas.width,header+90);
   ctx.textAlign='left';ctx.fillStyle='#263c2b';ctx.font=`600 ${detail?52:66}px "PingFang SC","Heiti SC",sans-serif`;
-  ctx.fillText(detail?`${options.year} · 奇幻街区近景`:'wxy 的奇幻贡献之城',margin,detail?70:88);
+  ctx.fillText(detail?`${options.year} · 奇幻建筑形态`:'wxy 的奇幻贡献之城',margin,detail?70:88);
   ctx.font=`${detail?24:30}px "PingFang SC","Heiti SC",sans-serif`;ctx.fillStyle='#5c6c4d';
   const total=data.years.reduce((n,y)=>n+y.total,0),count=data.years.reduce((n,y)=>n+plans.get(y.year).estates.length,0);
-  ctx.fillText(detail?'同一真实地图 · 留出院落与连接小路 · 同繁荣档相邻地块合并':`2024–2026/11/10 · ${total.toLocaleString('en-US')} 次公开贡献 · ${count} 个庭院与农场`,margin,detail?112:139);
+  ctx.fillText(detail?'占地选择长屋、侧翼庄园或农场 · 区域均值选择材料与设施':`2024–2026/11/10 · ${total.toLocaleString('en-US')} 次公开贡献 · ${count} 个建筑单元`,margin,detail?112:139);
   const bottomFade=ctx.createLinearGradient(0,canvas.height-footer-45,0,canvas.height);bottomFade.addColorStop(0,'rgba(242,233,206,0)');bottomFade.addColorStop(1,'rgba(242,233,206,.95)');ctx.fillStyle=bottomFade;ctx.fillRect(0,canvas.height-footer-45,canvas.width,footer+45);
   ctx.font=`${detail?19:25}px "PingFang SC","Heiti SC",sans-serif`;ctx.fillStyle='#526347';
-  ctx.fillText('房屋数量与位置来自真实日期地块；外观按区域均值选择。草地、道路与河流仅为装饰。',margin,canvas.height-40);
+  ctx.fillText('地块来自真实日期；建筑组形态按占地与均值选择。道路、河流与环境不代表贡献。',margin,canvas.height-40);
   metadata.width=canvas.width;metadata.height=canvas.height;
   metadata.unit=unit;
   return {canvas,metadata};
