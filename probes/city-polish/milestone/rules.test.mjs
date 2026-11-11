@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { recognize } from './rules.mjs';
+const joined='2020-01-06', later='2020-02-03';
+const evidence={joined,created:[later],completeFromJoined:true};
+assert.equal(recognize([joined,later],evidence).first,later);
+assert.equal(recognize([later],evidence).first,undefined);
+assert.equal(recognize([joined,later],{...evidence,completeFromJoined:false}).first,undefined);
+assert.equal(recognize([joined],{...evidence,created:[joined]}).shared,true);
+assert.equal(recognize([joined],evidence).first,undefined);
+assert.equal(recognize([joined,later],{...evidence,created:['2019-01-01',later]}).first,undefined);
+assert.equal(recognize([joined,later],{...evidence,created:[]}).first,undefined);
+console.log('7 milestone boundary checks passed');
