@@ -1,0 +1,30 @@
+{
+  "modern": {
+    "source": "docs/design/city-wayposts/v1/modern-highway-source.png",
+    "face": [[347, 93], [1431, 135], [347, 339]],
+    "anchor": [889, 817],
+    "width": 10,
+    "height": 2.8
+  },
+  "modern-mutual": {
+    "source": "docs/design/city-wayposts/v1/modern-highway-mutual-source.png",
+    "face": [[496, 57], [1275, 340], [496, 234]],
+    "anchor": [885.5, 782],
+    "width": 10,
+    "height": 2.8
+  },
+  "town": {
+    "source": "docs/design/city-wayposts/v1/town-source.png",
+    "face": [[331, 235], [1497, 242], [331, 504]],
+    "anchor": [914, 851],
+    "width": 10,
+    "height": 2.8
+  },
+  "town-mutual": {
+    "source": "docs/design/city-wayposts/v1/town-mutual-source.png",
+    "face": [[342, 252], [1494, 252], [342, 482]],
+    "anchor": [918, 853],
+    "width": 10,
+    "height": 2.8
+  }
+}

@@ -59,7 +59,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .city-road-links { position:absolute; z-index:1; inset:0; overflow:hidden; pointer-events:none; }
       .city-road-surface,.city-road-sign { position:absolute; padding:0; border:0; border-radius:0; background:transparent; pointer-events:auto; cursor:pointer; user-select:none; -webkit-user-drag:none; }
       .city-road-sign { z-index:1; }
-      .city-road-surface:hover,.city-road-sign:hover,.city-road-sign:focus-visible { background:#f8e6a655; }
+      .city-road-surface:hover { background:#f8e6a655; }
+      .city-road-sign:hover { background:#fff1; }
+      .city-road-sign:focus-visible { background:#ffe18044; }
       .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }

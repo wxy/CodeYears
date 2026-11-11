@@ -57,7 +57,7 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true,res
   const roadNetwork=planCityRoadNetwork(layout,depth,parkStarts);
   const visibleItems=items.filter(item=>item.parcel||!['broadleaf-a','conifer-b'].includes(item.id)
     ||cityTreeClearsBridges(item.x,item.z,item.w,item.d,roadNetwork.bridges));
-  const keys=[...new Set([...visibleItems.map(i=>i.id),...CITY_OUTSKIRT_IDS])];
+  const keys=[...new Set([...visibleItems.map(i=>i.id),...CITY_OUTSKIRT_IDS,'direction-board','direction-board-mutual'])];
   return {weekly,layout,items:visibleItems,keys,parkStarts,width,depth,roadNetwork};
 }
 
@@ -79,7 +79,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     // 所有成员已在本批真实days中，融合地块按首个成员进入呈现前缀时整体出现。
     return [{item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1],after:progressive?(item.revealAfter??(item.parcel?Math.min(...item.parcel.indices)+1:0)):0}];
   }).sort((a,b)=>a.groundY-b.groundY||a.left-b.left);
-  const outer=roadNetwork.ringOuter+CITY_OUTSKIRT_MARGIN;
+  const outer=roadNetwork.ringOuter+CITY_OUTSKIRT_MARGIN+18;
   // 渐进场地的包围盒只取预留布局和既有外围余量，不随后到楼宇改变取景。
   const minX=Math.min(-depth/2-outer-.4,...(progressive?[]:placed.map(p=>p.left)))-.3,maxX=Math.max(width/2+outer+.4,...(progressive?[]:placed.map(p=>p.left+p.width)))+.3;
   const minY=Math.min(-outer/2-.4,...(progressive?[]:placed.map(p=>p.top)))-4.5,maxY=Math.max((width+depth)/4+outer/2+.5,...(progressive?[]:placed.map(p=>p.top+p.height)));
@@ -208,18 +208,26 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     const a=road.points[0],b=road.points.at(-1)!;
     return b[0]<a[0]?0:b[0]>a[0]?1:b[1]<a[1]?2:3;
   };
-  const baseExits=[...(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')))].sort((a,b)=>direction(a)-direction(b));
+  const baseExits=[...(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')))].sort((a,b)=>direction(a)-direction(b)).map(road=>{
+    const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+    return {...road,lanes:4 as const,laneWidth:.8,points:[a,[b[0]+dx/length*14,b[1]+dz/length*14]] as [number,number][]};
+  });
   const extraExits=baseExits.map((road,index)=>{
     const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-    return {...road,id:`extra-exit-${index}`,points:[[a[0]+dx*.25,a[1]+dz*.25],[b[0]+dx/length*5-dz/length*10,b[1]+dz/length*5+dx/length*10]] as [number,number][]};
+    return {...road,id:`extra-exit-${index}`,points:[[a[0]+dx*.25,a[1]+dz*.25],[b[0]+dx/length*18-dz/length*20,b[1]+dz/length*18+dx/length*20]] as [number,number][]};
   });
   const exitRoads=[...baseExits,...extraExits];
   let roadCount=4;
   let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined,boardOrder:DirectionBoard[]=[];
-  const extraPainters=extraExits.map(road=>{
+  const exitPainters=exitRoads.map(road=>{
     if(scene.kind!=='town')return createCityRoadPainter([road],[]);
-    const path=new Path2D();road.points.map(([x,z])=>project(x,z)).forEach((point,i)=>i?path.lineTo(...point):path.moveTo(...point));
-    return (target:CanvasRenderingContext2D)=>{target.lineCap='round';target.strokeStyle='#8c8865';target.lineWidth=.11;target.stroke(path);target.strokeStyle='#c6bb91';target.lineWidth=.075;target.stroke(path)};
+    const [a,b]=road.points,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),ux=dx/length,uz=dz/length,half=cityRoadWidth(road)/2;
+    const path=new Path2D();path.moveTo(...a);path.lineTo(...b);
+    const seams=new Path2D();
+    for(let along=.7;along<length;along+=.7){const x=a[0]+ux*along,z=a[1]+uz*along;seams.moveTo(x-uz*half,z+ux*half);seams.lineTo(x+uz*half,z-ux*half)}
+    return (target:CanvasRenderingContext2D)=>{
+      target.save();target.transform(.5,.25,-.5,.25,0,0);target.lineCap='butt';target.strokeStyle='#8f8365';target.lineWidth=half*2+.2;target.stroke(path);target.strokeStyle='#bdad88';target.lineWidth=half*2;target.stroke(path);target.strokeStyle='#a29473';target.lineWidth=.035;target.stroke(seams);target.restore();
+    };
   });
   const roadScreen=(x:number,z:number,viewport:LandscapeViewport):[number,number]=>{
     const [px,py]=project(x,z),scale=fitScale(viewport)*viewport.zoom;
@@ -250,15 +258,15 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     canvas,
     setRoadCount(count){if(count!==roadCount){roadCount=count;frameKey=''}},
     setRoadLabels(labels,returnLabel){
-      boards=labels.map((label,i)=>planDirectionBoard(exitRoads[i],label,scene.kind==='town',false,context));
-      returnBoard=returnLabel?planDirectionBoard(baseExits[0],returnLabel,scene.kind==='town',true,context):undefined;
+      boards=labels.flatMap(({name,mutual},i)=>{const sprite=images[mutual?'direction-board-mutual':'direction-board'];return sprite?[planDirectionBoard(exitRoads[i],name,scene.kind==='town',false,mutual,context,sprite)]:[]});
+      returnBoard=returnLabel&&images['direction-board']?planDirectionBoard(baseExits[0],returnLabel,scene.kind==='town',true,false,context,images['direction-board']):undefined;
       boardOrder=[...boards,...(returnBoard?[returnBoard]:[])].sort((a,b)=>a.groundY-b.groundY);frameKey='';
     },
     roadExits(viewport){
       const screen=(x:number,z:number)=>roadScreen(x,z,viewport);
       return exitRoads.slice(0,roadCount).map((road,i)=>{
         const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-        const half=scene.kind==='town'?.12:cityRoadWidth(road)/2,nx=-dz/length*half,nz=dx/length*half;
+        const half=cityRoadWidth(road)/2,nx=-dz/length*half,nz=dx/length*half;
         return {board:boards[i]?.polygon.map(([x,y])=>{
           const scale=fitScale(viewport)*viewport.zoom;
           return [viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale] as [number,number];
@@ -342,9 +350,10 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.restore();
       }
       const level=(1-Math.pow(1-progress,1.4))*tallest;
-      if(roadCount>4){
+      {
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
-        for(const paint of extraPainters.slice(0,roadCount-4))paint(context);
+        for(const paint of exitPainters.slice(0,roadCount))paint(context);
+        for(const board of boards)board.paintRoad(context);
         context.restore();
       }
       let boardIndex=0;

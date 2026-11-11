@@ -279,7 +279,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
   }
   items.push(...planCityTransport(vehicles,signals,bridges));
-  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,exits,junctions,bridges,vehicles}};
+  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground','direction-board','direction-board-mutual'])],roadNetwork:{...original.roadNetwork,roads,exits,junctions,bridges,vehicles}};
   const shown=new Set(items.flatMap(item=>item.parcel?.indices??[]));
   return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,signals,rivers};
 }

@@ -628,5 +628,27 @@
     "groundBasis": "manual-source-envelope",
     "baselineHeight": 0.8,
     "sampleId": "life-8"
+  },
+  "direction-board": {
+    "file": "direction-board.png",
+    "left": -3.666932115583573,
+    "top": -10.230422835801951,
+    "width": 7.119100961469485,
+    "height": 12.09237361894994,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board"
+  },
+  "direction-board-mutual": {
+    "file": "direction-board-mutual.png",
+    "left": -3.784108182013323,
+    "top": -11.890173053833598,
+    "width": 7.295434083800385,
+    "height": 13.847019986507396,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board-mutual"
   }
 }

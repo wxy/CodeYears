@@ -1098,5 +1098,27 @@
     "nativeDepth": 1,
     "baselineHeight": 3,
     "sampleId": "github-joining-tower"
+  },
+  "direction-board": {
+    "file": "direction-board.png",
+    "left": -2.6343902110896114,
+    "top": -9.595973479266043,
+    "width": 5.262478967563112,
+    "height": 10.551139422527037,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board"
+  },
+  "direction-board-mutual": {
+    "file": "direction-board-mutual.png",
+    "left": -2.71532162345068,
+    "top": -11.222706587061131,
+    "width": 5.46591835616519,
+    "height": 12.198771430646815,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board-mutual"
   }
 }

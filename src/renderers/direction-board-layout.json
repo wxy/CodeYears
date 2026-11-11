@@ -1,0 +1,22 @@
+{
+  "modern": {
+    "width": 10,
+    "height": 2.8,
+    "top": -8.001626016260161
+  },
+  "modern-mutual": {
+    "width": 10,
+    "height": 2.8,
+    "top": -9.23050847457627
+  },
+  "town": {
+    "width": 10,
+    "height": 2.8,
+    "top": -6.37546468401487
+  },
+  "town-mutual": {
+    "width": 10,
+    "height": 2.8,
+    "top": -7.316521739130435
+  }
+}
