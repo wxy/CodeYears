@@ -13,8 +13,8 @@ const { values } = parseArgs({ options: {
 if (!values.outDir) throw new Error('请用 --outDir 指定运行素材目录。');
 const root = fileURLToPath(new URL('..', import.meta.url)), out = resolve(values.outDir);
 const { frames, sources } = await prepareTownScale({ root, collection: 'rustic' });
-const buildingIds = ['cottages-1', 'cottages-2', 'cottages-3', 'cottages-4', 'forms-0', 'forms-1', 'forms-2', 'forms-4', 'stable-0', 'magic-0', 'magic-2', 'magic-3', 'mage-0', 'rustic-hut-front', 'rustic-hut-back'];
-const mirrors = ['forms-0', 'forms-1', 'forms-2', 'forms-4', 'magic-2', 'magic-3', 'rustic-hut-front', 'rustic-hut-back'];
+const buildingIds = ['cottages-1', 'cottages-2', 'cottages-3', 'cottages-4', 'cottages-9', 'forms-0', 'forms-1', 'forms-2', 'forms-4', 'stable-0', 'magic-0', 'magic-2', 'magic-3', 'mage-0', 'estate-farmhouse', 'estate-villa', 'estate-windmill', 'rustic-hut-front', 'rustic-hut-back'];
+const mirrors = ['estate-farmhouse', 'estate-villa', 'estate-windmill', 'estate-herb-bed', 'forms-0', 'forms-1', 'forms-2', 'forms-4', 'magic-2', 'magic-3', 'rustic-hut-front', 'rustic-hut-back'];
 const paths = new Map([...sources, ...['scale-sprites', 'work-window', 'private-courtyards'].map(name => [
   '/' + name + '.js', resolve(root, 'probes/fantasy-city/' + name + '.js'),
 ])]);

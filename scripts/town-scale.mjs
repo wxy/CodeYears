@@ -61,10 +61,10 @@ const add=(id,label,frame,observation,reference,target,kind)=>{
       personVisibility:kind==='upper-body'?'inferred from 0.55H visible upper body':undefined,
       scale,groundSpan:[nw,nd],postPlacementFactor:1}});
 };
-const cottageIds = collection === 'rustic' ? ['cottages-1','cottages-2','cottages-3','cottages-4'] : ['cottages-1'];
+const cottageIds = collection === 'rustic' ? ['cottages-1','cottages-2','cottages-3','cottages-4','cottages-9'] : ['cottages-1'];
 for(const obs of classic.cottages.filter(o=>cottageIds.includes(o.id))){
   const i=Number(obs.id.split('-')[1]),door=obs.door?.top?obs.door:{heightPx:88,basis:'inferred: shared cottage structural family; no visible door in this variant'};
-  add(obs.id,['','农舍','烘焙屋','草药屋','木工屋'][i],cottages.frames[i],obs,door,1,'door');
+  add(obs.id,{1:'农舍',2:'烘焙屋',3:'草药屋',4:'木工屋',9:'晶饰工坊'}[i],cottages.frames[i],obs,door,1,'door');
 }
 const formIds = collection === 'rustic' ? ['forms-0','forms-1','forms-2','forms-4'] : ['forms-0'];
 for(const obs of classic.forms.filter(o=>formIds.includes(o.id))){
@@ -80,6 +80,12 @@ for(const i of [0,2,3]){
 }
 add('mage-0','圆形法师工坊',{sw:mage.sw,sh:mage.sh,ground:mage.ground,axes:mage.axes,footprint:[1,1]},mage,mage.door,1,'door');
 if (collection === 'rustic') {
+  const estates = await readJSON(join(design, 'prosperity-estates/observations.json'));
+  for (const obs of estates.frames) {
+    const [sx, sy, sw, sh] = obs.crop;
+    add(obs.id, obs.label, {sx, sy, sw, sh, ground: obs.ground, axes: obs.axes, footprint: [1, 1]},
+      obs, obs.door ?? obs.reference, obs.referenceTarget ?? 1, obs.door ? 'door' : 'facility');
+  }
   const {front, back} = await readJSON(join(design, 'rustic-courts/observations.json'));
   // 同一屋型的角柱贯穿两幅图。背面以柱高迁移正面门尺，隐藏主门只作位置推定。
   const postHeight = (front.post.bottom[1] - front.post.top[1]) / (front.door.bottom[1] - front.door.top[1]);

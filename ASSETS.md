@@ -8,7 +8,7 @@
 - `public/assets/city/`：保留的设计源素材，包含项目专用的 AI 生成透明建筑、植被、地面、奇观和城郊图片。源文件不再直接进入下一版发行包；代码的 MIT 声明不另行承诺这些位图的独立复用授权。
 - `public/assets/city-runtime/`：由设计源素材及标定流程生成的100张运行PNG；发行时复制到`assets/city/`，保持原资源权限范围。包括幼树的独立标定结果、注册纪念塔及两种道路路牌，不分发目录未引用的旧候选图。
 - SVG 投影模板、标定 JSON 与程序绘制道路属于项目代码；运行时只使用本地资源。
-- `public/assets/town-runtime/`：2026-11-11当前43张运行PNG，共10,839,236 bytes。基线main `3edec9d`的28张及其metadata全部保持，含六张地貌和两张道路路牌；新增15张共1,511,364 bytes，为烘焙/草药/木工附屋、长工坊/侧翼作坊/锻造坊、温室/炼金工作院及其已烘焙镜像和两款低石墙。复用已有正式原画与观察，不新增AI生成图；茅草屋仍为一种选择，不恢复宫殿/学宫作为通用主体。新恢复图片长边上限384，既有地貌及道路牌规格不变，所有运行实例factor=1。发行时复制到`assets/town/`，按所需ID加载。来源、形制/入口依据与forms-2支撑包络修订见[组合素材说明](docs/design/ancient-town-concepts/2026-11-11/building-compounds/CALIBRATION.md)，真实贡献数据不进入图像工具。原始提示与设计源完整保留，代码MIT不自动变更位图独立复用边界；实现和验证见[本轮报告](docs/reports/TOWN-BUILDING-COMPOUNDS.md)。
+- `public/assets/town-runtime/`：2026-11-11当前52张运行PNG，共12,080,822 bytes。基线d64538e的43张及metadata保持，包含两路牌和六张地貌；新增9张共1,241,586 bytes：连翼农庄、雕石别墅、朴素风车、药草床各正/镜向，以及复用原画的晶饰小宅。四幅新原画使用内置ImageGen、透明背景，正式源/几何参考/完整提示/人工支撑点与±3px误差保存在[素材记录](docs/design/ancient-town-concepts/2026-11-11/prosperity-estates/GENERATION.md)，未输入真实贡献数据。普通门1、成人0.8，运行倍率1；昂贵程度由材料工艺表达，不随房屋高度编码。运行图按场景key加载，新图长边≤384，原路牌/地貌规格保留。发行时复制到`assets/town/`，源图不分发；代码MIT不自动变更位图独立复用边界。布局与验证见[本轮报告](docs/reports/TOWN-PROSPERITY-ESTATES.md)。
 
 生成提示、来源和标定分别保留在 `docs/design/city-buildings/`、`docs/design/city-units/v2/` 至 `v4/`、`docs/design/city-outskirts/`、`docs/design/city-transport/` 和 `docs/design/city-model-expansion/`。部分提示使用城市建造游戏作为质感参考，并要求不复制游戏素材、标志或受保护的特色建筑；没有将游戏图片打包。不能仅凭提示就宣称已完成第三方权利核查。
 
