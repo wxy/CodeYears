@@ -16,12 +16,14 @@ const [classic,magicLife,mage,newHalls,newStable,cottages,forms,magic,life,corre
 correction.cottages.forEach((entry,i)=>Object.assign(cottages.frames[i],entry));
 correction.forms.forEach((entry,i)=>Object.assign(forms.frames[i],entry));
 const context={window:{}};runInNewContext(await readFile(resolve(root,'probes/fantasy-city/project-sprites.js'),'utf8'),context);
+const access = collection === 'rustic' ? await readJSON(join(design, 'building-compounds/access.json')) : {};
 const sources=new Map(),frames=[];
 const lineHeight=(line,cal)=>Math.abs(cal.shear*(line.bottom[0]-line.top[0])+cal.vertical*(line.bottom[1]-line.top[1]));
 const add=(id,label,frame,observation,reference,target,kind)=>{
   const source=resolve(design,observation.source),url='/source/'+sources.size+'.png';
   sources.set(url,source);
-  const f={...frame},cal=context.window.prepareFantasyProjection(f);
+  const f = access[id]?.ground ? {...frame, ground: access[id].ground} : {...frame};
+  const cal=context.window.prepareFantasyProjection(f);
   const height=reference.top?lineHeight(reference,cal):cal.vertical*reference.heightPx;
   // The measured doorway/adult sets the scale. Ground fit never caps it again.
   const scale=target/height,measured=!!(f.ground||f.ellipse);
@@ -48,7 +50,8 @@ const add=(id,label,frame,observation,reference,target,kind)=>{
     height:Math.max(...corners.map(p=>p[1]))-Math.min(...corners.map(p=>p[1])),
     nativeWidth:nw,nativeDepth:nd,directionBasis:cal.directionBasis,
     ...(observation.runtimeEdge ? {runtimeEdge:observation.runtimeEdge} : {}),
-    doorPoint:door?floor(door.bottom):[nw/2,nd],
+    doorPoint:door?floor(door.bottom):access[id]?.point?floor(access[id].point):[nw/2,nd],
+    entranceAxis:access[id]?.axis,entranceBasis:access[id]?.basis,
     residentSlots:observation.residentSlots?.map(floor),
     crownPoint:kind==='adult'?screen(reference.top):undefined,workWindow,
     metrics:{referenceType:kind,referenceHeight:target,basis:reference.basis??reference.note,
@@ -58,23 +61,31 @@ const add=(id,label,frame,observation,reference,target,kind)=>{
       personVisibility:kind==='upper-body'?'inferred from 0.55H visible upper body':undefined,
       scale,groundSpan:[nw,nd],postPlacementFactor:1}});
 };
-for(const obs of classic.cottages.filter(o=>o.id==='cottages-1')){
+const cottageIds = collection === 'rustic' ? ['cottages-1','cottages-2','cottages-3','cottages-4','cottages-9'] : ['cottages-1'];
+for(const obs of classic.cottages.filter(o=>cottageIds.includes(o.id))){
   const i=Number(obs.id.split('-')[1]),door=obs.door?.top?obs.door:{heightPx:88,basis:'inferred: shared cottage structural family; no visible door in this variant'};
-  add(obs.id,i===1?'农舍':'小屋 '+i,cottages.frames[i],obs,door,1,'door');
+  add(obs.id,{1:'农舍',2:'烘焙屋',3:'草药屋',4:'木工屋',9:'晶饰工坊'}[i],cottages.frames[i],obs,door,1,'door');
 }
-for(const obs of classic.forms.filter(o=>o.id==='forms-0')){
-  const i=Number(obs.id.split('-')[1]);if(i===7)continue;
-  add(obs.id,['长屋','工坊长屋','侧翼庄园','深长屋','深工坊'][i],forms.frames[i],obs,obs.door,1,'door');
+const formIds = collection === 'rustic' ? ['forms-0','forms-1','forms-2','forms-4'] : ['forms-0'];
+for(const obs of classic.forms.filter(o=>formIds.includes(o.id))){
+  const i=Number(obs.id.split('-')[1]);
+  add(obs.id,['长屋','蓝瓦工坊','侧翼作坊庭院','','长锻造坊'][i],forms.frames[i],obs,obs.door,1,'door');
 }
 for(const obs of newStable.frames){const [, ,sw,sh]=obs.crop;
   add(obs.id,'单体畜舍',{sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');}
-for(const i of collection === 'rustic' ? [0] : [0,2,3]){
+for(const i of [0,2,3]){
   const obs=magicLife.magic.find(f=>f.id==='magic-'+i),person=obs.embeddedPeople[0];
   add(obs.id,['圆形观星台','','温室','炼金庄园'][i],magic.frames[i],obs,person.reference,
     i===2?.44:.8,i===2?'upper-body':'adult');
 }
 add('mage-0','圆形法师工坊',{sw:mage.sw,sh:mage.sh,ground:mage.ground,axes:mage.axes,footprint:[1,1]},mage,mage.door,1,'door');
 if (collection === 'rustic') {
+  const estates = await readJSON(join(design, 'prosperity-estates/observations.json'));
+  for (const obs of estates.frames) {
+    const [sx, sy, sw, sh] = obs.crop;
+    add(obs.id, obs.label, {sx, sy, sw, sh, ground: obs.ground, axes: obs.axes, footprint: [1, 1]},
+      obs, obs.door ?? obs.reference, obs.referenceTarget ?? 1, obs.door ? 'door' : 'facility');
+  }
   const {front, back} = await readJSON(join(design, 'rustic-courts/observations.json'));
   // 同一屋型的角柱贯穿两幅图。背面以柱高迁移正面门尺，隐藏主门只作位置推定。
   const postHeight = (front.post.bottom[1] - front.post.top[1]) / (front.door.bottom[1] - front.door.top[1]);

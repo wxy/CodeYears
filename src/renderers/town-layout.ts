@@ -9,7 +9,7 @@ interface TownCourt extends Rectangle { id:string; gate:Point }
 interface TownPlot extends Rectangle { parcel:CityParcel; bodies:(Rectangle&{id:string})[]; courts:TownCourt[]; entries:Point[]; paths:Point[][]; courtyardPads:Rectangle[]; gate:Point }
 interface TownSquare { cell:CityParcel; kind:string; x:number; z:number; road:Point }
 export interface TownPlan { scene:CityScene; plots:TownPlot[]; roads:[Point,Point][]; squares:TownSquare[]; yearZ:number[]; yearWidth:number[] }
-const PITCH=3.8,WIDTH=7*PITCH,GAP=3;
+const PITCH=2.8,WIDTH=7*PITCH,GAP=3;
 const sprites:Record<string,{nativeWidth:number;nativeDepth:number;entrancePoint?:number[];entranceAxis?:string;entranceSide?:string}>=catalog;
 const edgeKey=(a:Point,b:Point)=>[a.join(','),b.join(',')].sort().join('|');
 const seedFor=(p:CityParcel)=>((Math.imul(p.block+1,73856093)^Math.imul(p.x+1,19349663)^Math.imul(p.z+1,83492791))>>>0);
@@ -20,11 +20,11 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
   const cells=calendar.cells;
   const byCell=new Map(cells.map(cell=>[`${cell.block},${cell.x},${cell.z}`,cell]));
   const candidates:{cell:CityParcel;w:number;d:number;members:CityParcel[]}[]=[];
-  // 最多八周、七日、三十二个成员；跨原强度档，不设固定周/月切分线。
+  // 放宽相近日数合并；最多56日/8周，形状不超过3:1，不设固定周/月窗口。
   for(const cell of cells){
     if(cell.kind!=='building'||cell.milestone)continue;
     for(let w=1;w<=8;w++)for(let d=1;d<=7;d++){
-      if(w*d>32||cell.x+w>calendar.districts[cell.block].weeks||cell.z+d>7)continue;
+      if(w*d>56||Math.max(w/d,d/w)>3||cell.x+w>calendar.districts[cell.block].weeks||cell.z+d>7)continue;
       const members:CityParcel[]=[];
       for(let z=cell.z;z<cell.z+d;z++)for(let x=cell.x;x<cell.x+w;x++){
         const next=byCell.get(`${cell.block},${x},${z}`);
@@ -32,7 +32,7 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
       }
       if(members.length!==w*d)continue;
       const mean=members.reduce((sum,member)=>sum+member.count,0)/members.length;
-      if(members.every(member=>Math.abs(member.count-mean)<=Math.max(3,mean*.7)))candidates.push({cell,w,d,members});
+      if(members.every(member=>Math.abs(member.count-mean)<=Math.max(6,mean*.9)))candidates.push({cell,w,d,members});
     }
   }
   candidates.sort((a,b)=>b.w*b.d-a.w*a.d||Math.min(b.w,b.d)/Math.max(b.w,b.d)-Math.min(a.w,a.d)/Math.max(a.w,a.d)||a.cell.block-b.cell.block||a.cell.z-b.cell.z||a.cell.x-b.cell.x);
@@ -58,81 +58,126 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
     const {w,d}=parcel,seed=seedFor(parcel);
     const x=parcel.x*PITCH,z=yearZ[parcel.block]+parcel.z*PITCH,pw=w*PITCH,pd=d*PITCH;
     const after=Math.min(...parcel.indices)+1;
-    const yardId='shared-yard';
-    const plot:TownPlot={parcel,x,z,w:pw,d:pd,bodies:[],courts:[{id:yardId,x:x+.3,z:z+.3,w:pw-.6,d:pd-.6,gate:[x+pw/2,z+pd-.3]}],entries:[],paths:[],courtyardPads:[],gate:[x+pw/2,z+pd]};
-    // 短栏以各自地面中心排序，长侧栏不再跨过前景屋顶。
-    const fenceX=sprites['yard-fence-x'],fenceZ=sprites['yard-fence-z'];
-    const fence=(id:string,fx:number,fz:number)=>{
-      const art=sprites[id];items.push({id,factor:1,x:fx,z:fz,w:art.nativeWidth,d:art.nativeDepth,flat:false,revealAfter:after});
-    };
-    const spanX=pw-.64,spanZ=pd-.64,gate=spanX/2;
-    const top=[0,spanX-fenceX.nativeWidth,...(spanX>6?[spanX*.33-fenceX.nativeWidth/2,spanX*.66-fenceX.nativeWidth/2]:[])];
-    const bottom=[gate-.5-fenceX.nativeWidth,gate+.5,0,spanX-fenceX.nativeWidth];
-    const sides=[0,spanZ-fenceZ.nativeDepth,...(spanZ>6?[spanZ*.33-fenceZ.nativeDepth/2,spanZ*.66-fenceZ.nativeDepth/2]:[])];
-    const front:number[]=[];
-    for(const start of bottom)if(start>=0&&start+fenceX.nativeWidth<=spanX&&!front.some(other=>Math.abs(other-start)<fenceX.nativeWidth+.04))front.push(start);
-    for(const start of top)fence('yard-fence-x',x+.32+start,z+.32);
-    for(const start of front)fence('yard-fence-x',x+.32+start,z+pd-.32-fenceX.nativeDepth);
-    for(const start of sides){
-      fence('yard-fence-z',x+.32,z+.32+start);
-      fence('yard-fence-z',x+pw-.32-fenceZ.nativeWidth,z+.32+start);
+    const plot:TownPlot={parcel,x,z,w:pw,d:pd,bodies:[],courts:[],entries:[],paths:[],courtyardPads:[],gate:[x+pw/2,z+pd]};
+    const area=w*d,transpose=pw>pd,cw=transpose?pd:pw,cd=transpose?pw:pd;
+    const point=(u:number,v:number):Point=>transpose?[x+v,z+u]:[x+u,z+v];
+    // 日均对应材料与工艺等级；同档可高可矮，高档没有朴素小屋回退。
+    const choices=parcel.milestone?['magic-0']:parcel.band===0
+      ?['estate-farmhouse','estate-windmill','forms-0','cottages-1','stable-0','rustic-hut-front']
+      :parcel.band===1?['estate-farmhouse','estate-windmill','forms-0','cottages-2','cottages-3','cottages-4']
+        :parcel.band===2?['forms-2','forms-4','forms-1','magic-2','mage-0','cottages-9']
+          :['estate-villa','magic-3','magic-0','cottages-9','mage-0'];
+    const fitted:{base:string;id:string;w:number;d:number}[]=[];
+    for(const base of choices){
+      const options=[base,...(sprites[`${base}-x`]?[`${base}-x`]:[])].map(id=>{
+        const art=sprites[id];return {base,id,w:transpose?art.nativeDepth:art.nativeWidth,d:transpose?art.nativeWidth:art.nativeDepth};
+      }).filter(body=>body.w<=cw-.64&&body.d<=cd-.64)
+        .sort((a,b)=>Math.max(b.w/cw,b.d/cd)-Math.max(a.w/cw,a.d/cd));
+      if(options.length)fitted.push(options[0]);
     }
-    const count=Math.min(4,Math.ceil(w*d/4));
-    const columns=count===4&&w>=2&&d>=2?2:pw>=pd?count:1;
-    const rows=count===4&&w>=2&&d>=2?2:pw>=pd?1:count;
-    for(let row=0;row<rows;row++)for(let column=0;column<columns;column++){
-      const index=row*columns+column,mx=x+column*pw/columns,mz=z+row*pd/rows,mw=pw/columns,md=pd/rows;
-      const transpose=mw>md,cw=transpose?md:mw,cd=transpose?mw:md;
-      const point=(u:number,v:number):Point=>transpose?[mx+v,mz+u]:[mx+u,mz+v];
-      const padW=w*d===1?1.2:cw<5?1.7:2.3+(seed+index)%2*.15;
-      const desiredPadD=1.7+(seed+index)%3*.15;
-      let north='rustic-hut-front';
-      if(parcel.milestone)north='magic-0';
-      else if(!transpose&&index===0){
-        if((seed%7===0)&&parcel.band<=1)north='stable-0';
-        else if(seed%5===0&&cd>=sprites['forms-0'].nativeDepth+sprites['rustic-hut-back'].nativeDepth+desiredPadD+1.34&&parcel.band<=2)north='forms-0';
-        else if(seed%11===0&&parcel.band>=2)north='mage-0';
-        else if(seed%5===1)north='cottages-1';
+    const largest=Math.max(...fitted.map(body=>body.w*body.d));
+    const suitable=area>=2?fitted.filter(body=>body.w*body.d>=largest*.5):fitted;
+    const estate=fitted.find(body=>body.base==='estate-villa'||body.base==='estate-farmhouse'||body.base==='estate-windmill');
+    const main=estate??suitable[seed%suitable.length];
+    // 只有实际排得下时才接一个相容工作设施；主体/设施共用一块真实入口工作面。
+    const facilityBase=parcel.band<=1?'stable-0':'magic-2';
+    const facilityOptions=area>=9&&main.base!==facilityBase
+      ?[facilityBase,...(sprites[`${facilityBase}-x`]?[`${facilityBase}-x`]:[])].map(id=>{
+        const art=sprites[id];return {base:facilityBase,id,w:transpose?art.nativeDepth:art.nativeWidth,d:transpose?art.nativeWidth:art.nativeDepth};
+      }).filter(body=>main.w+body.w+.35<=cw-.64&&body.d<=cd-.64)
+        .sort((a,b)=>a.d-b.d):[];
+    const bed=sprites['estate-herb-bed'],remoteBase=parcel.band<=1?'estate-windmill':main.base==='magic-2'?'forms-1':'magic-2';
+    // 大用地须留得下前后两段园地与中央工作轴，才把唯一附属设施放到远端。
+    const firstGardenEnd=.32+main.d+.18+2.8+.45+bed.nativeDepth;
+    const remoteOptions=area>=24?[remoteBase,`${remoteBase}-x`].map(id=>{
+      const art=sprites[id];return {base:remoteBase,id,w:transpose?art.nativeDepth:art.nativeWidth,d:transpose?art.nativeWidth:art.nativeDepth};
+    }).filter(body=>body.w<=cw/2-.9&&cd-.32-body.d-.75-2>=firstGardenEnd+.55)
+      .sort((a,b)=>a.w-b.w):[];
+    const remote=remoteOptions[0],facility=remote??facilityOptions[0];
+    const rowW=main.w+(!remote&&facility?facility.w+.35:0),rowD=remote?main.d:Math.max(main.d,facility?.d??0);
+    const rowX=(cw-rowW)/2,rowZ=.32,front=rowZ+rowD,available=cd-.32-front;
+    const padD=Math.min(area===1?.7:area<6?1.6:2.8,available-.18);
+    const padW=Math.min(cw-.64,Math.max(1.25,Math.min(5,main.w*.7+.5)));
+    const center:Point=[rowX+main.w/2,padD>=.4?front+.18+padD/2:Math.min(cd-.15,front+.12)];
+    const facilityU=remote?cw-.32-remote.w:rowX+main.w+.35;
+    const facilityV=remote?cd-.32-remote.d:rowZ+rowD-(facility?.d??0);
+    const workCenter:Point=remote?[facilityU+remote.w/2,facilityV-.75]:center;
+    const addHouse=(body:{id:string;w:number;d:number},u:number,v:number)=>{
+      const art=sprites[body.id],[bx,bz]=point(u,v),entry=art.entrancePoint!;
+      const door:Point=transpose?[u+entry[1],v+entry[0]]:[u+entry[0],v+entry[1]];
+      const axis=transpose?(art.entranceAxis==='x'?'z':'x'):art.entranceAxis,positive=art.entranceSide==='front';
+      const exit:Point=axis==='x'
+        ?[positive?Math.max(u+body.w+.12,door[0]):Math.min(u-.12,door[0]),door[1]]
+        :[door[0],positive?Math.max(v+body.d+.12,door[1]):Math.min(v-.12,door[1])];
+      let route:Point[]=[door,exit,[exit[0],center[1]],center];
+      if(remote&&body===facility){
+        route=axis==='x'?[door,exit,[exit[0],workCenter[1]],workCenter,[center[0],workCenter[1]],center]
+          :[door,exit,[u+body.w+.16,exit[1]],[u+body.w+.16,workCenter[1]],workCenter,[center[0],workCenter[1]],center];
       }
-      const northArt=sprites[north],southArt=sprites['rustic-hut-back'];
-      const padD=w*d===1?.5:Math.min(desiredPadD,cd-northArt.nativeDepth-southArt.nativeDepth-1.34);
-      const westWidth=sprites['rustic-hut-front-x'].nativeWidth;
-      const westReach=westWidth+.22+padW/2,eastReach=Math.max(northArt.nativeWidth,southArt.nativeWidth)/2;
-      const westCenter=Math.max(cw/2+(westReach-eastReach)/2,.45+westReach);
-      const side=w*d>1&&westCenter+padW/2<=cw-.9;
-      const cx=side?westCenter:cw/2;
-      const cz=w*d===1?northArt.nativeDepth+.88
-        :Math.max(northArt.nativeDepth+padD/2+.67,Math.min(cd/2,cd-southArt.nativeDepth-padD/2-.67));
-      const center=point(cx,cz);
-      const addHouse=(base:string,axis:'x'|'z',u:number,v:number)=>{
-        const mirrored=(axis==='x')!==transpose,id=mirrored?`${base}-x`:base,art=sprites[id];
-        const [bx,bz]=point(u,v),door:Point=[bx+art.entrancePoint![0],bz+art.entrancePoint![1]];
-        const body={id,x:bx,z:bz,w:art.nativeWidth,d:art.nativeDepth};
-        items.push({parcel,id,factor:1,x:bx,z:bz,w:body.w,d:body.d,flat:false});plot.bodies.push(body);plot.entries.push(door);
-        const positive=art.entranceSide==='front',exit:Point=art.entranceAxis==='x'
-          ?[positive?bx+body.w+.12:bx-.12,door[1]]
-          :[door[0],positive?bz+body.d+.12:bz-.12];
-        plot.paths.push(art.entranceAxis==='x'
-          ?[door,exit,[center[0],exit[1]],center]
-          :[door,exit,[exit[0],center[1]],center]);
-      };
-      // 小院以相向的南北屋为骨架；宽院加西翼，东侧始终作为共同入口。
-      addHouse(north,'z',cx-northArt.nativeWidth/2,w*d===1?.45:cz-padD/2-.22-northArt.nativeDepth);
-      if(w*d>1){
-        addHouse('rustic-hut-back','z',cx-southArt.nativeWidth/2+(index%2?.08:-.08),cz+padD/2+.22);
-        if(side){
-          const west=sprites['rustic-hut-front-x'];
-          addHouse('rustic-hut-front','x',cx-padW/2-.22-west.nativeWidth,cz-west.nativeDepth/2+(index%2?.12:-.12));
-        }
-      }
-      const [px,pz]=point(cx-padW/2,cz-padD/2);
+      items.push({parcel,id:body.id,factor:1,x:bx,z:bz,w:art.nativeWidth,d:art.nativeDepth,flat:false});
+      plot.bodies.push({id:body.id,x:bx,z:bz,w:art.nativeWidth,d:art.nativeDepth});plot.entries.push(point(...door));plot.paths.push(route.map(([u,v])=>point(u,v)));
+    };
+    addHouse(main,rowX,rowZ+rowD-main.d);
+    if(facility)addHouse(facility,facilityU,facilityV);
+    if(padD>=.4){
+      const [px,pz]=point(center[0]-padW/2,front+.18);
       plot.courtyardPads.push({x:px,z:pz,w:transpose?padD:padW,d:transpose?padW:padD});
-      const exit=point(cw-.45,cz),corridor=x+pw-.45;
-      plot.paths.push([center,exit,[exit[0],mz+md-.45],[corridor,mz+md-.45],[corridor,z+pd-.45],[plot.gate[0],z+pd-.45],plot.gate]);
-      if(w*d>1){
-        const fixture=point(cx+(index%2?.5:-.55),cz+(index%2?-.55:.55));
-        prop(index%2?'life-5':'magic-6',fixture[0],fixture[1],after);
-        const person=point(cx-.28,cz+.2);prop(seed%2?'life-0':'life-2',person[0],person[1],after);
+    }
+    if(remote){
+      const workW=Math.min(2.2,remote.w-.2),[px,pz]=point(workCenter[0]-workW/2,workCenter[1]-.6);
+      plot.courtyardPads.push({x:px,z:pz,w:transpose?1.2:workW,d:transpose?workW:1.2});
+      const route:Point[]=transpose?[center,[cw-.18,center[1]],[cw-.18,cd/2],[cw,cd/2]]
+        :[center,[center[0],cd-.18],[cw/2,cd-.18],[cw/2,cd]];
+      plot.paths.push(route.map(([u,v])=>point(u,v)));
+    }else{
+      const exitZ=Math.min(cd-.18,front+.18+Math.max(0,padD));
+      const route=([center,[center[0],exitZ],[cw-.18,exitZ]] as Point[]).map(([u,v])=>point(u,v)),last=route.at(-1)!;
+      plot.paths.push([...route,[x+pw-.18,last[1]],[x+pw-.18,z+pd-.18],[plot.gate[0],z+pd-.18],plot.gate]);
+    }
+    if(padD>=.65){
+      const person=point(center[0]+Math.min(.4,padW*.25),center[1]-.35);prop(seed%2?'life-0':'life-2',person[0],person[1],after);
+      if(area>=4){const well=point(center[0]-padW*.3,front+.18+padD*.7);prop('magic-6',well[0],well[1],after)}
+    }else{
+      const body=plot.bodies[0],art=sprites[body.id],door=plot.entries[0],positive=art.entranceSide==='front';
+      const person:Point=art.entranceAxis==='x'
+        ?[positive?body.x+body.w+.17:body.x-.17,door[1]]
+        :[door[0],positive?body.z+body.d+.17:body.z-.17];
+      prop(seed%2?'life-0':'life-2',person[0],person[1],after);
+    }
+    // 园地沿主屋的前场延伸，只放少量实用设施，不按日期格铺满花畦。
+    const gardenStart=front+.18+Math.max(0,padD)+.45;
+    if(remote){
+      // 两段各两床，以主院到远端工作面的轴线组织，不按日期网格铺田。
+      for(const v of [gardenStart,workCenter[1]-2]){
+        for(const u of [center[0]-bed.nativeWidth-.3,center[0]+.3]){
+          const id=transpose?'estate-herb-bed-x':'estate-herb-bed',art=sprites[id],[gx,gz]=point(u,v);
+          items.push({id,factor:1,x:gx,z:gz,w:art.nativeWidth,d:art.nativeDepth,flat:false,revealAfter:after});
+        }
+        const tree=point(center[0]-bed.nativeWidth-.95,v+bed.nativeDepth+.55);prop('life-5',tree[0],tree[1],after);
+      }
+      const lamp=point(center[0]+.55,(gardenStart+bed.nativeDepth+workCenter[1]-2)/2);prop('magic-7',lamp[0],lamp[1],after);
+      const worker=point(workCenter[0]-.4,workCenter[1]-.4);prop('life-0',worker[0],worker[1],after);
+    }else if(area>=3&&gardenStart+bed.nativeDepth<=cd-.32){
+      const positions:Point[]=cw<4?[[center[0]-bed.nativeWidth/2,gardenStart]]
+        :[[center[0]-bed.nativeWidth-.3,gardenStart],[center[0]+.3,gardenStart]];
+      if(cw<4&&gardenStart+bed.nativeDepth*2+.55<=cd-.32)positions.push([center[0]-bed.nativeWidth/2,gardenStart+bed.nativeDepth+.55]);
+      for(const [u,v]of positions){
+        if(u<.32||u+bed.nativeWidth>cw-.32)continue;
+        const id=transpose?'estate-herb-bed-x':'estate-herb-bed',art=sprites[id],[gx,gz]=point(u,v);
+        items.push({id,factor:1,x:gx,z:gz,w:art.nativeWidth,d:art.nativeDepth,flat:false,revealAfter:after});
+      }
+      if(cw>=5){const tree=point(cw-.75,Math.min(cd-.7,gardenStart+bed.nativeDepth+.5));prop('life-5',tree[0],tree[1],after)}
+    }
+    // 栏只标记小屋自己的工作庭院；不沿日历plot周界画一圈。
+    if(padD>=.4&&!facility&&(main.base==='stable-0'||main.base==='cottages-1'||main.base==='cottages-9')){
+      const stone=main.base==='cottages-9',yardX=rowX-.18,yardW=main.w+.36,yardD=rowD+.18+padD;
+      const [yx,yz]=point(yardX,rowZ),gate=point(rowX+main.w/2,rowZ+yardD);
+      plot.courts.push({id:'building-yard',x:yx,z:yz,w:transpose?yardD:yardW,d:transpose?yardW:yardD,gate});
+      const id=stone?(transpose?'yard-wall-x':'yard-wall-z'):(transpose?'yard-fence-x':'yard-fence-z'),art=sprites[id];
+      const nativeAlong=transpose?art.nativeWidth:art.nativeDepth;
+      for(const u of [yardX,yardX+yardW-(transpose?art.nativeDepth:art.nativeWidth)]){
+        const [fx,fz]=point(u,rowZ+yardD-nativeAlong);
+        items.push({id,factor:1,x:fx,z:fz,w:art.nativeWidth,d:art.nativeDepth,flat:false,revealAfter:after});
       }
     }
     plots.push(plot);
