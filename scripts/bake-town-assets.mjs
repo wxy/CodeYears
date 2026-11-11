@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { readFile, writeFile, mkdir, mkdtemp, rm, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, mkdtemp, rm, readdir, copyFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,8 +13,8 @@ const { values } = parseArgs({ options: {
 if (!values.outDir) throw new Error('请用 --outDir 指定运行素材目录。');
 const root = fileURLToPath(new URL('..', import.meta.url)), out = resolve(values.outDir);
 const { frames, sources } = await prepareTownScale({ root, collection: 'rustic' });
-const buildingIds = ['cottages-1', 'forms-0', 'stable-0', 'magic-0', 'mage-0', 'rustic-hut-front', 'rustic-hut-back'];
-const mirrors = ['forms-0', 'rustic-hut-front', 'rustic-hut-back'];
+const buildingIds = ['cottages-1', 'cottages-2', 'cottages-3', 'cottages-4', 'forms-0', 'forms-1', 'forms-2', 'forms-4', 'stable-0', 'magic-0', 'magic-2', 'magic-3', 'mage-0', 'rustic-hut-front', 'rustic-hut-back'];
+const mirrors = ['forms-0', 'forms-1', 'forms-2', 'forms-4', 'magic-2', 'magic-3', 'rustic-hut-front', 'rustic-hut-back'];
 const paths = new Map([...sources, ...['scale-sprites', 'work-window', 'private-courtyards'].map(name => [
   '/' + name + '.js', resolve(root, 'probes/fantasy-city/' + name + '.js'),
 ])]);
@@ -52,22 +52,23 @@ const page = `<!doctype html><meta charset="utf-8"><script src="/scale-sprites.j
       width: trimmed.width / ratio, height: trimmed.height / ratio, ...metadata, sampleId: id };
     records.push({ id, metadata: m, png: trimmed.toDataURL('image/png').split(',')[1], pixels: [trimmed.width, trimmed.height] });
   };
-  const fenceSprite = (w, d, phase) => {
+  const fenceSprite = (w, d, phase, material) => {
     const corners = [[0, 0], [w, 0], [w, d], [0, d]].map(([x, z]) => [(x - z) * .5, (x + z) * .25]);
     const left = Math.min(...corners.map(p => p[0])) - .01, right = Math.max(...corners.map(p => p[0])) + .01;
     const top = Math.min(...corners.map(p => p[1])) - .21, bottom = Math.max(...corners.map(p => p[1])) + .01;
     const ratio = 512 / Math.max(right - left, bottom - top), canvas = document.createElement('canvas');
     canvas.width = Math.ceil((right - left) * ratio);canvas.height = Math.ceil((bottom - top) * ratio);
     const c = canvas.getContext('2d');c.scale(ratio, ratio);c.translate(-left, -top);
-    paintPrivateCourtyard(c, { x: 0, z: 0, w, d, material: 'wood' }, phase);
+    paintPrivateCourtyard(c, { x: 0, z: 0, w, d, material }, phase);
     return { canvas, left, top, width: canvas.width / ratio, height: canvas.height / ratio };
   };
   for (const frame of frames) for (const mirror of mirrors.includes(frame.id) ? [false, true] : [false]) {
     const id = frame.id + (mirror ? '-x' : ''), isBuilding = buildingIds.includes(frame.id);
     const nw = mirror ? frame.nativeDepth : frame.nativeWidth, nd = mirror ? frame.nativeWidth : frame.nativeDepth;
+    const nativeAxis = frame.entranceAxis ?? 'z';
     const entrance = isBuilding ? {
       entrancePoint: mirror ? [...frame.doorPoint].reverse() : frame.doorPoint,
-      entranceAxis: mirror ? 'x' : 'z', entranceSide: frame.entranceSide ?? 'front',
+      entranceAxis: mirror ? (nativeAxis === 'z' ? 'x' : 'z') : nativeAxis, entranceSide: frame.entranceSide ?? 'front',
       entranceBasis: frame.entranceBasis ?? (frame.metrics.doorHeight ? 'observed-door' : 'inferred'),
     } : {};
     encode(id, sprites[frame.id], {
@@ -77,11 +78,13 @@ const page = `<!doctype html><meta charset="utf-8"><script src="/scale-sprites.j
     }, mirror);
   }
   // 与各栋建筑共用地面深度排序的独立栏段；转向不改变真实柱高。
-  for (const [axis, width, depth] of [['x', .95, .07], ['z', .07, .95]]) {
-    encode('yard-fence-' + axis, fenceSprite(width, depth, 'short-' + axis), {
-      nativeWidth: width, nativeDepth: depth, groundWidth: width, groundDepth: depth,
-      groundBasis: 'shared-courtyard-fence', directionBasis: 'native-2-to-1', baselineHeight: .4,
-    }, false, 256);
+  for (const [name, material, thickness] of [['yard-fence', 'wood', .07], ['yard-wall', 'stone', .10]]) {
+    for (const [axis, width, depth] of [['x', .95, thickness], ['z', thickness, .95]]) {
+      encode(name + '-' + axis, fenceSprite(width, depth, 'short-' + axis, material), {
+        nativeWidth: width, nativeDepth: depth, groundWidth: width, groundDepth: depth,
+        groundBasis: 'shared-courtyard-fence', directionBasis: 'native-2-to-1', baselineHeight: .4,
+      }, false, 256);
+    }
   }
   const board = document.createElement('canvas');
   if (includeBoard) {
@@ -126,12 +129,24 @@ try {
   ], { timeout: 90000, maxBuffer: 4 * 1024 * 1024 });
   if (error) throw new Error(error);if (!result) throw new Error('浏览器没有返回素材。');
   await mkdir(out, { recursive: true });
-  const names = new Set(result.records.map(entry => entry.metadata.file));
-  for (const name of await readdir(out)) if (name.endsWith('.png') && !names.has(name)) await rm(join(out, name));
+  const entries = Object.fromEntries(result.records.map(entry => [entry.id, entry.metadata]));
+  // 路牌由独立烘焙器维护。生成完整小镇目录时使用其正式图和投影参数。
+  const runtime = resolve(root, 'public/assets/town-runtime');
+  const existing = JSON.parse(await readFile(resolve(root, 'src/renderers/town-baked-catalog.json'), 'utf8'));
+  for (const id of ['direction-board-x', 'direction-board-z']) {
+    const metadata = existing[id];
+    if (out !== runtime) await copyFile(join(runtime, metadata.file), join(out, metadata.file));
+    entries[id] = metadata;
+  }
   for (const entry of result.records) await writeFile(join(out, entry.metadata.file), Buffer.from(entry.png, 'base64'));
+  const workingCatalog = join(temporary, 'catalog.json');
+  await writeFile(workingCatalog, JSON.stringify(entries, null, 2) + '\n');
+  await promisify(execFile)(process.execPath,[resolve(root,'scripts/bake-town-ground.mjs'),'--outDir',out,'--catalog',workingCatalog],{timeout:90000});
+  const complete = await readFile(workingCatalog, 'utf8');
   const catalog = values.catalog ? resolve(values.catalog) : join(out, 'catalog.json');await mkdir(resolve(catalog, '..'), { recursive: true });
-  await writeFile(catalog, JSON.stringify(Object.fromEntries(result.records.map(e => [e.id, e.metadata])), null, 2) + '\n');
-  await promisify(execFile)(process.execPath,[resolve(root,'scripts/bake-town-ground.mjs'),'--outDir',out,'--catalog',catalog],{timeout:90000});
+  await writeFile(catalog, complete);
+  const names = new Set(Object.values(JSON.parse(complete)).map(entry => entry.file));
+  for (const name of await readdir(out)) if (name.endsWith('.png') && !names.has(name)) await rm(join(out, name));
   for (const [option, data] of [['board', Buffer.from(result.board, 'base64')], ['proof', JSON.stringify(result.proof, null, 2) + '\n']]) {
     if (values[option]) { await mkdir(resolve(values[option], '..'), { recursive: true });await writeFile(values[option], data); }
   }

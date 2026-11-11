@@ -372,22 +372,22 @@
     "message": "正在准备地图…"
   },
   "townLegendHeading": {
-    "message": "读懂小镇 · 院落的日均贡献"
+    "message": "读懂小镇 · 地块的日均贡献"
   },
   "townLegendRustic": {
-    "message": "茅草小屋与乡间院落"
+    "message": "农舍、茅草屋与畜舍"
   },
   "townLegendFarm": {
-    "message": "农舍、畜舍与农家院"
+    "message": "农庄、温室与庭院"
   },
   "townLegendWorkshop": {
-    "message": "草药工坊与匠人院落"
+    "message": "匠人工坊与侧翼庄园"
   },
   "townLegendArcane": {
-    "message": "法师庭院与小型观星台"
+    "message": "法师工坊与圆形观星台"
   },
   "townLegendRegions": {
-    "message": "贡献相近的相邻日期合成区域，由一组小屋围合的共享院落表示区域日均。面积决定院落数量和组合，日均决定工艺、铺地与魔法设施；人物与普通门保持共同尺度，不用楼高表示贡献。"
+    "message": "贡献相近的相邻日期合成一片地块。根据占地选择不同形制的主体，配合附属屋、围墙与工作庭院，表示整片区域的日均贡献。人物与普通门保持共同尺度，不用楼高表示贡献。"
   },
   "townLegendLife": {
     "message": "居民、动物、花树、魔法井与传送门表现生活场景，不表示人数、项目数量或额外贡献。悬停贡献建筑可查看实际成员日期及已取得的项目活动。"

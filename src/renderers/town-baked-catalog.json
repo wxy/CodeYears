@@ -21,6 +21,72 @@
     "entranceBasis": "observed-door",
     "sampleId": "cottages-1"
   },
+  "cottages-2": {
+    "file": "cottages-2.png",
+    "left": -0.6232428117755191,
+    "top": -0.9961881147372322,
+    "width": 1.2162601856043462,
+    "height": 1.6419512505658673,
+    "nativeWidth": 1.265151515151515,
+    "nativeDepth": 1.2803030303030303,
+    "groundWidth": 1.265151515151515,
+    "groundDepth": 1.2803030303030303,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      0.6325757575757575,
+      1.253787878787879
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "cottages-2"
+  },
+  "cottages-3": {
+    "file": "cottages-3.png",
+    "left": -0.7309371677506376,
+    "top": -1.052223301504842,
+    "width": 1.3310477934826677,
+    "height": 1.7392357834840193,
+    "nativeWidth": 1.298527443105756,
+    "nativeDepth": 1.4451385790073876,
+    "groundWidth": 1.298527443105756,
+    "groundDepth": 1.4451385790073876,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      0.5383757251227128,
+      1.2968664782587138
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "cottages-3"
+  },
+  "cottages-4": {
+    "file": "cottages-4.png",
+    "left": -0.6512996033605863,
+    "top": -1.0918728268600748,
+    "width": 1.2184675543622483,
+    "height": 1.7430855291571052,
+    "nativeWidth": 1.2127811692240003,
+    "nativeDepth": 1.3660745384883317,
+    "groundWidth": 1.2127811692240003,
+    "groundDepth": 1.3660745384883317,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      0.49810262332948363,
+      1.104493207941484
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "cottages-4"
+  },
   "forms-0": {
     "file": "forms-0.png",
     "left": -1.9385471394049554,
@@ -65,6 +131,138 @@
     "entranceBasis": "observed-door",
     "sampleId": "forms-0-x"
   },
+  "forms-1": {
+    "file": "forms-1.png",
+    "left": -2.3374366933781756,
+    "top": -1.1152999599444506,
+    "width": 3.202745089262588,
+    "height": 3.057897321406491,
+    "nativeWidth": 2.285714285714286,
+    "nativeDepth": 5.319148936170214,
+    "groundWidth": 2.285714285714286,
+    "groundDepth": 5.319148936170214,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      2.1003861003861006,
+      4.00243161094225
+    ],
+    "entranceAxis": "x",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "forms-1"
+  },
+  "forms-1-x": {
+    "file": "forms-1-x.png",
+    "left": -0.861920144004738,
+    "top": -1.1152999599444506,
+    "width": 3.202745089262588,
+    "height": 3.057897321406491,
+    "nativeWidth": 5.319148936170214,
+    "nativeDepth": 2.285714285714286,
+    "groundWidth": 5.319148936170214,
+    "groundDepth": 2.285714285714286,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      4.00243161094225,
+      2.1003861003861006
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "forms-1-x"
+  },
+  "forms-2": {
+    "file": "forms-2.png",
+    "left": -2.654514042891857,
+    "top": -1.5635635416425213,
+    "width": 4.571070189284616,
+    "height": 3.5105819053705853,
+    "nativeWidth": 3.9483887096774217,
+    "nativeDepth": 5.5243642415923135,
+    "groundWidth": 3.9483887096774217,
+    "groundDepth": 5.5243642415923135,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      1.0387106451612929,
+      5.15648496911462
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "forms-2"
+  },
+  "forms-2-x": {
+    "file": "forms-2-x.png",
+    "left": -1.9111670952222348,
+    "top": -1.5635635416425213,
+    "width": 4.571070189284616,
+    "height": 3.5105819053705853,
+    "nativeWidth": 5.5243642415923135,
+    "nativeDepth": 3.9483887096774217,
+    "groundWidth": 5.5243642415923135,
+    "groundDepth": 3.9483887096774217,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      5.15648496911462,
+      1.0387106451612929
+    ],
+    "entranceAxis": "x",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "forms-2-x"
+  },
+  "forms-4": {
+    "file": "forms-4.png",
+    "left": -2.2016276427050534,
+    "top": -1.4298730808260014,
+    "width": 3.778715080774836,
+    "height": 3.2240413074500895,
+    "nativeWidth": 3.3968058968058967,
+    "nativeDepth": 4.621261261261261,
+    "groundWidth": 3.3968058968058967,
+    "groundDepth": 4.621261261261261,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      1.061425061425061,
+      4.2619819819819815
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "forms-4"
+  },
+  "forms-4-x": {
+    "file": "forms-4-x.png",
+    "left": -1.587487571319622,
+    "top": -1.4298730808260014,
+    "width": 3.778715080774836,
+    "height": 3.2240413074500895,
+    "nativeWidth": 4.621261261261261,
+    "nativeDepth": 3.3968058968058967,
+    "groundWidth": 4.621261261261261,
+    "groundDepth": 3.3968058968058967,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 1,
+    "entrancePoint": [
+      4.2619819819819815,
+      1.061425061425061
+    ],
+    "entranceAxis": "x",
+    "entranceSide": "front",
+    "entranceBasis": "observed-door",
+    "sampleId": "forms-4-x"
+  },
   "stable-0": {
     "file": "stable-0.png",
     "left": -0.5685375775896233,
@@ -108,6 +306,94 @@
     "entranceSide": "front",
     "entranceBasis": "observed-door",
     "sampleId": "magic-0"
+  },
+  "magic-2": {
+    "file": "magic-2.png",
+    "left": -2.6784465802589357,
+    "top": -0.7285323818846137,
+    "width": 4.129259939270439,
+    "height": 2.5706097086725834,
+    "nativeWidth": 2.7655603184323323,
+    "nativeDepth": 5.263070411696806,
+    "groundWidth": 2.7655603184323323,
+    "groundDepth": 5.263070411696806,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 0.44,
+    "entrancePoint": [
+      2.06689528475199,
+      1.977545209696037
+    ],
+    "entranceAxis": "x",
+    "entranceSide": "front",
+    "entranceBasis": "workfront-access",
+    "sampleId": "magic-2"
+  },
+  "magic-2-x": {
+    "file": "magic-2-x.png",
+    "left": -1.4508133590115038,
+    "top": -0.7285323818846137,
+    "width": 4.129259939270439,
+    "height": 2.5706097086725834,
+    "nativeWidth": 5.263070411696806,
+    "nativeDepth": 2.7655603184323323,
+    "groundWidth": 5.263070411696806,
+    "groundDepth": 2.7655603184323323,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 0.44,
+    "entrancePoint": [
+      1.977545209696037,
+      2.06689528475199
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "workfront-access",
+    "sampleId": "magic-2-x"
+  },
+  "magic-3": {
+    "file": "magic-3.png",
+    "left": -1.6719801103341971,
+    "top": -1.001617716902092,
+    "width": 3.7504391584729806,
+    "height": 2.768181283634819,
+    "nativeWidth": 4.102564102564103,
+    "nativeDepth": 3.2943290286355977,
+    "groundWidth": 4.102564102564103,
+    "groundDepth": 3.2943290286355977,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 0.8,
+    "entrancePoint": [
+      2.1025641025641026,
+      2.8777840164701476
+    ],
+    "entranceAxis": "z",
+    "entranceSide": "front",
+    "entranceBasis": "workfront-access",
+    "sampleId": "magic-3"
+  },
+  "magic-3-x": {
+    "file": "magic-3-x.png",
+    "left": -2.0818664020108297,
+    "top": -1.001617716902092,
+    "width": 3.7504391584729806,
+    "height": 2.768181283634819,
+    "nativeWidth": 3.2943290286355977,
+    "nativeDepth": 4.102564102564103,
+    "groundWidth": 3.2943290286355977,
+    "groundDepth": 4.102564102564103,
+    "groundBasis": "human-scale-source-envelope",
+    "directionBasis": "annotated-edge-pairs",
+    "baselineHeight": 0.8,
+    "entrancePoint": [
+      2.8777840164701476,
+      2.1025641025641026
+    ],
+    "entranceAxis": "x",
+    "entranceSide": "front",
+    "entranceBasis": "workfront-access",
+    "sampleId": "magic-3-x"
   },
   "mage-0": {
     "file": "mage-0.png",
@@ -369,6 +655,58 @@
     "baselineHeight": 0.4,
     "sampleId": "yard-fence-z"
   },
+  "yard-wall-x": {
+    "file": "yard-wall-x.png",
+    "left": -0.053407258064516135,
+    "top": -0.20340725806451612,
+    "width": 0.5318145161290323,
+    "height": 0.4680846774193549,
+    "nativeWidth": 0.95,
+    "nativeDepth": 0.1,
+    "groundWidth": 0.95,
+    "groundDepth": 0.1,
+    "groundBasis": "shared-courtyard-fence",
+    "directionBasis": "native-2-to-1",
+    "baselineHeight": 0.4,
+    "sampleId": "yard-wall-x"
+  },
+  "yard-wall-z": {
+    "file": "yard-wall-z.png",
+    "left": -0.4784072580645161,
+    "top": -0.20340725806451612,
+    "width": 0.5318145161290323,
+    "height": 0.4680846774193549,
+    "nativeWidth": 0.1,
+    "nativeDepth": 0.95,
+    "groundWidth": 0.1,
+    "groundDepth": 0.95,
+    "groundBasis": "shared-courtyard-fence",
+    "directionBasis": "native-2-to-1",
+    "baselineHeight": 0.4,
+    "sampleId": "yard-wall-z"
+  },
+  "direction-board-x": {
+    "file": "direction-board-x.png",
+    "left": -3.6227532975602696,
+    "top": -10.186244017778646,
+    "width": 7.030743325422878,
+    "height": 12.004015982903335,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board-x"
+  },
+  "direction-board-z": {
+    "file": "direction-board-z.png",
+    "left": -3.7268890911599866,
+    "top": -11.804344417553594,
+    "width": 7.180995902093712,
+    "height": 13.68966748666072,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board-z"
+  },
   "natural-ground": {
     "file": "natural-ground.png",
     "left": 0,
@@ -434,27 +772,5 @@
     "nativeDepth": 6,
     "baselineHeight": 2,
     "sampleId": "outskirts-hills"
-  },
-  "direction-board-x": {
-    "file": "direction-board-x.png",
-    "left": -3.6227532975602696,
-    "top": -10.186244017778646,
-    "width": 7.030743325422878,
-    "height": 12.004015982903335,
-    "nativeWidth": 10,
-    "nativeDepth": 0.5,
-    "baselineHeight": 2.8,
-    "sampleId": "direction-board-x"
-  },
-  "direction-board-z": {
-    "file": "direction-board-z.png",
-    "left": -3.7268890911599866,
-    "top": -11.804344417553594,
-    "width": 7.180995902093712,
-    "height": 13.68966748666072,
-    "nativeWidth": 10,
-    "nativeDepth": 0.5,
-    "baselineHeight": 2.8,
-    "sampleId": "direction-board-z"
   }
 }
