@@ -1,9 +1,10 @@
-/* Local probe, same vertical-preserving axis correction as unit-calibration.ts. */
+/* Visible edge directions calibrate the camera; the support envelope only fits/anchors it. */
 window.prepareFantasyProjection = function prepareFantasyProjection(frame) {
   let shear=0,vertical=1,points,anchor;
   if(frame.ground){
     const [l,f,r]=frame.ground;
-    const mw=(f[1]-l[1])/(f[0]-l[0]),md=(r[1]-f[1])/(r[0]-f[0]);
+    const [wa,wb]=frame.axes?.W??[l,f],[da,db]=frame.axes?.D??[f,r];
+    const mw=(wb[1]-wa[1])/(wb[0]-wa[0]),md=(db[1]-da[1])/(db[0]-da[0]);
     vertical=1/(mw-md);shear=-(mw+md)/(2*(mw-md));
     points=[l,f,r,[l[0]+r[0]-f[0],l[1]+r[1]-f[1]]];
     anchor=[(l[0]+r[0])/2,(l[1]+r[1])/2];
@@ -23,6 +24,7 @@ window.prepareFantasyProjection = function prepareFantasyProjection(frame) {
   const sourceHeight=ref?map(ref.base)[1]-map(ref.top)[1]:0;
   const scale=ref?Math.min(fitScale,ref.target/sourceHeight):fitScale;
   const corners=[[0,0],[frame.sw,0],[frame.sw,frame.sh],[0,frame.sh]].map(map).map(([x,y])=>[x*scale,y*scale]);
-  frame.projection={shear,vertical,anchor,scale,span:span.map(v=>v*scale),corners,referenceHeight:sourceHeight*scale,heightLimited:scale<fitScale};
+  frame.projection={shear,vertical,anchor,scale,span:span.map(v=>v*scale),corners,referenceHeight:sourceHeight*scale,heightLimited:scale<fitScale,
+    directionBasis:frame.axes?'annotated-edge-pairs':frame.ellipse?'horizontal-base-ellipse':frame.ground?'support-envelope-only':'contact-and-size-only'};
   return frame.projection;
 };

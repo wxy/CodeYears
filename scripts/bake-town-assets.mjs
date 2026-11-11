@@ -7,7 +7,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { parseArgs } from 'node:util';
 
-const { values }=parseArgs({options:{outDir:{type:'string'},catalog:{type:'string'},board:{type:'string'}}});
+const { values }=parseArgs({options:{outDir:{type:'string'},catalog:{type:'string'},board:{type:'string'},proof:{type:'string'}}});
 if(!values.outDir)throw new Error('请用 --outDir 指定运行素材目录。');
 const root=fileURLToPath(new URL('..',import.meta.url)),out=resolve(values.outDir);
 const temporary=await mkdtemp(join(tmpdir(),'codeyears-town-bake-'));
@@ -31,18 +31,42 @@ const paths={
 };
 const page=`<!doctype html><meta charset="utf-8"><script src="/projection.js"></script><script>
 (async()=>{
-  const sources=${JSON.stringify(sources)},records=[],proof=[];
+  const sources=${JSON.stringify(sources)},records=[],proof=[],excluded=[];
   const load=url=>new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=reject;image.src=url;});
   for(const [name,source]of Object.entries(sources)){
     const image=await load('/'+name+'.png'),compact=name==='magic'?await load('/magic-compact.png'):undefined;
     for(let index=0;index<source.frames.length;index++){
-      const frame=source.frames[index],cal=prepareFantasyProjection(frame),mirrors=(name==='forms'&&[0,1,3,4,7].includes(index))||(name==='magic'&&index===2)?[false,true]:[false];
+      const frame=source.frames[index];
+      if(frame.ground&&!frame.axes&&frame.runtime!==false)throw new Error('缺少独立于包络的方向标注：'+name+'-'+index);
+      const cal=prepareFantasyProjection(frame),mirrors=(name==='forms'&&[0,1,3,4,7].includes(index))||(name==='magic'&&index===2)?[false,true]:[false];
+      if(!Number.isFinite(cal.vertical)||cal.vertical<=0)throw new Error('素材竖直方向无效：'+name+'-'+index);
+      const entryProof={id:name+'-'+index,basis:cal.directionBasis,axisBasis:frame.axisBasis,status:frame.perspectiveStatus,projection:cal,heightReference:frame.heightReference};
       if(frame.ground){
-        const [l,f,r]=frame.ground,mw=(f[1]-l[1])/(f[0]-l[0]),md=(r[1]-f[1])/(r[0]-f[0]);
+        const [l,f,r]=frame.ground,[wa,wb]=frame.axes?.W??[l,f],[da,db]=frame.axes?.D??[f,r];
+        const mw=(wb[1]-wa[1])/(wb[0]-wa[0]),md=(db[1]-da[1])/(db[0]-da[0]);
         if(Math.abs(cal.shear+cal.vertical*mw-.5)>1e-9||Math.abs(cal.shear+cal.vertical*md+.5)>1e-9)throw new Error('地面轴校准失败');
-        proof.push({id:name+'-'+index,original:[mw,md],mapped:[cal.shear+cal.vertical*mw,cal.shear+cal.vertical*md]});
+        const validation=(frame.checkAxes??[]).map(check=>{
+          const [a,b]=check.points,m=(b[1]-a[1])/(b[0]-a[0]),mapped=cal.shear+cal.vertical*m,target=check.axis==='W'?.5:-.5;
+          return {...check,original:m,mapped,errorDegrees:Math.abs(Math.atan(mapped)-Math.atan(target))*180/Math.PI};
+        });
+        Object.assign(entryProof,{original:[mw,md],mapped:[cal.shear+cal.vertical*mw,cal.shear+cal.vertical*md],validation});
       }
-      if(frame.ellipse){const rx=frame.ellipse[2],ry=frame.ellipse[3];if(Math.abs(rx/(cal.vertical*ry)-2)>1e-9)throw new Error('圆形地面校准失败');}
+      if(frame.ellipse){const reference=frame.ellipse,rx=reference[2],ry=reference[3];if(Math.abs(rx/(cal.vertical*ry)-2)>1e-9)throw new Error('水平圆参考校准失败');entryProof.ellipse={sourceRatio:rx/ry,mappedRatio:rx/(cal.vertical*ry),basis:frame.ellipseBasis,reference};}
+      entryProof.verticalChecks=(frame.checkVerticals??[]).map(check=>{
+        const [a,b]=check.points,dx=b[0]-a[0],dy=cal.shear*dx+cal.vertical*(b[1]-a[1]);
+        return {...check,errorDegrees:Math.atan2(Math.abs(dx),Math.abs(dy))*180/Math.PI};
+      });
+      // A rotated building need not follow map axes. Undo the 2:1 floor
+      // foreshortening and check its own pair of horizontal right-angle edges.
+      entryProof.orthogonalChecks=(frame.checkOrthogonals??[]).map(check=>{
+        const vectors=[check.axes.W,check.axes.D].map(([a,b])=>{
+          const dx=b[0]-a[0];return [dx,2*(cal.shear*dx+cal.vertical*(b[1]-a[1]))];
+        });
+        const [a,b]=vectors,dot=a[0]*b[0]+a[1]*b[1],length=Math.hypot(...a)*Math.hypot(...b);
+        return {...check,errorDegrees:Math.asin(Math.min(1,Math.abs(dot/length)))*180/Math.PI};
+      });
+      proof.push(entryProof);
+      if(frame.runtime===false){excluded.push(...mirrors.map(mirror=>name+'-'+index+(mirror?'-x':'')+'.png'));continue;}
       for(const mirror of mirrors){
         const id=name+'-'+index+(mirror?'-x':''),nw=frame.footprint[mirror?1:0],nd=frame.footprint[mirror?0:1];
         const center=[(nw-nd)/4,(nw+nd)/8];
@@ -63,7 +87,7 @@ const page=`<!doctype html><meta charset="utf-8"><script src="/projection.js"></
         const trimmed=document.createElement('canvas');trimmed.width=x1-x0+3;trimmed.height=y1-y0+3;
         trimmed.getContext('2d').drawImage(canvas,x0,y0,x1-x0+1,y1-y0+1,1,1,x1-x0+1,y1-y0+1);
         const measured=frame.ground||frame.ellipse;
-        const metadata={file:id+'.png',left:left+(x0-padding-1)/ratio,top:top+(y0-padding-1)/ratio,width:trimmed.width/ratio,height:trimmed.height/ratio,nativeWidth:nw,nativeDepth:nd,groundWidth:measured?cal.span[mirror?1:0]:nw,groundDepth:measured?cal.span[mirror?0:1]:nd,groundBasis:measured?'manual-source-envelope':'declared-decoration',baselineHeight:frame.worldHeight??1,sampleId:id};
+        const metadata={file:id+'.png',left:left+(x0-padding-1)/ratio,top:top+(y0-padding-1)/ratio,width:trimmed.width/ratio,height:trimmed.height/ratio,nativeWidth:nw,nativeDepth:nd,groundWidth:measured?cal.span[mirror?1:0]:nw,groundDepth:measured?cal.span[mirror?0:1]:nd,groundBasis:measured?'manual-source-envelope':'declared-decoration',directionBasis:cal.directionBasis,baselineHeight:frame.worldHeight??1,sampleId:id};
         records.push({id,png:trimmed.toDataURL('image/png').split(',')[1],metadata});
       }
     }
@@ -75,7 +99,7 @@ const page=`<!doctype html><meta charset="utf-8"><script src="/projection.js"></
     c.strokeStyle='#82937d';c.lineWidth=1;c.beginPath();[[0,0],[m.nativeWidth,0],[m.nativeWidth,m.nativeDepth],[0,m.nativeDepth]].forEach(([a,b],index)=>{const xx=px+(a-b)*.5*scale,yy=py+(a+b)*.25*scale;if(index)c.lineTo(xx,yy);else c.moveTo(xx,yy);});c.closePath();c.stroke();
     c.drawImage(im,px+m.left*scale,py+m.top*scale,m.width*scale,m.height*scale);c.fillStyle='#26362c';c.font='17px sans-serif';c.fillText(entry.id,x+12,y+312);
   }
-  await fetch('/result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records,proof,board:board.toDataURL('image/png').split(',')[1]})});document.title='READY';
+  await fetch('/result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records,proof,excluded,board:board.toDataURL('image/png').split(',')[1]})});document.title='READY';
 })().catch(async error=>{await fetch('/error',{method:'POST',body:String(error.stack||error)});document.title='ERROR';});
 </script>`;
 let result,error;
@@ -97,9 +121,11 @@ try{
   ],{timeout:90000,maxBuffer:4*1024*1024});
   if(error)throw new Error(error);if(!result)throw new Error('浏览器没有返回素材。');
   await mkdir(out,{recursive:true});
+  for(const file of result.excluded)await rm(join(out,file),{force:true});
   for(const entry of result.records)await writeFile(join(out,entry.metadata.file),Buffer.from(entry.png,'base64'));
   const target=values.catalog?resolve(values.catalog):join(out,'catalog.json');await mkdir(resolve(target,'..'),{recursive:true});
   await writeFile(target,JSON.stringify(Object.fromEntries(result.records.map(e=>[e.id,e.metadata])),null,2)+'\n');
   if(values.board){await mkdir(resolve(values.board,'..'),{recursive:true});await writeFile(values.board,Buffer.from(result.board,'base64'));}
-  console.log(JSON.stringify({files:result.records.length,catalog:target,proof:result.proof},null,2));
+  if(values.proof){await mkdir(resolve(values.proof,'..'),{recursive:true});await writeFile(values.proof,JSON.stringify(result.proof,null,2)+'\n');}
+  console.log(JSON.stringify({files:result.records.length,catalog:target,...(values.proof?{proof:resolve(values.proof)}:{proof:result.proof})},null,2));
 }finally{await new Promise(resolve=>server.close(resolve));await rm(temporary,{recursive:true,force:true});}

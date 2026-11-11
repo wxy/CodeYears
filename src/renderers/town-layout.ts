@@ -55,7 +55,7 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
     let id:string;
     if(parcel.milestone)id='magic-0';
     else if(area===1)id=band>=2&&seed%3===0?`magic-${band>=3?0:1}`:`cottages-${band*2+seed%2}`;
-    else if(band<=1&&area>=4)id=w>=2&&d>=2?'forms-6':`forms-7${w>d?'-x':''}`;
+    else if(band<=1&&area>=4)id=w>=2&&d>=2?'forms-7-x':`forms-7${w>d?'-x':''}`;
     else if(w>=2&&d>=2)id=`magic-${w/d>=1.6?5:band>=3?4:3}`;
     else id=`${band>=2&&seed%3===0?'magic-2':`forms-${(Math.max(w,d)>=3?3:0)+(band>=2?1:0)}`}${w>d?'-x':''}`;
     const x=yearX[parcel.block]+parcel.x*PITCH,z=parcel.z*PITCH,pw=w*PITCH,pd=d*PITCH;
@@ -66,7 +66,11 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
       items.push({parcel,id:key,factor,x:px,z:pz,w:aw,d:ad,flat:false});
       plot.bodies.push({x:px,z:pz,w:aw,d:ad});plot.entries.push([px+aw/2,pz+ad+.10]);
     };
-    if(area>=6&&w>=3){
+    if(band<=1&&w>=2&&d>=2){
+      // 整图农场尚不能证明共享相机，改用分别校准的连体畜舍与农舍。
+      addBody('forms-7-x',x+.15,z+.14,pw-.30,pd*.48);
+      addBody('cottages-1',x+.15,z+pd*.5,pw*.48-.15,pd*.5-.38);
+    }else if(area>=6&&w>=3){
       addBody(id,x+.15,z+.14,pw-1.8,pd-.38);
       addBody(band<=1?'forms-0':'magic-1',x+pw-1.55,z+.25,1.3,pd-.5);
     }else if(area>=6&&d>=3){
@@ -122,7 +126,7 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
     const squareIndices=new Set<number>();
     for(const [bucket,{cell,edge}]of buckets){
       const x=yearX[block]+(cell.x+.5)*PITCH,z=(cell.z+.5)*PITCH;
-      const kind=['magic-6','life-6','life-8','life-7','magic-8'][(bucket+block)%5];
+      const kind=['magic-6','life-7','life-8','magic-8'][(bucket+block)%4];
       const road:Point=[yearX[block]+(edge[0][0]+edge[1][0])/2*PITCH,(edge[0][1]+edge[1][1])/2*PITCH];
       squares.push({cell,kind,x,z,road});squareIndices.add(cell.indices[0]);
       prop(kind,x,z,1,cell.indices[0]+1);prop('magic-7',x+.48,z-.38,.8,cell.indices[0]+1);
