@@ -16,7 +16,7 @@ import type { LandscapeView, LandscapeViewport } from './types';
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
 // 素材首次命中时生成共享的一位透明度掩码，后续移动只查掩码、不重画城市。
 const hitMasks=new WeakMap<HTMLCanvasElement,Uint8Array>();
-export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number; revealAfter?:number }
+export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number; revealAfter?:number; /** 独立围院前/后墙的投影深度，只用于绘制/遮挡顺序。 */ sortY?:number }
 export interface CityScene { kind?:'town'; weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
@@ -77,7 +77,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     const left=x+sprite.left*item.factor,top=y+sprite.top*item.factor-(item.elevation??0)*.5;
     // 所有成员已在本批真实days中，融合地块按首个成员进入呈现前缀时整体出现。
     return [{item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1],after:progressive?(item.revealAfter??(item.parcel?Math.min(...item.parcel.indices)+1:0)):0}];
-  }).sort((a,b)=>a.groundY-b.groundY||a.left-b.left);
+  }).sort((a,b)=>(a.item.sortY??a.groundY)-(b.item.sortY??b.groundY)||a.left-b.left);
   const outer=roadNetwork.ringOuter+CITY_OUTSKIRT_MARGIN;
   // 渐进场地的包围盒只取预留布局和既有外围余量，不随后到楼宇改变取景。
   const minX=Math.min(-depth/2-outer-.4,...(progressive?[]:placed.map(p=>p.left)))-.3,maxX=Math.max(width/2+outer+.4,...(progressive?[]:placed.map(p=>p.left+p.width)))+.3;

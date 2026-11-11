@@ -1,4 +1,4 @@
-/* 独立建筑庭院原型；不改变地块规划或运行素材。
+/* 原型与运行PNG烘焙共用的独立庭院绘制；不负责地块规划。
  * court = { x, z, w, d, gateX, material?: 'stone' | 'wood' }。
  * gateX 是世界坐标；院门位于 z + d 一侧，缺省居中。
  * 调用方先 translate/scale 画布，再按 back → 建筑/人物 → front 绘制。

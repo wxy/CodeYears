@@ -8,7 +8,7 @@
 - `public/assets/city/`：保留的设计源素材，包含项目专用的 AI 生成透明建筑、植被、地面、奇观和城郊图片。源文件不再直接进入下一版发行包；代码的 MIT 声明不另行承诺这些位图的独立复用授权。
 - `public/assets/city-runtime/`：由设计源素材及标定流程生成的98张运行PNG；发行时复制到`assets/city/`，保持原资源权限范围。包括幼树的独立标定结果及注册纪念塔，不分发目录未引用的旧候选图。
 - SVG 投影模板、标定 JSON 与程序绘制道路属于项目代码；运行时只使用本地资源。
-- `public/assets/town-runtime/`：2026-11-11新增魔法小镇的41张预烘焙 PNG，发行时复制到 `assets/town/`。源图、完整提示词与校准记录保存在 `docs/design/ancient-town-concepts/2026-11-10/`、`2026-11-11/`，均为内置图像工具基于已有项目风格生成/修订的通用素材；没有提交真实贡献数据给图像工具。建筑、居民、动物、花树和公共设施的位图不因此自动改为代码 MIT；参考项目的原草地图未复制成扩展运行依赖。
+- `public/assets/town-runtime/`：2026-11-11共同尺度版魔法小镇的44张预烘焙 PNG，共2,364,185 bytes：12个建筑方向、24张独立围院前后层、8类生活与公共设施。工坊窗内居民离线合成，围墙由项目代码绘制，发行时复制到 `assets/town/`。源图、完整提示词与校准记录保存在 `docs/design/ancient-town-concepts/2026-11-10/`、`2026-11-11/`，均为内置图像工具基于已有项目风格生成/修订的通用素材；没有提交真实贡献数据给图像工具。建筑、居民、动物、花树和公共设施的位图不因此自动改为代码 MIT；参考项目的原草地图未复制成扩展运行依赖。规格、占地、推定与误差见[资源报告](docs/reports/TOWN-SCALE-ASSETS.md)。
 
 生成提示、来源和标定分别保留在 `docs/design/city-buildings/`、`docs/design/city-units/v2/` 至 `v4/`、`docs/design/city-outskirts/`、`docs/design/city-transport/` 和 `docs/design/city-model-expansion/`。部分提示使用城市建造游戏作为质感参考，并要求不复制游戏素材、标志或受保护的特色建筑；没有将游戏图片打包。不能仅凭提示就宣称已完成第三方权利核查。
 
