@@ -42,9 +42,9 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   let joinedDate:string|undefined;
   const townAssetBase=new URL('../town/',assetBase).href;
   const planMap=(mode:'city'|'town',snapshot:readonly DailyContribution[],joined?:string)=>{
-    if(mode==='town'){const plan=planTownScene(snapshot,reservedYears,joined);return {scene:plan.scene,ground:createTownGround(plan)}}
+    if(mode==='town'){const plan=planTownScene(snapshot,reservedYears,joined);return {scene:plan.scene,ground:(ready:CityImages)=>createTownGround(plan,ready)}}
     const plan=planOrganicCity(snapshot,90,reservedYears!,cityWonders,namingOriginYear,joined);
-    return {scene:plan.scene,ground:createOrganicGround(plan)};
+    return {scene:plan.scene,ground:()=>createOrganicGround(plan)};
   };
   let disposed=false,blocked=false,suspended=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
   let preparationError: string | undefined;
@@ -103,7 +103,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         assetPromise=loadTownImages(townAssetBase,plan.scene.keys,assetAbort.signal);
         const ready=await assetPromise;
         if(disposed||token!==generation){closeCityImages(ready);return}
-        images=ready;layer=createCityView(plan.scene,images,progressiveCity?0:undefined,createTownGround(plan));
+        images=ready;layer=createCityView(plan.scene,images,progressiveCity?0:undefined,createTownGround(plan,images));
       }else if(view==="city"){
         if(progressiveCity){
           const plan=planOrganicCity(days,90,reservedYears!,cityWonders,namingOriginYear),ground=createOrganicGround(plan);
@@ -214,7 +214,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         ready=await (mode==='town'?loadTownImages(townAssetBase,plan.scene.keys,assetAbort.signal):loadCityImages(assetBase,[...plan.scene.keys,'natural-ground'],assetAbort.signal));
         assetAbort.signal.throwIfAborted();signal?.throwIfAborted();
         if(disposed||token!==generation)throw new DOMException('城市已关闭或替换。','AbortError');
-        next=createCityView(plan.scene,ready,currentDays.length,plan.ground);
+        next=createCityView(plan.scene,ready,currentDays.length,plan.ground(ready));
         configureCanvas(next,mode);viewport.zoom=zoomBase;viewport.panX=viewport.panY=0;next.draw(1,viewport);
         const previous=layer,previousImages=images;
         if(previous)previous.canvas.replaceWith(next.canvas);else host.append(next.canvas);
@@ -251,7 +251,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         images??={};if(added)Object.assign(images,added);merged=true;
         const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
         const prefix=reduced?nextDays.length:Math.min(Math.floor(revealedDays),nextDays.length);
-        next=createCityView(nextScene,images,prefix,organic.ground);configureCanvas(next);
+        next=createCityView(nextScene,images,prefix,organic.ground(images));configureCanvas(next);
         // 新层先完成一次绘制再交换，素材准备期间原图和取景始终保留。
         next.draw(nextDays.length?prefix/nextDays.length:1,viewport);
         const previous=layer;

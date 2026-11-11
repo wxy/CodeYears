@@ -17,7 +17,7 @@ import { planDirectionBoard, type DirectionBoard } from './city-direction-boards
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
 // 素材首次命中时生成共享的一位透明度掩码，后续移动只查掩码、不重画城市。
 const hitMasks=new WeakMap<HTMLCanvasElement,Uint8Array>();
-export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number; revealAfter?:number }
+export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number; revealAfter?:number; /** 独立围院前/后墙的投影深度，只用于绘制/遮挡顺序。 */ sortY?:number }
 export interface CityScene { kind?:'town'; weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
@@ -78,7 +78,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     const left=x+sprite.left*item.factor,top=y+sprite.top*item.factor-(item.elevation??0)*.5;
     // 所有成员已在本批真实days中，融合地块按首个成员进入呈现前缀时整体出现。
     return [{item,sprite,left,top,width:sprite.width*item.factor,height:sprite.height*item.factor,groundY:project(item.x+item.w/2,item.z+item.d/2)[1],after:progressive?(item.revealAfter??(item.parcel?Math.min(...item.parcel.indices)+1:0)):0}];
-  }).sort((a,b)=>a.groundY-b.groundY||a.left-b.left);
+  }).sort((a,b)=>(a.item.sortY??a.groundY)-(b.item.sortY??b.groundY)||a.left-b.left);
   const outer=roadNetwork.ringOuter+CITY_OUTSKIRT_MARGIN+18;
   // 渐进场地的包围盒只取预留布局和既有外围余量，不随后到楼宇改变取景。
   const minX=Math.min(-depth/2-outer-.4,...(progressive?[]:placed.map(p=>p.left)))-.3,maxX=Math.max(width/2+outer+.4,...(progressive?[]:placed.map(p=>p.left+p.width)))+.3;
@@ -219,14 +219,17 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const exitRoads=[...baseExits,...extraExits];
   let roadCount=4;
   let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined,boardOrder:DirectionBoard[]=[];
+  let exitStone:CanvasPattern|undefined;
+  if(scene.kind==='town'){
+    const sprite=images['town-stone'];exitStone=context.createPattern(sprite.canvas,'repeat')!;
+    exitStone.setTransform(new DOMMatrix([sprite.width/sprite.canvas.width,0,0,sprite.height/sprite.canvas.height,0,0]));
+  }
   const exitPainters=exitRoads.map(road=>{
     if(scene.kind!=='town')return createCityRoadPainter([road],[]);
-    const [a,b]=road.points,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),ux=dx/length,uz=dz/length,half=cityRoadWidth(road)/2;
+    const [a,b]=road.points,half=cityRoadWidth(road)/2;
     const path=new Path2D();path.moveTo(...a);path.lineTo(...b);
-    const seams=new Path2D();
-    for(let along=.7;along<length;along+=.7){const x=a[0]+ux*along,z=a[1]+uz*along;seams.moveTo(x-uz*half,z+ux*half);seams.lineTo(x+uz*half,z-ux*half)}
     return (target:CanvasRenderingContext2D)=>{
-      target.save();target.transform(.5,.25,-.5,.25,0,0);target.lineCap='butt';target.strokeStyle='#8f8365';target.lineWidth=half*2+.2;target.stroke(path);target.strokeStyle='#bdad88';target.lineWidth=half*2;target.stroke(path);target.strokeStyle='#a29473';target.lineWidth=.035;target.stroke(seams);target.restore();
+      target.save();target.transform(.5,.25,-.5,.25,0,0);target.lineCap='butt';target.strokeStyle='#8f8365';target.lineWidth=half*2+.2;target.stroke(path);target.strokeStyle=exitStone!;target.lineWidth=half*2;target.stroke(path);target.restore();
     };
   });
   const roadScreen=(x:number,z:number,viewport:LandscapeViewport):[number,number]=>{
@@ -326,7 +329,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const sx=(x:number)=>viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,sy=(y:number)=>viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale;
       context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
       // 本地PNG未就绪也先铺平地，不把空场地变回空白。背景只填当前视口。
-      context.fillStyle=scene.kind==='town'?'#94a16b':'#a3b58d';context.fillRect(0,0,viewport.width,viewport.height);
+      context.fillStyle=scene.kind==='town'?'#53744b':'#a3b58d';context.fillRect(0,0,viewport.width,viewport.height);
       if(terrainPattern){
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
         context.fillStyle=terrainPattern;context.fillRect(-sx(0)/scale,-sy(0)/scale,viewport.width/scale,viewport.height/scale);context.restore();
@@ -361,7 +364,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);board.paint(context);context.restore();
       };
       for(const p of placed){
-        while(boardIndex<boardOrder.length&&boardOrder[boardIndex].groundY<=p.groundY)paintBoard(boardOrder[boardIndex++]);
+        while(boardIndex<boardOrder.length&&boardOrder[boardIndex].groundY<=(p.item.sortY??p.groundY))paintBoard(boardOrder[boardIndex++]);
         if(p.item.flat||(progressive&&p.after>prefix))continue;
         const x=sx(p.left),y=sy(p.top),w=p.width*scale,h=p.height*scale;
         if(x+w<0||x>viewport.width||y+h<0||y>viewport.height)continue;

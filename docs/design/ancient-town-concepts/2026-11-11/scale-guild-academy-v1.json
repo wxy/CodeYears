@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "status": "design scale references; original PNG and runtime assets unchanged",
+  "coordinateSystem": "Native source pixels, origin at full crop top-left. Height uses vertical delta-y. Door width follows its facade plane and is a screen segment, not recovered physical width.",
+  "method": "Manual inspection of the original full-resolution images. Door top/bottom follow inner usable arch/wooden leaf, excluding stone trim and steps. Axes use visible horizontal construction edges independent of the support envelope. Measurements have approximately +/-4px endpoint uncertainty unless noted. No embedded people are used as references.",
+  "normalizationProposal": {
+    "adultHeightWorld": 0.8,
+    "ordinaryDoorNetHeightWorld": 1.0,
+    "calibratedScaleNote": "Choose final uniform scale from the ordinary door AFTER direction correction. If vertical vectors are multiplied by d, the calibrated source net height is abs(d)*heightPx. Do not shrink again to fit a ground envelope.",
+    "doorFunctions": "Ordinary side doors set human scale. A central ceremonial or double entrance may intentionally differ in width and height; it is not forced to equal an ordinary door."
+  },
+  "frames": [
+    {
+      "id": "guild-0",
+      "source": "guild-human-scale-v1.png",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "axes": {
+        "W": [
+          [
+            328,
+            625
+          ],
+          [
+            370,
+            638
+          ]
+        ],
+        "D": [
+          [
+            478,
+            550
+          ],
+          [
+            527,
+            526
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured-limited: 左端翼普通木门叶底部可见硬边；与地面包络独立。线仅42px，端点约±3px，不宣称是长边高精度校准。",
+        "D": "measured: 左翼朝庭院的最前扇窗下方石窗台长边；端点避开植物，为有限长度的可见水平构件。"
+      },
+      "ground": [
+        [
+          193,
+          620
+        ],
+        [
+          887,
+          850
+        ],
+        [
+          1581,
+          620
+        ]
+      ],
+      "groundBasis": "inferred: 包含整套院落铺地的保守支撑包络三点。前沿有平切角/平边，F为最前可见边的中点，不宣称是原图矩形的真实转角；不得用来反算方向和人尺度。",
+      "door": {
+        "top": [
+          345,
+          501
+        ],
+        "bottom": [
+          345,
+          631
+        ],
+        "heightPx": 130,
+        "width": [
+          [
+            332,
+            581
+          ],
+          [
+            370,
+            593
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 4,
+        "kind": "ordinary pedestrian side door",
+        "note": "以左端翼人行侧门为标准门；木门内拱冠到同一竖线上门叶底边，不含石拱和台阶。"
+      },
+      "sideDoors": [
+        {
+          "side": "left",
+          "top": [
+            345,
+            501
+          ],
+          "bottom": [
+            345,
+            631
+          ],
+          "heightPx": 130,
+          "width": [
+            [
+              332,
+              581
+            ],
+            [
+              370,
+              593
+            ]
+          ],
+          "basis": "measured",
+          "endpointUncertaintyPx": 4
+        },
+        {
+          "side": "right",
+          "top": [
+            1429,
+            501
+          ],
+          "bottom": [
+            1429,
+            631
+          ],
+          "heightPx": 130,
+          "width": [
+            [
+              1407,
+              593
+            ],
+            [
+              1445,
+              581
+            ]
+          ],
+          "basis": "measured",
+          "endpointUncertaintyPx": 4
+        }
+      ],
+      "centralDoor": {
+        "top": [
+          887,
+          370
+        ],
+        "bottom": [
+          887,
+          545
+        ],
+        "heightPx": 175,
+        "width": [
+          [
+            834,
+            485
+          ],
+          [
+            943,
+            485
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 4,
+        "kind": "grand ceremonial double door",
+        "note": "中央双扇仪式门内口，宽高均有意超过侧门；木门内拱冠到门叶底边，不计外石拱。"
+      },
+      "window": {
+        "top": [
+          665,
+          394
+        ],
+        "bottom": [
+          665,
+          455
+        ],
+        "heightPx": 61,
+        "basis": "measured",
+        "endpointUncertaintyPx": 5,
+        "recognition": "visible glazing",
+        "note": "左翼靠中央的高窗玻璃内边界，不含石外框和窗台；分格横条计在整窗净口内。"
+      },
+      "internalScaleAssessment": "两端普通门本次量得约130px，符合用同一人尺度。中央门175px约为普通门1.35倍；在普通门端点不确定性下仅作比例筛查，明确是较大双扇仪式门，不把它当普通门强缩到1.0。",
+      "action": "normalize-by-ordinary-side-door-and-review-with-standard-adult"
+    },
+    {
+      "id": "academy-0",
+      "source": "academy-human-scale-v1.png",
+      "crop": [
+        0,
+        0,
+        1774,
+        887
+      ],
+      "axes": {
+        "W": [
+          [
+            1231,
+            481
+          ],
+          [
+            1275,
+            498
+          ]
+        ],
+        "D": [
+          [
+            499,
+            498
+          ],
+          [
+            543,
+            481
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 右翼靠普通侧门的前扇窗的石窗台可见低边；与左翼对应构件对照，不取花叶或斜屋脊，端点约±3px。",
+        "D": "measured: 左翼相应窗台可见低边，明确位于玻璃下缘外的石构件；端点约±3px，与W均独立于支撑包络。"
+      },
+      "ground": [
+        [
+          45,
+          628
+        ],
+        [
+          887,
+          814
+        ],
+        [
+          1730,
+          628
+        ]
+      ],
+      "groundBasis": "inferred: 含铺地和低花池的保守整院支撑包络。原前沿是长平边并有截角，F为可见前边中点；不宣称三点构成真实矩形地基，不用于方向校正或人尺度。",
+      "door": {
+        "top": [
+          429,
+          479
+        ],
+        "bottom": [
+          429,
+          588
+        ],
+        "heightPx": 109,
+        "width": [
+          [
+            411,
+            546
+          ],
+          [
+            448,
+            532
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 4,
+        "kind": "ordinary pedestrian side door",
+        "note": "以左翼普通门净口标定；木门内拱冠到门叶底边，不计台阶/石框。宽度沿负斜率立面。"
+      },
+      "sideDoors": [
+        {
+          "side": "left",
+          "top": [
+            429,
+            479
+          ],
+          "bottom": [
+            429,
+            588
+          ],
+          "heightPx": 109,
+          "width": [
+            [
+              411,
+              546
+            ],
+            [
+              448,
+              532
+            ]
+          ],
+          "basis": "measured",
+          "endpointUncertaintyPx": 4
+        },
+        {
+          "side": "right",
+          "top": [
+            1345,
+            479
+          ],
+          "bottom": [
+            1345,
+            588
+          ],
+          "heightPx": 109,
+          "width": [
+            [
+              1327,
+              532
+            ],
+            [
+              1364,
+              546
+            ]
+          ],
+          "basis": "measured",
+          "endpointUncertaintyPx": 4
+        }
+      ],
+      "centralDoor": {
+        "top": [
+          887,
+          380
+        ],
+        "bottom": [
+          887,
+          502
+        ],
+        "heightPx": 122,
+        "width": [
+          [
+            849,
+            453
+          ],
+          [
+            927,
+            453
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 4,
+        "kind": "central double entrance",
+        "note": "中央双扇门，净高约为普通侧门1.12倍，净宽约为单侧门的两倍；不强同宽/高。"
+      },
+      "window": {
+        "top": [
+          705,
+          389
+        ],
+        "bottom": [
+          705,
+          438
+        ],
+        "heightPx": 49,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible glazing",
+        "note": "中央门左边的矩形窗，玻璃内顶至内底，不含石框、石窗台或下方花池。"
+      },
+      "internalScaleAssessment": "左右普通门独立观察均约109px，在本次端点精度内一致；适合用一组整体等比尺度。中央双扇门约122px，功能不同且幅度较小，不作为侧门不一致处理。未把静态观察提升为最终地图验收。",
+      "action": "normalize-by-ordinary-side-door-and-review-with-standard-adult"
+    }
+  ],
+  "sourceSha256": {
+    "guild-human-scale-v1.png": "4db02050fb0e4db813393e8b7bb644d70e963f98d42b3e5dedffa7229c118db9",
+    "academy-human-scale-v1.png": "63d55ade3bf8b0de7e60caab8e49ffa10b1c6f7db542b3e2530abcf7573b9e43"
+  }
+}

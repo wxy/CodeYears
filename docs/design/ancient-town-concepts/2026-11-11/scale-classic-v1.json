@@ -1,0 +1,990 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "status": "design scale references only; original PNG, calibration and runtime assets unchanged",
+  "coordinateSystem": "Native source pixels relative to crop top-left. Height is vertical delta-y; width endpoints follow the slanted facade plane and are not recovered physical width.",
+  "method": "Manually inspected original source crops with 10px coordinate grid at 3x nearest-neighbor zoom. Door measurements follow the inner usable opening/wooden leaf, excluding external stone arch and step. Glass/window openings exclude the surround. Hidden limits are labelled inferred or unavailable.",
+  "normalizationProposal": {
+    "adultHeightWorld": 0.8,
+    "ordinaryDoorNetHeightWorld": 1.0,
+    "invariant": "One uniform image scale preserves all internal ratios. It can normalize a measured pedestrian door but cannot fix relative scales of buildings/animals already combined in one image. No source is shrunk again to fit a reserved ground envelope.",
+    "calibratedScaleNote": "Source pixel heights are measured before direction correction. If the chosen direction transform multiplies vertical vectors by d, the calibrated net height is abs(d)*heightPx; choose final uniform scale from that calibrated door height. Never apply raw source height as final output height without accounting for the transform."
+  },
+  "cottages": [
+    {
+      "id": "cottages-0",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        0,
+        0,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          119,
+          213
+        ],
+        "bottom": [
+          119,
+          303
+        ],
+        "heightPx": 90,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "前立面木门内拱冠至同竖线上的门叶下缘，不含外石拱和台阶。",
+        "width": [
+          [
+            107,
+            261
+          ],
+          [
+            140,
+            269
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          253,
+          224
+        ],
+        "bottom": [
+          253,
+          254
+        ],
+        "heightPx": 30,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "右立面玻璃可见段，花叶遮住下沿；30px只代表未遮挡净高下界。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-1",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        362,
+        0,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          115,
+          214
+        ],
+        "bottom": [
+          115,
+          302
+        ],
+        "heightPx": 88,
+        "width": [
+          [
+            104,
+            260
+          ],
+          [
+            136,
+            268
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible arched pedestrian door",
+        "note": "木门内拱冠至同一竖线上的门叶下缘；不含外部石拱和门前台阶。净宽取拱肩以下门叶两侧，顺前立面方向。"
+      },
+      "window": {
+        "top": [
+          253,
+          228
+        ],
+        "bottom": [
+          253,
+          264
+        ],
+        "heightPx": 36,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "右立面可见玻璃段；下沿被花叶/花箱遮挡，36px是可见净高下界，不是完整窗口高度。"
+      },
+      "uniformScaleAssessment": "可按88px标准人门整体等比标定；同图无成人，不能声称门/人体比例已经验收。窗口只作为可见段佐证。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-2",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        724,
+        0,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          103,
+          219
+        ],
+        "bottom": [
+          103,
+          307
+        ],
+        "heightPx": 88,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "左前立面人行木门；右侧烤炉开口不是人门，未用作参考。",
+        "width": [
+          [
+            93,
+            265
+          ],
+          [
+            122,
+            272
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          223,
+          213
+        ],
+        "bottom": [
+          223,
+          247
+        ],
+        "heightPx": 34,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible glazing",
+        "note": "右立面窗右玻璃格内高，不计窗框、百叶和下方陈列台。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-3",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        1086,
+        0,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          101,
+          217
+        ],
+        "bottom": [
+          101,
+          300
+        ],
+        "heightPx": 83,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "左前立面木门内拱冠至门叶下边；悬挂香草不跨过该竖线。",
+        "width": [
+          [
+            93,
+            260
+          ],
+          [
+            123,
+            267
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          240,
+          221
+        ],
+        "bottom": [
+          240,
+          238
+        ],
+        "heightPx": 17,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "侧面窗被药草成束遮挡，只记录右侧可见玻璃连续段；不能以此估完整窗口净高。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-4",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        0,
+        362,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          113,
+          199
+        ],
+        "bottom": [
+          113,
+          286
+        ],
+        "heightPx": 87,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "工坊短立面石拱内木门，不计门前台阶。",
+        "width": [
+          [
+            103,
+            240
+          ],
+          [
+            132,
+            248
+          ]
+        ]
+      },
+      "window": {
+        "top": null,
+        "bottom": null,
+        "heightPx": null,
+        "basis": "unavailable",
+        "recognition": "not-visible",
+        "note": "长侧立面为工具墙与工作台，没有可确认的完整玻璃窗口；不能把工具空隙当窗。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-5",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        362,
+        362,
+        362,
+        362
+      ],
+      "door": {
+        "top": null,
+        "bottom": null,
+        "heightPx": null,
+        "basis": "unavailable",
+        "recognition": "not-visible",
+        "note": "两可见立面为药草墙、开敞柜台/货架，未见标准人行门的内口。"
+      },
+      "window": {
+        "top": null,
+        "bottom": null,
+        "heightPx": null,
+        "basis": "unavailable",
+        "recognition": "not-visible",
+        "note": "未见可确认净玻璃窗口；货架瓶罐和工具之间空白不作窗。"
+      },
+      "uniformScaleAssessment": "无可测人行门；不能把屋顶/石基包络或相似建筑共享样式当成实测人尺度。若用cottages-4的相近工坊构造作暂定尺度，只能标shared/inferred；本文件不提供伪造的门净高。",
+      "action": "omit-from-measured-door-scale-board-or-redraw-visible-door"
+    },
+    {
+      "id": "cottages-6",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        724,
+        362,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          88,
+          196
+        ],
+        "bottom": [
+          88,
+          281
+        ],
+        "heightPx": 85,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "左前人门内口，避开外石拱和门侧盆栽。",
+        "width": [
+          [
+            79,
+            239
+          ],
+          [
+            108,
+            247
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          260,
+          182
+        ],
+        "bottom": [
+          260,
+          228
+        ],
+        "heightPx": 46,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "右立面尖拱玻璃窗；下沿被花叶遮挡，46px为可见净高下界。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。尖拱窗为较大装饰窗，不要求与普通居室小窗同高。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-7",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        1086,
+        362,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          106,
+          205
+        ],
+        "bottom": [
+          106,
+          286
+        ],
+        "heightPx": 81,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "左前人行木门内拱冠至木门叶底边。",
+        "width": [
+          [
+            98,
+            247
+          ],
+          [
+            128,
+            254
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          201,
+          188
+        ],
+        "bottom": [
+          201,
+          204
+        ],
+        "heightPx": 16,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible glazing",
+        "note": "书架上方左段高侧窗玻璃，16px是该上亮子本身净高；下方书架不是窗延续。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。侧面所测为高侧窗/上亮子，不能作为普通整窗高度。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-8",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        0,
+        724,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          106,
+          196
+        ],
+        "bottom": [
+          106,
+          276
+        ],
+        "heightPx": 80,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "左前人行木门内口；不含外石拱。",
+        "width": [
+          [
+            95,
+            236
+          ],
+          [
+            124,
+            244
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          240,
+          152
+        ],
+        "bottom": [
+          240,
+          221
+        ],
+        "heightPx": 69,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "右立面大装饰尖拱窗；花叶遮住下沿，69px仅可见净高下界。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。大装饰窗有意大于普通小窗；不按窗高强制缩放。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "cottages-9",
+      "source": "../2026-11-10/fantasy-sprites-v1.png",
+      "crop": [
+        362,
+        724,
+        362,
+        362
+      ],
+      "door": {
+        "top": [
+          105,
+          200
+        ],
+        "bottom": [
+          105,
+          278
+        ],
+        "heightPx": 78,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "左前立面木门内口，底边不计前台阶。",
+        "width": [
+          [
+            96,
+            240
+          ],
+          [
+            126,
+            248
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          195,
+          187
+        ],
+        "bottom": [
+          195,
+          250
+        ],
+        "heightPx": 63,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible glazing",
+        "note": "长侧立面最左个尖拱彩玻璃格，取内玻璃冠顶至玻璃底边；不计外木框。"
+      },
+      "uniformScaleAssessment": "可按人门净高整体等比标定；同图无成人，门/人体关系仍须和H=.8标准人对照。彩玻璃长窗是装饰窗，净高可高于普通居室窗。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    }
+  ],
+  "forms": [
+    {
+      "id": "forms-0",
+      "source": "../2026-11-10/fantasy-building-forms-v1.png",
+      "crop": [
+        0,
+        0,
+        416,
+        415
+      ],
+      "door": {
+        "top": [
+          77,
+          292
+        ],
+        "bottom": [
+          77,
+          334
+        ],
+        "heightPx": 42,
+        "width": [
+          [
+            71,
+            317
+          ],
+          [
+            90,
+            322
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 2,
+        "recognition": "visible arched pedestrian door",
+        "note": "左端短立面的木门内拱冠至门叶下缘，不含石拱外圈。门净高约为cottages-1的一半；禁止按整栋包络直接赋同等scale。"
+      },
+      "window": {
+        "top": [
+          181,
+          282
+        ],
+        "bottom": [
+          181,
+          306
+        ],
+        "heightPx": 24,
+        "basis": "measured",
+        "endpointUncertaintyPx": 2,
+        "recognition": "visible",
+        "note": "靠近前门的第一扇侧面窗，内玻璃竖向高度，不含白色石框和外部窗台；画内中央横分格仍属窗内。"
+      },
+      "uniformScaleAssessment": "单栋长屋，可按42px人门整体放大至统一人尺度；其墙高和窗高随同放大。标准门标定的相对比例约为cottages-1的2.10倍，而非按地块fit缩回。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "forms-1",
+      "source": "../2026-11-10/fantasy-building-forms-v1.png",
+      "crop": [
+        416,
+        0,
+        400,
+        415
+      ],
+      "door": {
+        "top": [
+          177,
+          281
+        ],
+        "bottom": [
+          177,
+          316
+        ],
+        "heightPx": 35,
+        "basis": "measured",
+        "endpointUncertaintyPx": 2,
+        "recognition": "visible pedestrian door",
+        "note": "主入口位于中间山墙下，木门净口；宽线沿该长立面负斜率方向，不误取石拱外沿。",
+        "width": [
+          [
+            168,
+            303
+          ],
+          [
+            186,
+            298
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          255,
+          244
+        ],
+        "bottom": [
+          255,
+          266
+        ],
+        "heightPx": 22,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "中段侧窗可见玻璃，底边被花叶局部遮挡，22px为可见净高下界。"
+      },
+      "uniformScaleAssessment": "可按唯一清晰人行门净高整体等比标定；门为较小源像素，端点±2px对高度比有明显影响。无同图成人，完整人尺度仍须和标准人对照，不能宣布验收。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "forms-2",
+      "source": "../2026-11-10/fantasy-building-forms-v1.png",
+      "crop": [
+        816,
+        0,
+        438,
+        415
+      ],
+      "door": {
+        "top": [
+          62,
+          288
+        ],
+        "bottom": [
+          62,
+          319
+        ],
+        "heightPx": 31,
+        "basis": "measured",
+        "endpointUncertaintyPx": 2,
+        "recognition": "visible pedestrian door",
+        "note": "左端前翼唯一清晰人行门；门内拱冠至木门叶底边，不计外石框。",
+        "width": [
+          [
+            56,
+            306
+          ],
+          [
+            72,
+            310
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          206,
+          228
+        ],
+        "bottom": [
+          206,
+          252
+        ],
+        "heightPx": 24,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible glazing",
+        "note": "庭院内后侧、长凳上方窗的右玻璃格，不含白石框和窗台。"
+      },
+      "uniformScaleAssessment": "可按唯一清晰人行门净高整体等比标定；门为较小源像素，端点±2px对高度比有明显影响。无同图成人，完整人尺度仍须和标准人对照，不能宣布验收。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "forms-3",
+      "source": "../2026-11-10/fantasy-building-forms-v1.png",
+      "crop": [
+        0,
+        415,
+        414,
+        410
+      ],
+      "door": {
+        "top": [
+          78,
+          277
+        ],
+        "bottom": [
+          78,
+          310
+        ],
+        "heightPx": 33,
+        "basis": "measured",
+        "endpointUncertaintyPx": 2,
+        "recognition": "visible pedestrian door",
+        "note": "左端短立面木门内口，不含石拱和台阶。",
+        "width": [
+          [
+            72,
+            298
+          ],
+          [
+            90,
+            302
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          375,
+          156
+        ],
+        "bottom": [
+          375,
+          171
+        ],
+        "heightPx": 15,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible glazing",
+        "note": "长侧最右后方窗的右玻璃格，底部在可见窗台之上；15px线很短，端点误差占比较大。"
+      },
+      "uniformScaleAssessment": "可按唯一清晰人行门净高整体等比标定；门为较小源像素，端点±2px对高度比有明显影响。无同图成人，完整人尺度仍须和标准人对照，不能宣布验收。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "forms-4",
+      "source": "../2026-11-10/fantasy-building-forms-v1.png",
+      "crop": [
+        414,
+        415,
+        400,
+        410
+      ],
+      "door": {
+        "top": [
+          70,
+          271
+        ],
+        "bottom": [
+          70,
+          308
+        ],
+        "heightPx": 37,
+        "basis": "measured",
+        "endpointUncertaintyPx": 2,
+        "recognition": "visible pedestrian door",
+        "note": "左端短立面木门内口，不含石拱/台阶；旁边工作台敞开区不作门。",
+        "width": [
+          [
+            64,
+            291
+          ],
+          [
+            84,
+            295
+          ]
+        ]
+      },
+      "window": {
+        "top": [
+          159,
+          253
+        ],
+        "bottom": [
+          159,
+          271
+        ],
+        "heightPx": 18,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible glazing",
+        "note": "前段工作台后方窗右玻璃格；玻璃下缘可见于石窗台上方，不计木质外框。"
+      },
+      "uniformScaleAssessment": "可按唯一清晰人行门净高整体等比标定；门为较小源像素，端点±2px对高度比有明显影响。无同图成人，完整人尺度仍须和标准人对照，不能宣布验收。",
+      "action": "door-normalize-and-compare-with-standard-adult"
+    },
+    {
+      "id": "forms-7",
+      "source": "../2026-11-10/fantasy-building-forms-v1.png",
+      "crop": [
+        418,
+        825,
+        384,
+        429
+      ],
+      "door": {
+        "top": [
+          279,
+          143
+        ],
+        "bottom": [
+          279,
+          171
+        ],
+        "heightPx": 28,
+        "width": [
+          [
+            273,
+            163
+          ],
+          [
+            288,
+            167
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 2,
+        "recognition": "rear house pedestrian door only",
+        "note": "仅测最右后方茅草农舍木门的内口；前景马栏和中段干草开口均不是标准人行门，不能替代此参考。"
+      },
+      "window": {
+        "top": [
+          347,
+          144
+        ],
+        "bottom": [
+          347,
+          161
+        ],
+        "heightPx": 17,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 2,
+        "recognition": "partly-occluded",
+        "note": "后方农舍侧窗可见玻璃段；花叶遮住下缘，17px仅是可见段下界。"
+      },
+      "components": [
+        {
+          "id": "rear-house",
+          "reference": "door",
+          "basis": "measured",
+          "note": "只有该幢具备可确认的人行门参考。"
+        },
+        {
+          "id": "middle-hay-shed",
+          "door": null,
+          "basis": "unavailable",
+          "note": "可见为敞开储草空间，未见标准人行门/可比净窗。"
+        },
+        {
+          "id": "front-stable",
+          "door": null,
+          "basis": "unavailable",
+          "note": "马栏开口不是人行门；马头夸张且身体遮挡，不能用马栏和马头反推标准成人。"
+        }
+      ],
+      "uniformScaleAssessment": "单个scale只能把后农舍28px人门标到1.0，无法独立修正同图前景畜舍、马与农舍的比例。其余两幢缺少标准人门，因此不能宣布全图人尺度统一。为解决用户指出的内部比例，拆为独立建筑或用新单体畜舍替换，不继续以整体包络当尺度。",
+      "action": "split-or-replace-composite-before-use"
+    }
+  ],
+  "stable": [
+    {
+      "id": "stable-0",
+      "source": "stable-human-scale-v1.png",
+      "crop": [
+        0,
+        0,
+        1280,
+        1280
+      ],
+      "door": {
+        "top": [
+          315,
+          719
+        ],
+        "bottom": [
+          315,
+          930
+        ],
+        "heightPx": 211,
+        "width": [
+          [
+            278,
+            820
+          ],
+          [
+            361,
+            828
+          ]
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "recognition": "visible pedestrian door",
+        "note": "左端立面木门内拱冠至门叶下缘，不包含石拱厚度、外框和前台阶。左右门叶/孔口边界清楚。"
+      },
+      "window": {
+        "top": [
+          505,
+          749
+        ],
+        "bottom": [
+          505,
+          818
+        ],
+        "heightPx": 69,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "门右侧窗的玻璃可见段；花叶遮住完整下沿，69px是可见净高下界。不能把花箱外高当窗净高。"
+      },
+      "axes": {
+        "W": [
+          [
+            166,
+            632
+          ],
+          [
+            470,
+            663
+          ]
+        ],
+        "D": [
+          [
+            698,
+            675
+          ],
+          [
+            983,
+            590
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 门所在短立面上方大横梁的上边界，避开斜屋面、灯钩和柱头，端点约±4px。",
+        "D": "measured: 长立面屋檐下连续水平檐梁下边，取中间未被立柱遮挡的直段，端点约±4px。"
+      },
+      "checkAxes": [
+        {
+          "axis": "W",
+          "points": [
+            [
+              280,
+              925
+            ],
+            [
+              359,
+              933
+            ]
+          ],
+          "basis": "measured: 同一人行门底部木门叶边界，端点约±3px，短线仅为方向佐证。"
+        },
+        {
+          "axis": "D",
+          "points": [
+            [
+              1042,
+              765
+            ],
+            [
+              1125,
+              740
+            ]
+          ],
+          "basis": "measured: 最右侧窗下花箱的低边界，端点约±4px，局部叶片遮挡；仅作有限佐证。"
+        }
+      ],
+      "checkVerticals": [
+        {
+          "points": [
+            [
+              602,
+              739
+            ],
+            [
+              602,
+              922
+            ]
+          ],
+          "basis": "measured: 前后立面交界的大立柱左边界，避开柱基和倾斜斜撑，端点约±3px。"
+        }
+      ],
+      "ground": [
+        [
+          110,
+          935
+        ],
+        [
+          618,
+          1005
+        ],
+        [
+          1170,
+          838
+        ]
+      ],
+      "groundBasis": "inferred: 以可见地面接触的石基外轮廓概括整体L/F/R支撑包络；局部水槽/柱基前凸，三点不是可见完整矩形，也不用于反算方向或人尺度。",
+      "uniformScaleAssessment": "单体畜舍，可先按211px人门等比标至1.0世界单位；普通成人0.8对应约169px原图高。门旁窗仅测可见段，尚未验收完整窗净高；同图马身体被栏门遮挡，不以马头替代成人。门标定不会再被ground-fit缩回。",
+      "action": "single-building-door-normalize-and-review-courtyard-board"
+    }
+  ],
+  "scope": "10 cottage crops, 6 enabled classic forms, and new single stable. This file is independent design evidence, not a runtime catalogue.",
+  "sourceSha256": {
+    "../2026-11-10/fantasy-sprites-v1.png": "a8cc67cfdee4185e26df6b6836f1b344e613e26f33251357a4c0575376f2b486",
+    "../2026-11-10/fantasy-building-forms-v1.png": "f8533e8c69df3768707b2e1776d99de31b750fea3ab5956d297ad9f428845eb8",
+    "stable-human-scale-v1.png": "5a62a8778f52e9c98d0d87f19f79bc2e0ae66da9889550b1c3a7eb7c4437924a"
+  },
+  "observations": [
+    "有可见门的9栋cottages人门源净高78..90px；cottages-5没有可见标准人行门。",
+    "启用forms的人门源净高28..42px，不能沿用与cottages相同的源像素倍率；forms-7为多栋组合，必须拆分/替换才能独立调整相对尺度。",
+    "旧素材多数窗被花/草遮挡；完整净高未知时记录可见下界，不把花箱外边或屋顶当窗。普通窗、尖拱装饰窗和高侧窗不得强行等高。",
+    "每栋独立围墙/围栏和院门属于设计板布局，本文件只给真实像素参考，未修改任何布局或运行素材。"
+  ]
+}

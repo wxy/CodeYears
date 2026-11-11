@@ -1,0 +1,382 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "status": "manual first-pass calibration annotations; not runtime integration",
+  "source": "mage-workshop-human-scale-v1.png",
+  "sourceSha256": "e7d5b83c69aeac736cd82977d7888fef57b872335425fc8f5f8d7a7ff06f66f2",
+  "crop": [
+    0,
+    0,
+    1536,
+    1024
+  ],
+  "sx": 0,
+  "sy": 0,
+  "sw": 1536,
+  "sh": 1024,
+  "coordinateSystem": "native source pixels, relative to full-image crop; height delta-y, widths are screen projected, not recovered physical widths",
+  "pixelUncertainty": {
+    "door": 4,
+    "window": 4,
+    "occlusionPolygons": 5,
+    "stepAxes": 4,
+    "groundEnvelope": 10
+  },
+  "embeddedPeople": [],
+  "door": {
+    "kind": "clear ordinary arched wooden entrance",
+    "top": [
+      638,
+      551
+    ],
+    "bottom": [
+      638,
+      831
+    ],
+    "netHeightPx": 280,
+    "netWidthScreenPx": 108,
+    "widthAtY": 660,
+    "leftAtY660": [
+      585,
+      660
+    ],
+    "rightAtY660": [
+      693,
+      660
+    ],
+    "thresholdLine": [
+      [
+        587,
+        822
+      ],
+      [
+        693,
+        838
+      ]
+    ],
+    "basis": "measured: inner door opening apex to threshold top at door centre; stone arch/frame and threshold thickness excluded; the lower edge slopes across its width",
+    "adultHeightAtDoorRatio1_25Px": 224,
+    "assessment": "At a224px adult reference the net door is1.25H. This source has no baked person, so one shared resident can be introduced without changing internal person/door ratios."
+  },
+  "workWindow": {
+    "innerOpeningQuad": [
+      [
+        833,
+        584
+      ],
+      [
+        1027,
+        562
+      ],
+      [
+        1027,
+        695
+      ],
+      [
+        833,
+        720
+      ]
+    ],
+    "clipPolygon": [
+      [
+        838,
+        586
+      ],
+      [
+        1022,
+        565
+      ],
+      [
+        1022,
+        691
+      ],
+      [
+        838,
+        715
+      ]
+    ],
+    "clipBasis": "inset quad inside posts, upper beam and sill; effective resident clip MUST subtract clipExcludePolygons or redraw their original source foreground after the resident. A four-corner quad alone cannot represent internal diagonal braces and bottles.",
+    "clipExcludePolygons": [
+      {
+        "kind": "left diagonal brace",
+        "polygon": [
+          [
+            833,
+            584
+          ],
+          [
+            874,
+            580
+          ],
+          [
+            833,
+            631
+          ]
+        ]
+      },
+      {
+        "kind": "right diagonal brace",
+        "polygon": [
+          [
+            984,
+            568
+          ],
+          [
+            1027,
+            562
+          ],
+          [
+            1027,
+            610
+          ],
+          [
+            1011,
+            600
+          ]
+        ]
+      },
+      {
+        "kind": "left purple bottle",
+        "polygon": [
+          [
+            850,
+            674
+          ],
+          [
+            871,
+            674
+          ],
+          [
+            872,
+            686
+          ],
+          [
+            880,
+            699
+          ],
+          [
+            878,
+            716
+          ],
+          [
+            868,
+            724
+          ],
+          [
+            854,
+            723
+          ],
+          [
+            842,
+            714
+          ],
+          [
+            842,
+            700
+          ],
+          [
+            850,
+            688
+          ]
+        ]
+      },
+      {
+        "kind": "middle blue bottle",
+        "polygon": [
+          [
+            953,
+            660
+          ],
+          [
+            969,
+            660
+          ],
+          [
+            970,
+            676
+          ],
+          [
+            981,
+            688
+          ],
+          [
+            978,
+            703
+          ],
+          [
+            966,
+            713
+          ],
+          [
+            954,
+            711
+          ],
+          [
+            945,
+            702
+          ],
+          [
+            944,
+            687
+          ],
+          [
+            953,
+            675
+          ]
+        ]
+      },
+      {
+        "kind": "right tall purple bottle",
+        "polygon": [
+          [
+            989,
+            644
+          ],
+          [
+            1006,
+            644
+          ],
+          [
+            1007,
+            660
+          ],
+          [
+            1013,
+            675
+          ],
+          [
+            1018,
+            690
+          ],
+          [
+            1010,
+            702
+          ],
+          [
+            996,
+            707
+          ],
+          [
+            981,
+            703
+          ],
+          [
+            975,
+            693
+          ],
+          [
+            981,
+            676
+          ],
+          [
+            988,
+            662
+          ]
+        ]
+      }
+    ],
+    "sillBackTopLine": [
+      [
+        833,
+        720
+      ],
+      [
+        1027,
+        695
+      ]
+    ],
+    "sillFrontTopLine": [
+      [
+        818,
+        733
+      ],
+      [
+        1060,
+        709
+      ]
+    ],
+    "netHeightPxAtCentre": 135,
+    "netHeightToAdult224": 0.603,
+    "safeSingleQuadWithoutOcclusionHoles": [
+      [
+        878,
+        583
+      ],
+      [
+        976,
+        574
+      ],
+      [
+        1012,
+        630
+      ],
+      [
+        847,
+        651
+      ]
+    ],
+    "safeSingleQuadNote": "This conservative head/shoulder-only region avoids braces/bottles; at roughly70px high it is not the whole0.6H working window. Use the full quad with foreground exclusions for a full upper-body composition.",
+    "basis": "measured: black opening inner edge; posts, lintel, sill and potion silhouettes are separate source foreground. Manual bottle polygons are conservative and can hide a few extra resident pixels; do not cut or alter the source PNG."
+  },
+  "axes": {
+    "W": [
+      [
+        478,
+        862
+      ],
+      [
+        686,
+        895
+      ]
+    ],
+    "D": [
+      [
+        686,
+        895
+      ],
+      [
+        727,
+        867
+      ]
+    ]
+  },
+  "axisBasis": {
+    "W": "measured: front rectangular entrance-step top front stone edge; not the round plinth arc; manual endpoint uncertainty about4px",
+    "D": "measured: same step top right return edge; short41px horizontal span, hence direction less certain; not an independent full-building rigid-axis proof"
+  },
+  "ellipse": [
+    772,
+    821,
+    407,
+    118
+  ],
+  "ellipseBasis": "inferred: circular main plinth visible side/front arcs; rear half hidden by building and front arc partly hidden by entrance steps. This is an occupancy envelope, not an independently measured complete horizontal circle.",
+  "ground": [
+    [
+      253.4,
+      873.2
+    ],
+    [
+      971.0,
+      987.1
+    ],
+    [
+      1290.6,
+      768.8
+    ]
+  ],
+  "groundBasis": "conservative proxy L/F/R tangent parallelogram of the inferred plinth ellipse in the independently measured step-axis directions. These are NOT three visible physical corners. Supplied for existing ground+axes matrix readers: axes determine direction; ground determines conservative extent/fit.",
+  "anchor": [
+    772,
+    821
+  ],
+  "contactBasis": "manual: centre of the main plinth ground envelope, not door threshold or potion sill; entrance-step lower front corner is additional foreground depth.",
+  "projectionCaution": "The source is nearly frontal. The rectangular step W slope is0.159 and D slope-0.683 before calibration, with a short uncertain D edge. Preserve upright verticals and inspect an actual grid projection; do not claim the inferred circle proves2:1 perspective.",
+  "normalizationProposal": {
+    "adultHeadCrownToSolesPx": 224,
+    "ordinaryDoorRatio": 1.25,
+    "workWindowRatio": 0.603,
+    "windowResident": "one standard adult, body behind sill; no children relabeling; source braces/bottles remain foreground"
+  },
+  "changesMade": "Only this new JSON. Existing catalogues, source PNG, projection helper and runtime remain unchanged."
+}

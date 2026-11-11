@@ -378,7 +378,7 @@
     "message": "Rustic homes and longhouses"
   },
   "townLegendFarm": {
-    "message": "Homesteads and working farms"
+    "message": "Farmhouses, stables and working farms"
   },
   "townLegendWorkshop": {
     "message": "Workshops, greenhouses and alchemy halls"
@@ -387,10 +387,10 @@
     "message": "Arcane guilds and observatories"
   },
   "townLegendRegions": {
-    "message": "Adjacent dates with similar intensity form rectangular plots of up to eight days. Area determines the floor plan; the mean determines craftsmanship and facilities. Height does not encode contributions."
+    "message": "Adjacent dates with similar intensity form rectangular settlements of different sizes. Buildings and residents share one scale, and each building has its own courtyard. Plot area and mean daily contributions determine the form; height does not encode contributions."
   },
   "townLegendLife": {
-    "message": "Residents, animals, trees, markets, wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
+    "message": "Residents, animals, flowering trees, mana wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
   },
   "roadsHeading": {
     "message": "Road destination"
