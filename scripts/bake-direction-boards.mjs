@@ -19,9 +19,9 @@ try{
       const point=(x,y)=>[(x-entry.anchor[0])*sx,(x-entry.anchor[0])*shear+(y-entry.anchor[1])*sy];
       const corners=[[0,0],[image.width,0],[image.width,image.height],[0,image.height]].map(([x,y])=>point(x,y));
       const left=Math.min(...corners.map(p=>p[0])),top=Math.min(...corners.map(p=>p[1])),right=Math.max(...corners.map(p=>p[0])),bottom=Math.max(...corners.map(p=>p[1]));
-      const ratio=512/Math.max(right-left,bottom-top),padding=2;
+      const ratio=2048/Math.max(right-left,bottom-top),padding=2;
       const canvas=document.createElement('canvas');canvas.width=Math.ceil((right-left)*ratio)+padding*2;canvas.height=Math.ceil((bottom-top)*ratio)+padding*2;
-      const ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.translate(padding-left*ratio,padding-top*ratio);ctx.scale(ratio,ratio);ctx.transform(sx,shear,0,sy,0,0);ctx.translate(-entry.anchor[0],-entry.anchor[1]);ctx.drawImage(image,0,0);ctx.resetTransform();
+      const ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.translate(padding-left*ratio,padding-top*ratio);ctx.scale(ratio,ratio);ctx.transform(sx,shear,0,sy,0,0);ctx.translate(-entry.anchor[0],-entry.anchor[1]);ctx.filter=entry.style.startsWith('modern')?'saturate(.42) brightness(.9) sepia(.12)':'saturate(.6) brightness(.95)';ctx.drawImage(image,0,0);ctx.filter='none';ctx.resetTransform();
       const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);let x0=canvas.width,y0=canvas.height,x1=-1,y1=-1;
       for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++){
         const i=(y*canvas.width+x)*4+3;if(pixels.data[i]<=8)pixels.data[i]=0;

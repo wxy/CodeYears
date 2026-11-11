@@ -270,7 +270,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       if(vehicles.length>=180)break;
       const fraction=direction===1?.32+(seed%13)/100:.62+(seed%11)/100;
       const laneWidth=cityRoadWidth(road)/road.lanes,offset=laneWidth*(.5+seed%(road.lanes/2))*direction;
-      const x=a[0]+dx*fraction+dz/length*offset,z=a[1]+dz*fraction-dx/length*offset;
+      const x=a[0]+dx*fraction-dz/length*offset,z=a[1]+dz*fraction+dx/length*offset;
       if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+.8)||
         bridges.some(bridge=>Math.abs(x-bridge.from[0])<catalog[`transport-bridge-${bridge.style}`].nativeWidth/2+.3&&z>bridge.landings.from[1]-.6&&z<bridge.landings.to[1]+.6)||
         labels.some(label=>Math.hypot(label.x-x,label.z-z)<cityRoadLabelLength(label.text,label.kind)/2+.65)||

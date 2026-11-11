@@ -20,16 +20,21 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,town:boolean
   const arrow=(ux-uz)>=0?1:-1;
   // x/z 是原素材键；现在蓝色款用于出城，绿色款用于返程，与道路朝向无关。
   const layout=layouts[`${town?'town':'modern'}-${returning?'x':'z'}`];
-  const unit=.8,postScale=town?.65:.35,split=layout.top+layout.height+.3,lift=split*(postScale-1);
+  const unit=.55,postScale=town?.65:.35,split=layout.top+layout.height+.3,lift=split*(postScale-1);
   const width=layout.width*unit,height=layout.height*unit,top=(layout.top+lift)*unit;
   measure.save();measure.font='700 100px ui-monospace,monospace';
   const textWidth=(text:string)=>measure.measureText(text).width/100;
-  const lines=textWidth(label)>width-2.6?[label.slice(0,Math.ceil(label.length/2)),label.slice(Math.ceil(label.length/2))]:[label];
-  const font=label?Math.min(1.35,(width-2.6)/Math.max(...lines.map(textWidth)),(height-.4)/(lines.length*1.1)):1.35;
   const roadDirection=(ux-uz)>=0?1:-1,roadText=roadDirection>0?`${label} →`:`← ${label}`;
-  const roadFont=Math.min(1.05,(length-6)/textWidth(roadText));measure.restore();
-  const half=cityRoadWidth(route)/2,side=temporary||route.id.startsWith('extra-exit-')?-1:1;
-  const shoulder=half+2,along=length-(temporary?4:1);
+  const roadFont=Math.min(1.05,(length-6)/textWidth(roadText));
+  // 比较投影后垂直于文字基线的字高；四个主方向等于路面字号的一半。
+  const targetFont=roadFont*.25*Math.hypot(vx,vy)/(Math.hypot((ux-uz)*.5,(ux+uz)*.25)*Math.abs(vx));
+  const lines=textWidth(label)*targetFont>width-2.6?[label.slice(0,Math.ceil(label.length/2)),label.slice(Math.ceil(label.length/2))]:[label];
+  const font=label?Math.min(targetFont,(width-2.6)/Math.max(...lines.map(textWidth)),(height-.4)/(lines.length*1.1)):targetFont;measure.restore();
+  // 额外出口向正法线一侧分岔，路牌放在另一侧；返程沿同侧错开普通牌。
+  const half=cityRoadWidth(route)/2,side=-1;
+  // 用完整素材包络留出支架/石基余量，整块牌的两脚都在路缘外。
+  const reach=Math.max(Math.abs(sprite.left),Math.abs(sprite.left+sprite.width))*2*unit;
+  const shoulder=half+reach+.8,along=length-(temporary?8:1);
   const [px,py]=project(a[0]+ux*along-uz*shoulder*side,a[1]+uz*along+ux*shoulder*side);
   const point=(s:number,y:number):RoadPoint=>[px+vx*s,py+vy*s+y];
   const polygon=[point(-width/2-.55,top-.5),point(width/2+.55,top-.5),point(width/2+.55,top+height+.45),point(-width/2-.55,top+height+.45)];
@@ -57,7 +62,7 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,town:boolean
       context.restore();
       if(town&&returning){
         // 木框/石基保留，空木牌面呈现绿色漆面，颜色只编码返程。
-        context.save();context.transform(vx,vy,0,1,px,py+top);context.fillStyle='#106344cc';context.fillRect(-width/2+.22,.16,width-.44,height-.32);context.restore();
+        context.save();context.transform(vx,vy,0,1,px,py+top);context.fillStyle='#315c4fbb';context.fillRect(-width/2+.22,.16,width-.44,height-.32);context.restore();
       }
       if(!label)return;
       context.save();context.transform(vx,vy,0,1,px,py+top);

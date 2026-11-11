@@ -16,6 +16,8 @@ interface RoadOptions {
 /** 只有当前已登录的城主可以编辑；旅行返程属于当前标签的访问者。 */
 export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const profile=options.context().profileLogin.toLowerCase(),key=`codeyears:roads:${profile}`;
+  // 扩展重载后的旧页面可能失去 storage；销毁时使用创建时的事件引用。
+  const storageEvents=chrome.storage?.onChanged;
   const username=/^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/i;
   const lifetime=new AbortController();
   let slots:(string|null)[]=[null,null,null,null],ready=false,saving=false,disposed=false,editing=false;
@@ -169,7 +171,7 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const wheel=(event:WheelEvent)=>{if(!event.composedPath().includes(host))close()};
   const resize=()=>close();
   host.querySelector<HTMLButtonElement>('.road-close')!.onclick=()=>close(true);retry.onclick=()=>{void load()};
-  chrome.storage.onChanged.addListener(storageChanged);document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',escape,true);
+  storageEvents?.addListener(storageChanged);document.addEventListener('pointerdown',outside,true);document.addEventListener('keydown',escape,true);
   host.parentElement!.addEventListener('wheel',wheel,{passive:true});window.addEventListener('resize',resize);
   void load();
   return {
@@ -177,6 +179,6 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     returnPost:()=>returnPost,
     refresh:render,
     close,
-    dispose(){disposed=true;lifetime.abort();chrome.storage.onChanged.removeListener(storageChanged);document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);host.parentElement!.removeEventListener('wheel',wheel);window.removeEventListener('resize',resize);host.replaceChildren()},
+    dispose(){disposed=true;lifetime.abort();storageEvents?.removeListener(storageChanged);document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);host.parentElement!.removeEventListener('wheel',wheel);window.removeEventListener('resize',resize);host.replaceChildren()},
   };
 }
