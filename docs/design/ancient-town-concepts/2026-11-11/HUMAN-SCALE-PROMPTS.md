@@ -52,4 +52,3 @@ Critical correction ONLY to human doorway proportions: the existing human door l
 No people added. The renderer places an adult with the same1.7m scale across all buildings, so the adult shoulders must visibly fit through this opening after map projection. The doorway's stone surround must be coherent and not overlap structural corner posts.
 Retain all other stable identity and perspective details as closely as possible: normal vertical jambs, the existing foundation and roof dimensions, the horse bay, trough and rune. Same square canvas, entire object visible, genuine transparent alpha background. No new courtyard, fences, backdrop, text, rulers or guides. One isolated building.
 ```
-
