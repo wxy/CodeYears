@@ -131,6 +131,7 @@ try {
   for (const entry of result.records) await writeFile(join(out, entry.metadata.file), Buffer.from(entry.png, 'base64'));
   const catalog = values.catalog ? resolve(values.catalog) : join(out, 'catalog.json');await mkdir(resolve(catalog, '..'), { recursive: true });
   await writeFile(catalog, JSON.stringify(Object.fromEntries(result.records.map(e => [e.id, e.metadata])), null, 2) + '\n');
+  await promisify(execFile)(process.execPath,[resolve(root,'scripts/bake-town-ground.mjs'),'--outDir',out,'--catalog',catalog],{timeout:90000});
   for (const [option, data] of [['board', Buffer.from(result.board, 'base64')], ['proof', JSON.stringify(result.proof, null, 2) + '\n']]) {
     if (values[option]) { await mkdir(resolve(values[option], '..'), { recursive: true });await writeFile(values[option], data); }
   }

@@ -274,7 +274,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const sx=(x:number)=>viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,sy=(y:number)=>viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale;
       context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
       // 本地PNG未就绪也先铺平地，不把空场地变回空白。背景只填当前视口。
-      context.fillStyle=scene.kind==='town'?'#94a16b':'#a3b58d';context.fillRect(0,0,viewport.width,viewport.height);
+      context.fillStyle=scene.kind==='town'?'#53744b':'#a3b58d';context.fillRect(0,0,viewport.width,viewport.height);
       if(terrainPattern){
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
         context.fillStyle=terrainPattern;context.fillRect(-sx(0)/scale,-sy(0)/scale,viewport.width/scale,viewport.height/scale);context.restore();

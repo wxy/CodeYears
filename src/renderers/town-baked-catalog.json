@@ -754,5 +754,71 @@
     "directionBasis": "horizontal-base-ellipse",
     "baselineHeight": 1.1,
     "sampleId": "magic-8"
+  },
+  "natural-ground": {
+    "file": "natural-ground.png",
+    "left": 0,
+    "top": 0,
+    "width": 16,
+    "height": 16,
+    "nativeWidth": 16,
+    "nativeDepth": 16,
+    "baselineHeight": 0,
+    "sampleId": "natural-ground"
+  },
+  "town-stone": {
+    "file": "town-stone.png",
+    "left": 0,
+    "top": 0,
+    "width": 2.4,
+    "height": 2.4,
+    "nativeWidth": 2.4,
+    "nativeDepth": 2.4,
+    "baselineHeight": 0,
+    "sampleId": "town-stone"
+  },
+  "town-earth": {
+    "file": "town-earth.png",
+    "left": 0,
+    "top": 0,
+    "width": 3,
+    "height": 3,
+    "nativeWidth": 3,
+    "nativeDepth": 3,
+    "baselineHeight": 0,
+    "sampleId": "town-earth"
+  },
+  "town-paving": {
+    "file": "town-paving.png",
+    "left": 0,
+    "top": 0,
+    "width": 2.4,
+    "height": 2.4,
+    "nativeWidth": 2.4,
+    "nativeDepth": 2.4,
+    "baselineHeight": 0,
+    "sampleId": "town-paving"
+  },
+  "outskirts-forest": {
+    "file": "outskirts-forest.png",
+    "left": -3,
+    "top": -1.2833333333333337,
+    "width": 7,
+    "height": 4.666666666666667,
+    "nativeWidth": 8,
+    "nativeDepth": 6,
+    "baselineHeight": 2,
+    "sampleId": "outskirts-forest"
+  },
+  "outskirts-hills": {
+    "file": "outskirts-hills.png",
+    "left": -3,
+    "top": -1.2833333333333337,
+    "width": 7,
+    "height": 4.666666666666667,
+    "nativeWidth": 8,
+    "nativeDepth": 6,
+    "baselineHeight": 2,
+    "sampleId": "outskirts-hills"
   }
 }
