@@ -434,6 +434,12 @@
   "changeRoad": {
     "message": "修改目的地"
   },
+  "editRoad": {
+    "message": "修改"
+  },
+  "editRoadTo": {
+    "message": "修改前往 $1 的道路"
+  },
   "cityName": {
     "message": "@$1 的城市"
   },

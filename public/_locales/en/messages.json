@@ -434,6 +434,12 @@
   "changeRoad": {
     "message": "Change destination"
   },
+  "editRoad": {
+    "message": "Edit"
+  },
+  "editRoadTo": {
+    "message": "Change the road to $1"
+  },
   "cityName": {
     "message": "@$1’s city"
   },

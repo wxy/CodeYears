@@ -6,12 +6,13 @@ import { createCityView, planCityScene, type CityScene } from "./city-view";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import { planTownScene, createTownGround } from './town-layout';
 import { loadTownImages } from './town-assets';
-import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
+import type { CityRoadLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
-export interface CityRoadControl { sign: HTMLElement; surface: HTMLAnchorElement | HTMLButtonElement; label:string }
+export interface CityRoadControl extends CityRoadLabel { sign: HTMLElement; surface: HTMLAnchorElement | HTMLButtonElement; edit?:HTMLButtonElement }
+export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement; label:string }
 
 export interface ContributionLandscape {
-  setRoadControls(controls: readonly CityRoadControl[], returnPost?:HTMLElement): void;
+  setRoadControls(controls: readonly CityRoadControl[], returnPost?:CityReturnControl): void;
   buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
   highlightBuilding(point?: {x:number;y:number}): void;
   setView(view: ViewMode,signal?:AbortSignal): Promise<void>;
@@ -49,7 +50,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   let disposed=false,blocked=false,suspended=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
   let preparationError: string | undefined;
   const roadLayer=document.createElement('div');roadLayer.className='city-road-links';host.append(roadLayer);
-  let roadAnchors:readonly CityRoadControl[]=[],returnSign:HTMLElement|undefined;
+  let roadAnchors:readonly CityRoadControl[]=[],returnSign:CityReturnControl|undefined;
   const placeRoadTarget=(element:HTMLElement,polygon:readonly [number,number][])=>{
     element.hidden=!polygon.length;if(!polygon.length)return;
     const xs=polygon.map(p=>p[0]),ys=polygon.map(p=>p[1]),left=Math.min(...xs),top=Math.min(...ys),width=Math.max(...xs)-left,height=Math.max(...ys)-top;
@@ -57,11 +58,13 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   const positionRoads=()=>{
     const exits=layer?.roadExits?.(viewport)??[];
-    for(const [slot,{sign,surface}]of roadAnchors.entries()){
-      placeRoadTarget(sign,exits[slot]?.board??[]);
+    for(const [slot,{sign,surface,edit}]of roadAnchors.entries()){
+      const board=exits[slot]?.board??[];
+      placeRoadTarget(sign,board);
       placeRoadTarget(surface,exits[slot]?.polygon??[]);
+      if(edit){edit.hidden=!board.length;if(board.length){edit.style.left=`${board[1][0]}px`;edit.style.top=`${(board[1][1]+board[2][1])/2}px`}}
     }
-    if(returnSign)placeRoadTarget(returnSign,layer?.returnPost?.(viewport)??[]);
+    if(returnSign){const back=layer?.returnPost?.(viewport);placeRoadTarget(returnSign.sign,back?.board??[]);placeRoadTarget(returnSign.surface,back?.polygon??[])}
   };
   const state=():TimelineState=>progressiveCity?{status:revealedDays>=currentDays.length?"completed":playing?"playing":"paused",revealedDays:Math.floor(revealedDays),totalDays:currentDays.length}:timeline.getState();
   const notify=(error?:string)=>onChange(state(),error,preparationError??layer?.description()??`正在准备${view==="terrain"?"连续山脉":view==='town'?'魔法小镇':'建筑素材'}…`);
@@ -73,7 +76,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   const configureCanvas=(next:LandscapeView,mode=view)=>{
     next.setRoadCount?.(roadAnchors.length||4);
-    next.setRoadLabels?.(roadAnchors.map(road=>road.label),returnSign?.dataset.cityLabel);
+    next.setRoadLabels?.(roadAnchors,returnSign?.label);
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
     next.canvas.setAttribute("aria-label",`${mode==="city"?"贡献之城":mode==='town'?'魔法小镇':"连续时光山脉"}，固定视角。拖动平移，滚轮缩放。`);
   };
@@ -180,9 +183,9 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   return{
     setRoadControls(controls,post){
       roadLayer.replaceChildren();roadAnchors=controls;returnSign=post;
-      for(const {sign,surface}of controls)roadLayer.append(surface,sign);
-      if(post)roadLayer.append(post);
-      layer?.setRoadCount?.(controls.length);layer?.setRoadLabels?.(controls.map(road=>road.label),post?.dataset.cityLabel);positionRoads();schedule();
+      for(const {sign,surface,edit}of controls){roadLayer.append(surface,sign);if(edit)roadLayer.append(edit)}
+      if(post)roadLayer.append(post.surface,post.sign);
+      layer?.setRoadCount?.(controls.length);layer?.setRoadLabels?.(controls,post?.label);positionRoads();schedule();
     },
     buildingAt(x,y){
       if(disposed||suspended||!progressiveCity)return;

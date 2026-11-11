@@ -1,5 +1,5 @@
 import { localize, text, type Language, type MessageKey } from './i18n';
-import type { CityRoadControl } from '../renderers/landscape';
+import type { CityRoadControl, CityReturnControl } from '../renderers/landscape';
 import type { GitHubPageContext } from '../platform/github/types';
 import { confirmViewer, sameContext } from '../platform/github/load-year';
 import { readCityJourney, rememberCityJourney, type CityStop } from './city-travel';
@@ -10,7 +10,7 @@ interface RoadOptions {
   currentContext():GitHubPageContext;
   language():Language;
   mapType():CityStop['map'];
-  changed(controls:readonly CityRoadControl[],returnPost?:HTMLElement):void;
+  changed(controls:readonly CityRoadControl[],returnPost?:CityReturnControl):void;
 }
 
 /** 只有当前已登录的城主可以编辑；旅行返程属于当前标签的访问者。 */
@@ -20,7 +20,7 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const lifetime=new AbortController();
   let slots:(string|null)[]=[null,null,null,null],ready=false,saving=false,disposed=false,editing=false;
   let message:MessageKey|undefined,selection:{kind:'road';slot:number}|{kind:'return'}|undefined;
-  let rendered:CityRoadControl[]=[],returnPost:HTMLAnchorElement|undefined;
+  let rendered:CityRoadControl[]=[],returnPost:CityReturnControl|undefined;
   const owner=(context:GitHubPageContext)=>context.profileLogin.toLowerCase()===profile&&context.viewer.state==='known'&&context.viewer.identity.kind==='authenticated'&&context.viewer.identity.login.toLowerCase()===profile;
   const canEdit=()=>owner(options.currentContext());
   const t=(id:MessageKey,values:readonly(string|number)[]=[])=>text(options.language(),id,values);
@@ -44,7 +44,7 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const journey=()=>readCityJourney(options.currentContext());
   const close=(restoreFocus=false)=>{
     const selected=selection;selection=undefined;host.hidden=true;
-    if(restoreFocus&&selected)(selected.kind==='return'?returnPost:rendered[selected.slot]?.sign)?.focus();
+    if(restoreFocus&&selected)(selected.kind==='return'?returnPost?.sign:rendered[selected.slot]?.sign)?.focus();
   };
   const makeLink=(stop:CityStop,returning=false)=>{
     const link=document.createElement('a');link.className=returning?'road-return-link':'city-road-destination';
@@ -73,9 +73,9 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     host.querySelector('.road-count')!.textContent=t('roadCount',[slots.filter(Boolean).length,MAX_ROADS]);
     host.querySelector('.roads-local')!.textContent=t(back?'returnRoadLocal':own?'roadsLocal':'roadsOwnerOnly');
   };
-  const open=(selected:NonNullable<typeof selection>,anchor:HTMLElement)=>{
+  const open=(selected:NonNullable<typeof selection>,anchor:HTMLElement,edit=false)=>{
     if(selected.kind==='return'&&!journey().length)return;
-    selection=selected;editing=selected.kind==='road'&&!slots[selected.slot]&&canEdit();
+    selection=selected;editing=selected.kind==='road'&&(edit||!slots[selected.slot])&&canEdit();
     message=ready?undefined:'roadsReadError';input.value=selected.kind==='road'?slots[selected.slot]??'':'';host.hidden=false;
     updateEditor();
     const area=host.parentElement!.getBoundingClientRect(),point=anchor.getBoundingClientRect();
@@ -99,16 +99,22 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
       const label=login??(own?t('addRoadAt',[slot+1]):t('unknownRoad'));sign.title=login&&own?`${login} · ${t('roadEditHint')}`:label;sign.setAttribute('aria-label',label);
       if(returnRoad)sign.title+=` · ${t('roadReturnHint')}`;
       if(login&&(own||returnRoad))menu(sign,{kind:'road',slot});
+      let edit:HTMLButtonElement|undefined;
+      if(login&&own){
+        edit=document.createElement('button');edit.type='button';edit.className='city-road-edit';edit.textContent=t('editRoad');edit.title=t('changeRoad');edit.setAttribute('aria-label',t('editRoadTo',[login]));edit.dataset.roadEdit=String(slot);edit.disabled=saving;
+        edit.onclick=()=>open({kind:'road',slot},sign,true);
+      }
       let surface:HTMLAnchorElement|HTMLButtonElement;
       if(login)surface=makeLink({login,map:options.mapType()});
       else{surface=document.createElement('button');surface.type='button';surface.onclick=()=>open({kind:'road',slot},sign)}
       surface.textContent='';surface.className='city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=label;
-      return {sign,surface,label:login??''};
+      return {sign,surface,edit,label:login??'',returning:!!login&&login===previous?.login};
     });
     returnPost=undefined;
     if(previous&&!slots.includes(previous.login)){
-      returnPost=makeLink(trail.at(-1)!,true);returnPost.textContent='';returnPost.className='city-road-sign city-return-post';returnPost.title=`${t('returnToCity',[trail.at(-1)!.login])} · ${t('roadReturnHint')}`;returnPost.setAttribute('aria-label',t('returnToCity',[trail.at(-1)!.login]));
-      returnPost.dataset.cityLabel=trail.at(-1)!.login;menu(returnPost,{kind:'return'});
+      const sign=makeLink(previous,true);sign.textContent='';sign.className='city-road-sign city-return-post';sign.title=`${t('returnToCity',[previous.login])} · ${t('roadReturnHint')}`;sign.setAttribute('aria-label',t('returnToCity',[previous.login]));menu(sign,{kind:'return'});
+      const surface=makeLink(previous,true);surface.textContent='';surface.className='city-road-surface city-return-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=t('returnToCity',[previous.login]);
+      returnPost={sign,surface,label:previous.login};
     }
     options.changed(rendered,returnPost);
   };
