@@ -372,22 +372,22 @@
     "message": "Preparing the map…"
   },
   "townLegendHeading": {
-    "message": "Reading the regions · mean daily contributions"
+    "message": "Reading the town · courtyard mean daily contributions"
   },
   "townLegendRustic": {
-    "message": "Farmhouses, longhouses and connected halls"
+    "message": "Thatched cottages and country courtyards"
   },
   "townLegendFarm": {
-    "message": "Connected manors and courtyard halls"
+    "message": "Farmhouses, stables and farmyards"
   },
   "townLegendWorkshop": {
-    "message": "Workshops, greenhouses and alchemy halls"
+    "message": "Herbal workshops and artisan yards"
   },
   "townLegendArcane": {
-    "message": "Arcane guilds and observatories"
+    "message": "Mages' courtyards and small observatories"
   },
   "townLegendRegions": {
-    "message": "Adjacent dates with similar contributions form a region represented by one complete building and its mean daily contribution level. Larger regions use more bays, connected wings and courtyard halls, with people and ordinary doors kept at one scale. Scattered cottages and oversized yards no longer fill the plot; height does not encode contributions."
+    "message": "Adjacent dates with similar contributions form a region represented by cottages around shared courtyards. Area determines the courtyard grouping; mean daily contributions guide craftsmanship, paving and magical amenities. People and ordinary doors keep one scale. Height does not encode contributions."
   },
   "townLegendLife": {
     "message": "Residents, animals, flowering trees, mana wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
