@@ -47,7 +47,9 @@ const add=(id,label,frame,observation,reference,target,kind)=>{
     width:Math.max(...corners.map(p=>p[0]))-Math.min(...corners.map(p=>p[0])),
     height:Math.max(...corners.map(p=>p[1]))-Math.min(...corners.map(p=>p[1])),
     nativeWidth:nw,nativeDepth:nd,directionBasis:cal.directionBasis,
+    ...(observation.runtimeEdge ? {runtimeEdge:observation.runtimeEdge} : {}),
     doorPoint:door?floor(door.bottom):[nw/2,nd],
+    residentSlots:observation.residentSlots?.map(floor),
     crownPoint:kind==='adult'?screen(reference.top):undefined,workWindow,
     metrics:{referenceType:kind,referenceHeight:target,basis:reference.basis??reference.note,
       doorHeight:door?lineHeight(door,cal)*scale:undefined,doorWidth,
@@ -74,6 +76,11 @@ for(const i of [0,2,3]){
 add('mage-0','圆形法师工坊',{sw:mage.sw,sh:mage.sh,ground:mage.ground,axes:mage.axes,footprint:[1,1]},mage,mage.door,1,'door');
 for(const obs of newHalls.frames){const [, ,sw,sh]=obs.crop;
   add(obs.id,obs.id==='guild-0'?'行会庭院':'宽学院',{sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');}
+const massing=await readJSON(join(design,'massing/observations.json'));
+for(const obs of massing.frames){
+  const [sx,sy,sw,sh]=obs.crop;
+  add(obs.id,obs.label,{sx,sy,sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');
+}
 for(const i of [0,1,2]){
   const obs=magicLife.life.find(f=>f.id==='life-'+i),ref=obs.people[0].headCrownToSole;
   add(obs.id,['学徒','居民','学者'][i],{...life.frames[i],anchor:ref.bottom,footprint:[i===1?.55:.25,.20]},obs,ref,.8,'adult');

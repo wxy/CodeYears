@@ -7,54 +7,20 @@ type Point=[number,number];
 interface Rectangle { x:number; z:number; w:number; d:number }
 interface CourtMetadata { width:number; depth:number; gateX:number; doorX:number; doorZ:number }
 interface TownCourt extends Rectangle { id:string; gate:Point; door:Point }
-interface TownPlot extends Rectangle { parcel:CityParcel; bodies:(Rectangle&{id:string})[]; courts:TownCourt[]; entries:Point[]; paths:Point[][]; beds:Rectangle[]; gate:Point }
+interface TownPlot extends Rectangle { parcel:CityParcel; bodies:(Rectangle&{id:string})[]; courts:TownCourt[]; entries:Point[]; paths:Point[][]; gate:Point }
 interface TownSquare { cell:CityParcel; kind:string; x:number; z:number; road:Point }
 export interface TownPlan { scene:CityScene; plots:TownPlot[]; roads:[Point,Point][]; squares:TownSquare[]; yearZ:number[]; yearWidth:number[] }
-const PITCH=3.8,WIDTH=7*PITCH,GAP=3,SETBACK=.32,COURT_GAP=.35;
-const sprites:Record<string,{nativeWidth:number;nativeDepth:number;court?:CourtMetadata}>=catalog;
+const PITCH=3.8,WIDTH=7*PITCH,GAP=3,SETBACK=.30;
+const sprites:Record<string,{nativeWidth:number;nativeDepth:number;court?:CourtMetadata;residentSlots?:number[][]}>=catalog;
 const edgeKey=(a:Point,b:Point)=>[a.join(','),b.join(',')].sort().join('|');
 const seedFor=(p:CityParcel)=>((Math.imul(p.block+1,73856093)^Math.imul(p.x+1,19349663)^Math.imul(p.z+1,83492791))>>>0);
-const overlaps=(a:Rectangle,b:Rectangle,margin=0)=>a.x+a.w>b.x-margin&&a.x<b.x+b.w+margin&&a.z+a.d>b.z-margin&&a.z<b.z+b.d+margin;
 
-/** 最多四栋完整实尺独立院落；逐行排放，行间保留入户通道。 */
-function packCourts(ids:string[],w:number,d:number):TownCourt[]|undefined {
-  const courts=ids.map(id=>({id,...sprites[id].court!}));
-  const arrangements=[];
-  for(let columns=1;columns<=courts.length;columns++){
-    const positions:Point[]=[],rowWidths:number[]=[];
-    let z=0;
-    for(let start=0;start<courts.length;start+=columns){
-      const row=courts.slice(start,start+columns),depth=Math.max(...row.map(c=>c.depth));
-      let x=0;
-      for(const court of row){positions.push([x,z+depth-court.depth]);x+=court.width+COURT_GAP}
-      rowWidths.push(x-COURT_GAP);z+=depth+COURT_GAP;
-    }
-    arrangements.push({w:Math.max(...rowWidths),d:z-COURT_GAP,positions});
-  }
-  const fit=arrangements.filter(a=>a.w<=w-SETBACK*2&&a.d<=d-SETBACK*2)
-    .sort((a,b)=>Math.max(a.w/w,a.d/d)-Math.max(b.w/w,b.d/d))[0];
-  if(!fit)return;
-  const x=(w-fit.w)/2,z=SETBACK+(d-SETBACK*2-fit.d)*.1;
-  return courts.map((court,i):TownCourt=>{
-    const [px,pz]=fit.positions[i],cx=x+px,cz=z+pz;
-    return {id:court.id,x:cx,z:cz,w:court.width,d:court.depth,gate:[cx+court.gateX,cz+court.depth],door:[cx+.3+court.doorX,cz+.2+court.doorZ]};
-  });
-}
-
-/** 支路沿独立院外侧走；后排院门绕过前院，不能借道穿过别院。 */
-function courtAccess(court:TownCourt,plot:TownPlot):Point[] {
-  const start:Point=[court.gate[0],court.gate[1]+.16],front=plot.z+plot.d-.04;
-  const blocked=(path:Point[])=>path.slice(1).some((b,i)=>{
-    const a=path[i],segment={x:Math.min(a[0],b[0]),z:Math.min(a[1],b[1]),w:Math.abs(a[0]-b[0]),d:Math.abs(a[1]-b[1])};
-    return plot.courts.some(c=>overlaps(segment,c,.025));
-  });
-  const direct=[court.gate,start,[start[0],front],[plot.gate[0],front],plot.gate] as Point[];
-  if(!blocked(direct.slice(1)))return direct;
-  const routes=[plot.x+.04,plot.x+plot.w-.04].map(side=>[court.gate,start,[side,start[1]],[side,front],[plot.gate[0],front],plot.gate] as Point[]);
-  return routes.filter(route=>!blocked(route.slice(1))).sort((a,b)=>{
-    const length=(path:Point[])=>path.slice(1).reduce((sum,p,i)=>sum+Math.abs(p[0]-path[i][0])+Math.abs(p[1]-path[i][1]),0);
-    return length(a)-length(b);
-  })[0];
+/** 一座完整实尺主体配一个独立院落；占地不足时不缩放素材。 */
+function fitCourt(id:string,w:number,d:number):TownCourt|undefined {
+  const court=sprites[id].court!;
+  if(court.width>w-SETBACK*2||court.depth>d-SETBACK*2)return;
+  const x=(w-court.width)/2,z=(d-court.depth)/2;
+  return {id,x,z,w:court.width,d:court.depth,gate:[x+court.gateX,z+court.depth],door:[x+.3+court.doorX,z+.2+court.doorZ]};
 }
 
 /** 与现代城市共用周向+x、星期向+z；相近真实数量构成矩形聚落。 */
@@ -98,27 +64,27 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
   };
   for(const parcel of parcels){
     if(parcel.kind!=='building')continue;
-    const {w,d,band}=parcel,seed=seedFor(parcel),area=w*d;
+    const {w,d,band}=parcel,seed=seedFor(parcel);
     const x=parcel.x*PITCH,z=yearZ[parcel.block]+parcel.z*PITCH,pw=w*PITCH,pd=d*PITCH;
     const after=Math.min(...parcel.indices)+1;
-    const oriented=(id:string)=>w>d?[`${id}-x`,id]:[id,`${id}-x`];
-    const workshops=seed%2===0?[['magic-3'],...oriented('magic-2').map(id=>[id])]:[...oriented('magic-2').map(id=>[id]),['magic-3']];
-    const choices=parcel.milestone?[['magic-0']]:band<=1
-      ?[
-        ...(area>=12?oriented('forms-0').map(id=>[id,'stable-0','cottages-1','stable-0']):[]),
-        ...(area>=6?oriented('forms-0').map(id=>[id,'stable-0','cottages-1']):[]),
-        ...(area>=4?oriented('forms-0').map(id=>[id,'stable-0']):[]),
-        ...(area>=2?[['cottages-1','stable-0']]:[]),['cottages-1']
-      ]
-      :[
-        ...(area>=12&&band>=3?[['academy-0','mage-0','magic-0'],...oriented('guild-0').map(id=>[id,'mage-0','magic-0'])]:[]),
-        ...(band>=3?[['academy-0'],...oriented('guild-0').map(id=>[id])]:[]),
-        ...(area>=8?workshops.map(ids=>[...ids,'mage-0','magic-0']):[]),
-        ...workshops,
-        ...((seed%2===0)?[['mage-0'],['magic-0']]:[['magic-0'],['mage-0']])
-      ];
-    const courts=choices.map(ids=>packCourts(ids,pw,pd)).find(Boolean)!;
-    const plot:TownPlot={parcel,x,z,w:pw,d:pd,bodies:[],courts:courts.map((c):TownCourt=>({...c,x:x+c.x,z:z+c.z,gate:[x+c.gate[0],z+c.gate[1]],door:[x+c.door[0],z+c.door[1]]})),entries:[],paths:[],beds:[],gate:[x+pw/2,z+pd]};
+    const forms=band<=1
+      ?['massing-extended-hall','massing-manor','massing-compact','massing-middle','massing-grand','massing-quadrangle','massing-college']
+      :band===2
+        ?['massing-extended-hall','massing-middle','massing-quadrangle','massing-compact','massing-manor','massing-college','massing-grand']
+        :['massing-college','massing-grand','massing-extended-hall','massing-quadrangle','massing-middle','massing-compact','massing-manor'];
+    const large=forms.flatMap(id=>w>d?[`${id}-x`,id]:[id,`${id}-x`]);
+    const choices=parcel.milestone?['magic-0']:w*d===1&&band<=1
+      ?[seed%3===0?'stable-0':'cottages-1']
+      :[...large,...(band<=1?['forms-0','forms-0-x','cottages-1']
+        :[...(band>=3?['academy-0','guild-0','guild-0-x']:[]),'magic-3','magic-2','magic-2-x','magic-0','mage-0'])];
+    // 优先可完整容纳的主体建筑包络；面积相差不超过10%时按日均选择朴素/工坊/学院形态。
+    const fitted=choices.map(id=>fitCourt(id,pw,pd)).filter((court):court is TownCourt=>!!court)
+      .map(court=>({court,area:sprites[court.id].nativeWidth*sprites[court.id].nativeDepth}));
+    const largest=Math.max(...fitted.map(fit=>fit.area));
+    const court=fitted.filter(fit=>fit.area>=largest*.9)
+      .sort((a,b)=>choices.indexOf(a.court.id)-choices.indexOf(b.court.id))[0].court;
+    const courts=[court];
+    const plot:TownPlot={parcel,x,z,w:pw,d:pd,bodies:[],courts:courts.map((c):TownCourt=>({...c,x:x+c.x,z:z+c.z,gate:[x+c.gate[0],z+c.gate[1]],door:[x+c.door[0],z+c.door[1]]})),entries:[],paths:[],gate:[x+pw/2,z+pd]};
     for(const court of plot.courts){
       const art=sprites[court.id],bx=court.x+.3,bz=court.z+.2;
       items.push({parcel,id:court.id,factor:1,x:bx,z:bz,w:art.nativeWidth,d:art.nativeDepth,flat:false});
@@ -126,6 +92,8 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
       plot.entries.push(court.door);
       for(const phase of ['back','front'])items.push({id:`court-${court.id}-${phase}`,factor:1,x:court.x,z:court.z,w:court.w,d:court.d,flat:false,revealAfter:after,sortY:phase==='back'?(court.x+court.z)/4-.001:(court.x+court.z+court.w+court.d)/4+.001});
       prop(seed%2?'life-0':'life-2',Math.min(court.x+court.w-.25,court.gate[0]+.28),court.z+court.d-.38,after);
+      const residents=(art.residentSlots??[]).slice(0,court.id.startsWith('massing-middle')?1:2);
+      for(const [i,slot]of residents.entries())prop(i%2?'life-0':'life-2',bx+slot[0],bz+slot[1],after);
       if(court.id==='guild-0'||court.id==='guild-0-x'||court.id==='academy-0'){
         // 沿用已审阅原型的开放内院居民；placed 坐标是素材原点，镜像行会交换两轴。
         const mirror=court.id==='guild-0-x',middle=(mirror?art.nativeDepth:art.nativeWidth)*.5,openZ=(mirror?art.nativeWidth:art.nativeDepth)*.7;
@@ -135,21 +103,9 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
         }
       }
     }
-    plot.paths=plot.courts.map(court=>courtAccess(court,plot));
-    const onPath=(patch:Rectangle)=>plot.paths.some(path=>path.slice(1).some((b,i)=>{
-      const a=path[i];return overlaps(patch,{x:Math.min(a[0],b[0]),z:Math.min(a[1],b[1]),w:Math.abs(a[0]-b[0]),d:Math.abs(a[1]-b[1])},.12);
-    }));
-    // 院外余地使用固定人尺度的菜畦/果树，不把同一栋房子变成越来越大的空院。
-    let garden=0;
-    for(let zz=z+.35;zz<z+pd-.7;zz+=.85)for(let xx=x+.25;xx<x+pw-.8;xx+=.9){
-      const patch={x:xx,z:zz,w:.55,d:.42};
-      if(plot.courts.some(c=>overlaps(patch,c,.12))||onPath(patch))continue;
-      if(area>=4&&garden++%7===0){
-        const tree={x:xx-.05,z:zz-.05,w:.65,d:.65};
-        if(!plot.courts.some(c=>overlaps(tree,c,.12))&&!onPath(tree))prop('life-5',xx+.275,zz+.275,after);
-        else plot.beds.push(patch);
-      }else plot.beds.push(patch);
-    }
+    plot.paths=plot.courts.map(court=>[
+      court.gate,[court.gate[0],z+pd-.1],[plot.gate[0],z+pd-.1],plot.gate
+    ]);
     plots.push(plot);
   }
   for(let block=0;block<calendar.districts.length;block++){

@@ -34,11 +34,6 @@ export function createTownGround(plan:TownPlan,images:CityImages):(context:Canva
       ctx.globalAlpha=1;ctx.strokeStyle=kind;ctx.lineWidth=width;ctx.stroke(path);
     };
     for(const plot of plots){
-      for(const bed of plot.beds){
-        ctx.fillStyle=earth;ctx.fillRect(bed.x,bed.z,bed.w,bed.d);
-        ctx.strokeStyle=plot.parcel.band<=1?'#79964d':'#6d8c56';ctx.lineWidth=.045;
-        for(let row=0;row<4;row++){ctx.beginPath();ctx.moveTo(bed.x+.04,bed.z+.055+row*.1);ctx.lineTo(bed.x+bed.w-.04,bed.z+.055+row*.1);ctx.stroke()}
-      }
       plot.courts.forEach((court,i)=>{
         ctx.fillStyle=plot.parcel.band<=1?earth:paving;
         ctx.fillRect(court.x+.04,court.z+.04,court.w-.08,court.d-.08);
