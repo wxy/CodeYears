@@ -135,6 +135,12 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
     }
   }
   const scene:CityScene={kind:'town',weekly,items,keys:[...new Set(items.map(item=>item.id))],width,depth,parkStarts:[],roadNetwork:{roads:[],junctions:[],bridges:[],vehicles:[],ringOuter:.7},layout:{width,districts:calendar.districts.map((year,i)=>({year:year.year,z:0,quarterWeeks:[],quarterPadding:[],weekX:week=>yearX[i]+week*PITCH}))}};
+  scene.roadNetwork.roads=[
+    {id:'exit-west',lanes:2,points:[[-.55,depth/2],[-8,depth/2]]},
+    {id:'exit-east',lanes:2,points:[[width,-.7],[width+8,-.7]]},
+    {id:'exit-north',lanes:2,points:[[-.55,-.7],[-.55,-8]]},
+    {id:'exit-south',lanes:2,points:[[-.55,(yearDepth[0]??depth)+.7],[-.55,depth+8]]},
+  ];
   return {scene,plots,roads,squares,yearX,yearDepth};
 }
 
@@ -144,10 +150,10 @@ export function createTownGround(plan:TownPlan):(context:CanvasRenderingContext2
     const rectangle=(x:number,z:number,w:number,d:number,color:string)=>{
       ctx.fillStyle=color;ctx.beginPath();[project(x,z),project(x+w,z),project(x+w,z+d),project(x,z+d)].forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.closePath();ctx.fill();
     };
-    const line=(points:Point[],color:string,width:number)=>{
+    const line=(points:readonly Point[],color:string,width:number)=>{
       ctx.beginPath();points.map(([x,z])=>project(x,z)).forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p));ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='round';ctx.stroke();
     };
-    const path=(points:Point[])=>{line(points,'#8c8865',.11);line(points,'#c6bb91',.075)};
+    const path=(points:readonly Point[])=>{line(points,'#8c8865',.11);line(points,'#c6bb91',.075)};
     rectangle(-1.1,-1.1,plan.scene.width+2.2,plan.scene.depth+2.2,'#94a16b');
     plan.yearX.forEach((x,i)=>{
       path([[x-.55,-.7],[x-.55,plan.yearDepth[i]+.7]]);
@@ -158,6 +164,7 @@ export function createTownGround(plan:TownPlan):(context:CanvasRenderingContext2
       const [tx,ty]=project(x+WIDTH/2,-1.2);ctx.font='600 .48px system-ui';ctx.textAlign='center';ctx.fillStyle='#405b3e';ctx.fillText(String(plan.scene.weekly.districts[i].year),tx,ty);
     });
     path([[plan.yearX[0]??0,-.7],[plan.scene.width,-.7]]);
+    for(const road of plan.scene.roadNetwork.roads)path(road.points);
     for(const {x,z,w,d,parcel,bodies,entries,gate}of plan.plots){
       rectangle(x+.17,z+.17,w-.34,d-.34,parcel.band<=1?'#a4a375':'#a6b184');
       const farm=parcel.band<=1&&parcel.w*parcel.d>=4;

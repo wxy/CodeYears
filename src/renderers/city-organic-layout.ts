@@ -204,6 +204,8 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,...(area<0?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),cornerRadius:members.length&&members.every(region=>region.milestone) ? .45 : lanes===8?2.4:1.2,closed:true,points:corners});
   }
   connectSettlements(roads,footprints,(horizontal,at,start,end,kind)=>road(horizontal,at,start,end,2,kind));
+  // 零贡献城市仍保留装饰性环路与出口，允许手动访问别人的城市。
+  if(!regions.length)roads.push(...original.roadNetwork.roads.filter(road=>road.id==='ring'||road.id.startsWith('exit-')));
   for(const line of lines.values()){
     const merged:{start:number;end:number}[]=[];
     for(const span of line.spans.sort((a,b)=>a.start-b.start)){

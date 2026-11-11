@@ -14,6 +14,8 @@ export interface LandscapeViewport {
 }
 export interface LandscapeView {
   canvas: HTMLCanvasElement;
+  /** 四向出城路的屏幕位置，与画布共用投影和取景。 */
+  roadExits?(viewport: LandscapeViewport): readonly { sign: [number, number]; polygon: [number, number][] }[];
   /** 已显示建筑在创建此视图的数据快照中的成员索引。 */
   buildingAt?(x: number, y: number, viewport: LandscapeViewport): readonly number[] | undefined;
   highlightBuilding?(point: {x:number;y:number} | undefined, viewport: LandscapeViewport): void;

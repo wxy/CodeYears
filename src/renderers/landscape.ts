@@ -9,6 +9,7 @@ import { loadTownImages } from './town-assets';
 import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface ContributionLandscape {
+  setRoadLinks(links: readonly ({ href: string; label: string } | null)[]): void;
   buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
   highlightBuilding(point?: {x:number;y:number}): void;
   setView(view: ViewMode,signal?:AbortSignal): Promise<void>;
@@ -45,6 +46,18 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   let disposed=false,blocked=false,suspended=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
   let preparationError: string | undefined;
+  const roadLayer=document.createElement('div');roadLayer.className='city-road-links';host.append(roadLayer);
+  let roadAnchors:{slot:number;sign:HTMLAnchorElement;surface:HTMLAnchorElement}[]=[];
+  const positionRoads=()=>{
+    const exits=layer?.roadExits?.(viewport)??[];
+    for(const {slot,sign,surface}of roadAnchors){
+      const exit=exits[slot];sign.hidden=surface.hidden=!exit;
+      if(!exit)continue;
+      sign.style.left=`${exit.sign[0]}px`;sign.style.top=`${exit.sign[1]}px`;
+      const xs=exit.polygon.map(p=>p[0]),ys=exit.polygon.map(p=>p[1]),left=Math.min(...xs),top=Math.min(...ys),width=Math.max(...xs)-left,height=Math.max(...ys)-top;
+      Object.assign(surface.style,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,clipPath:`polygon(${exit.polygon.map(([x,y])=>`${(x-left)/width*100}% ${(y-top)/height*100}%`).join(',')})`});
+    }
+  };
   const state=():TimelineState=>progressiveCity?{status:revealedDays>=currentDays.length?"completed":playing?"playing":"paused",revealedDays:Math.floor(revealedDays),totalDays:currentDays.length}:timeline.getState();
   const notify=(error?:string)=>onChange(state(),error,preparationError??layer?.description()??`正在准备${view==="terrain"?"连续山脉":view==='town'?'魔法小镇':'建筑素材'}…`);
   const labelCity=()=>{
@@ -72,7 +85,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(playing){if(!anchored){timeline.play(now);anchored=true}timeline.advance(now);playing=timeline.getState().status==="playing"}
       const current=timeline.getState();layer.draw(current.revealedDays/current.totalDays,viewport);
     }
-    notify();if(playing)schedule();
+    positionRoads();notify();if(playing)schedule();
   }
   const pause=()=>{playing=false;timeline.pause();anchored=false;notify()};
   async function prepare(){
@@ -123,7 +136,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   const themeObserver=new MutationObserver(theme);themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:["data-color-mode","data-dark-theme","data-light-theme","data-preview-theme"]});preference.addEventListener("change",theme);
   let pointer:{id:number;x:number;y:number}|undefined;
-  const down=(event:PointerEvent)=>{if(pointer)return;pointer={id:event.pointerId,x:event.clientX,y:event.clientY};host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"};
+  const down=(event:PointerEvent)=>{if(pointer||(event.target instanceof Element&&event.target.closest('a')))return;pointer={id:event.pointerId,x:event.clientX,y:event.clientY};host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"};
   const move=(event:PointerEvent)=>{if(!pointer||pointer.id!==event.pointerId)return;viewport.panX+=event.clientX-pointer.x;viewport.panY+=event.clientY-pointer.y;pointer.x=event.clientX;pointer.y=event.clientY;schedule()};
   const up=(event:PointerEvent)=>{if(pointer?.id!==event.pointerId)return;pointer=undefined;host.style.cursor="grab"};
   const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const max=Math.min(layer?.maxZoom?.(viewport)??5,view!=="terrain"?zoomBase*20:5),next=Math.min(max,Math.max(view!=="terrain"?minZoom:.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule()};
@@ -143,6 +156,16 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
+    setRoadLinks(links){
+      roadLayer.replaceChildren();roadAnchors=[];
+      links.forEach((link,slot)=>{
+        if(!link)return;
+        const sign=document.createElement('a');sign.className='city-road-link city-road-sign';sign.href=link.href;sign.textContent=link.label;sign.setAttribute('data-turbo','false');
+        const surface=sign.cloneNode(false) as HTMLAnchorElement;surface.className='city-road-link city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=link.label;
+        roadLayer.append(surface,sign);roadAnchors.push({slot,sign,surface});
+      });
+      positionRoads();
+    },
     buildingAt(x,y){
       if(disposed||suspended||!progressiveCity)return;
       return layer?.buildingAt?.(x,y,viewport)?.map(index=>currentDays[index]).filter(day=>day.count>0);
@@ -180,7 +203,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         layer=next;next=undefined;images=ready;ready=undefined;cityScene=plan.scene;view=mode;
         assetPromise=Promise.resolve(images);revealedDays=currentDays.length;playing=false;preparationError=undefined;
         previous?.dispose();if(previousImages)closeCityImages(previousImages);
-        labelCity();zoomAt(1);notify();
+        labelCity();positionRoads();zoomAt(1);notify();
       }catch(error){next?.dispose();if(ready)closeCityImages(ready);throw error}
     },
     zoomBy:zoomAt,
@@ -217,12 +240,13 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         if(previous)previous.canvas.replaceWith(next.canvas);else host.append(next.canvas);
         layer=next;next=undefined;previous?.dispose();cityScene=nextScene;
         currentDays=nextDays;joinedDate=joinedOn;revealedDays=prefix;playing=prefix<nextDays.length;anchored=false;preparationError=undefined;
-        labelCity();notify();if(playing)schedule();
+        labelCity();positionRoads();notify();if(playing)schedule();
       }catch(error){next?.dispose();if(added&&!merged)closeCityImages(added);throw error}
     },
     dispose(){
       if(disposed)return;disposed=true;generation++;assetAbort.abort();playing=false;timeline.pause();cancelAnimationFrame(raf);raf=0;observer.disconnect();themeObserver.disconnect();preference.removeEventListener("change",theme);document.removeEventListener("visibilitychange",visibility);
       host.removeEventListener("pointerdown",down);host.removeEventListener("pointermove",move);host.removeEventListener("pointerup",up);host.removeEventListener("pointercancel",up);host.removeEventListener("lostpointercapture",up);host.removeEventListener("wheel",wheel);host.removeEventListener("keydown",keydown);layer?.dispose();layer=undefined;
+      roadLayer.remove();roadAnchors=[];
       if(images)closeCityImages(images);else if(assetPromise)void assetPromise.then(closeCityImages,()=>{});
     },
   };

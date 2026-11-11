@@ -4,7 +4,7 @@ import type { CityImages } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
 import { createGroundSelector } from './city-ground-style';
 import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from './city-road-network';
-import { createCityRoadPainter } from './city-roads';
+import { createCityRoadPainter, cityRoadWidth } from './city-roads';
 import { createCityVehiclePainter } from './city-vehicles';
 import { createCityBridgePainter } from './city-bridges';
 import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
@@ -202,6 +202,12 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const clearHighlight=()=>{highlighted=-1;highlight.remove();highlight.hidden=true;highlight.width=highlight.height=0};
   let frameKey='',visiblePrefix=0;
   const fitScale=(viewport:LandscapeViewport)=>Math.min(Math.max(1,viewport.width-32)/(maxX-minX),Math.max(1,viewport.height-24)/(maxY-minY));
+  // 出口按西、东、北、南固定排列；新增数据和地图切换不改变账号所在的出口。
+  const exits=roadNetwork.roads.filter(road=>road.id.startsWith('exit-')||road.id.startsWith('organic-exit-'));
+  const exitRoads=[
+    ...exits.filter(road=>road.points[0][1]===road.points.at(-1)![1]).sort((a,b)=>a.points[0][0]+a.points.at(-1)![0]-b.points[0][0]-b.points.at(-1)![0]),
+    ...exits.filter(road=>road.points[0][0]===road.points.at(-1)![0]).sort((a,b)=>a.points[0][1]+a.points.at(-1)![1]-b.points[0][1]-b.points.at(-1)![1]),
+  ];
   const hitItem=(x:number,y:number,viewport:LandscapeViewport)=>{
     if(!frameKey)return -1;
     const scale=fitScale(viewport)*viewport.zoom;
@@ -225,6 +231,18 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   };
   return {
     canvas,
+    roadExits(viewport){
+      const scale=fitScale(viewport)*viewport.zoom;
+      const screen=(x:number,z:number):[number,number]=>{
+        const [px,py]=project(x,z);
+        return [viewport.width/2+viewport.panX+(px-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(py-(minY+maxY)/2)*scale];
+      };
+      return exitRoads.map(road=>{
+        const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+        const half=scene.kind==='town'?.12:cityRoadWidth(road)/2,nx=-dz/length*half,nz=dx/length*half;
+        return {sign:screen((a[0]+b[0])/2,(a[1]+b[1])/2),polygon:[screen(a[0]+nx,a[1]+nz),screen(b[0]+nx,b[1]+nz),screen(b[0]-nx,b[1]-nz),screen(a[0]-nx,a[1]-nz)]};
+      });
+    },
     buildingAt(x,y,viewport){
       return placed[hitItem(x,y,viewport)]?.item.parcel?.indices;
     },
