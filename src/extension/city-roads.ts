@@ -19,7 +19,6 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const username=/^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/i;
   const lifetime=new AbortController();
   let slots:(string|null)[]=[null,null,null,null],ready=false,saving=false,disposed=false,editing=false;
-  let mutual=new Set<string>();
   let message:MessageKey|undefined,selection:{kind:'road';slot:number}|{kind:'return'}|undefined;
   let rendered:CityRoadControl[]=[],returnPost:HTMLAnchorElement|undefined;
   const owner=(context:GitHubPageContext)=>context.profileLogin.toLowerCase()===profile&&context.viewer.state==='known'&&context.viewer.identity.kind==='authenticated'&&context.viewer.identity.login.toLowerCase()===profile;
@@ -28,7 +27,7 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   host.hidden=true;
   host.innerHTML=`<section class="roads-panel" role="dialog" aria-labelledby="road-editor-title">
     <div class="road-editor-heading"><h3 id="road-editor-title"></h3><button class="road-close" type="button" data-i18n-label="closeRoadEditor">×</button></div>
-    <div class="road-destination" hidden></div><p class="note road-direction" hidden></p><ul class="road-return-list" hidden></ul>
+    <div class="road-destination" hidden></div><ul class="road-return-list" hidden></ul>
     <button class="road-change" type="button" data-i18n="changeRoad" hidden></button>
     <form class="roads-form" hidden><label><span data-i18n="roadUsername"></span><input name="login" type="text" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" required placeholder="octocat"></label><button type="submit" data-i18n="saveRoad"></button></form>
     <output class="note" role="status" aria-live="polite"></output><button class="roads-retry" type="button" data-i18n="retry" hidden></button>
@@ -60,14 +59,13 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const updateEditor=()=>{
     localize(host,options.language());
     const own=canEdit(),back=selection?.kind==='return',login=selection?.kind==='road'?slots[selection.slot]:null;
-    const returnRoad=!!login&&mutual.has(login)&&journey().some(stop=>stop.login===login);
+    const returnRoad=!!login&&journey().some(stop=>stop.login===login);
     host.querySelector('#road-editor-title')!.textContent=login&&!editing&&!back?login:t(back?'returnRoadHeading':login?'roadsHeading':own?'addRoadHeading':'unknownRoad');
     form.hidden=!own||!editing||back;input.disabled=submit.disabled=!own||!ready||saving;
     remove.hidden=!own||!login||back;remove.disabled=saving;
     change.hidden=!own||!login||editing||back;change.disabled=saving;
     destination.hidden=!login||editing||back;destination.replaceChildren();
     if(login&&!editing&&!back)destination.append(makeLink({login,map:options.mapType()}));
-    const direction=host.querySelector<HTMLElement>('.road-direction')!;direction.hidden=!login||back||editing;direction.textContent=login?t(mutual.has(login)?'mutualRoad':'oneWayRoad'):'';
     returns.hidden=!back&&!returnRoad;returns.replaceChildren();
     if(back||returnRoad)for(const stop of [...journey()].reverse()){const row=document.createElement('li');row.append(makeLink(stop,true));returns.append(row)}
     status.textContent=message?t(message):'';retry.hidden=ready||saving||!own||back;
@@ -94,23 +92,21 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     const trail=journey(),previous=trail.at(-1);
     if(own&&ready&&entries.every(Boolean)&&entries.length<MAX_ROADS)entries.push(null);
     rendered=entries.map((login,slot)=>{
-      const paired=!!login&&mutual.has(login),returnRoad=paired&&trail.some(stop=>stop.login===login);
+      const returnRoad=!!login&&trail.some(stop=>stop.login===login);
       const sign=login?makeLink({login,map:options.mapType()}):document.createElement('button');
       sign.textContent='';sign.className='city-road-sign';sign.dataset.roadSlot=String(slot);sign.dataset.destination=login??'';
       if(sign instanceof HTMLButtonElement){sign.type='button';sign.disabled=saving;sign.onclick=()=>open({kind:'road',slot},sign)}
       const label=login??(own?t('addRoadAt',[slot+1]):t('unknownRoad'));sign.title=login&&own?`${login} · ${t('roadEditHint')}`:label;sign.setAttribute('aria-label',label);
-      sign.dataset.connection=login?(paired?'mutual':'one-way'):'unknown';
-      if(paired)sign.title+=` · ${t('mutualRoad')}`;
       if(returnRoad)sign.title+=` · ${t('roadReturnHint')}`;
       if(login&&(own||returnRoad))menu(sign,{kind:'road',slot});
       let surface:HTMLAnchorElement|HTMLButtonElement;
       if(login)surface=makeLink({login,map:options.mapType()});
       else{surface=document.createElement('button');surface.type='button';surface.onclick=()=>open({kind:'road',slot},sign)}
       surface.textContent='';surface.className='city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=label;
-      return {sign,surface,label:login??'?',mutual:paired};
+      return {sign,surface,label:login??''};
     });
     returnPost=undefined;
-    if(previous&&!mutual.has(previous.login)){
+    if(previous&&!slots.includes(previous.login)){
       returnPost=makeLink(trail.at(-1)!,true);returnPost.textContent='';returnPost.className='city-road-sign city-return-post';returnPost.title=`${t('returnToCity',[trail.at(-1)!.login])} · ${t('roadReturnHint')}`;returnPost.setAttribute('aria-label',t('returnToCity',[trail.at(-1)!.login]));
       returnPost.dataset.cityLabel=trail.at(-1)!.login;menu(returnPost,{kind:'return'});
     }
@@ -120,22 +116,17 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     anchor.oncontextmenu=event=>{event.preventDefault();open(selected,anchor)};
     anchor.onkeydown=event=>{if(event.key==='ContextMenu'||event.shiftKey&&event.key==='F10'){event.preventDefault();event.stopPropagation();open(selected,anchor)}};
   };
-  const readSlots=(value:unknown,account=profile):(string|null)[]=>{
+  const readSlots=(value:unknown):(string|null)[]=>{
     if(value===undefined)return [null,null,null,null];
     if(!Array.isArray(value)||value.length<4||value.length>MAX_ROADS||value.some(login=>login!==null&&(typeof login!=='string'||!username.test(login))))throw new Error('Invalid roads');
     const next=value.map(login=>typeof login==='string'?login.toLowerCase():null),logins=next.filter(login=>login!==null);
-    if(logins.includes(account)||new Set(logins).size!==logins.length)throw new Error('Invalid roads');
+    if(logins.includes(profile)||new Set(logins).size!==logins.length)throw new Error('Invalid roads');
     return next;
-  };
-  const readMutual=async(next:readonly(string|null)[])=>{
-    const logins=next.filter((login):login is string=>login!==null),keys=logins.map(login=>`codeyears:roads:${login}`);
-    const stored=await chrome.storage.local.get(keys);
-    return new Set(logins.filter(login=>readSlots(stored[`codeyears:roads:${login}`],login).includes(profile)));
   };
   async function load(){
     saving=true;message=undefined;render();
-    try{const stored=await chrome.storage.local.get(key),next=readSlots(stored[key]),paired=await readMutual(next);if(disposed)return;slots=next;mutual=paired;ready=true}
-    catch{message='roadsReadError';ready=false;mutual.clear()}
+    try{const stored=await chrome.storage.local.get(key);if(disposed)return;slots=readSlots(stored[key]);ready=true}
+    catch{message='roadsReadError';ready=false}
     finally{saving=false;render()}
   }
   async function save(next:(string|null)[]){
@@ -143,10 +134,9 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     if(!owner(before)){message='roadsOwnerOnly';render();return}
     saving=true;message=undefined;render();
     try{
-      const paired=await readMutual(next);
       await confirmViewer(before,lifetime.signal);lifetime.signal.throwIfAborted();
       if(!sameContext(before,options.currentContext()))throw new Error('Changed visitor');
-      await chrome.storage.local.set({[key]:next});if(disposed)return;slots=next;mutual=paired;close();
+      await chrome.storage.local.set({[key]:next});if(disposed)return;slots=next;close();
     }catch{if(!disposed)message='roadOwnerCheckFailed'}
     finally{saving=false;render()}
   }
@@ -163,7 +153,7 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   };
   change.onclick=()=>{if(canEdit()){editing=true;updateEditor();input.focus();input.select()}};
   const storageChanged=(changes:Record<string,chrome.storage.StorageChange>,area:string)=>{
-    if(area==='local'&&(changes[key]||slots.some(login=>login&&changes[`codeyears:roads:${login}`])))void load();
+    if(area==='local'&&changes[key])void load();
   };
   const outside=(event:PointerEvent)=>{if(!event.composedPath().includes(host))close()};
   const escape=(event:KeyboardEvent)=>{

@@ -2,6 +2,8 @@
 
 2026-11-11，使用内置 `image_gen.imagegen`，全部启用 `transparent_background=true`。正式选用下列四张源图；前期厚框现代款已弃用，不纳入运行素材。
 
+后续规则已调整：绿色/木色用于东西方向，蓝色用于南北方向，不再表示双向连接；未知牌面完全留空。以下提示词保留实际生成时的原文及文件名，mutual 是历史制作名称，不是当前产品状态；当前用途见 [README](README.md)。本轮复用原图，没有重新生成或改变像素。
+
 ## 现代公路款
 
 以真实公路指路牌为构造参考，参考照片来自 [WSJ 的 I-19 指路牌报道](https://www.wsj.com/politics/policy/america-first-trump-metric-highway-tucker-carlson-827758e6)；另查看 [FHWA 指路标志示例](https://mutcd.fhwa.dot.gov/htm/2003/part2/fig2e-15_longdesc.htm) 的牌面形式。照片只在系统临时目录参与输入，不进入项目。这里只参考外观，不声称执行或认证交通标志标准。

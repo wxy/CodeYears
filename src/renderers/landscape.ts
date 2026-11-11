@@ -8,7 +8,7 @@ import { planTownScene, createTownGround } from './town-layout';
 import { loadTownImages } from './town-assets';
 import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
-export interface CityRoadControl { sign: HTMLElement; surface: HTMLAnchorElement | HTMLButtonElement; label:string; mutual:boolean }
+export interface CityRoadControl { sign: HTMLElement; surface: HTMLAnchorElement | HTMLButtonElement; label:string }
 
 export interface ContributionLandscape {
   setRoadControls(controls: readonly CityRoadControl[], returnPost?:HTMLElement): void;
@@ -73,7 +73,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   const configureCanvas=(next:LandscapeView,mode=view)=>{
     next.setRoadCount?.(roadAnchors.length||4);
-    next.setRoadLabels?.(roadAnchors.map(road=>({name:road.label,mutual:road.mutual})),returnSign?.dataset.cityLabel);
+    next.setRoadLabels?.(roadAnchors.map(road=>road.label),returnSign?.dataset.cityLabel);
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
     next.canvas.setAttribute("aria-label",`${mode==="city"?"贡献之城":mode==='town'?'魔法小镇':"连续时光山脉"}，固定视角。拖动平移，滚轮缩放。`);
   };
@@ -111,7 +111,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
           images={};layer=createCityView(cityScene,images,0,ground);configureCanvas(layer);host.append(layer.canvas);
           layer.draw(1,viewport);labelCity();schedule();notify();
           // 场地先同步显示；本地自然图片独立于网络贡献加载，且与后续批次共用。
-          assetPromise=loadCityImages(assetBase,["natural-ground","direction-board","direction-board-mutual"],assetAbort.signal).then(ready=>{
+          assetPromise=loadCityImages(assetBase,["natural-ground","direction-board-x","direction-board-z"],assetAbort.signal).then(ready=>{
             if(disposed){closeCityImages(ready);throw new DOMException('城市已关闭。','AbortError')}
             Object.assign(images!,ready);return ready;
           });
@@ -182,7 +182,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       roadLayer.replaceChildren();roadAnchors=controls;returnSign=post;
       for(const {sign,surface}of controls)roadLayer.append(surface,sign);
       if(post)roadLayer.append(post);
-      layer?.setRoadCount?.(controls.length);layer?.setRoadLabels?.(controls.map(road=>({name:road.label,mutual:road.mutual})),post?.dataset.cityLabel);positionRoads();schedule();
+      layer?.setRoadCount?.(controls.length);layer?.setRoadLabels?.(controls.map(road=>road.label),post?.dataset.cityLabel);positionRoads();schedule();
     },
     buildingAt(x,y){
       if(disposed||suspended||!progressiveCity)return;

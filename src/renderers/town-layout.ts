@@ -210,7 +210,7 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
       if(seed%9===0)prop('life-5',x,z,cell.indices[0]+1);
     }
   }
-  const scene:CityScene={kind:'town',weekly,items,keys:[...new Set([...items.map(item=>item.id),'natural-ground','town-stone','town-earth','town-paving','outskirts-forest','outskirts-hills','direction-board','direction-board-mutual'])],width,depth,parkStarts:[],roadNetwork:{roads:[],junctions:[],bridges:[],vehicles:[],ringOuter:.7},layout:{width,districts:calendar.districts.map((year,i)=>({year:year.year,z:yearZ[i],quarterWeeks:[],quarterPadding:[],weekX:week=>week*PITCH}))}};
+  const scene:CityScene={kind:'town',weekly,items,keys:[...new Set([...items.map(item=>item.id),'natural-ground','town-stone','town-earth','town-paving','outskirts-forest','outskirts-hills','direction-board-x','direction-board-z'])],width,depth,parkStarts:[],roadNetwork:{roads:[],junctions:[],bridges:[],vehicles:[],ringOuter:.7},layout:{width,districts:calendar.districts.map((year,i)=>({year:year.year,z:yearZ[i],quarterWeeks:[],quarterPadding:[],weekX:week=>week*PITCH}))}};
   const exitYear=Math.floor(yearZ.length/2),exitZ=yearZ[exitYear]-.55,exitX=yearWidth[exitYear]+.7;
   scene.roadNetwork.roads=[
     {id:'exit-west',lanes:2,points:[[-.7,exitZ],[-8,exitZ]]},

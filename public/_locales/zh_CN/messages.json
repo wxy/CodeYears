@@ -443,12 +443,6 @@
   "roadEditHint": {
     "message": "右键或按 Shift+F10 修改目的地"
   },
-  "mutualRoad": {
-    "message": "双向连接"
-  },
-  "oneWayRoad": {
-    "message": "单向连接"
-  },
   "roadReturnHint": {
     "message": "右键或按 Shift+F10 查看全部返程"
   },

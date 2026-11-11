@@ -443,12 +443,6 @@
   "roadEditHint": {
     "message": "Right-click or press Shift+F10 to edit the destination"
   },
-  "mutualRoad": {
-    "message": "Two-way connection"
-  },
-  "oneWayRoad": {
-    "message": "One-way connection"
-  },
   "roadReturnHint": {
     "message": "Right-click or press Shift+F10 for all return routes"
   },

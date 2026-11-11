@@ -29,7 +29,7 @@ try{
       }
       ctx.putImageData(pixels,0,0);const trimmed=document.createElement('canvas');trimmed.width=x1-x0+3;trimmed.height=y1-y0+3;trimmed.getContext('2d').drawImage(canvas,x0,y0,x1-x0+1,y1-y0+1,1,1,x1-x0+1,y1-y0+1);
       const centerX=(a[0]+b[0])/2,faceTop=point(centerX,a[1]+(b[1]-a[1])*.5)[1];
-      records.push({style:entry.style,png:trimmed.toDataURL('image/png').split(',')[1],layout:{width:entry.width,height:entry.height,top:faceTop},metadata:{file:'direction-board.png',left:left+(x0-padding-1)/ratio,top:top+(y0-padding-1)/ratio,width:trimmed.width/ratio,height:trimmed.height/ratio,nativeWidth:entry.width,nativeDepth:.5,baselineHeight:entry.height,sampleId:'direction-board'},proof:{sourceSlope:(b[1]-a[1])/(b[0]-a[0]),mappedSlope:(shear+sy*(b[1]-a[1])/(b[0]-a[0]))/sx}});
+      records.push({style:entry.style,png:trimmed.toDataURL('image/png').split(',')[1],layout:{width:entry.width,height:entry.height,top:faceTop},metadata:{left:left+(x0-padding-1)/ratio,top:top+(y0-padding-1)/ratio,width:trimmed.width/ratio,height:trimmed.height/ratio,nativeWidth:entry.width,nativeDepth:.5,baselineHeight:entry.height},proof:{sourceSlope:(b[1]-a[1])/(b[0]-a[0]),mappedSlope:(shear+sy*(b[1]-a[1])/(b[0]-a[0]))/sx}});
     }
     document.body.innerHTML='<pre id="result"></pre>';document.querySelector('#result').textContent=JSON.stringify(records);
   })().catch(error=>{document.body.innerHTML='<pre id="error"></pre>';document.querySelector('#error').textContent=String(error.stack||error)});
@@ -40,9 +40,9 @@ try{
   if(!result)throw new Error('路牌预烘焙失败：'+stdout.slice(-2000));
   const records=JSON.parse(result[1].replaceAll('&quot;','"').replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&amp;','&'));
   for(const record of records){
-    const kind=record.style.startsWith('modern')?'city':'town',id='direction-board'+(record.style.endsWith('-mutual')?'-mutual':''),catalogPath='src/renderers/'+kind+'-baked-catalog.json';
+    const kind=record.style.startsWith('modern')?'city':'town',id='direction-board-'+(record.style.endsWith('-z')?'z':'x'),catalogPath='src/renderers/'+kind+'-baked-catalog.json';
     await writeFile('public/assets/'+kind+'-runtime/'+id+'.png',Buffer.from(record.png,'base64'));
-    const catalog=JSON.parse(await readFile(catalogPath,'utf8'));catalog[id]={...record.metadata,file:id+'.png',sampleId:id};await writeFile(catalogPath,JSON.stringify(catalog,null,2)+'\n');
+    const catalog=JSON.parse(await readFile(catalogPath,'utf8'));catalog[id]={file:id+'.png',...record.metadata,sampleId:id};await writeFile(catalogPath,JSON.stringify(catalog,null,2)+'\n');
   }
   await writeFile('src/renderers/direction-board-layout.json',JSON.stringify(Object.fromEntries(records.map(record=>[record.style,record.layout])),null,2)+'\n');
   console.log(JSON.stringify(records.map(({style,layout,proof})=>({style,layout,proof})),null,2));

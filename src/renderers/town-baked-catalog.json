@@ -821,8 +821,8 @@
     "baselineHeight": 2,
     "sampleId": "outskirts-hills"
   },
-  "direction-board": {
-    "file": "direction-board.png",
+  "direction-board-x": {
+    "file": "direction-board-x.png",
     "left": -3.666932115583573,
     "top": -10.230422835801951,
     "width": 7.119100961469485,
@@ -830,10 +830,10 @@
     "nativeWidth": 10,
     "nativeDepth": 0.5,
     "baselineHeight": 2.8,
-    "sampleId": "direction-board"
+    "sampleId": "direction-board-x"
   },
-  "direction-board-mutual": {
-    "file": "direction-board-mutual.png",
+  "direction-board-z": {
+    "file": "direction-board-z.png",
     "left": -3.784108182013323,
     "top": -11.890173053833598,
     "width": 7.295434083800385,
@@ -841,6 +841,6 @@
     "nativeWidth": 10,
     "nativeDepth": 0.5,
     "baselineHeight": 2.8,
-    "sampleId": "direction-board-mutual"
+    "sampleId": "direction-board-z"
   }
 }
