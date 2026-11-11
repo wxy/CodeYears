@@ -3,7 +3,6 @@ import type { CityRoadControl } from '../renderers/landscape';
 import type { GitHubPageContext } from '../platform/github/types';
 import { confirmViewer, sameContext } from '../platform/github/load-year';
 import { readCityJourney, rememberCityJourney, type CityStop } from './city-travel';
-import { roadPostArt } from './road-post';
 
 const MAX_ROADS=8;
 interface RoadOptions {
@@ -60,7 +59,7 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const updateEditor=()=>{
     localize(host,options.language());
     const own=canEdit(),back=selection?.kind==='return',login=selection?.kind==='road'?slots[selection.slot]:null;
-    host.querySelector('#road-editor-title')!.textContent=t(back?'returnRoadHeading':login&&!editing?'cityName':login?'roadsHeading':'addRoadHeading',login?[login]:[]);
+    host.querySelector('#road-editor-title')!.textContent=t(back?'returnRoadHeading':login&&!editing?'cityName':login?'roadsHeading':own?'addRoadHeading':'unknownRoad',login?[login]:[]);
     form.hidden=!own||!editing||back;input.disabled=submit.disabled=!own||!ready||saving;
     remove.hidden=!own||!login||back;remove.disabled=saving;
     change.hidden=!own||!login||editing||back;change.disabled=saving;
@@ -74,7 +73,6 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     host.querySelector('.roads-local')!.textContent=t(back?'returnRoadLocal':own?'roadsLocal':'roadsOwnerOnly');
   };
   const open=(selected:NonNullable<typeof selection>,anchor:HTMLElement)=>{
-    if(selected.kind==='road'&&!slots[selected.slot]&&!canEdit())return;
     if(selected.kind==='return'&&!journey().length)return;
     selection=selected;editing=selected.kind==='road'&&!slots[selected.slot]&&canEdit();
     message=ready?undefined:'roadsReadError';input.value=selected.kind==='road'?slots[selected.slot]??'':'';host.hidden=false;
@@ -93,17 +91,20 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     if(own&&ready&&entries.every(Boolean)&&entries.length<MAX_ROADS)entries.push(null);
     rendered=entries.map((login,slot)=>{
       const sign=document.createElement('button');sign.type='button';sign.className='city-road-sign';sign.dataset.roadSlot=String(slot);sign.dataset.destination=login??'';
-      sign.disabled=saving;sign.innerHTML=roadPostArt(options.mapType()==='town');
-      const label=login?t('cityName',[login]):t('addRoadAt',[slot+1]);sign.title=label;sign.setAttribute('aria-label',label);
+      sign.disabled=saving;
+      const label=login?t('cityName',[login]):own?t('addRoadAt',[slot+1]):t('unknownRoad');sign.title=label;sign.setAttribute('aria-label',label);
       sign.onclick=()=>open({kind:'road',slot},sign);
-      let surface:HTMLAnchorElement|undefined;
-      if(login){surface=makeLink({login,map:options.mapType()});surface.textContent='';surface.className='city-road-link city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=label}
-      return {sign,surface,visible:own||!!login};
+      let surface:HTMLAnchorElement|HTMLButtonElement;
+      if(login)surface=makeLink({login,map:options.mapType()});
+      else{surface=document.createElement('button');surface.type='button';surface.onclick=()=>open({kind:'road',slot},sign)}
+      surface.textContent='';surface.className='city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=label;
+      return {sign,surface,label:login?t('cityName',[login]):'?'};
     });
     returnPost=undefined;
-    if(journey().length){
+    const trail=journey();
+    if(trail.length){
       returnPost=document.createElement('button');returnPost.type='button';returnPost.className='city-road-sign city-return-post';returnPost.title=t('returnRoadHeading');returnPost.setAttribute('aria-label',t('returnRoadHeading'));
-      returnPost.innerHTML=roadPostArt(options.mapType()==='town',true);
+      returnPost.dataset.cityLabel=t('cityName',[trail.at(-1)!.login]);
       const post=returnPost;post.onclick=()=>open({kind:'return'},post);
     }
     options.changed(rendered,returnPost);

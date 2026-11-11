@@ -51,19 +51,15 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       @media (prefers-reduced-motion:reduce) { .building-hover { transition:none; } }
       .building-hover-time { margin-bottom:5px; color:var(--fgColor-muted,#59636e); font-size:11px; }
       .building-hover p { margin:4px 0 0; }
-      .view-tools { position:absolute; right:10px; bottom:10px; display:flex; align-items:center; padding:3px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); }
+      .view-tools { position:absolute; z-index:2; right:10px; bottom:10px; display:flex; align-items:center; padding:3px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); }
       .status button { background:transparent; }
       .view-tools button { display:grid; place-items:center; width:30px; height:30px; padding:6px; border:0; background:transparent; }
       .view-tools button:hover { background:color-mix(in srgb,var(--bgColor-muted,#f6f8fa) 70%,transparent); }
       .view-tools svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
       .city-road-links { position:absolute; z-index:1; inset:0; overflow:hidden; pointer-events:none; }
-      .city-road-link { position:absolute; pointer-events:auto; cursor:pointer; }
-      .city-road-surface:hover { background:#f8e6a655; }
-      .city-road-sign { position:absolute; z-index:1; padding:0; border:0; border-radius:2px; background:transparent; transform:translate(-50%,-92%); pointer-events:auto; cursor:pointer; }
-      .city-road-sign:active { transform:translate(-50%,-92%); }
-      .road-post-art { display:block; width:100%; height:100%; overflow:visible; transform:scaleX(var(--road-facing,1)); filter:drop-shadow(0 1px 1px #0002); }
-      .city-road-sign:hover .road-post-art { filter:drop-shadow(0 0 3px #fff3a8); }
-      .city-road-sign:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
+      .city-road-surface,.city-road-sign { position:absolute; padding:0; border:0; border-radius:0; background:transparent; pointer-events:auto; cursor:pointer; user-select:none; -webkit-user-drag:none; }
+      .city-road-sign { z-index:1; }
+      .city-road-surface:hover,.city-road-sign:hover,.city-road-sign:focus-visible { background:#f8e6a655; }
       .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }

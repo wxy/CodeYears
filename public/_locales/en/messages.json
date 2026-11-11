@@ -437,6 +437,9 @@
   "cityName": {
     "message": "@$1’s city"
   },
+  "unknownRoad": {
+    "message": "Unknown destination"
+  },
   "returnToCity": {
     "message": "Return to @$1’s city"
   },

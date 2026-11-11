@@ -12,6 +12,7 @@ import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
 import { createCityYearMarkers } from './city-year-markers';
 import { createCityOutskirtsPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
 import type { LandscapeView, LandscapeViewport } from './types';
+import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
 // 素材首次命中时生成共享的一位透明度掩码，后续移动只查掩码、不重画城市。
@@ -81,7 +82,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const outer=roadNetwork.ringOuter+CITY_OUTSKIRT_MARGIN;
   // 渐进场地的包围盒只取预留布局和既有外围余量，不随后到楼宇改变取景。
   const minX=Math.min(-depth/2-outer-.4,...(progressive?[]:placed.map(p=>p.left)))-.3,maxX=Math.max(width/2+outer+.4,...(progressive?[]:placed.map(p=>p.left+p.width)))+.3;
-  const minY=Math.min(-outer/2-.4,...(progressive?[]:placed.map(p=>p.top)))-.5,maxY=Math.max((width+depth)/4+outer/2+.5,...(progressive?[]:placed.map(p=>p.top+p.height)));
+  const minY=Math.min(-outer/2-.4,...(progressive?[]:placed.map(p=>p.top)))-4.5,maxY=Math.max((width+depth)/4+outer/2+.5,...(progressive?[]:placed.map(p=>p.top+p.height)));
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
   // 窗格在远景大幅缩小时容易随像素相位跳闪；逐级预滤波，避免每帧直接从384像素缩到十几像素。
   const samples=new Map<HTMLCanvasElement,HTMLCanvasElement[]>();
@@ -210,10 +211,11 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const baseExits=[...(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')))].sort((a,b)=>direction(a)-direction(b));
   const extraExits=baseExits.map((road,index)=>{
     const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-    return {...road,id:`extra-exit-${index}`,points:[[a[0]+dx*.25,a[1]+dz*.25],[b[0]-dz/length*6,b[1]+dx/length*6]] as [number,number][]};
+    return {...road,id:`extra-exit-${index}`,points:[[a[0]+dx*.25,a[1]+dz*.25],[b[0]+dx/length*5-dz/length*10,b[1]+dz/length*5+dx/length*10]] as [number,number][]};
   });
   const exitRoads=[...baseExits,...extraExits];
   let roadCount=4;
+  let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined,boardOrder:DirectionBoard[]=[];
   const extraPainters=extraExits.map(road=>{
     if(scene.kind!=='town')return createCityRoadPainter([road],[]);
     const path=new Path2D();road.points.map(([x,z])=>project(x,z)).forEach((point,i)=>i?path.lineTo(...point):path.moveTo(...point));
@@ -247,21 +249,25 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   return {
     canvas,
     setRoadCount(count){if(count!==roadCount){roadCount=count;frameKey=''}},
+    setRoadLabels(labels,returnLabel){
+      boards=labels.map((label,i)=>planDirectionBoard(exitRoads[i],label,scene.kind==='town',false,context));
+      returnBoard=returnLabel?planDirectionBoard(baseExits[0],returnLabel,scene.kind==='town',true,context):undefined;
+      boardOrder=[...boards,...(returnBoard?[returnBoard]:[])].sort((a,b)=>a.groundY-b.groundY);frameKey='';
+    },
     roadExits(viewport){
-      const scale=fitScale(viewport)*viewport.zoom;
       const screen=(x:number,z:number)=>roadScreen(x,z,viewport);
-      return exitRoads.slice(0,roadCount).map(road=>{
+      return exitRoads.slice(0,roadCount).map((road,i)=>{
         const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
         const half=scene.kind==='town'?.12:cityRoadWidth(road)/2,nx=-dz/length*half,nz=dx/length*half;
-        const shoulder=half+.65;
-        return {sign:screen(b[0]-dz/length*shoulder,b[1]+dx/length*shoulder),size:Math.max(20,Math.min(46,scale*2.4)),polygon:[screen(a[0]+nx,a[1]+nz),screen(b[0]+nx,b[1]+nz),screen(b[0]-nx,b[1]-nz),screen(a[0]-nx,a[1]-nz)]};
+        return {board:boards[i]?.polygon.map(([x,y])=>{
+          const scale=fitScale(viewport)*viewport.zoom;
+          return [viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale] as [number,number];
+        })??[],polygon:[screen(a[0]+nx,a[1]+nz),screen(b[0]+nx,b[1]+nz),screen(b[0]-nx,b[1]-nz),screen(a[0]-nx,a[1]-nz)]};
       });
     },
     returnPost(viewport){
-      const road=baseExits[0];if(!road)return;
-      const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-      const shoulder=(scene.kind==='town'?.12:cityRoadWidth(road)/2)+.85;
-      return {point:roadScreen(a[0]+dx*.15+dz/length*shoulder,a[1]+dz*.15-dx/length*shoulder,viewport),size:Math.max(20,Math.min(46,fitScale(viewport)*viewport.zoom*2.4))};
+      const scale=fitScale(viewport)*viewport.zoom;
+      return returnBoard?.polygon.map(([x,y]):[number,number]=>[viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale]);
     },
     buildingAt(x,y,viewport){
       return placed[hitItem(x,y,viewport)]?.item.parcel?.indices;
@@ -341,7 +347,12 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         for(const paint of extraPainters.slice(0,roadCount-4))paint(context);
         context.restore();
       }
+      let boardIndex=0;
+      const paintBoard=(board:DirectionBoard)=>{
+        context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);board.paint(context);context.restore();
+      };
       for(const p of placed){
+        while(boardIndex<boardOrder.length&&boardOrder[boardIndex].groundY<=p.groundY)paintBoard(boardOrder[boardIndex++]);
         if(p.item.flat||(progressive&&p.after>prefix))continue;
         const x=sx(p.left),y=sy(p.top),w=p.width*scale,h=p.height*scale;
         if(x+w<0||x>viewport.width||y+h<0||y>viewport.height)continue;
@@ -357,6 +368,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         }
         context.drawImage(source,x,y,w,h);context.restore();
       }
+      while(boardIndex<boardOrder.length)paintBoard(boardOrder[boardIndex++]);
       frameKey=nextFrameKey;
       visiblePrefix=prefix;
     },

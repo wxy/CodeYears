@@ -437,6 +437,9 @@
   "cityName": {
     "message": "@$1 的城市"
   },
+  "unknownRoad": {
+    "message": "未知目的地"
+  },
   "returnToCity": {
     "message": "返回 @$1 的城市"
   },
