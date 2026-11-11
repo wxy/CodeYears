@@ -219,6 +219,10 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     const path=new Path2D();road.points.map(([x,z])=>project(x,z)).forEach((point,i)=>i?path.lineTo(...point):path.moveTo(...point));
     return (target:CanvasRenderingContext2D)=>{target.lineCap='round';target.strokeStyle='#8c8865';target.lineWidth=.11;target.stroke(path);target.strokeStyle='#c6bb91';target.lineWidth=.075;target.stroke(path)};
   });
+  const roadScreen=(x:number,z:number,viewport:LandscapeViewport):[number,number]=>{
+    const [px,py]=project(x,z),scale=fitScale(viewport)*viewport.zoom;
+    return [viewport.width/2+viewport.panX+(px-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(py-(minY+maxY)/2)*scale];
+  };
   const hitItem=(x:number,y:number,viewport:LandscapeViewport)=>{
     if(!frameKey)return -1;
     const scale=fitScale(viewport)*viewport.zoom;
@@ -245,15 +249,19 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     setRoadCount(count){if(count!==roadCount){roadCount=count;frameKey=''}},
     roadExits(viewport){
       const scale=fitScale(viewport)*viewport.zoom;
-      const screen=(x:number,z:number):[number,number]=>{
-        const [px,py]=project(x,z);
-        return [viewport.width/2+viewport.panX+(px-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(py-(minY+maxY)/2)*scale];
-      };
+      const screen=(x:number,z:number)=>roadScreen(x,z,viewport);
       return exitRoads.slice(0,roadCount).map(road=>{
         const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
         const half=scene.kind==='town'?.12:cityRoadWidth(road)/2,nx=-dz/length*half,nz=dx/length*half;
-        return {sign:screen((a[0]+b[0])/2,(a[1]+b[1])/2),polygon:[screen(a[0]+nx,a[1]+nz),screen(b[0]+nx,b[1]+nz),screen(b[0]-nx,b[1]-nz),screen(a[0]-nx,a[1]-nz)]};
+        const shoulder=half+.65;
+        return {sign:screen(b[0]-dz/length*shoulder,b[1]+dx/length*shoulder),size:Math.max(20,Math.min(46,scale*2.4)),polygon:[screen(a[0]+nx,a[1]+nz),screen(b[0]+nx,b[1]+nz),screen(b[0]-nx,b[1]-nz),screen(a[0]-nx,a[1]-nz)]};
       });
+    },
+    returnPost(viewport){
+      const road=baseExits[0];if(!road)return;
+      const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+      const shoulder=(scene.kind==='town'?.12:cityRoadWidth(road)/2)+.85;
+      return {point:roadScreen(a[0]+dx*.15+dz/length*shoulder,a[1]+dz*.15-dx/length*shoulder,viewport),size:Math.max(20,Math.min(46,fitScale(viewport)*viewport.zoom*2.4))};
     },
     buildingAt(x,y,viewport){
       return placed[hitItem(x,y,viewport)]?.item.parcel?.indices;

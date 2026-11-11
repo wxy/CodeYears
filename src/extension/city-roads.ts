@@ -1,72 +1,113 @@
 import { localize, text, type Language, type MessageKey } from './i18n';
 import type { CityRoadControl } from '../renderers/landscape';
+import type { GitHubPageContext } from '../platform/github/types';
+import { confirmViewer, sameContext } from '../platform/github/load-year';
+import { readCityJourney, rememberCityJourney, type CityStop } from './city-travel';
+import { roadPostArt } from './road-post';
 
 const MAX_ROADS=8;
+interface RoadOptions {
+  context():GitHubPageContext;
+  currentContext():GitHubPageContext;
+  language():Language;
+  mapType():CityStop['map'];
+  changed(controls:readonly CityRoadControl[],returnPost?:HTMLElement):void;
+}
 
-/** 路牌直接管理本机目的地；前四个出口和已保存槽位保持稳定。 */
-export function createCityRoads(host: HTMLElement, profileLogin: string, language: () => Language, mapType: () => 'city' | 'town', changed: (controls: readonly CityRoadControl[]) => void) {
-  const profile=profileLogin.toLowerCase(),key=`codeyears:roads:${profile}`;
+/** 只有当前已登录的城主可以编辑；旅行返程属于当前标签的访问者。 */
+export function createCityRoads(host:HTMLElement,options:RoadOptions) {
+  const profile=options.context().profileLogin.toLowerCase(),key=`codeyears:roads:${profile}`;
   const username=/^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/i;
-  let slots:(string|null)[]=[null,null,null,null],ready=false,saving=false,disposed=false;
-  let message:MessageKey|undefined,activeSlot:number|undefined;
-  let rendered:CityRoadControl[]=[];
+  const lifetime=new AbortController();
+  let slots:(string|null)[]=[null,null,null,null],ready=false,saving=false,disposed=false,editing=false;
+  let message:MessageKey|undefined,selection:{kind:'road';slot:number}|{kind:'return'}|undefined;
+  let rendered:CityRoadControl[]=[],returnPost:HTMLButtonElement|undefined;
+  const owner=(context:GitHubPageContext)=>context.profileLogin.toLowerCase()===profile&&context.viewer.state==='known'&&context.viewer.identity.kind==='authenticated'&&context.viewer.identity.login.toLowerCase()===profile;
+  const canEdit=()=>owner(options.currentContext());
+  const t=(id:MessageKey,values:readonly(string|number)[]=[])=>text(options.language(),id,values);
   host.hidden=true;
   host.innerHTML=`<section class="roads-panel" role="dialog" aria-labelledby="road-editor-title">
-    <div class="road-editor-heading"><h3 id="road-editor-title" data-i18n="roadsHeading"></h3><button class="road-close" type="button" data-i18n-label="closeRoadEditor">×</button></div>
-    <form class="roads-form"><label><span data-i18n="roadUsername"></span><input name="login" type="text" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" required placeholder="octocat"></label><button type="submit" data-i18n="saveRoad"></button></form>
+    <div class="road-editor-heading"><h3 id="road-editor-title"></h3><button class="road-close" type="button" data-i18n-label="closeRoadEditor">×</button></div>
+    <div class="road-destination" hidden></div><ul class="road-return-list" hidden></ul>
+    <button class="road-change" type="button" data-i18n="changeRoad" hidden></button>
+    <form class="roads-form" hidden><label><span data-i18n="roadUsername"></span><input name="login" type="text" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" required placeholder="octocat"></label><button type="submit" data-i18n="saveRoad"></button></form>
     <output class="note" role="status" aria-live="polite"></output><button class="roads-retry" type="button" data-i18n="retry" hidden></button>
     <div class="road-editor-actions"><span class="note road-count"></span><button class="road-remove" type="button" data-i18n="removeRoad" hidden></button></div>
-    <p class="note roads-local" data-i18n="roadsLocal"></p>
+    <p class="note roads-local"></p>
   </section>`;
   const form=host.querySelector<HTMLFormElement>('form')!,input=host.querySelector<HTMLInputElement>('input')!;
   const submit=host.querySelector<HTMLButtonElement>('button[type=submit]')!,remove=host.querySelector<HTMLButtonElement>('.road-remove')!;
-  const status=host.querySelector<HTMLOutputElement>('output')!,retry=host.querySelector<HTMLButtonElement>('.roads-retry')!;
-  // GitHub 的页面快捷键看到的是 Shadow DOM 外层，不能识别这里的 INPUT。
-  // 只隔离输入框事件，保留浏览器原生输入、编辑、粘贴和表单提交。
+  const change=host.querySelector<HTMLButtonElement>('.road-change')!,status=host.querySelector<HTMLOutputElement>('output')!;
+  const retry=host.querySelector<HTMLButtonElement>('.roads-retry')!,destination=host.querySelector<HTMLElement>('.road-destination')!;
+  const returns=host.querySelector<HTMLUListElement>('.road-return-list')!;
+  // Shadow DOM 外的 GitHub 快捷键不能识别内部 INPUT；保留原生编辑与提交。
   for(const name of ['keydown','keypress','keyup'])input.addEventListener(name,event=>event.stopPropagation());
-  const t=(id:MessageKey,values:readonly(string|number)[]=[])=>text(language(),id,values);
+  const journey=()=>readCityJourney(options.currentContext());
   const close=(restoreFocus=false)=>{
-    const slot=activeSlot;activeSlot=undefined;host.hidden=true;
-    if(restoreFocus&&slot!==undefined)rendered[slot]?.sign.querySelector<HTMLElement>('button')?.focus();
+    const selected=selection;selection=undefined;host.hidden=true;
+    if(restoreFocus&&selected)(selected.kind==='return'?returnPost:rendered[selected.slot]?.sign)?.focus();
   };
-  const open=(slot:number,anchor:HTMLElement)=>{
-    activeSlot=slot;message=ready?undefined:'roadsReadError';input.value=slots[slot]??'';host.hidden=false;
+  const makeLink=(stop:CityStop,returning=false)=>{
+    const link=document.createElement('a');link.className=returning?'road-return-link':'city-road-destination';
+    link.href=`https://github.com/${stop.login}#codeyears-${stop.map}`;link.textContent=t(returning?'returnToCity':'cityName',[stop.login]);link.setAttribute('data-turbo','false');
+    link.onclick=event=>{
+      if(event.defaultPrevented||event.button!==0)return;
+      try{rememberCityJourney(options.currentContext(),options.mapType(),stop)}
+      catch{event.preventDefault();message='roadTravelError';host.hidden=false;updateEditor()}
+    };
+    return link;
+  };
+  const updateEditor=()=>{
+    localize(host,options.language());
+    const own=canEdit(),back=selection?.kind==='return',login=selection?.kind==='road'?slots[selection.slot]:null;
+    host.querySelector('#road-editor-title')!.textContent=t(back?'returnRoadHeading':login&&!editing?'cityName':login?'roadsHeading':'addRoadHeading',login?[login]:[]);
+    form.hidden=!own||!editing||back;input.disabled=submit.disabled=!own||!ready||saving;
+    remove.hidden=!own||!login||back;remove.disabled=saving;
+    change.hidden=!own||!login||editing||back;change.disabled=saving;
+    destination.hidden=!login||editing||back;destination.replaceChildren();
+    if(login&&!editing&&!back)destination.append(makeLink({login,map:options.mapType()}));
+    returns.hidden=!back;returns.replaceChildren();
+    if(back)for(const stop of [...journey()].reverse()){const row=document.createElement('li');row.append(makeLink(stop,true));returns.append(row)}
+    status.textContent=message?t(message):'';retry.hidden=ready||saving||!own||back;
+    host.querySelector<HTMLElement>('.road-editor-actions')!.hidden=!own||back;
+    host.querySelector('.road-count')!.textContent=t('roadCount',[slots.filter(Boolean).length,MAX_ROADS]);
+    host.querySelector('.roads-local')!.textContent=t(back?'returnRoadLocal':own?'roadsLocal':'roadsOwnerOnly');
+  };
+  const open=(selected:NonNullable<typeof selection>,anchor:HTMLElement)=>{
+    if(selected.kind==='road'&&!slots[selected.slot]&&!canEdit())return;
+    if(selected.kind==='return'&&!journey().length)return;
+    selection=selected;editing=selected.kind==='road'&&!slots[selected.slot]&&canEdit();
+    message=ready?undefined:'roadsReadError';input.value=selected.kind==='road'?slots[selected.slot]??'':'';host.hidden=false;
     updateEditor();
     const area=host.parentElement!.getBoundingClientRect(),point=anchor.getBoundingClientRect();
     const left=Math.max(8,Math.min(area.width-host.offsetWidth-8,point.left-area.left));
     const below=point.bottom-area.top+8,top=below+host.offsetHeight<=area.height-8?below:point.top-area.top-host.offsetHeight-8;
     host.style.left=`${left}px`;host.style.top=`${Math.max(8,top)}px`;
-    if(ready&&!saving){input.focus();input.select()}else retry.focus();
-  };
-  const updateEditor=()=>{
-    localize(host,language());input.disabled=submit.disabled=!ready||saving;
-    remove.hidden=activeSlot===undefined||!slots[activeSlot];remove.disabled=saving;
-    status.textContent=message?t(message):'';retry.hidden=ready||saving;
-    host.querySelector('.road-count')!.textContent=t('roadCount',[slots.filter(Boolean).length,MAX_ROADS]);
+    if(!form.hidden&&ready&&!saving){input.focus();input.select()}
+    else host.querySelector<HTMLButtonElement>('.road-close')!.focus();
   };
   const render=()=>{
     if(disposed)return;
     updateEditor();
-    const entries=[...slots];
-    // 已有出口全部指定后提供一个可添加的分岔出口，最多八条。
-    if(ready&&entries.every(Boolean)&&entries.length<MAX_ROADS)entries.push(null);
+    const own=canEdit(),entries=[...slots];
+    if(own&&ready&&entries.every(Boolean)&&entries.length<MAX_ROADS)entries.push(null);
     rendered=entries.map((login,slot)=>{
-      const sign=document.createElement('span');sign.className='city-road-sign';sign.dataset.roadSlot=String(slot);
-      const edit=document.createElement('button');edit.type='button';edit.disabled=saving;
+      const sign=document.createElement('button');sign.type='button';sign.className='city-road-sign';sign.dataset.roadSlot=String(slot);sign.dataset.destination=login??'';
+      sign.disabled=saving;sign.innerHTML=roadPostArt(options.mapType()==='town');
+      const label=login?t('cityName',[login]):t('addRoadAt',[slot+1]);sign.title=label;sign.setAttribute('aria-label',label);
+      sign.onclick=()=>open({kind:'road',slot},sign);
       let surface:HTMLAnchorElement|undefined;
-      if(login){
-        const link=document.createElement('a');link.className='city-road-link city-road-destination';link.href=`https://github.com/${login}#codeyears-${mapType()}`;link.textContent=t('roadTo',[login]);link.setAttribute('data-turbo','false');
-        surface=link.cloneNode(false) as HTMLAnchorElement;surface.className='city-road-link city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=t('roadTo',[login]);
-        edit.className='road-edit';edit.textContent='⋯';edit.setAttribute('aria-label',t('editRoadTo',[login]));sign.append(link,edit);
-      }else{
-        edit.className='road-add';edit.textContent=t('addRoadSign');edit.setAttribute('aria-label',t('addRoadAt',[slot+1]));sign.append(edit);
-      }
-      edit.onclick=()=>open(slot,edit);
-      return {sign,surface};
+      if(login){surface=makeLink({login,map:options.mapType()});surface.textContent='';surface.className='city-road-link city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=label}
+      return {sign,surface,visible:own||!!login};
     });
-    changed(rendered);
+    returnPost=undefined;
+    if(journey().length){
+      returnPost=document.createElement('button');returnPost.type='button';returnPost.className='city-road-sign city-return-post';returnPost.title=t('returnRoadHeading');returnPost.setAttribute('aria-label',t('returnRoadHeading'));
+      returnPost.innerHTML=roadPostArt(options.mapType()==='town',true);
+      const post=returnPost;post.onclick=()=>open({kind:'return'},post);
+    }
+    options.changed(rendered,returnPost);
   };
-  // 沿用四槽设置；只在外部存储边界校验，内部使用四至八个可信槽位。
   const readSlots=(value:unknown):(string|null)[]=>{
     if(value===undefined)return [null,null,null,null];
     if(!Array.isArray(value)||value.length<4||value.length>MAX_ROADS||value.some(login=>login!==null&&(typeof login!=='string'||!username.test(login))))throw new Error('Invalid roads');
@@ -81,22 +122,28 @@ export function createCityRoads(host: HTMLElement, profileLogin: string, languag
     finally{saving=false;render()}
   }
   async function save(next:(string|null)[]){
+    const before=options.currentContext();
+    if(!owner(before)){message='roadsOwnerOnly';render();return}
     saving=true;message=undefined;render();
-    try{await chrome.storage.local.set({[key]:next});if(disposed)return;slots=next;close()}
-    catch{message='roadsSaveError'}
+    try{
+      await confirmViewer(before,lifetime.signal);lifetime.signal.throwIfAborted();
+      if(!sameContext(before,options.currentContext()))throw new Error('Changed visitor');
+      await chrome.storage.local.set({[key]:next});if(disposed)return;slots=next;close();
+    }catch{if(!disposed)message='roadOwnerCheckFailed'}
     finally{saving=false;render()}
   }
   form.onsubmit=event=>{
-    event.preventDefault();if(!ready||saving||activeSlot===undefined)return;
-    const login=input.value.trim().replace(/^@/,'').toLowerCase();
-    message=!username.test(login)?'roadInvalidUsername':login===profile?'roadSelf':slots.some((target,slot)=>slot!==activeSlot&&target===login)?'roadDuplicate':undefined;
+    event.preventDefault();if(!ready||saving||selection?.kind!=='road'||!canEdit())return;
+    const slot=selection.slot,login=input.value.trim().replace(/^@/,'').toLowerCase();
+    message=!username.test(login)?'roadInvalidUsername':login===profile?'roadSelf':slots.some((target,index)=>index!==slot&&target===login)?'roadDuplicate':undefined;
     if(message){updateEditor();return}
-    const next=[...slots];next[activeSlot]=login;void save(next);
+    const next=[...slots];next[slot]=login;void save(next);
   };
   remove.onclick=()=>{
-    if(activeSlot===undefined||saving)return;
-    const next=[...slots];next[activeSlot]=null;void save(next);
+    if(selection?.kind!=='road'||saving||!canEdit())return;
+    const next=[...slots];next[selection.slot]=null;void save(next);
   };
+  change.onclick=()=>{if(canEdit()){editing=true;updateEditor();input.focus();input.select()}};
   const storageChanged=(changes:Record<string,chrome.storage.StorageChange>,area:string)=>{
     if(area!=='local'||!changes[key])return;
     try{slots=readSlots(changes[key].newValue);ready=true;message=undefined}
@@ -116,8 +163,9 @@ export function createCityRoads(host: HTMLElement, profileLogin: string, languag
   void load();
   return {
     controls:()=>rendered,
+    returnPost:()=>returnPost,
     refresh:render,
     close,
-    dispose(){disposed=true;chrome.storage.onChanged.removeListener(storageChanged);document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);host.parentElement!.removeEventListener('wheel',wheel);window.removeEventListener('resize',resize);host.replaceChildren()},
+    dispose(){disposed=true;lifetime.abort();chrome.storage.onChanged.removeListener(storageChanged);document.removeEventListener('pointerdown',outside,true);document.removeEventListener('keydown',escape,true);host.parentElement!.removeEventListener('wheel',wheel);window.removeEventListener('resize',resize);host.replaceChildren()},
   };
 }

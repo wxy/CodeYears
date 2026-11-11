@@ -401,11 +401,8 @@
   "removeRoad": {
     "message": "Remove"
   },
-  "roadTo": {
-    "message": "→ @$1"
-  },
   "roadsLocal": {
-    "message": "Saved only in this browser, separately for each departure city. The other city does not receive a return road."
+    "message": "Destinations are saved in this browser. Only you can edit your city’s roads."
   },
   "roadInvalidUsername": {
     "message": "Enter a GitHub username (up to 39 letters, digits or single hyphens)."
@@ -428,16 +425,37 @@
   "closeRoadEditor": {
     "message": "Close road settings"
   },
-  "addRoadSign": {
-    "message": "+ Add road"
-  },
   "addRoadAt": {
     "message": "Add a destination to exit $1"
   },
-  "editRoadTo": {
-    "message": "Edit the road to @$1"
-  },
   "roadCount": {
     "message": "$1 / $2 roads"
+  },
+  "changeRoad": {
+    "message": "Change destination"
+  },
+  "cityName": {
+    "message": "@$1’s city"
+  },
+  "returnToCity": {
+    "message": "Return to @$1’s city"
+  },
+  "returnRoadHeading": {
+    "message": "Return routes"
+  },
+  "returnRoadLocal": {
+    "message": "These return routes follow your visits in this tab. They do not change this city’s exits."
+  },
+  "roadsOwnerOnly": {
+    "message": "Only the signed-in owner can edit this city’s roads."
+  },
+  "roadOwnerCheckFailed": {
+    "message": "Could not confirm your identity and save the road. The previous settings have been kept."
+  },
+  "roadTravelError": {
+    "message": "Could not save the return route. Please try again."
+  },
+  "addRoadHeading": {
+    "message": "Add a road"
   }
 }

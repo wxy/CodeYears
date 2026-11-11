@@ -401,11 +401,8 @@
   "removeRoad": {
     "message": "移除"
   },
-  "roadTo": {
-    "message": "→ @$1"
-  },
   "roadsLocal": {
-    "message": "仅保存在此浏览器，每座出发城市单独设置；不会为对方添加返程道路。"
+    "message": "目的地保存在此浏览器，只有你能修改自己城市的道路。"
   },
   "roadInvalidUsername": {
     "message": "请输入 GitHub 用户名：最多 39 位字母、数字或不连续的连字符。"
@@ -428,16 +425,37 @@
   "closeRoadEditor": {
     "message": "关闭道路设置"
   },
-  "addRoadSign": {
-    "message": "+ 添加道路"
-  },
   "addRoadAt": {
     "message": "为出口 $1 添加目的地"
   },
-  "editRoadTo": {
-    "message": "修改通往 @$1 的道路"
-  },
   "roadCount": {
     "message": "$1 / $2 条道路"
+  },
+  "changeRoad": {
+    "message": "修改目的地"
+  },
+  "cityName": {
+    "message": "@$1 的城市"
+  },
+  "returnToCity": {
+    "message": "返回 @$1 的城市"
+  },
+  "returnRoadHeading": {
+    "message": "返程路牌"
+  },
+  "returnRoadLocal": {
+    "message": "返程入口只跟随你在此标签页的访问路径，不改变这座城市的出城道路。"
+  },
+  "roadsOwnerOnly": {
+    "message": "只有登录后的城主可以修改这座城市的道路。"
+  },
+  "roadOwnerCheckFailed": {
+    "message": "未能确认本人身份并保存道路，原设置已保留，请重试。"
+  },
+  "roadTravelError": {
+    "message": "未能保存返程记录，请重试。"
+  },
+  "addRoadHeading": {
+    "message": "添加道路"
   }
 }
