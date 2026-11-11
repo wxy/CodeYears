@@ -358,5 +358,38 @@
   },
   "feedback": {
     "message": "Feedback"
+  },
+  "mapType": {
+    "message": "Map type"
+  },
+  "modernCity": {
+    "message": "Modern city"
+  },
+  "magicTown": {
+    "message": "Magic town"
+  },
+  "preparingMap": {
+    "message": "Preparing the map…"
+  },
+  "townLegendHeading": {
+    "message": "Reading the town · mean daily contributions"
+  },
+  "townLegendRustic": {
+    "message": "Rustic homes and longhouses"
+  },
+  "townLegendFarm": {
+    "message": "Homesteads and working farms"
+  },
+  "townLegendWorkshop": {
+    "message": "Workshops, greenhouses and alchemy halls"
+  },
+  "townLegendArcane": {
+    "message": "Arcane guilds and observatories"
+  },
+  "townLegendRegions": {
+    "message": "Adjacent dates with similar intensity form rectangular plots of up to eight days. Area determines the floor plan; the mean determines craftsmanship and facilities. Height does not encode contributions."
+  },
+  "townLegendLife": {
+    "message": "Residents, animals, trees, markets, wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
   }
 }

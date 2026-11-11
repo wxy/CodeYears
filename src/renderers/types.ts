@@ -1,4 +1,4 @@
-export type ViewMode = "city" | "terrain";
+export type ViewMode = "city" | "town" | "terrain";
 export type Theme = "signature" | "natural";
 
 /** 工程原型的最小生命周期契约；具体资源由实现管理。 */

@@ -7,11 +7,21 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
     image.onerror = () => reject(new Error(`Unable to load prototype artwork: ${url}`));
     image.src = url;
   });
-  const [atlas, ground, catalog, formAtlas, formCatalog] = await Promise.all([
+  const [atlas, ground, catalog, formAtlas, formCatalog, magicAtlas, magicCatalog, lifeAtlas, lifeCatalog, classicProjection, magicCompact] = await Promise.all([
     loadImage(assetUrls.atlas), loadImage(assetUrls.ground),
     fetch(assetUrls.catalog).then(response => response.json()),
     loadImage(assetUrls.forms), fetch(assetUrls.formCatalog).then(response => response.json()),
+    loadImage(assetUrls.magic),fetch(assetUrls.magicCatalog).then(response=>response.json()),
+    loadImage(assetUrls.life),fetch(assetUrls.lifeCatalog).then(response=>response.json()),
+    fetch(assetUrls.classicProjection).then(response=>response.json()),
+    loadImage(assetUrls.magicCompact),
   ]);
+  classicProjection.cottages.forEach((frame,i)=>Object.assign(catalog.frames[i],frame));
+  classicProjection.forms.forEach((frame,i)=>Object.assign(formCatalog.frames[i],frame));
+  const sources={cottages:{image:atlas,catalog},forms:{image:formAtlas,catalog:formCatalog},magic:{image:magicAtlas,catalog:magicCatalog},life:{image:lifeAtlas,catalog:lifeCatalog}};
+  for(const source of Object.values(sources))for(const frame of source.catalog.frames){
+    if(frame.ground||frame.ellipse||frame.worldHeight)window.prepareFantasyProjection(frame);
+  }
   const canvas = document.createElement('canvas');
   canvas.width = options.width;
   canvas.height = options.height;
@@ -91,8 +101,12 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
     for(let x=riverX-.85;x<riverX+1.05;x+=.23)line([[x,y-.15],[x,y+.15]],'rgba(76,90,78,.35)',Math.max(1,unit*.012));
   }
 
-  const queue=[],metadata={profile:data.profile,asOf:data.asOf,source:'anonymous-public',mode:detail?'detail':'overview',years:[],drawnUnits:0,decorations:0,pitch,forms:{},layouts:[]};
+  const queue=[],metadata={profile:data.profile,asOf:data.asOf,source:'anonymous-public',mode:detail?'detail':'overview',years:[],drawnUnits:0,decorations:0,pitch,forms:{},layouts:[],life:{},plazas:[],projection:[]};
+  for(const [name,source] of Object.entries(sources))source.catalog.frames.forEach((frame,index)=>{
+    if(frame.projection)metadata.projection.push({atlas:name,index,ground:frame.ground,ellipse:frame.ellipse,shear:frame.projection.shear,vertical:frame.projection.vertical});
+  });
   const sprite = (frame, x, y, scale, kind, extra={}) => queue.push({frame,x,y,scale,kind,depth:x+y,...extra});
+  const ornament=(atlas,frame,x,y,scale,role)=>sprite(frame,x,y,scale,'ornament',{atlas,role});
   const footpath=points=>{line(points,'rgba(113,106,73,.65)',unit*.21);line(points,'#b8ae87',unit*.15);};
   const fence=(a,b,stone=false)=>{
     const steps=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.42));
@@ -112,13 +126,40 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
     const ox=offsets.get(year.year);
     const plan=plans.get(year.year);
     metadata.years.push({year:year.year,total:year.total,active:year.active,parcels:year.parcels.length,estates:plan.estates.length,combined:plan.estates.filter(p=>p.members.length>1).length,maxArea:Math.max(...plan.estates.map(p=>p.w*p.h)),sha256:year.sha256});
-    // Zero-contribution dates have meadow, flowers and occasional low stones, never invented houses.
+    const edgeKey=(a,b)=>[a.join(','),b.join(',')].sort().join('|');
+    const roadEdges=new Set(plan.edges.map(([a,b])=>edgeKey(a,b)));
+    const daily=new Map(year.days.map(day=>[`${day.x},${day.y}`,day]));
+    const squareBuckets=new Map();
+    for(const day of year.days){
+      if(day.count!==0||![[1,0],[-1,0],[0,1],[0,-1]].some(([x,y])=>(daily.get(`${day.x+x},${day.y+y}`)?.count||0)>0))continue;
+      const {x,y}=day;
+      const edge=[[[x,y],[x+1,y]],[[x,y+1],[x+1,y+1]],[[x,y],[x,y+1]],[[x+1,y],[x+1,y+1]]].find(([a,b])=>roadEdges.has(edgeKey(a,b)));
+      if(!edge)continue;
+      const bucket=Math.floor(y/4),rank=hash(year.year+x*479+y*37);
+      if(!squareBuckets.has(bucket)||rank<squareBuckets.get(bucket).rank)squareBuckets.set(bucket,{day,edge,rank,bucket});
+    }
+    const squares=new Map([...squareBuckets.values()].map(p=>[`${p.day.x},${p.day.y}`,p]));
+    // Public amenities and nature may use known zero dates; never invent contribution houses.
     for(const day of year.days){
       if(detail&&(day.y<options.firstRow||day.y>=options.lastRow))continue;
       if(day.count!==0)continue;
       const seed=year.year*371+day.x*7919+day.y*43;
       const x=ox+(day.x+.5)*pitch,y=(day.y+.5)*pitch;
-      if(hash(seed)>.86)sprite(11,x,y,.40+hash(seed+1)*.17,'scenery');
+      const square=squares.get(`${day.x},${day.y}`);
+      if(square){
+        rectangle(x-.61,y-.61,1.22,1.22,'#b7b28f','#8a9771',unit*.018);
+        const [[ax,ay],[bx,by]]=square.edge;
+        footpath([[x,y],[ox+(ax+bx)/2*pitch,(ay+by)/2*pitch]]);
+        const kinds=[['magic',6],['life',6],['life',8],['life',7],['magic',8]];
+        const [source,index]=kinds[(square.bucket+year.year)%kinds.length];
+        ornament(source,index,x,y,1,'public-facility');
+        ornament('magic',7,x+.48,y-.38,.85,'leyline-lamp');
+        ornament('life',5,x-.48,y+.40,.65,'flowering-tree');
+        metadata.plazas.push({year:year.year,x:day.x,y:day.y,count:day.count,edge:square.edge,kind:(source==='magic'?magicCatalog:lifeCatalog).frames[index].family});
+      }
+      else if(hash(seed)>.88)ornament('life',5,x,y,.85,'flowering-tree');
+      else if(hash(seed+77)>.98)ornament('life',3+Math.floor(hash(seed+7)*2),x,y,.85,'animal-group');
+      else if(hash(seed)>.80)sprite(11,x,y,.40+hash(seed+1)*.17,'scenery');
       else if(hash(seed+5)>.64){
         const [px,py]=project(x,y);
         ctx.fillStyle=hash(seed+6)>.5?'#d8c77d':'#8cab60';
@@ -132,7 +173,7 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
       if(detail&&(parcel.y+parcel.h<=options.firstRow||parcel.y>=options.lastRow))continue;
       const px=ox+parcel.x*pitch,py=parcel.y*pitch,w=parcel.w*pitch,h=parcel.h*pitch;
       const seed=year.year*104729+parcel.x*1297+parcel.y*7919;
-      const form=window.planFantasyBuildingForm({...parcel,year:year.year},formCatalog,pitch);
+      const form=window.planFantasyBuildingForm({...parcel,year:year.year},formCatalog,pitch,magicCatalog);
       const box={x:px+form.footprint.x,y:py+form.footprint.y,w:form.footprint.w,h:form.footprint.h};
       const entryX=px+form.entry.x,entryY=py+form.entry.y;
       rectangle(px+.18,py+.18,w-.36,h-.36,parcel.tier<=1?'#8e985d':'#96a16e','rgba(75,92,60,.55)',Math.max(.8,unit*.018));
@@ -174,6 +215,8 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
         }
       }
       sprite(form.frame,px+form.anchor.x,py+form.anchor.y,form.scale,'building',{year:year.year,parcelId:parcel.id,form});
+      ornament('life',parcel.tier>=2?(seed%2?0:2):1,entryX+.1,entryY+.08,1,'resident-group');
+      if(farm)ornament('life',3,px+.50,py+h-.43,.85,'animal-group');
       metadata.forms[form.family]=(metadata.forms[form.family]||0)+1;
       metadata.layouts.push({year:year.year,id:parcel.id,family:form.family,footprint:form.footprint,parcel:{w,h},entry:form.entry});
     }
@@ -195,23 +238,23 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
   const visibleUnits=[];
   for(const item of queue){
     if(item.kind==='fence'){item.draw();continue;}
-    const compound=item.kind==='building'&&item.form.atlas==='forms';
-    const frame=(compound?formCatalog:catalog).frames[item.frame];
+    const source=sources[item.kind==='building'?item.form.atlas:item.atlas||'cottages'];
+    const frame=source.catalog.frames[item.frame],cal=frame.projection;
     const [x,y]=project(item.x,item.y);
-    const scale=compound?unit/frame.pixelsPerUnit*item.scale:unit*1.60/320*item.scale;
-    const mirror=compound&&item.form.mirror;
-    const ax=compound?(mirror?frame.sw-frame.anchor[0]:frame.anchor[0]):frame.footx;
-    const ay=compound?frame.anchor[1]:frame.footy;
-    const dx=x-ax*scale,dy=y-ay*scale;
+    const scale=cal?unit*cal.scale*item.scale:unit*1.60/320*item.scale;
+    const mirror=item.kind==='building'&&item.form.mirror;
+    const anchor=cal?cal.anchor:[frame.footx,frame.footy];
+    const bounds=cal?cal.corners.map(([px,py])=>[x+(mirror?-px:px)*unit*item.scale,y+py*unit*item.scale]):[[x-anchor[0]*scale,y-anchor[1]*scale],[x+(frame.sw-anchor[0])*scale,y+(frame.sh-anchor[1])*scale]];
     ctx.save();
-    if(mirror){ctx.translate(dx+frame.sw*scale,dy);ctx.scale(-1,1);}
-    else ctx.translate(dx,dy);
-    ctx.drawImage(compound?formAtlas:atlas,frame.sx,frame.sy,frame.sw,frame.sh,0,0,frame.sw*scale,frame.sh*scale);
+    ctx.translate(x,y);if(mirror)ctx.scale(-1,1);ctx.scale(scale,scale);
+    if(cal)ctx.transform(1,cal.shear,0,cal.vertical,0,0);
+    ctx.translate(-anchor[0],-anchor[1]);
+    ctx.drawImage(frame.source==='magic-town-v1.png'?magicCompact:source.image,frame.sx,frame.sy,frame.sw,frame.sh,0,0,frame.sw,frame.sh);
     ctx.restore();
     if(item.kind==='building'){
       metadata.drawnUnits++;
-      if(dx+frame.sw*scale>0&&dx<canvas.width&&dy+frame.sh*scale>header&&dy<canvas.height-footer)visibleUnits.push({year:item.year,id:item.parcelId});
-    }else metadata.decorations++;
+      if(Math.max(...bounds.map(p=>p[0]))>0&&Math.min(...bounds.map(p=>p[0]))<canvas.width&&Math.max(...bounds.map(p=>p[1]))>header&&Math.min(...bounds.map(p=>p[1]))<canvas.height-footer)visibleUnits.push({year:item.year,id:item.parcelId});
+    }else {metadata.decorations++;if(item.role)metadata.life[item.role]=(metadata.life[item.role]||0)+1;}
   }
   metadata.visibleUnits=visibleUnits.length;
   if(!detail){
@@ -223,13 +266,13 @@ window.renderCodeYearsFantasy = async function renderCodeYearsFantasy(data, asse
   }
   const topFade=ctx.createLinearGradient(0,0,0,header+90);topFade.addColorStop(0,'rgba(242,233,206,.98)');topFade.addColorStop(.6,'rgba(242,233,206,.93)');topFade.addColorStop(1,'rgba(242,233,206,0)');ctx.fillStyle=topFade;ctx.fillRect(0,0,canvas.width,header+90);
   ctx.textAlign='left';ctx.fillStyle='#263c2b';ctx.font=`600 ${detail?52:66}px "PingFang SC","Heiti SC",sans-serif`;
-  ctx.fillText(detail?`${options.year} · 奇幻建筑形态`:'wxy 的奇幻贡献之城',margin,detail?70:88);
+  ctx.fillText(detail?`${options.year} · 西欧魔法小镇`:'wxy 的西欧魔法小镇',margin,detail?70:88);
   ctx.font=`${detail?24:30}px "PingFang SC","Heiti SC",sans-serif`;ctx.fillStyle='#5c6c4d';
   const total=data.years.reduce((n,y)=>n+y.total,0),count=data.years.reduce((n,y)=>n+plans.get(y.year).estates.length,0);
-  ctx.fillText(detail?'占地选择长屋、侧翼庄园或农场 · 区域均值选择材料与设施':`2024–2026/11/10 · ${total.toLocaleString('en-US')} 次公开贡献 · ${count} 个建筑单元`,margin,detail?112:139);
+  ctx.fillText(detail?'圆形工坊与观星台 · 居民、家畜与花树 · 魔法设施与公共广场':`2024–${data.asOf.replaceAll('-','/')} · ${total.toLocaleString('en-US')} 次公开贡献 · ${count} 个建筑单元`,margin,detail?112:139);
   const bottomFade=ctx.createLinearGradient(0,canvas.height-footer-45,0,canvas.height);bottomFade.addColorStop(0,'rgba(242,233,206,0)');bottomFade.addColorStop(1,'rgba(242,233,206,.95)');ctx.fillStyle=bottomFade;ctx.fillRect(0,canvas.height-footer-45,canvas.width,footer+45);
   ctx.font=`${detail?19:25}px "PingFang SC","Heiti SC",sans-serif`;ctx.fillStyle='#526347';
-  ctx.fillText('地块来自真实日期；建筑组形态按占地与均值选择。道路、河流与环境不代表贡献。',margin,canvas.height-40);
+  ctx.fillText('建筑地块来自真实贡献；人物、动物、花树与公共设施仅表现生活场景。',margin,canvas.height-40);
   metadata.width=canvas.width;metadata.height=canvas.height;
   metadata.unit=unit;
   return {canvas,metadata};

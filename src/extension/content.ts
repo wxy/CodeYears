@@ -93,7 +93,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     .bar { padding:0; gap:6px; }
   </style>
     <div class="bar">
-        <form data-i18n-label="yearRange"><select id="start-year" data-i18n-label="startYear"></select><span>—</span><select id="year" data-i18n-label="endYear"></select><button id="run" type="submit" data-i18n="apply"></button></form>
+        <form data-i18n-label="yearRange"><select id="map-type" data-i18n-label="mapType"><option value="city" data-i18n="modernCity"></option><option value="town" data-i18n="magicTown"></option></select><select id="start-year" data-i18n-label="startYear"></select><span>—</span><select id="year" data-i18n-label="endYear"></select><button id="run" type="submit" data-i18n="apply"></button></form>
         <span id="city-summary" class="summary"></span>
         <button id="expand" type="button" aria-expanded="false" disabled></button>
         <details id="more"><summary data-i18n-label="moreLabel" data-i18n="more"></summary><div class="more-panel">
@@ -114,6 +114,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const get = <T extends Element>(selector: string) => (shadow.querySelector<T>(selector) ?? controls.querySelector<T>(selector))!;
   const panel = get<HTMLElement>(".panel"), dialog = get<HTMLDialogElement>("dialog");
   const startSelect = get<HTMLSelectElement>("#start-year"), select = get<HTMLSelectElement>("#year");
+  const mapSelect=get<HTMLSelectElement>('#map-type');
+  let mapType:'city'|'town'='city';
   for (const year of years) { select.add(new Option(String(year), String(year))); startSelect.add(new Option(String(year), String(year))); }
   startSelect.value = String(years[Math.min(2, years.length - 1)]);
   const run = get<HTMLButtonElement>("#run"), refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
@@ -187,7 +189,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   const setBusy = (value: boolean) => {
     if(value)hover.hide();
-    busy = value; run.disabled = refresh.disabled = select.disabled = startSelect.disabled = busy;
+    busy = value; run.disabled = refresh.disabled = select.disabled = startSelect.disabled = mapSelect.disabled = busy;
     clear.disabled = busy || context.viewer.state === "unknown"; updateControls();
   };
   const resetResult = () => {
@@ -225,7 +227,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (!active || controller !== request) return;
         if (error) { renderFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!);
+      }, mapType, undefined, true, reservedYears, showZoom, years.at(-1)!);
       fieldCreated = true;
       return city;
     };
@@ -294,6 +296,29 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   cancel.onclick = () => controller?.abort();
   fitView.onclick = () => city?.resetView();
   maxZoom.onclick = () => city?.zoomToMax();
+  mapSelect.onchange=async()=>{
+    const next=mapSelect.value as 'city'|'town',previous=mapType;
+    if(!active||busy||next===previous)return;
+    const nextContext=currentContext(),field=city;
+    if(!field||!reusable||Date.now()>=reusable.expiresAt||nextContext.viewer.state==='unknown'||!sameContext(context,nextContext)){
+      mapType=next;get<HTMLElement>('#legend').replaceChildren(createCityLegend(language,mapType==='town'));await load(false);return;
+    }
+    const request=new AbortController();controller=request;hover.hide();setBusy(true);cancel.hidden=true;
+    cityHost.hidden=true;field.setVisible(false);setStatus(()=>t('preparingMap'));let verified=false;
+    try{
+      await confirmViewer(nextContext,request.signal);request.signal.throwIfAborted();
+      if(!sameContext(nextContext,currentContext()))throw new Error('当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。');
+      verified=true;await field.setView(next,request.signal);request.signal.throwIfAborted();
+      if(!sameContext(nextContext,currentContext())){verified=false;throw new Error('当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。')}
+      mapType=next;get<HTMLElement>('#legend').replaceChildren(createCityLegend(language,mapType==='town'));
+      cityHost.hidden=false;field.setVisible(true);setStatus(reusable.status);setSummary(reusable.summary);
+    }catch(error){
+      mapSelect.value=previous;
+      if(!active||controller!==request)return;
+      if(verified){cityHost.hidden=false;field.setVisible(true)}else resetResult();
+      setStatus(()=>error instanceof Error?externalText(language,error.message):t('readFailedDetail'));
+    }finally{if(controller===request){controller=undefined;setBusy(false)}}
+  };
   clear.onclick = async () => {
     if (!active || busy) return;
     const request = new AbortController(); controller = request;
@@ -320,6 +345,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     hover.hide();
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
+    get<HTMLElement>('#legend').replaceChildren(createCityLegend(language,mapType==='town'));
     fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
     cityHost.setAttribute("aria-description", t("keyboardControls"));
     expand.textContent = t(dialog.open ? "collapse" : "expand");

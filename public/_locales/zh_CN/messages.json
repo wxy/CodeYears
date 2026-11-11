@@ -358,5 +358,38 @@
   },
   "feedback": {
     "message": "问题反馈"
+  },
+  "mapType": {
+    "message": "地图类型"
+  },
+  "modernCity": {
+    "message": "现代城市"
+  },
+  "magicTown": {
+    "message": "魔法小镇"
+  },
+  "preparingMap": {
+    "message": "正在准备地图…"
+  },
+  "townLegendHeading": {
+    "message": "读懂小镇 · 区域日均贡献"
+  },
+  "townLegendRustic": {
+    "message": "乡间小屋与长屋"
+  },
+  "townLegendFarm": {
+    "message": "农舍与完整农场"
+  },
+  "townLegendWorkshop": {
+    "message": "工坊、温室与炼金厅"
+  },
+  "townLegendArcane": {
+    "message": "魔法行会与观星台"
+  },
+  "townLegendRegions": {
+    "message": "强度相近的相邻日期合为最多八日的矩形地块。面积决定建筑平面，区域日均决定工艺与设施，不用高度表示贡献。"
+  },
+  "townLegendLife": {
+    "message": "居民、动物、花树、集市、水井与传送门表现生活场景，不表示人数、项目数量或额外贡献。悬停贡献建筑可查看实际成员日期及已取得的项目活动。"
   }
 }

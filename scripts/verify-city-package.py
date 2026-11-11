@@ -14,7 +14,7 @@ FIXED = {'manifest.json', 'popup.html', 'options.html', 'entry.js', 'content.js'
 NOTICES = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'ASSETS.md', 'PRIVACY.md'}
 SCOPE = ['https://github.com/*']
 ENTRY = [{'matches': SCOPE, 'js': ['entry.js'], 'run_at': 'document_idle'}]
-WAR = [{'resources': ['content.js', 'landscape.js', 'chunks/*.js', 'assets/city/*.png'], 'matches': SCOPE}]
+WAR = [{'resources': ['content.js', 'landscape.js', 'chunks/*.js', 'assets/city/*.png', 'assets/town/*.png'], 'matches': SCOPE}]
 
 
 def require(condition, message):
@@ -82,6 +82,13 @@ def verify(archive, build):
         for path in runtime.glob('*.png'):
             name = 'assets/city/' + path.name
             expected[name] = build / name
+        town_sprites = read_json(ROOT / 'src/renderers/town-baked-catalog.json')
+        town_files = {sprite['file'] for sprite in town_sprites.values()}
+        town_runtime = ROOT / 'public/assets/town-runtime'
+        require({p.name for p in town_runtime.glob('*.png')} == {sprite['file'] for sprite in town_sprites.values()}, 'town catalog/image inventory mismatch')
+        for path in town_runtime.glob('*.png'):
+            name = 'assets/town/' + path.name
+            expected[name] = build / name
         for pattern in ('assets/popup-*.js', 'assets/options-*.js', 'assets/shared-*.js', 'chunks/*.js'):
             paths = list(build.glob(pattern))
             require(paths or pattern == 'assets/shared-*.js', f'build missing {pattern}')
@@ -120,7 +127,7 @@ def verify(archive, build):
                     reference(name, target)
                 # Baked catalog filenames are package-local resources.
                 for target in re.findall(r'''["'`]([\w-]+\.png)["'`]''', text):
-                    reference(name, 'assets/city/' + target, True)
+                    reference(name, ('assets/town/' if target in town_files else 'assets/city/') + target, True)
             require(expected[name].is_file(), f'missing build/source file: {name}')
             require(data == expected[name].read_bytes(), f'content differs from fresh build/source: {name}')
             require(data, f'empty release file: {name}')
