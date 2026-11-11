@@ -1,0 +1,1046 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "status": "design observations only; no runtime settings changed",
+  "scope": "magic0..5 door/window and embedded people; life0..5/7/8 adult/animal/tree/facility relationships",
+  "coordinateSystem": "All coordinates are native source pixels relative to the existing catalogue crop. PNG source files unchanged. Vertical height uses delta-y; width is screen projection, not recovered physical width.",
+  "uncertainty": "Manual visual review with crop coordinate grid, usually ±3px per endpoint. Very small/occluded openings and inferred anatomical crown points have larger uncertainty. Ratios are screening evidence, not physical survey.",
+  "normalizationProposal": {
+    "adultHeight": "H; adult head-crown to average shoe contact excluding hats/buns/items. Source hat/hair overhang retained separately.",
+    "ordinaryDoorNetHeight": "approximately1.25H, compare reasonable1.15..1.40H",
+    "workWindowNetHeight": "approximately0.60H; large feature windows explicitly different",
+    "courtyardBoundary": "Each independent building should receive its own low wall/fence in layout/calibration board. Suggested wall height0.25..0.35H, fence0.35..0.50H, gate clear width>=0.55H and visible opening facing access road. This file records a design target only; no walls are implemented here.",
+    "invariant": "A uniform sprite scale changes every internal length equally and cannot repair door/person or animal/animal ratios."
+  },
+  "sourceSha256": {
+    "magic-town-v1.png": "8486d63793b0168e4fb642b4876b5ea8dff4681b607bffeee08cf996b0c765b8",
+    "magic-town-v2.png": "aa5fa97cb335d6957b781ed8952e271b108debf28cdeb555361fdd800df23a84",
+    "town-life-v1.png": "0b64575c795349e4b2745ba9ae9c6865145ce6cf9e4bfd062e71dd11e4f3cac1"
+  },
+  "magic": [
+    {
+      "id": "magic-0",
+      "source": "magic-town-v1.png",
+      "crop": [
+        0,
+        0,
+        405,
+        420
+      ],
+      "door": {
+        "top": [
+          198,
+          278
+        ],
+        "bottom": [
+          198,
+          359
+        ],
+        "heightPx": 81,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "arched entrance",
+        "netWidthScreenPx": 43,
+        "recognition": "visible",
+        "note": "门内木板/暗口顶至门槛上表面；右侧被观星者遮挡，净宽取未遮挡边界外推。"
+      },
+      "window": {
+        "top": [
+          286,
+          252
+        ],
+        "bottom": [
+          286,
+          294
+        ],
+        "heightPx": 42,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "arched side window",
+        "netWidthScreenPx": 18,
+        "recognition": "partly-occluded",
+        "note": "右侧窗内发光玻璃，不含外石框；下沿局部被花卉遮挡。"
+      },
+      "embeddedPeople": [
+        {
+          "role": "astronomer",
+          "visibility": "full-body",
+          "reference": {
+            "top": [
+              211,
+              306
+            ],
+            "bottom": [
+              211,
+              366
+            ],
+            "heightPx": 60,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "含贴头帽顶至鞋底；旧 y310..367 近似可用，但不能把旧 target 上限当作统一尺度。"
+        }
+      ],
+      "doorToVisibleAdult": 1.35,
+      "windowToVisibleAdult": 0.7,
+      "uniformScaleAssessment": "门/人比例接近普通门目标1.25；整体等比缩放不改变1.35，门与人可保留作首轮比较。弧面窗口识别和遮挡造成约±5px不确定性。",
+      "action": "compare-with-standard-adult"
+    },
+    {
+      "id": "magic-1",
+      "source": "magic-town-v1.png",
+      "crop": [
+        405,
+        0,
+        367,
+        420
+      ],
+      "door": {
+        "top": [
+          137,
+          281
+        ],
+        "bottom": [
+          137,
+          354
+        ],
+        "heightPx": 73,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "arched entrance",
+        "netWidthScreenPx": 31,
+        "recognition": "visible",
+        "note": "取木门内口，不含石拱和门槛厚度。"
+      },
+      "window": {
+        "top": [
+          258,
+          285
+        ],
+        "bottom": [
+          258,
+          333
+        ],
+        "heightPx": 48,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "open work window",
+        "netWidthScreenPx": 62,
+        "recognition": "visible",
+        "note": "屋檐以下工作开口至木柜台上表面；窗宽是屏幕投影宽。"
+      },
+      "embeddedPeople": [
+        {
+          "role": "workshop alchemist",
+          "visibility": "upper-body-only",
+          "reference": {
+            "top": [
+              258,
+              292
+            ],
+            "bottom": [
+              258,
+              331
+            ],
+            "heightPx": 39,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "头顶至柜台遮挡线，腿和鞋不可见；旧 top312/base352 不能作为头顶/脚底；不可按全身40px处理。"
+        }
+      ],
+      "doorToVisibleUpperBody": 1.872,
+      "adultEquivalentEstimate": {
+        "method": "only sensitivity estimate; upper body assumed 0.50..0.60 of standing adult",
+        "heightPxRange": [
+          65,
+          78
+        ],
+        "doorToAdultRange": [
+          0.936,
+          1.123
+        ],
+        "certainty": "inferred; not an independent full-body observation"
+      },
+      "uniformScaleAssessment": "无法用等比缩放同时把门/成人调到1.25并保持现有半身人物比例；可见半身不足以严格反推全成人，不将推定当实测。",
+      "action": "remove-embedded-person-and-place-standard-resident-or-redraw-local-window-person"
+    },
+    {
+      "id": "magic-2",
+      "source": "magic-town-v2.png",
+      "crop": [
+        798,
+        0,
+        456,
+        420
+      ],
+      "door": null,
+      "doorBasis": "温室玻璃前端和工作台处均未见可确认的净门口/门槛；不把玻璃面板当门。",
+      "window": {
+        "top": [
+          282,
+          252
+        ],
+        "bottom": [
+          282,
+          282
+        ],
+        "heightPx": 30,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "open work window",
+        "netWidthScreenPx": 31,
+        "recognition": "partly-occluded",
+        "note": "炼金师背后的开口顶到柜台上表面；帽顶近开口，边界小且部分遮挡。"
+      },
+      "embeddedPeople": [
+        {
+          "role": "greenhouse alchemist",
+          "visibility": "upper-body-only",
+          "reference": {
+            "top": [
+              282,
+              259
+            ],
+            "bottom": [
+              282,
+              282
+            ],
+            "heightPx": 23,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "仅帽顶、头、上身到台面；旧 y292..318 偏下，不能当作此人物可见高度。"
+        }
+      ],
+      "windowToVisibleUpperBody": 1.304,
+      "adultEquivalentEstimate": {
+        "method": "sensitivity only; upper body assumed 0.50..0.60 of standing adult",
+        "heightPxRange": [
+          38.3,
+          46
+        ],
+        "windowToAdultRange": [
+          0.652,
+          0.783
+        ],
+        "certainty": "inferred; not an independent full-body observation"
+      },
+      "uniformScaleAssessment": "工作窗可能略高于0.6成人目标；门尺度无法验收。等比缩放不会改变内部人窗比例。",
+      "action": "make-entry-unambiguous-and-replace-embedded-upper-body-before-final-scale-acceptance"
+    },
+    {
+      "id": "magic-3",
+      "source": "magic-town-v2.png",
+      "crop": [
+        0,
+        420,
+        383,
+        400
+      ],
+      "door": null,
+      "doorBasis": "L形庄园当前可见立面均为玻璃/花窗；入口可能藏在内转角，净门口不可确认。",
+      "window": {
+        "top": [
+          75,
+          207
+        ],
+        "bottom": [
+          75,
+          255
+        ],
+        "heightPx": 48,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "large feature window",
+        "netWidthScreenPx": 23,
+        "recognition": "visible",
+        "note": "前左大拱窗内玻璃高，不含石框；这是大装饰窗，不是已确认的普通工作窗。"
+      },
+      "embeddedPeople": [
+        {
+          "role": "left alchemist",
+          "visibility": "full-body-partly-occluded-by-table",
+          "reference": {
+            "top": [
+              189,
+              236
+            ],
+            "bottom": [
+              189,
+              275
+            ],
+            "heightPx": 39,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "帽顶至可见前侧鞋底，桌面遮住腰腿局部，仍可见接地鞋。"
+        },
+        {
+          "role": "right assistant",
+          "visibility": "full-body-partly-occluded-by-table",
+          "reference": {
+            "top": [
+              238,
+              242
+            ],
+            "bottom": [
+              238,
+              277
+            ],
+            "heightPx": 35,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "头发顶至右鞋，体态不同；不能以孩子命名消除比例差。"
+        }
+      ],
+      "windowToVisibleAdult": 1.231,
+      "uniformScaleAssessment": "大拱窗约1.23成人，可作为庄园特色大窗；不能将其硬称0.6成人普通窗。当前无明确门，不能给门高通过结论。两成人同图身高约39/35，差约11%，含姿态/遮挡误差。",
+      "action": "add-or-reveal-standard-entry; standardize-residents-if-source-is-redrawn"
+    },
+    {
+      "id": "magic-4",
+      "source": "magic-town-v2.png",
+      "crop": [
+        383,
+        420,
+        394,
+        400
+      ],
+      "door": {
+        "top": [
+          194,
+          174
+        ],
+        "bottom": [
+          194,
+          202
+        ],
+        "heightPx": 28,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "central rune-panel entrance candidate",
+        "netWidthScreenPx": 31,
+        "recognition": "candidate-not-confirmed",
+        "note": "中央蓝色符文双扇面板，可能是门也可能是装饰屏/旗；净门槛身份不可靠。"
+      },
+      "window": {
+        "top": [
+          145,
+          172
+        ],
+        "bottom": [
+          145,
+          199
+        ],
+        "heightPx": 27,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "left inner arched window",
+        "netWidthScreenPx": 14,
+        "recognition": "partly-occluded",
+        "note": "内院左翼小拱窗净发光玻璃；局部花卉遮挡。"
+      },
+      "embeddedPeople": [
+        {
+          "role": "standing tutor",
+          "visibility": "full-body",
+          "reference": {
+            "top": [
+              178,
+              221
+            ],
+            "bottom": [
+              178,
+              259
+            ],
+            "heightPx": 38,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "帽顶至前脚底；旧 y234..274 整段偏低。坐席人物不得作为站立成人标尺。"
+        }
+      ],
+      "candidateDoorToVisibleAdult": 0.737,
+      "windowToVisibleAdult": 0.711,
+      "uniformScaleAssessment": "若中央面板是门，则门仅0.74成人，整体缩放无解；若是装饰屏，则无可测入口，仍不能宣称统一门尺度。不能把现有导师改称儿童。",
+      "action": "redraw-or-replace-with-unambiguous-entry; preferably remove baked people and reuse standard residents"
+    },
+    {
+      "id": "magic-5",
+      "source": "magic-town-v2.png",
+      "crop": [
+        777,
+        420,
+        477,
+        400
+      ],
+      "door": {
+        "top": [
+          237,
+          174
+        ],
+        "bottom": [
+          237,
+          202
+        ],
+        "heightPx": 28,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "central golden double-panel entrance candidate",
+        "netWidthScreenPx": 29,
+        "recognition": "candidate-not-confirmed",
+        "note": "中央金色双拱面板，缺明确通行门槛；可能为双窗。"
+      },
+      "window": {
+        "top": [
+          184,
+          170
+        ],
+        "bottom": [
+          184,
+          200
+        ],
+        "heightPx": 30,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "left inner arched window",
+        "netWidthScreenPx": 14,
+        "recognition": "partly-occluded",
+        "note": "取发光窗内口，不含石框/花坛。"
+      },
+      "embeddedPeople": [
+        {
+          "role": "front left scholar",
+          "visibility": "full-body",
+          "reference": {
+            "top": [
+              166,
+              263
+            ],
+            "bottom": [
+              166,
+              294
+            ],
+            "heightPx": 31,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "头发顶至左鞋底；旧 y277..310 整段偏下。"
+        },
+        {
+          "role": "front right scholar",
+          "visibility": "full-body",
+          "reference": {
+            "top": [
+              187,
+              264
+            ],
+            "bottom": [
+              187,
+              294
+            ],
+            "heightPx": 30,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "完整站立成人约30px。"
+        },
+        {
+          "role": "right lecturer",
+          "visibility": "full-body",
+          "reference": {
+            "top": [
+              311,
+              249
+            ],
+            "bottom": [
+              311,
+              281
+            ],
+            "heightPx": 32,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "头顶至鞋底约32px，持书不计入身高。"
+        }
+      ],
+      "candidateDoorToVisibleAdult": 0.903,
+      "windowToVisibleAdult": 0.968,
+      "uniformScaleAssessment": "若中央为门，则仅0.90成人，不能靠等比缩放修复；若为双窗，则无明确门，不能通过门尺度验收。庭院三人约30..32px内部一致，但与建筑入口关系不足。",
+      "action": "redraw-or-replace-entry; remove baked people if adopting standard residents"
+    }
+  ],
+  "life": [
+    {
+      "id": "life-0",
+      "source": "town-life-v1.png",
+      "crop": [
+        0,
+        0,
+        420,
+        420
+      ],
+      "people": [
+        {
+          "role": "apprentice",
+          "visibility": "full-body",
+          "silhouette": {
+            "top": [
+              188,
+              84
+            ],
+            "bottom": [
+              194,
+              414
+            ],
+            "heightPx": 330,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "headCrownToSole": {
+            "top": [
+              220,
+              103
+            ],
+            "bottom": [
+              220,
+              405
+            ],
+            "heightPx": 302,
+            "basis": "inferred-head-crown",
+            "endpointUncertaintyPx": 4
+          },
+          "footContacts": [
+            [
+              192,
+              412
+            ],
+            [
+              248,
+              399
+            ]
+          ],
+          "note": "发髻顶84，不等于头颅顶；手持药瓶不计入身高。两个脚处于不同前后深度，鞋底中点约406。"
+        }
+      ],
+      "recommendedNormalization": "use adult head-crown to contact-midpoint about303px; retain hair/hat overhang separately",
+      "adultHeightPxEstimate": 303,
+      "uncertaintyPx": 8
+    },
+    {
+      "id": "life-1",
+      "source": "town-life-v1.png",
+      "crop": [
+        420,
+        0,
+        394,
+        420
+      ],
+      "people": [
+        {
+          "role": "farmer",
+          "visibility": "full-body",
+          "silhouette": {
+            "top": [
+              108,
+              88
+            ],
+            "bottom": [
+              91,
+              414
+            ],
+            "heightPx": 326,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "headCrownToSole": {
+            "top": [
+              118,
+              117
+            ],
+            "bottom": [
+              118,
+              405
+            ],
+            "heightPx": 288,
+            "basis": "inferred-under-hat",
+            "endpointUncertaintyPx": 7
+          },
+          "footContacts": [
+            [
+              91,
+              414
+            ],
+            [
+              151,
+              397
+            ]
+          ],
+          "note": "草帽冠比真实头颅高约29px，不能用整组bounds统一两人。"
+        },
+        {
+          "role": "artisan",
+          "visibility": "full-body",
+          "silhouette": {
+            "top": [
+              288,
+              108
+            ],
+            "bottom": [
+              292,
+              414
+            ],
+            "heightPx": 306,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "headCrownToSole": {
+            "top": [
+              285,
+              117
+            ],
+            "bottom": [
+              285,
+              406
+            ],
+            "heightPx": 289,
+            "basis": "inferred-under-headscarf",
+            "endpointUncertaintyPx": 5
+          },
+          "footContacts": [
+            [
+              246,
+              404
+            ],
+            [
+              292,
+              414
+            ]
+          ],
+          "note": "头巾顶与头颅顶分开；两脚接地中点约409。"
+        }
+      ],
+      "recommendedNormalization": "farmers/agents share about290px anatomical adult reference, hats extra; keep pair relation rather than force equal total silhouettes",
+      "adultHeightPxEstimate": 290,
+      "uncertaintyPx": 10
+    },
+    {
+      "id": "life-2",
+      "source": "town-life-v1.png",
+      "crop": [
+        814,
+        0,
+        440,
+        420
+      ],
+      "people": [
+        {
+          "role": "scholar",
+          "visibility": "full-body",
+          "silhouette": {
+            "top": [
+              187,
+              84
+            ],
+            "bottom": [
+              178,
+              417
+            ],
+            "heightPx": 333,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "headCrownToSole": {
+            "top": [
+              207,
+              102
+            ],
+            "bottom": [
+              207,
+              407
+            ],
+            "heightPx": 305,
+            "basis": "inferred-under-cap",
+            "endpointUncertaintyPx": 5
+          },
+          "footContacts": [
+            [
+              177,
+              416
+            ],
+            [
+              239,
+              400
+            ]
+          ],
+          "note": "帽冠顶84；手持星盘不计身高。帽下头颅顶约102，鞋底接触中点约408。"
+        }
+      ],
+      "recommendedNormalization": "adult head-crown to contact midpoint about306px; cap extra",
+      "adultHeightPxEstimate": 306,
+      "uncertaintyPx": 8
+    },
+    {
+      "id": "life-3",
+      "source": "town-life-v1.png",
+      "crop": [
+        0,
+        420,
+        420,
+        400
+      ],
+      "animals": [
+        {
+          "role": "goat",
+          "reference": {
+            "top": [
+              166,
+              158
+            ],
+            "bottom": [
+              166,
+              287
+            ],
+            "heightPx": 129,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "referenceType": "withers to ground at same torso depth; horn and head excluded",
+          "silhouette": {
+            "top": [
+              218,
+              69
+            ],
+            "bottom": [
+              188,
+              296
+            ],
+            "heightPx": 227,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "targetAdultRatioRange": [
+            0.5,
+            0.6
+          ]
+        },
+        {
+          "role": "brown chicken",
+          "reference": {
+            "top": [
+              338,
+              198
+            ],
+            "bottom": [
+              338,
+              287
+            ],
+            "heightPx": 89,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "referenceType": "highest tail/back to ground; feeding head lower",
+          "targetAdultRatioRange": [
+            0.18,
+            0.25
+          ]
+        },
+        {
+          "role": "white chicken",
+          "reference": {
+            "top": [
+              376,
+              247
+            ],
+            "bottom": [
+              353,
+              329
+            ],
+            "heightPx": 82,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "referenceType": "tail/body top to claw contact",
+          "targetAdultRatioRange": [
+            0.18,
+            0.25
+          ]
+        }
+      ],
+      "assessment": "鸡可见高度82..89px约为山羊肩高129px的0.64..0.69；按山羊肩0.50..0.60成人，鸡约0.32..0.41成人，偏大。整组等比缩放不改变此关系。",
+      "action": "split/redraw chickens at roughly0.55..0.70 current relative size, or omit chickens from compound; do not use total compound bounds as goat height"
+    },
+    {
+      "id": "life-4",
+      "source": "town-life-v1.png",
+      "crop": [
+        420,
+        420,
+        394,
+        400
+      ],
+      "animals": [
+        {
+          "role": "sitting cat",
+          "reference": {
+            "top": [
+              119,
+              160
+            ],
+            "bottom": [
+              119,
+              299
+            ],
+            "heightPx": 139,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "referenceType": "head/ear top to paws; tail excluded",
+          "targetAdultRatioRange": [
+            0.22,
+            0.3
+          ]
+        },
+        {
+          "role": "sheep",
+          "reference": {
+            "top": [
+              284,
+              155
+            ],
+            "bottom": [
+              284,
+              292
+            ],
+            "heightPx": 137,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "referenceType": "wool back/withers to hoof ground; wool top on head separate",
+          "targetAdultRatioRange": [
+            0.45,
+            0.55
+          ]
+        },
+        {
+          "role": "sheep whole",
+          "reference": {
+            "top": [
+              245,
+              130
+            ],
+            "bottom": [
+              272,
+              298
+            ],
+            "heightPx": 168,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "referenceType": "head wool top to hoof; not withers"
+        }
+      ],
+      "assessment": "猫坐高约139px与羊肩高137px几乎相同；按统一成人关系，猫应约羊肩0.4..0.65，当前猫约大1.5..2.5倍。整组缩放无解。",
+      "action": "split/redraw cat at roughly0.5..0.65 current relative size or omit cat from compound"
+    },
+    {
+      "id": "life-5",
+      "source": "town-life-v1.png",
+      "crop": [
+        814,
+        420,
+        440,
+        400
+      ],
+      "reference": {
+        "top": [
+          204,
+          34
+        ],
+        "bottom": [
+          213,
+          342
+        ],
+        "heightPx": 308,
+        "basis": "measured",
+        "endpointUncertaintyPx": 3
+      },
+      "referenceType": "canopy top to root/soil contact; flowers/foreground stones excluded",
+      "targetAdultRatioRange": [
+        1.8,
+        2.4
+      ],
+      "basis": "design range for a mature ornamental apple tree, not source-derived metric size; no adult stands in this source crop",
+      "assessment": "按成人H归一化时树冠高1.8..2.4H；树根锚不跟随前景石头最低点。现有worldHeight1.28只是旧渲染声明，不能作为人体校准证据。"
+    },
+    {
+      "id": "life-7",
+      "source": "town-life-v1.png",
+      "crop": [
+        420,
+        820,
+        394,
+        434
+      ],
+      "references": [
+        {
+          "kind": "seat-to-ground",
+          "line": {
+            "top": [
+              82,
+              303
+            ],
+            "bottom": [
+              82,
+              358
+            ],
+            "heightPx": 55,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "targetAdultRatioRange": [
+            0.24,
+            0.29
+          ],
+          "note": "左前椅腿同一x附近的座板上表面至腿底，方向接近竖直；非整张椅bounds。"
+        },
+        {
+          "kind": "seated resident visible height",
+          "line": {
+            "top": [
+              120,
+              156
+            ],
+            "bottom": [
+              151,
+              350
+            ],
+            "heightPx": 194,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "坐姿含发髻，不能直接当站立成人身高；腿部被裙遮挡。"
+        },
+        {
+          "kind": "signpost",
+          "line": {
+            "top": [
+              283,
+              28
+            ],
+            "bottom": [
+              283,
+              193
+            ],
+            "heightPx": 165,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "note": "仅立柱从帽冠至花箱上表面，未宣称到地总高；下段被花箱遮挡。"
+        }
+      ],
+      "adultEquivalentEstimate": {
+        "heightPxRange": [
+          190,
+          229
+        ],
+        "method": "seat height55px / target seat0.24..0.29adult",
+        "certainty": "inferred ergonomic design reference, no independent standing adult in crop"
+      },
+      "assessment": "可用座高作为统一居民的设施关系检查，坐姿人物不能直接缩成0.44world的站人；若与统一头部尺度冲突，移除或重画坐姿人物。"
+    },
+    {
+      "id": "life-8",
+      "source": "town-life-v1.png",
+      "crop": [
+        814,
+        820,
+        440,
+        434
+      ],
+      "references": [
+        {
+          "kind": "front basin rim to ground",
+          "line": {
+            "top": [
+              161,
+              255
+            ],
+            "bottom": [
+              161,
+              355
+            ],
+            "heightPx": 100,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "targetAdultRatioRange": [
+            0.5,
+            0.65
+          ],
+          "note": "前缘盆沿上表面到前基础地面，约100px，不能拿背墙总高当盆沿高。"
+        },
+        {
+          "kind": "wall highest masonry to local ground",
+          "line": {
+            "top": [
+              203,
+              64
+            ],
+            "bottom": [
+              203,
+              349
+            ],
+            "heightPx": 285,
+            "basis": "measured",
+            "endpointUncertaintyPx": 3
+          },
+          "targetAdultRatioRange": [
+            1.4,
+            1.8
+          ],
+          "note": "背墙到地深度推定；前后地面投影不同，非精密竖直标尺。"
+        }
+      ],
+      "adultEquivalentEstimate": {
+        "heightPxRange": [
+          154,
+          200
+        ],
+        "method": "front basin rim100px / target0.50..0.65adult",
+        "certainty": "inferred ergonomic design reference; no source adult"
+      },
+      "assessment": "公共泉台可高于人，但盆沿应维持0.50..0.65成人；背墙/盆沿分别检查，不以整图worldHeight统一所有设施。"
+    }
+  ],
+  "firstPassDecision": {
+    "retainForComparison": [
+      "magic-0",
+      "life-0",
+      "life-1",
+      "life-2",
+      "life-5",
+      "life-7",
+      "life-8"
+    ],
+    "needsUnambiguousEntranceOrLocalRedraw": [
+      "magic-1",
+      "magic-2",
+      "magic-3",
+      "magic-4",
+      "magic-5"
+    ],
+    "compoundAnimalRescalingCannotBeUniform": [
+      "life-3",
+      "life-4"
+    ],
+    "doNotClaim": [
+      "No full-body measurement is available for magic1/2 window occupants.",
+      "magic4/5 central panels are entrance candidates, not positively identified doors.",
+      "life7 seated resident is not a standing-adult calibration.",
+      "No production scale, image, wall, renderer, or existing catalogue JSON was modified."
+    ]
+  }
+}
