@@ -203,9 +203,16 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
     roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,...(area<0?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),cornerRadius:members.length&&members.every(region=>region.milestone) ? .45 : lanes===8?2.4:1.2,closed:true,points:corners});
   }
-  connectSettlements(roads,footprints,(horizontal,at,start,end,kind)=>road(horizontal,at,start,end,2,kind));
+  const exits:CityRoadRoute[]=[];
+  connectSettlements(roads,footprints,(horizontal,at,start,end,kind)=>{
+    road(horizontal,at,start,end,2,kind);
+    if(kind==='exit')exits.push({id:`exit-${exits.length}`,lanes:2,points:horizontal?[[fixed(start),fixed(at)],[fixed(end),fixed(at)]]:[[fixed(at),fixed(start)],[fixed(at),fixed(end)]]});
+  });
   // 零贡献城市仍保留装饰性环路与出口，允许手动访问别人的城市。
-  if(!regions.length)roads.push(...original.roadNetwork.roads.filter(road=>road.id==='ring'||road.id.startsWith('exit-')));
+  if(!regions.length){
+    roads.push(...original.roadNetwork.roads.filter(road=>road.id==='ring'||road.id.startsWith('exit-')));
+    exits.push(...roads.filter(road=>road.id.startsWith('exit-')));
+  }
   for(const line of lines.values()){
     const merged:{start:number;end:number}[]=[];
     for(const span of line.spans.sort((a,b)=>a.start-b.start)){
@@ -272,7 +279,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
   }
   items.push(...planCityTransport(vehicles,signals,bridges));
-  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,junctions,bridges,vehicles}};
+  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground'])],roadNetwork:{...original.roadNetwork,roads,exits,junctions,bridges,vehicles}};
   const shown=new Set(items.flatMap(item=>item.parcel?.indices??[]));
   return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,signals,rivers};
 }

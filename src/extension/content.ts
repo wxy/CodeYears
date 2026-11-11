@@ -38,7 +38,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
-      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:min(24ch,100%); white-space:nowrap; }
+      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:0; white-space:nowrap; }
       #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
       .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
@@ -59,20 +59,25 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .city-road-links { position:absolute; z-index:1; inset:0; overflow:hidden; pointer-events:none; }
       .city-road-link { position:absolute; pointer-events:auto; cursor:pointer; }
       .city-road-surface:hover { background:#f8e6a655; }
-      .city-road-sign { transform:translate(-50%,-100%); min-height:28px; max-width:210px; padding:3px 10px; border:1px solid #6d7251; border-radius:5px; background:#f0e5c8; box-shadow:0 2px 5px #0003; color:#354831; font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-decoration:none; }
-      .city-road-sign:hover { background:#fff1cd; text-decoration:underline; }
-      .city-road-sign:focus-visible { outline:3px solid #268f80; outline-offset:2px; }
+      .city-road-leader { position:absolute; height:1px; background:#82744e; transform-origin:0 0; pointer-events:none; }
+      .city-road-sign { position:absolute; display:flex; align-items:center; pointer-events:auto; min-height:28px; max-width:240px; border:1px solid #6d7251; border-radius:5px; background:#f0e5c8; box-shadow:0 2px 5px #0003; color:#354831; font-size:12px; font-weight:600; white-space:nowrap; }
+      .city-road-sign a,.city-road-sign button { position:static; padding:4px 9px; border:0; border-radius:4px; background:transparent; color:inherit; font:inherit; text-decoration:none; }
+      .city-road-sign a { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+      .city-road-sign .road-edit { border-left:1px solid #6d725155; padding:4px 7px; }
+      .city-road-sign a:hover,.city-road-sign button:hover { background:#fff1cd; }
+      .city-road-sign a:focus-visible,.city-road-sign button:focus-visible { outline:3px solid #268f80; outline-offset:2px; }
       .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }
       .more-panel { position:absolute; z-index:3; right:0; top:100%; width:390px; max-width:100%; max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
-      #roads-control,#roads-menu { position:static; }
-      .roads-panel { position:absolute; z-index:4; right:0; top:100%; width:360px; max-width:100%; max-height:min(65vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
+      #road-editor { position:absolute; z-index:5; width:320px; max-width:calc(100% - 16px); max-height:calc(100% - 16px); overflow:auto; }
+      .roads-panel { padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
       .roads-panel h3 { margin:0 0 6px; font-size:13px; } .roads-panel p { margin:0 0 10px; }
-      .roads-list { list-style:none; margin:0; padding:0; } .roads-list li { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-      .roads-list a { flex:1; min-width:0; overflow-wrap:anywhere; color:var(--fgColor-accent,#0969da); text-decoration:none; } .roads-list button { flex:none; }
+      .road-editor-heading,.road-editor-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      .road-editor-heading .road-close { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
       .roads-form { margin:10px 0; align-items:flex-end; } .roads-form label { flex:1; min-width:100px; } .roads-form label span { display:block; font-size:12px; }
       .roads-form input { width:100%; padding:5px 8px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; font:inherit; color:inherit; background:var(--bgColor-default,#fff); }
+      .roads-form input:focus-visible { outline:2px solid #268f80; outline-offset:2px; }
       .roads-local { margin-top:10px!important; } .roads-retry { margin:8px 0; }
       .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       .more-panel h3 { margin:0 0 8px; font-size:12px; font-weight:600; }
@@ -95,6 +100,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     <section class="panel" data-i18n-label="cityRegion">
       <div id="expanded-controls"></div>
       <div class="scene-wrap"><div id="scene" tabindex="0" role="region" data-i18n-label="canvasKeyboardLabel"></div>
+        <div id="road-editor" hidden></div>
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
         <div class="view-tools" hidden>
           <button id="reset-view" type="button" data-i18n-label="fitView"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3v5H3m18 0h-5V3M3 16h5v5m8 0v-5h5M8 8 3 3m13 5 5-5M8 16l-5 5m13-5 5 5"/></svg></button>
@@ -106,12 +112,13 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   controls.innerHTML = `<style>${styles}
     :host { display:block; width:100%; min-width:0; }
     .bar { padding:0; gap:6px; }
+    .bar > form { gap:4px; }
+    .bar > form select,.bar > form button { padding:4px 6px; }
   </style>
     <div class="bar">
         <form data-i18n-label="yearRange"><select id="map-type" data-i18n-label="mapType"><option value="city" data-i18n="modernCity"></option><option value="town" data-i18n="magicTown"></option></select><select id="start-year" data-i18n-label="startYear"></select><span>—</span><select id="year" data-i18n-label="endYear"></select><button id="run" type="submit" data-i18n="apply"></button></form>
         <span id="city-summary" class="summary"></span>
         <button id="expand" type="button" aria-expanded="false" disabled></button>
-        <div id="roads-control"></div>
         <details id="more"><summary data-i18n-label="moreLabel" data-i18n="more"></summary><div class="more-panel">
           <label class="language"><span data-i18n="language"></span><select id="language"><option value="auto" data-i18n="followBrowser"></option><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></label>
           <section class="more-section" aria-labelledby="profile-section">
@@ -151,14 +158,13 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
-  const roads=createCityRoads(get<HTMLElement>('#roads-control'),context.profileLogin,()=>language,()=>mapType,links=>city?.setRoadLinks(links));
+  const roads=createCityRoads(get<HTMLElement>('#road-editor'),context.profileLogin,()=>language,()=>mapType,controls=>city?.setRoadControls(controls));
   const rememberDeparture=(event:MouseEvent)=>{
     if(!(event.target instanceof Element)||!event.target.closest('a[href*="#codeyears-"]'))return;
     const url=new URL(location.href);url.hash=`codeyears-${mapType}`;
     history.replaceState(history.state,'',url);
   };
   cityHost.addEventListener('click',rememberDeparture);
-  get<HTMLElement>('#roads-control').addEventListener('click',rememberDeparture);
   let reusable: { context: typeof context; range: string; expiresAt: number; status: () => string; summary: () => string } | undefined;
   let statusMessage = () => "", summaryMessage = () => "";
   const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
@@ -253,7 +259,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (error) { renderFailure = new Error(error); request.abort(); }
         updateControls();
       }, mapType, undefined, true, reservedYears, showZoom, years.at(-1)!);
-      city.setRoadLinks(roads.links());
+      city.setRoadControls(roads.controls());
       fieldCreated = true;
       return city;
     };
@@ -316,7 +322,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       if (controller === request) { controller = undefined; setBusy(false); }
     }
   };
-  get<HTMLFormElement>("form").addEventListener("submit", event => { event.preventDefault(); void load(false); });
+  controls.querySelector<HTMLFormElement>('form')!.addEventListener("submit", event => { event.preventDefault(); void load(false); });
   refresh.onclick = () => { void load(true); };
   retry.onclick = () => { void load(false); };
   cancel.onclick = () => controller?.abort();

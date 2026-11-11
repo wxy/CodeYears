@@ -9,6 +9,8 @@ export interface CityBridge {
 }
 export interface CityRoadNetwork {
   roads: CityRoadRoute[]; junctions: CityRoadJunction[]; bridges: CityBridge[];
+  /** 独立保存出口原段，避免同轴道路归并后丢失出城方向和接点。 */
+  exits?: CityRoadRoute[];
   vehicles: CityVehicle[]; ringOuter: number;
 }
 // 最外年度主路到1.6格，环路内缘2格，二者之间保留0.4格隔离带。

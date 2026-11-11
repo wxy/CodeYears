@@ -392,35 +392,20 @@
   "townLegendLife": {
     "message": "Residents, animals, trees, markets, wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
   },
-  "roadsLabel": {
-    "message": "Roads"
-  },
   "roadsHeading": {
-    "message": "Roads to other cities"
-  },
-  "roadsHelp": {
-    "message": "Add a GitHub username to one of four exits. Follow its road or sign to visit the same map on their profile."
+    "message": "Road destination"
   },
   "roadUsername": {
     "message": "GitHub username"
   },
-  "addRoad": {
-    "message": "Add road"
-  },
   "removeRoad": {
     "message": "Remove"
-  },
-  "removeRoadTo": {
-    "message": "Remove the road to @$1"
   },
   "roadTo": {
     "message": "→ @$1"
   },
   "roadsLocal": {
     "message": "Saved only in this browser, separately for each departure city. The other city does not receive a return road."
-  },
-  "roadsFull": {
-    "message": "All four exits are connected. Remove a road to choose another destination."
   },
   "roadInvalidUsername": {
     "message": "Enter a GitHub username (up to 39 letters, digits or single hyphens)."
@@ -436,5 +421,23 @@
   },
   "roadsSaveError": {
     "message": "Could not save this change. Your saved roads have been kept."
+  },
+  "saveRoad": {
+    "message": "Save"
+  },
+  "closeRoadEditor": {
+    "message": "Close road settings"
+  },
+  "addRoadSign": {
+    "message": "+ Add road"
+  },
+  "addRoadAt": {
+    "message": "Add a destination to exit $1"
+  },
+  "editRoadTo": {
+    "message": "Edit the road to @$1"
+  },
+  "roadCount": {
+    "message": "$1 / $2 roads"
   }
 }

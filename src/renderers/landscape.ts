@@ -8,8 +8,10 @@ import { planTownScene, createTownGround } from './town-layout';
 import { loadTownImages } from './town-assets';
 import type { LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
+export interface CityRoadControl { sign: HTMLElement; surface?: HTMLAnchorElement }
+
 export interface ContributionLandscape {
-  setRoadLinks(links: readonly ({ href: string; label: string } | null)[]): void;
+  setRoadControls(controls: readonly CityRoadControl[]): void;
   buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
   highlightBuilding(point?: {x:number;y:number}): void;
   setView(view: ViewMode,signal?:AbortSignal): Promise<void>;
@@ -47,15 +49,30 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   let disposed=false,blocked=false,suspended=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
   let preparationError: string | undefined;
   const roadLayer=document.createElement('div');roadLayer.className='city-road-links';host.append(roadLayer);
-  let roadAnchors:{slot:number;sign:HTMLAnchorElement;surface:HTMLAnchorElement}[]=[];
+  let roadAnchors:readonly (CityRoadControl&{leader:HTMLElement})[]=[];
   const positionRoads=()=>{
     const exits=layer?.roadExits?.(viewport)??[];
-    for(const {slot,sign,surface}of roadAnchors){
-      const exit=exits[slot];sign.hidden=surface.hidden=!exit;
+    for(const [slot,{sign,surface,leader}]of roadAnchors.entries()){
+      sign.hidden=leader.hidden=!exits[slot];if(surface)surface.hidden=!exits[slot];
+    }
+    const sizes=roadAnchors.map(({sign})=>({width:sign.offsetWidth,height:sign.offsetHeight}));
+    const placed:{left:number;top:number;width:number;height:number}[]=[];
+    for(const [slot,{sign,surface,leader}]of roadAnchors.entries()){
+      const exit=exits[slot];
       if(!exit)continue;
-      sign.style.left=`${exit.sign[0]}px`;sign.style.top=`${exit.sign[1]}px`;
-      const xs=exit.polygon.map(p=>p[0]),ys=exit.polygon.map(p=>p[1]),left=Math.min(...xs),top=Math.min(...ys),width=Math.max(...xs)-left,height=Math.max(...ys)-top;
-      Object.assign(surface.style,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,clipPath:`polygon(${exit.polygon.map(([x,y])=>`${(x-left)/width*100}% ${(y-top)/height*100}%`).join(',')})`});
+      const {width,height}=sizes[slot],left=Math.max(8,Math.min(viewport.width-width-8,exit.sign[0]-width/2));
+      const preferred=Math.max(8,Math.min(viewport.height-height-8,exit.sign[1]-height));
+      // 八条路在全景下会靠近；路牌就近错开，细杆仍指向实际出口。
+      const rows=Array.from({length:Math.floor((viewport.height-16-height)/(height+6))+1},(_,i)=>8+i*(height+6));
+      const candidates=[preferred,...rows].sort((a,b)=>Math.abs(a-preferred)-Math.abs(b-preferred));
+      const top=candidates.find(y=>!placed.some(box=>left<box.left+box.width+6&&left+width+6>box.left&&y<box.top+box.height+6&&y+height+6>box.top))??preferred;
+      placed.push({left,top,width,height});sign.style.left=`${left}px`;sign.style.top=`${top}px`;
+      const targetX=Math.max(left+5,Math.min(left+width-5,exit.sign[0])),targetY=top>exit.sign[1]?top:top+height;
+      const dx=targetX-exit.sign[0],dy=targetY-exit.sign[1];
+      Object.assign(leader.style,{left:`${exit.sign[0]}px`,top:`${exit.sign[1]}px`,width:`${Math.hypot(dx,dy)}px`,transform:`rotate(${Math.atan2(dy,dx)}rad)`});
+      if(!surface)continue;
+      const xs=exit.polygon.map(p=>p[0]),ys=exit.polygon.map(p=>p[1]),roadLeft=Math.min(...xs),roadTop=Math.min(...ys),roadWidth=Math.max(...xs)-roadLeft,roadHeight=Math.max(...ys)-roadTop;
+      Object.assign(surface.style,{left:`${roadLeft}px`,top:`${roadTop}px`,width:`${roadWidth}px`,height:`${roadHeight}px`,clipPath:`polygon(${exit.polygon.map(([x,y])=>`${(x-roadLeft)/roadWidth*100}% ${(y-roadTop)/roadHeight*100}%`).join(',')})`});
     }
   };
   const state=():TimelineState=>progressiveCity?{status:revealedDays>=currentDays.length?"completed":playing?"playing":"paused",revealedDays:Math.floor(revealedDays),totalDays:currentDays.length}:timeline.getState();
@@ -67,6 +84,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     layer.canvas.setAttribute("aria-label",`${text}固定视角，拖动平移，滚轮缩放。`);
   };
   const configureCanvas=(next:LandscapeView,mode=view)=>{
+    next.setRoadCount?.(roadAnchors.length||4);
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
     next.canvas.setAttribute("aria-label",`${mode==="city"?"贡献之城":mode==='town'?'魔法小镇':"连续时光山脉"}，固定视角。拖动平移，滚轮缩放。`);
   };
@@ -136,7 +154,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   const themeObserver=new MutationObserver(theme);themeObserver.observe(document.documentElement,{attributes:true,attributeFilter:["data-color-mode","data-dark-theme","data-light-theme","data-preview-theme"]});preference.addEventListener("change",theme);
   let pointer:{id:number;x:number;y:number}|undefined;
-  const down=(event:PointerEvent)=>{if(pointer||(event.target instanceof Element&&event.target.closest('a')))return;pointer={id:event.pointerId,x:event.clientX,y:event.clientY};host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"};
+  const down=(event:PointerEvent)=>{if(pointer||(event.target instanceof Element&&event.target.closest('a,button,input')))return;pointer={id:event.pointerId,x:event.clientX,y:event.clientY};host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"};
   const move=(event:PointerEvent)=>{if(!pointer||pointer.id!==event.pointerId)return;viewport.panX+=event.clientX-pointer.x;viewport.panY+=event.clientY-pointer.y;pointer.x=event.clientX;pointer.y=event.clientY;schedule()};
   const up=(event:PointerEvent)=>{if(pointer?.id!==event.pointerId)return;pointer=undefined;host.style.cursor="grab"};
   const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const max=Math.min(layer?.maxZoom?.(viewport)??5,view!=="terrain"?zoomBase*20:5),next=Math.min(max,Math.max(view!=="terrain"?minZoom:.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule()};
@@ -156,15 +174,14 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
-    setRoadLinks(links){
-      roadLayer.replaceChildren();roadAnchors=[];
-      links.forEach((link,slot)=>{
-        if(!link)return;
-        const sign=document.createElement('a');sign.className='city-road-link city-road-sign';sign.href=link.href;sign.textContent=link.label;sign.setAttribute('data-turbo','false');
-        const surface=sign.cloneNode(false) as HTMLAnchorElement;surface.className='city-road-link city-road-surface';surface.tabIndex=-1;surface.setAttribute('aria-hidden','true');surface.title=link.label;
-        roadLayer.append(surface,sign);roadAnchors.push({slot,sign,surface});
+    setRoadControls(controls){
+      roadLayer.replaceChildren();
+      roadAnchors=controls.map(control=>{
+        const leader=document.createElement('span');leader.className='city-road-leader';leader.setAttribute('aria-hidden','true');
+        roadLayer.append(leader);if(control.surface)roadLayer.append(control.surface);roadLayer.append(control.sign);
+        return {...control,leader};
       });
-      positionRoads();
+      layer?.setRoadCount?.(controls.length);positionRoads();schedule();
     },
     buildingAt(x,y){
       if(disposed||suspended||!progressiveCity)return;

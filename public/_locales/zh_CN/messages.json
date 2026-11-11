@@ -392,35 +392,20 @@
   "townLegendLife": {
     "message": "居民、动物、花树、集市、水井与传送门表现生活场景，不表示人数、项目数量或额外贡献。悬停贡献建筑可查看实际成员日期及已取得的项目活动。"
   },
-  "roadsLabel": {
-    "message": "道路"
-  },
   "roadsHeading": {
-    "message": "通往其他城市的道路"
-  },
-  "roadsHelp": {
-    "message": "输入 GitHub 用户名，连接四个出口之一。点击道路或路牌，即可前往对方主页的同一种地图。"
+    "message": "设置道路目的地"
   },
   "roadUsername": {
     "message": "GitHub 用户名"
   },
-  "addRoad": {
-    "message": "添加道路"
-  },
   "removeRoad": {
     "message": "移除"
-  },
-  "removeRoadTo": {
-    "message": "移除通往 @$1 的道路"
   },
   "roadTo": {
     "message": "→ @$1"
   },
   "roadsLocal": {
     "message": "仅保存在此浏览器，每座出发城市单独设置；不会为对方添加返程道路。"
-  },
-  "roadsFull": {
-    "message": "四个出口均已连接，可移除道路后更换目的地。"
   },
   "roadInvalidUsername": {
     "message": "请输入 GitHub 用户名：最多 39 位字母、数字或不连续的连字符。"
@@ -436,5 +421,23 @@
   },
   "roadsSaveError": {
     "message": "此次更改未能保存，原有道路已保留。"
+  },
+  "saveRoad": {
+    "message": "保存"
+  },
+  "closeRoadEditor": {
+    "message": "关闭道路设置"
+  },
+  "addRoadSign": {
+    "message": "+ 添加道路"
+  },
+  "addRoadAt": {
+    "message": "为出口 $1 添加目的地"
+  },
+  "editRoadTo": {
+    "message": "修改通往 @$1 的道路"
+  },
+  "roadCount": {
+    "message": "$1 / $2 条道路"
   }
 }
