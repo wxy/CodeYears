@@ -21,7 +21,7 @@ export function createTownGround(plan:TownPlan,images:CityImages):(context:Canva
   for(const edge of plan.roads)streets.addPath(line(edge));
   plan.yearZ.forEach((z,i)=>avenues.addPath(line([[-.7,z-.55],[plan.yearWidth[i]+.7,z-.55]])));
   if(plan.yearZ.length)avenues.addPath(line([[-.7,plan.yearZ[0]-.55],[-.7,plan.scene.depth+.7]]));
-  const plots=plan.plots.map(plot=>({...plot,access:plot.paths.map(line),doors:plot.courts.map(court=>line([court.door,[court.gate[0],Math.max(court.door[1],court.z+court.d-.3)],court.gate]))}));
+  const plots=plan.plots.map(plot=>({...plot,access:plot.paths.map(line)}));
   const squares=plan.squares.map(square=>({...square,path:line([[square.x,square.z],square.road])}));
   return ctx=>{
     ctx.save();ctx.transform(.5,.25,-.5,.25,0,0);
@@ -34,11 +34,10 @@ export function createTownGround(plan:TownPlan,images:CityImages):(context:Canva
       ctx.globalAlpha=1;ctx.strokeStyle=kind;ctx.lineWidth=width;ctx.stroke(path);
     };
     for(const plot of plots){
-      plot.courts.forEach((court,i)=>{
-        ctx.fillStyle=plot.parcel.band<=1?earth:paving;
-        ctx.fillRect(court.x+.04,court.z+.04,court.w-.08,court.d-.08);
-        road(plot.doors[i],.18,plot.parcel.band<=1?earth:stone);
-      });
+      for(const pad of plot.courtyardPads){
+        ctx.beginPath();ctx.roundRect(pad.x,pad.z,pad.w,pad.d,.22);
+        ctx.fillStyle=plot.parcel.band>=3?stone:earth;ctx.globalAlpha=.82;ctx.fill();ctx.globalAlpha=1;
+      }
       for(const path of plot.access)road(path,.18,earth);
     }
     road(streets,.42);road(avenues,.70);

@@ -3,7 +3,7 @@ import { resolve, join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 
 /** Design preview and runtime bake share measured human scale; no ground-fit cap. */
-export async function prepareTownScale({root}) {
+export async function prepareTownScale({root, collection = 'design'}) {
 const design=resolve(root,'docs/design/ancient-town-concepts/2026-11-11');
 const readJSON=async path=>JSON.parse(await readFile(path,'utf8'));
 const [classic,magicLife,mage,newHalls,newStable,cottages,forms,magic,life,correction]=await Promise.all([
@@ -68,18 +68,37 @@ for(const obs of classic.forms.filter(o=>o.id==='forms-0')){
 }
 for(const obs of newStable.frames){const [, ,sw,sh]=obs.crop;
   add(obs.id,'单体畜舍',{sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');}
-for(const i of [0,2,3]){
+for(const i of collection === 'rustic' ? [0] : [0,2,3]){
   const obs=magicLife.magic.find(f=>f.id==='magic-'+i),person=obs.embeddedPeople[0];
   add(obs.id,['圆形观星台','','温室','炼金庄园'][i],magic.frames[i],obs,person.reference,
     i===2?.44:.8,i===2?'upper-body':'adult');
 }
 add('mage-0','圆形法师工坊',{sw:mage.sw,sh:mage.sh,ground:mage.ground,axes:mage.axes,footprint:[1,1]},mage,mage.door,1,'door');
-for(const obs of newHalls.frames){const [, ,sw,sh]=obs.crop;
-  add(obs.id,obs.id==='guild-0'?'行会庭院':'宽学院',{sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');}
-const massing=await readJSON(join(design,'massing/observations.json'));
-for(const obs of massing.frames){
-  const [sx,sy,sw,sh]=obs.crop;
-  add(obs.id,obs.label,{sx,sy,sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');
+if (collection === 'rustic') {
+  const {front, back} = await readJSON(join(design, 'rustic-courts/observations.json'));
+  // 同一屋型的角柱贯穿两幅图。背面以柱高迁移正面门尺，隐藏主门只作位置推定。
+  const postHeight = (front.post.bottom[1] - front.post.top[1]) / (front.door.bottom[1] - front.door.top[1]);
+  for (const obs of [front, back]) {
+    const [sx, sy, sw, sh] = obs.crop;
+    const visible = obs === front;
+    add(obs.id, obs.label, {sx, sy, sw, sh, ground: obs.ground, axes: obs.axes, footprint: [1,1]},
+      obs, visible ? obs.door : obs.post, visible ? 1 : postHeight, visible ? 'door' : 'matching-corner-post');
+    const frame = frames.at(-1);
+    frame.entranceSide = obs.entranceSide;
+    frame.entranceBasis = obs.entranceBasis;
+    if (!visible) {
+      const face = frames.at(-2);
+      frame.doorPoint = [frame.nativeWidth * (1 - face.doorPoint[0] / face.nativeWidth), 0];
+    }
+  }
+} else {
+  for(const obs of newHalls.frames){const [, ,sw,sh]=obs.crop;
+    add(obs.id,obs.id==='guild-0'?'行会庭院':'宽学院',{sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');}
+  const massing=await readJSON(join(design,'massing/observations.json'));
+  for(const obs of massing.frames){
+    const [sx,sy,sw,sh]=obs.crop;
+    add(obs.id,obs.label,{sx,sy,sw,sh,ground:obs.ground,axes:obs.axes,footprint:[1,1]},obs,obs.door,1,'door');
+  }
 }
 for(const i of [0,1,2]){
   const obs=magicLife.life.find(f=>f.id==='life-'+i),ref=obs.people[0].headCrownToSole;

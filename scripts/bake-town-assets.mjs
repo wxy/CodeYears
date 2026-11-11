@@ -12,10 +12,9 @@ const { values } = parseArgs({ options: {
 } });
 if (!values.outDir) throw new Error('请用 --outDir 指定运行素材目录。');
 const root = fileURLToPath(new URL('..', import.meta.url)), out = resolve(values.outDir);
-const { frames, sources } = await prepareTownScale({ root });
-const massingIds = frames.filter(frame => frame.id.startsWith('massing-')).map(frame => frame.id);
-const buildingIds = [...massingIds, 'cottages-1', 'forms-0', 'stable-0', 'magic-0', 'mage-0', 'magic-2', 'magic-3', 'guild-0', 'academy-0'];
-const mirrors = [...massingIds, 'forms-0', 'magic-2', 'guild-0'];
+const { frames, sources } = await prepareTownScale({ root, collection: 'rustic' });
+const buildingIds = ['cottages-1', 'forms-0', 'stable-0', 'magic-0', 'mage-0', 'rustic-hut-front', 'rustic-hut-back'];
+const mirrors = ['forms-0', 'rustic-hut-front', 'rustic-hut-back'];
 const paths = new Map([...sources, ...['scale-sprites', 'work-window', 'private-courtyards'].map(name => [
   '/' + name + '.js', resolve(root, 'probes/fantasy-city/' + name + '.js'),
 ])]);
@@ -24,8 +23,7 @@ const page = `<!doctype html><meta charset="utf-8"><script src="/scale-sprites.j
   const includeBoard = ${Boolean(values.board)};
   const frames = ${JSON.stringify(frames)}, buildingIds = ${JSON.stringify(buildingIds)}, mirrors = ${JSON.stringify(mirrors)};
   const load = url => new Promise((resolve, reject) => { const im = new Image();im.onload = () => resolve(im);im.onerror = reject;im.src = url; });
-  const sprites = await prepareTownScaleImages({ frames: frames.filter(frame => !frame.runtimeEdge), load }), records = [];
-  Object.assign(sprites, await prepareTownScaleImages({ frames: frames.filter(frame => frame.runtimeEdge), load, maxEdge: 1536 }));
+  const sprites = await prepareTownScaleImages({ frames, load }), records = [];
   // The same shared actor and exclusions used by the design preview are baked once.
   for (const sprite of Object.values(sprites)) if (sprite.workWindow) {
     const c = sprite.canvas.getContext('2d'), ratio = sprite.canvas.width / sprite.width;
@@ -54,82 +52,56 @@ const page = `<!doctype html><meta charset="utf-8"><script src="/scale-sprites.j
       width: trimmed.width / ratio, height: trimmed.height / ratio, ...metadata, sampleId: id };
     records.push({ id, metadata: m, png: trimmed.toDataURL('image/png').split(',')[1], pixels: [trimmed.width, trimmed.height] });
   };
-  const courtSprite = (court, phase, renderEdge = 752) => {
-    const w = court.width, d = court.depth;
-    const corners = [[0, 0], [w, 0], [w, d + .28], [0, d + .28]].map(([x, z]) => [(x - z) * .5, (x + z) * .25]);
+  const fenceSprite = (w, d, phase) => {
+    const corners = [[0, 0], [w, 0], [w, d], [0, d]].map(([x, z]) => [(x - z) * .5, (x + z) * .25]);
     const left = Math.min(...corners.map(p => p[0])) - .01, right = Math.max(...corners.map(p => p[0])) + .01;
     const top = Math.min(...corners.map(p => p[1])) - .21, bottom = Math.max(...corners.map(p => p[1])) + .01;
-    const ratio = renderEdge / Math.max(right - left, bottom - top), canvas = document.createElement('canvas');
+    const ratio = 512 / Math.max(right - left, bottom - top), canvas = document.createElement('canvas');
     canvas.width = Math.ceil((right - left) * ratio);canvas.height = Math.ceil((bottom - top) * ratio);
     const c = canvas.getContext('2d');c.scale(ratio, ratio);c.translate(-left, -top);
-    paintPrivateCourtyard(c, { x: 0, z: 0, w, d, gateX: court.gateX, material: court.material }, phase);
+    paintPrivateCourtyard(c, { x: 0, z: 0, w, d, material: 'wood' }, phase);
     return { canvas, left, top, width: canvas.width / ratio, height: canvas.height / ratio };
   };
   for (const frame of frames) for (const mirror of mirrors.includes(frame.id) ? [false, true] : [false]) {
     const id = frame.id + (mirror ? '-x' : ''), isBuilding = buildingIds.includes(frame.id);
     const nw = mirror ? frame.nativeDepth : frame.nativeWidth, nd = mirror ? frame.nativeWidth : frame.nativeDepth;
-    const [doorX, doorZ] = mirror ? [...frame.doorPoint].reverse() : frame.doorPoint;
-    const court = isBuilding ? { width: nw + .6, depth: nd + 1,
-      gateX: .3 + Math.max(.2, Math.min(nw - .2, doorX)), doorX, doorZ,
-      material: ['cottages-1', 'stable-0'].includes(frame.id) ? 'wood' : 'stone' } : undefined;
-    const metadata = { nativeWidth: nw, nativeDepth: nd, groundWidth: nw, groundDepth: nd,
+    const entrance = isBuilding ? {
+      entrancePoint: mirror ? [...frame.doorPoint].reverse() : frame.doorPoint,
+      entranceAxis: mirror ? 'x' : 'z', entranceSide: frame.entranceSide ?? 'front',
+      entranceBasis: frame.entranceBasis ?? (frame.metrics.doorHeight ? 'observed-door' : 'inferred'),
+    } : {};
+    encode(id, sprites[frame.id], {
+      nativeWidth: nw, nativeDepth: nd, groundWidth: nw, groundDepth: nd,
       groundBasis: 'human-scale-source-envelope', directionBasis: frame.directionBasis,
-      baselineHeight: frame.metrics.referenceHeight,
-      ...(frame.residentSlots ? { residentSlots: frame.residentSlots.map(([x, z]) => mirror ? [z, x] : [x, z]) } : {}),
-      ...(court ? { court } : {}) };
-    encode(id, sprites[frame.id], metadata, mirror, frame.runtimeEdge);
-    if (court) for (const phase of ['back', 'front']) {
-      const courtId = 'court-' + id + '-' + phase;
-      encode(courtId, courtSprite(court, phase, frame.runtimeEdge ? frame.runtimeEdge * 2 : 752), { nativeWidth: court.width, nativeDepth: court.depth,
-        groundWidth: court.width, groundDepth: court.depth, groundBasis: 'independent-courtyard',
-        directionBasis: 'native-2-to-1', baselineHeight: .4 }, false, frame.runtimeEdge);
-    }
+      baselineHeight: frame.metrics.referenceHeight, ...entrance,
+    }, mirror);
+  }
+  // 与各栋建筑共用地面深度排序的独立栏段；转向不改变真实柱高。
+  for (const [axis, width, depth] of [['x', .95, .07], ['z', .07, .95]]) {
+    encode('yard-fence-' + axis, fenceSprite(width, depth, 'short-' + axis), {
+      nativeWidth: width, nativeDepth: depth, groundWidth: width, groundDepth: depth,
+      groundBasis: 'shared-courtyard-fence', directionBasis: 'native-2-to-1', baselineHeight: .4,
+    }, false, 256);
   }
   const board = document.createElement('canvas');
   if (includeBoard) {
-    // Same world magnification for every building, including the reference adult.
-    const buildings = records.filter(r => r.metadata.court), scale = 58, margin = 25, caption = 52;
-    const entries = buildings.map(r => {
-      const layers = ['court-' + r.id + '-back', r.id, 'court-' + r.id + '-front'].map((id, index) => {
-        const entry = records.find(item => item.id === id), m = entry.metadata;
-        return { entry, x: m.left + (index === 1 ? .05 : 0), y: m.top + (index === 1 ? .125 : 0), w: m.width, h: m.height };
-      });
-      const l = Math.min(...layers.map(p => p.x)), t = Math.min(...layers.map(p => p.y));
-      const width = Math.max(...layers.map(p => p.x + p.w)) - l;
-      const height = Math.max(...layers.map(p => p.y + p.h)) - t;
-      return { layers, r, l, t, width, height };
-    });
-    const columns = 4, cellW = Math.ceil(Math.max(...entries.map(e => e.width)) * scale + margin * 2);
-    const cellH = Math.ceil(Math.max(...entries.map(e => e.height)) * scale + margin * 2 + caption);
-    const facilities = records.filter(r => !r.metadata.court && !r.id.startsWith('court-'));
-    const facilityScale = 130, buildingRowsHeight = Math.ceil(entries.length / columns) * cellH;
-    const facilityHeight = Math.ceil(Math.max(...facilities.map(r => r.metadata.height)) * facilityScale);
-    board.width = cellW * columns; board.height = buildingRowsHeight + facilityHeight + caption + margin;
-    const c = board.getContext('2d'); c.fillStyle = '#e4dfce'; c.fillRect(0, 0, board.width, board.height);
-    const actor = records.find(r => r.id === 'life-0'), actorImage = await load('data:image/png;base64,' + actor.png);
-    for (const [i, entry] of entries.entries()) {
-      const col = i % columns * cellW, row = Math.floor(i / columns) * cellH;
-      const ox = col + (cellW - entry.width * scale) / 2 - entry.l * scale;
-      const oy = row + cellH - caption - (entry.height + entry.t) * scale;
-      for (const p of entry.layers) {
-        c.drawImage(await load('data:image/png;base64,' + p.entry.png), ox + p.x * scale, oy + p.y * scale, p.w * scale, p.h * scale);
-      }
-      const m = entry.r.metadata;
-      c.drawImage(actorImage, col + margin, row + cellH - caption - actor.metadata.height * scale, actor.metadata.width * scale, actor.metadata.height * scale);
-      c.fillStyle = '#26362c'; c.font = '18px sans-serif';
-      c.fillText(entry.r.id + '   ' + m.nativeWidth.toFixed(2) + ' × ' + m.nativeDepth.toFixed(2) +
-        '   /   ' + m.court.width.toFixed(2) + ' × ' + m.court.depth.toFixed(2),
-        col + margin, row + cellH - 21);
-    }
-    for (const [i, facility] of facilities.entries()) {
-      const m = facility.metadata, x = margin + i * board.width / facilities.length;
-      c.drawImage(await load('data:image/png;base64,' + facility.png), x, buildingRowsHeight + facilityHeight - m.height * facilityScale,
-        m.width * facilityScale, m.height * facilityScale);
-      c.fillText(facility.id, x, board.height - margin);
+    const scale = 100, margin = 20, columns = 4, caption = 42;
+    const cellW = Math.ceil(Math.max(...records.map(r => r.metadata.width)) * scale + margin * 2);
+    const cellH = Math.ceil(Math.max(...records.map(r => r.metadata.height)) * scale + margin * 2 + caption);
+    board.width = columns * cellW; board.height = Math.ceil(records.length / columns) * cellH;
+    const c = board.getContext('2d'); c.fillStyle = '#c4d0ab'; c.fillRect(0, 0, board.width, board.height);
+    c.fillStyle = '#28392b'; c.font = '17px sans-serif';
+    for (const [index, record] of records.entries()) {
+      const x = index % columns * cellW, y = Math.floor(index / columns) * cellH;
+      const m = record.metadata, image = await load('data:image/png;base64,' + record.png);
+      c.drawImage(image, x + (cellW - m.width * scale) / 2, y + cellH - caption - m.height * scale,
+        m.width * scale, m.height * scale);
+      c.fillText(record.id + '  ' + m.nativeWidth.toFixed(2) + ' × ' + m.nativeDepth.toFixed(2),
+        x + margin, y + cellH - 14);
     }
   }
   await fetch('/result', { method: 'POST', body: JSON.stringify({ records, board: board.toDataURL('image/png').split(',')[1],
-    proof: { adultHeight: .8, ordinaryDoorHeight: 1, postPlacementFactor: 1, legacyMaxPngEdge: 384, maxPngEdge: Math.max(...frames.map(f => f.runtimeEdge ?? 384)),
+    proof: { adultHeight: .8, ordinaryDoorHeight: 1, postPlacementFactor: 1, spriteMaxPngEdge: 384, fenceMaxPngEdge: 256,
       frames: frames.map(({ id, nativeWidth, nativeDepth, metrics }) => ({ id, nativeWidth, nativeDepth, ...metrics })),
       windowActors: frames.filter(f => f.workWindow).map(f => ({ building: f.id, actor: 'life-0', exclusions: f.workWindow.exclusions.length })),
       files: records.map(({ id, pixels }) => ({ id, pixels })) } }) });document.title = 'READY';

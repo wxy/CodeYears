@@ -74,7 +74,10 @@ window.paintPrivateCourtyard = function paintPrivateCourtyard(ctx, court, phase)
 
   ctx.save();
   ctx.lineJoin = 'round';
-  if (phase === 'back') {
+  if (phase === 'short-x' || phase === 'short-z') {
+    // 短段保留真实三柱和横木；地图按每段接地点处理遮挡。
+    section([left, back], phase === 'short-x' ? [right, back] : [left, front]);
+  } else if (phase === 'back') {
     // 只保留院门附近的短进路；入户路由建筑自己的门位继续连接。
     polygon([[gateX - .16, front - .58, 0], [gateX + .16, front - .58, 0],
       [gateX + .16, front + .28, 0], [gateX - .16, front + .28, 0]], '#b7b08a');

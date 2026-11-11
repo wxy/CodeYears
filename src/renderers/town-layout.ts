@@ -5,23 +5,14 @@ import catalog from './town-baked-catalog.json';
 
 type Point=[number,number];
 interface Rectangle { x:number; z:number; w:number; d:number }
-interface CourtMetadata { width:number; depth:number; gateX:number; doorX:number; doorZ:number }
-interface TownCourt extends Rectangle { id:string; gate:Point; door:Point }
-interface TownPlot extends Rectangle { parcel:CityParcel; bodies:(Rectangle&{id:string})[]; courts:TownCourt[]; entries:Point[]; paths:Point[][]; gate:Point }
+interface TownCourt extends Rectangle { id:string; gate:Point }
+interface TownPlot extends Rectangle { parcel:CityParcel; bodies:(Rectangle&{id:string})[]; courts:TownCourt[]; entries:Point[]; paths:Point[][]; courtyardPads:Rectangle[]; gate:Point }
 interface TownSquare { cell:CityParcel; kind:string; x:number; z:number; road:Point }
 export interface TownPlan { scene:CityScene; plots:TownPlot[]; roads:[Point,Point][]; squares:TownSquare[]; yearZ:number[]; yearWidth:number[] }
-const PITCH=3.8,WIDTH=7*PITCH,GAP=3,SETBACK=.30;
-const sprites:Record<string,{nativeWidth:number;nativeDepth:number;court?:CourtMetadata;residentSlots?:number[][]}>=catalog;
+const PITCH=3.8,WIDTH=7*PITCH,GAP=3;
+const sprites:Record<string,{nativeWidth:number;nativeDepth:number;entrancePoint?:number[];entranceAxis?:string;entranceSide?:string}>=catalog;
 const edgeKey=(a:Point,b:Point)=>[a.join(','),b.join(',')].sort().join('|');
 const seedFor=(p:CityParcel)=>((Math.imul(p.block+1,73856093)^Math.imul(p.x+1,19349663)^Math.imul(p.z+1,83492791))>>>0);
-
-/** 一座完整实尺主体配一个独立院落；占地不足时不缩放素材。 */
-function fitCourt(id:string,w:number,d:number):TownCourt|undefined {
-  const court=sprites[id].court!;
-  if(court.width>w-SETBACK*2||court.depth>d-SETBACK*2)return;
-  const x=(w-court.width)/2,z=(d-court.depth)/2;
-  return {id,x,z,w:court.width,d:court.depth,gate:[x+court.gateX,z+court.depth],door:[x+.3+court.doorX,z+.2+court.doorZ]};
-}
 
 /** 与现代城市共用周向+x、星期向+z；相近真实数量构成矩形聚落。 */
 export function planTownScene(days:readonly DailyContribution[],reservedYears?:readonly number[],joinedOn?:string):TownPlan {
@@ -64,48 +55,86 @@ export function planTownScene(days:readonly DailyContribution[],reservedYears?:r
   };
   for(const parcel of parcels){
     if(parcel.kind!=='building')continue;
-    const {w,d,band}=parcel,seed=seedFor(parcel);
+    const {w,d}=parcel,seed=seedFor(parcel);
     const x=parcel.x*PITCH,z=yearZ[parcel.block]+parcel.z*PITCH,pw=w*PITCH,pd=d*PITCH;
     const after=Math.min(...parcel.indices)+1;
-    const forms=band<=1
-      ?['massing-extended-hall','massing-manor','massing-compact','massing-middle','massing-grand','massing-quadrangle','massing-college']
-      :band===2
-        ?['massing-extended-hall','massing-middle','massing-quadrangle','massing-compact','massing-manor','massing-college','massing-grand']
-        :['massing-college','massing-grand','massing-extended-hall','massing-quadrangle','massing-middle','massing-compact','massing-manor'];
-    const large=forms.flatMap(id=>w>d?[`${id}-x`,id]:[id,`${id}-x`]);
-    const choices=parcel.milestone?['magic-0']:w*d===1&&band<=1
-      ?[seed%3===0?'stable-0':'cottages-1']
-      :[...large,...(band<=1?['forms-0','forms-0-x','cottages-1']
-        :[...(band>=3?['academy-0','guild-0','guild-0-x']:[]),'magic-3','magic-2','magic-2-x','magic-0','mage-0'])];
-    // 优先可完整容纳的主体建筑包络；面积相差不超过10%时按日均选择朴素/工坊/学院形态。
-    const fitted=choices.map(id=>fitCourt(id,pw,pd)).filter((court):court is TownCourt=>!!court)
-      .map(court=>({court,area:sprites[court.id].nativeWidth*sprites[court.id].nativeDepth}));
-    const largest=Math.max(...fitted.map(fit=>fit.area));
-    const court=fitted.filter(fit=>fit.area>=largest*.9)
-      .sort((a,b)=>choices.indexOf(a.court.id)-choices.indexOf(b.court.id))[0].court;
-    const courts=[court];
-    const plot:TownPlot={parcel,x,z,w:pw,d:pd,bodies:[],courts:courts.map((c):TownCourt=>({...c,x:x+c.x,z:z+c.z,gate:[x+c.gate[0],z+c.gate[1]],door:[x+c.door[0],z+c.door[1]]})),entries:[],paths:[],gate:[x+pw/2,z+pd]};
-    for(const court of plot.courts){
-      const art=sprites[court.id],bx=court.x+.3,bz=court.z+.2;
-      items.push({parcel,id:court.id,factor:1,x:bx,z:bz,w:art.nativeWidth,d:art.nativeDepth,flat:false});
-      plot.bodies.push({id:court.id,x:bx,z:bz,w:art.nativeWidth,d:art.nativeDepth});
-      plot.entries.push(court.door);
-      for(const phase of ['back','front'])items.push({id:`court-${court.id}-${phase}`,factor:1,x:court.x,z:court.z,w:court.w,d:court.d,flat:false,revealAfter:after,sortY:phase==='back'?(court.x+court.z)/4-.001:(court.x+court.z+court.w+court.d)/4+.001});
-      prop(seed%2?'life-0':'life-2',Math.min(court.x+court.w-.25,court.gate[0]+.28),court.z+court.d-.38,after);
-      const residents=(art.residentSlots??[]).slice(0,court.id.startsWith('massing-middle')?1:2);
-      for(const [i,slot]of residents.entries())prop(i%2?'life-0':'life-2',bx+slot[0],bz+slot[1],after);
-      if(court.id==='guild-0'||court.id==='guild-0-x'||court.id==='academy-0'){
-        // 沿用已审阅原型的开放内院居民；placed 坐标是素材原点，镜像行会交换两轴。
-        const mirror=court.id==='guild-0-x',middle=(mirror?art.nativeDepth:art.nativeWidth)*.5,openZ=(mirror?art.nativeWidth:art.nativeDepth)*.7;
-        for(const [id,offset]of [['life-2',-.35],['life-1',.35]] as const){
-          const person=sprites[id],[px,pz]=mirror?[openZ,middle+offset]:[middle+offset,openZ];
-          items.push({id,factor:1,x:bx+px,z:bz+pz,w:person.nativeWidth,d:person.nativeDepth,flat:false,revealAfter:after});
+    const yardId='shared-yard';
+    const plot:TownPlot={parcel,x,z,w:pw,d:pd,bodies:[],courts:[{id:yardId,x:x+.3,z:z+.3,w:pw-.6,d:pd-.6,gate:[x+pw/2,z+pd-.3]}],entries:[],paths:[],courtyardPads:[],gate:[x+pw/2,z+pd]};
+    // 短栏以各自地面中心排序，长侧栏不再跨过前景屋顶。
+    const fenceX=sprites['yard-fence-x'],fenceZ=sprites['yard-fence-z'];
+    const fence=(id:string,fx:number,fz:number)=>{
+      const art=sprites[id];items.push({id,factor:1,x:fx,z:fz,w:art.nativeWidth,d:art.nativeDepth,flat:false,revealAfter:after});
+    };
+    const spanX=pw-.64,spanZ=pd-.64,gate=spanX/2;
+    const top=[0,spanX-fenceX.nativeWidth,...(spanX>6?[spanX*.33-fenceX.nativeWidth/2,spanX*.66-fenceX.nativeWidth/2]:[])];
+    const bottom=[gate-.5-fenceX.nativeWidth,gate+.5,0,spanX-fenceX.nativeWidth];
+    const sides=[0,spanZ-fenceZ.nativeDepth,...(spanZ>6?[spanZ*.33-fenceZ.nativeDepth/2,spanZ*.66-fenceZ.nativeDepth/2]:[])];
+    const front:number[]=[];
+    for(const start of bottom)if(start>=0&&start+fenceX.nativeWidth<=spanX&&!front.some(other=>Math.abs(other-start)<fenceX.nativeWidth+.04))front.push(start);
+    for(const start of top)fence('yard-fence-x',x+.32+start,z+.32);
+    for(const start of front)fence('yard-fence-x',x+.32+start,z+pd-.32-fenceX.nativeDepth);
+    for(const start of sides){
+      fence('yard-fence-z',x+.32,z+.32+start);
+      fence('yard-fence-z',x+pw-.32-fenceZ.nativeWidth,z+.32+start);
+    }
+    const count=Math.min(4,Math.ceil(w*d/4));
+    const columns=count===4&&w>=2&&d>=2?2:pw>=pd?count:1;
+    const rows=count===4&&w>=2&&d>=2?2:pw>=pd?1:count;
+    for(let row=0;row<rows;row++)for(let column=0;column<columns;column++){
+      const index=row*columns+column,mx=x+column*pw/columns,mz=z+row*pd/rows,mw=pw/columns,md=pd/rows;
+      const transpose=mw>md,cw=transpose?md:mw,cd=transpose?mw:md;
+      const point=(u:number,v:number):Point=>transpose?[mx+v,mz+u]:[mx+u,mz+v];
+      const padW=w*d===1?1.2:cw<5?1.7:2.3+(seed+index)%2*.15;
+      const desiredPadD=1.7+(seed+index)%3*.15;
+      let north='rustic-hut-front';
+      if(parcel.milestone)north='magic-0';
+      else if(!transpose&&index===0){
+        if((seed%7===0)&&parcel.band<=1)north='stable-0';
+        else if(seed%5===0&&cd>=sprites['forms-0'].nativeDepth+sprites['rustic-hut-back'].nativeDepth+desiredPadD+1.34&&parcel.band<=2)north='forms-0';
+        else if(seed%11===0&&parcel.band>=2)north='mage-0';
+        else if(seed%5===1)north='cottages-1';
+      }
+      const northArt=sprites[north],southArt=sprites['rustic-hut-back'];
+      const padD=w*d===1?.5:Math.min(desiredPadD,cd-northArt.nativeDepth-southArt.nativeDepth-1.34);
+      const westWidth=sprites['rustic-hut-front-x'].nativeWidth;
+      const westReach=westWidth+.22+padW/2,eastReach=Math.max(northArt.nativeWidth,southArt.nativeWidth)/2;
+      const westCenter=Math.max(cw/2+(westReach-eastReach)/2,.45+westReach);
+      const side=w*d>1&&westCenter+padW/2<=cw-.9;
+      const cx=side?westCenter:cw/2;
+      const cz=w*d===1?northArt.nativeDepth+.88
+        :Math.max(northArt.nativeDepth+padD/2+.67,Math.min(cd/2,cd-southArt.nativeDepth-padD/2-.67));
+      const center=point(cx,cz);
+      const addHouse=(base:string,axis:'x'|'z',u:number,v:number)=>{
+        const mirrored=(axis==='x')!==transpose,id=mirrored?`${base}-x`:base,art=sprites[id];
+        const [bx,bz]=point(u,v),door:Point=[bx+art.entrancePoint![0],bz+art.entrancePoint![1]];
+        const body={id,x:bx,z:bz,w:art.nativeWidth,d:art.nativeDepth};
+        items.push({parcel,id,factor:1,x:bx,z:bz,w:body.w,d:body.d,flat:false});plot.bodies.push(body);plot.entries.push(door);
+        const positive=art.entranceSide==='front',exit:Point=art.entranceAxis==='x'
+          ?[positive?bx+body.w+.12:bx-.12,door[1]]
+          :[door[0],positive?bz+body.d+.12:bz-.12];
+        plot.paths.push(art.entranceAxis==='x'
+          ?[door,exit,[center[0],exit[1]],center]
+          :[door,exit,[exit[0],center[1]],center]);
+      };
+      // 小院以相向的南北屋为骨架；宽院加西翼，东侧始终作为共同入口。
+      addHouse(north,'z',cx-northArt.nativeWidth/2,w*d===1?.45:cz-padD/2-.22-northArt.nativeDepth);
+      if(w*d>1){
+        addHouse('rustic-hut-back','z',cx-southArt.nativeWidth/2+(index%2?.08:-.08),cz+padD/2+.22);
+        if(side){
+          const west=sprites['rustic-hut-front-x'];
+          addHouse('rustic-hut-front','x',cx-padW/2-.22-west.nativeWidth,cz-west.nativeDepth/2+(index%2?.12:-.12));
         }
       }
+      const [px,pz]=point(cx-padW/2,cz-padD/2);
+      plot.courtyardPads.push({x:px,z:pz,w:transpose?padD:padW,d:transpose?padW:padD});
+      const exit=point(cw-.45,cz),corridor=x+pw-.45;
+      plot.paths.push([center,exit,[exit[0],mz+md-.45],[corridor,mz+md-.45],[corridor,z+pd-.45],[plot.gate[0],z+pd-.45],plot.gate]);
+      if(w*d>1){
+        const fixture=point(cx+(index%2?.5:-.55),cz+(index%2?-.55:.55));
+        prop(index%2?'life-5':'magic-6',fixture[0],fixture[1],after);
+        const person=point(cx-.28,cz+.2);prop(seed%2?'life-0':'life-2',person[0],person[1],after);
+      }
     }
-    plot.paths=plot.courts.map(court=>[
-      court.gate,[court.gate[0],z+pd-.1],[plot.gate[0],z+pd-.1],plot.gate
-    ]);
     plots.push(plot);
   }
   for(let block=0;block<calendar.districts.length;block++){

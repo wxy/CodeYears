@@ -8,7 +8,7 @@
 - `public/assets/city/`：保留的设计源素材，包含项目专用的 AI 生成透明建筑、植被、地面、奇观和城郊图片。源文件不再直接进入下一版发行包；代码的 MIT 声明不另行承诺这些位图的独立复用授权。
 - `public/assets/city-runtime/`：由设计源素材及标定流程生成的98张运行PNG；发行时复制到`assets/city/`，保持原资源权限范围。包括幼树的独立标定结果及注册纪念塔，不分发目录未引用的旧候选图。
 - SVG 投影模板、标定 JSON 与程序绘制道路属于项目代码；运行时只使用本地资源。
-- `public/assets/town-runtime/`：2026-11-11当前92张运行PNG，共17,466,739 bytes。原50张建筑/围院/生活与地貌资源字节、metadata保持；新增7类连体大建筑、7镜像和28独立院墙，42张共12,003,716 bytes。新复杂建筑/墙单独允许768或1024像素上限以保留普通门窗；原建筑384、地貌材质512规格不变。发行时复制到 `assets/town/`，按当前场景ID加载。源图、几何参考、完整内置image_gen生成/编辑提示、人工观察和被替代的门设计见[大体量来源](docs/design/ancient-town-concepts/2026-11-11/massing/GENERATION.md)及同目录observations.json；没有向图像工具提供真实贡献数据。地貌来源仍见[材料记录](docs/design/ancient-town-concepts/2026-11-11/terrain/GENERATION.md)。代码MIT不自动变更位图独立复用边界，参考项目原草图不作运行依赖。规格与验证见[本轮报告](docs/reports/TOWN-REGION-MASSING.md)。
+- `public/assets/town-runtime/`：2026-11-11当前26张运行PNG，共5,222,877 bytes。20张既有小屋/设施/地貌资源逐文件字节保持；新增4张茅草小屋正背/镜像视角和2张可复用短木栏。长排屋、会馆、学院、学宫和整区复合围栏退出当前运行目录，设计源仍保留。小屋和生活素材长边上限384、地貌512，运行实例统一factor=1；发行时复制到`assets/town/`，按所需ID加载。源图、完整内置ImageGen提示与人工校准见[乡间院落来源](docs/design/ancient-town-concepts/2026-11-11/rustic-courts/GENERATION.md)，较早高瘦视图保留为被替代研究稿，未输入真实贡献数据。地貌来源见[材料记录](docs/design/ancient-town-concepts/2026-11-11/terrain/GENERATION.md)。代码MIT不自动变更位图独立复用边界；验证与局限见[本轮报告](docs/reports/TOWN-RUSTIC-COURTYARDS.md)。
 
 生成提示、来源和标定分别保留在 `docs/design/city-buildings/`、`docs/design/city-units/v2/` 至 `v4/`、`docs/design/city-outskirts/`、`docs/design/city-transport/` 和 `docs/design/city-model-expansion/`。部分提示使用城市建造游戏作为质感参考，并要求不复制游戏素材、标志或受保护的特色建筑；没有将游戏图片打包。不能仅凭提示就宣称已完成第三方权利核查。
 
