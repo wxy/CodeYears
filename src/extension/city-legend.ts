@@ -11,11 +11,18 @@ export const cityLegendStyles = `
   .city-legend p { margin:4px 0; }
 `;
 
-export function createCityLegend(language: Language = 'zh-CN'): HTMLElement {
+export function createCityLegend(language: Language = 'zh-CN',town=false): HTMLElement {
   const legend = document.createElement("aside");
   legend.className = "city-legend";
   legend.dataset.i18nLabel = 'legendLabel';
-  legend.innerHTML = `
+  legend.innerHTML = town?`
+    <h4 data-i18n="townLegendHeading"></h4>
+    <ul>
+      <li><strong>1–2</strong> <span data-i18n="townLegendRustic"></span></li>
+      <li><strong>3–5</strong> <span data-i18n="townLegendFarm"></span></li>
+      <li><strong>6–19</strong> <span data-i18n="townLegendWorkshop"></span></li>
+      <li><strong>20+</strong> <span data-i18n="townLegendArcane"></span></li>
+    </ul><p data-i18n="townLegendRegions"></p><p data-i18n="townLegendLife"></p><p data-i18n="legendMissing"></p>`:`
     <h4 data-i18n="legendHeading"></h4>
     <ul>
       <li><strong>0</strong> <span data-i18n="legendZero"></span></li>

@@ -1,0 +1,301 @@
+{
+  "calibration": "Manual source contact envelopes and visible ground directions. Rendering only: vertical-preserving shear; round bases normalized to 2:1 ellipses. Source PNG unchanged.",
+  "frames": [
+    {
+      "sx": 0,
+      "sy": 0,
+      "sw": 420,
+      "sh": 420,
+      "bounds": [
+        130,
+        83,
+        316,
+        415
+      ],
+      "anchor": [
+        195.6039603960396,
+        415
+      ],
+      "family": "apprentice",
+      "worldHeight": 0.42,
+      "footprint": [
+        0.12,
+        0.12
+      ],
+      "contactBasis": "contact-scale: 仅按靴底/蹄足/树根可见接触点和声明尺度落位，无可靠刚体双轴，不声称已做建筑轴校准。"
+    },
+    {
+      "sx": 420,
+      "sy": 0,
+      "sw": 394,
+      "sh": 420,
+      "bounds": [
+        35,
+        87,
+        357,
+        415
+      ],
+      "anchor": [
+        187.93269230769232,
+        415
+      ],
+      "family": "villagers",
+      "worldHeight": 0.43,
+      "footprint": [
+        0.3,
+        0.16
+      ],
+      "contactBasis": "contact-scale: 仅按靴底/蹄足/树根可见接触点和声明尺度落位，无可靠刚体双轴，不声称已做建筑轴校准。"
+    },
+    {
+      "sx": 814,
+      "sy": 0,
+      "sw": 440,
+      "sh": 420,
+      "bounds": [
+        106,
+        83,
+        318,
+        418
+      ],
+      "anchor": [
+        178.625,
+        418
+      ],
+      "family": "scholar",
+      "worldHeight": 0.44,
+      "footprint": [
+        0.14,
+        0.14
+      ],
+      "contactBasis": "contact-scale: 仅按靴底/蹄足/树根可见接触点和声明尺度落位，无可靠刚体双轴，不声称已做建筑轴校准。"
+    },
+    {
+      "sx": 0,
+      "sy": 420,
+      "sw": 420,
+      "sh": 400,
+      "bounds": [
+        88,
+        67,
+        390,
+        332
+      ],
+      "anchor": [
+        348.25,
+        332
+      ],
+      "family": "farm-animals",
+      "worldHeight": 0.33,
+      "footprint": [
+        0.4,
+        0.3
+      ],
+      "contactBasis": "contact-scale: 仅按靴底/蹄足/树根可见接触点和声明尺度落位，无可靠刚体双轴，不声称已做建筑轴校准。"
+    },
+    {
+      "sx": 420,
+      "sy": 420,
+      "sw": 394,
+      "sh": 400,
+      "bounds": [
+        40,
+        128,
+        358,
+        302
+      ],
+      "anchor": [
+        144.82911392405063,
+        302
+      ],
+      "family": "cat-sheep",
+      "worldHeight": 0.25,
+      "footprint": [
+        0.4,
+        0.25
+      ],
+      "contactBasis": "contact-scale: 仅按靴底/蹄足/树根可见接触点和声明尺度落位，无可靠刚体双轴，不声称已做建筑轴校准。"
+    },
+    {
+      "sx": 814,
+      "sy": 420,
+      "sw": 440,
+      "sh": 400,
+      "bounds": [
+        46,
+        31,
+        381,
+        368
+      ],
+      "anchor": [
+        177.26732673267327,
+        368
+      ],
+      "family": "flowering-apple",
+      "worldHeight": 1.28,
+      "footprint": [
+        0.65,
+        0.65
+      ],
+      "contactBasis": "contact-scale: 仅按靴底/蹄足/树根可见接触点和声明尺度落位，无可靠刚体双轴，不声称已做建筑轴校准。"
+    },
+    {
+      "sx": 0,
+      "sy": 820,
+      "sw": 420,
+      "sh": 434,
+      "bounds": [
+        58,
+        14,
+        410,
+        375
+      ],
+      "anchor": [
+        174.28787878787878,
+        375
+      ],
+      "family": "market-stall",
+      "worldHeight": 1.05,
+      "footprint": [
+        0.9,
+        0.65
+      ],
+      "ground": [
+        [
+          60,
+          323
+        ],
+        [
+          190,
+          375
+        ],
+        [
+          407,
+          311
+        ]
+      ],
+      "axes": {
+        "W": [
+          [
+            90,
+            129
+          ],
+          [
+            177,
+            159
+          ]
+        ],
+        "D": [
+          [
+            221,
+            273
+          ],
+          [
+            382,
+            249
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 摊位左侧木框短向水平支承边；端点人工约±3px",
+        "D": "measured: 摊台前方木质台面长边；不使用悬垂软篷边；端点人工约±3px"
+      },
+      "contactBasis": "manual: 按石脚/木腿最低接触区域定位，人物、花盆等外伸不当作基础轴。",
+      "runtime": false,
+      "perspectiveStatus": "excluded: 源图接近正面，按可见硬边校到地图角度后过窄；首版停用，保留原图与量测供单独重画"
+    },
+    {
+      "sx": 420,
+      "sy": 820,
+      "sw": 394,
+      "sh": 434,
+      "bounds": [
+        32,
+        25,
+        363,
+        367
+      ],
+      "anchor": [
+        86.3,
+        367
+      ],
+      "family": "public-bench",
+      "worldHeight": 0.8,
+      "footprint": [
+        0.7,
+        0.45
+      ],
+      "ground": [
+        [
+          35,
+          329
+        ],
+        [
+          118,
+          367
+        ],
+        [
+          361,
+          310
+        ]
+      ],
+      "axes": {
+        "W": [
+          [
+            44,
+            294
+          ],
+          [
+            82,
+            310
+          ]
+        ],
+        "D": [
+          [
+            245,
+            338
+          ],
+          [
+            347,
+            320
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 长椅前左木座短边；端点人工约±2px，短边误差较大",
+        "D": "measured: 右侧花箱底座长向前沿；端点人工约±3px。长椅与花箱是否严格同向仍需独立核对。"
+      },
+      "contactBasis": "manual: 按石脚/木腿最低接触区域定位，人物、花盆等外伸不当作基础轴。"
+    },
+    {
+      "sx": 814,
+      "sy": 820,
+      "sw": 440,
+      "sh": 434,
+      "bounds": [
+        13,
+        27,
+        387,
+        369
+      ],
+      "anchor": [
+        157.5344129554656,
+        369
+      ],
+      "family": "spring-fountain",
+      "worldHeight": 0.8,
+      "footprint": [
+        0.7,
+        0.6
+      ],
+      "ellipse": [
+        198,
+        326,
+        183,
+        40
+      ],
+      "contactBasis": "manual: 按石脚/木腿最低接触区域定位，人物、花盆等外伸不当作基础轴。",
+      "ellipseBasis": "inferred: 泉台水平圆盆/基础前半弧初拟合，后方被竖墙和花盆遮挡；不把竖立背墙轮廓强制变成水平圆。"
+    }
+  ]
+}

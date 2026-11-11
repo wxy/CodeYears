@@ -1,0 +1,198 @@
+{
+  "columns": 4,
+  "rows": 3,
+  "frames": [
+    {
+      "sx": 0,
+      "sy": 0,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        25,
+        52,
+        344,
+        334
+      ],
+      "footx": 183.45806451612904,
+      "footy": 334,
+      "bodyWidth": 319,
+      "name": "thatched-cottage"
+    },
+    {
+      "sx": 362,
+      "sy": 0,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        23,
+        50,
+        339,
+        336
+      ],
+      "footx": 188.98757763975155,
+      "footy": 336,
+      "bodyWidth": 316,
+      "name": "timber-cottage"
+    },
+    {
+      "sx": 724,
+      "sy": 0,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        22,
+        51,
+        339,
+        336
+      ],
+      "footx": 183.0,
+      "footy": 336,
+      "bodyWidth": 317,
+      "name": "baker-cottage"
+    },
+    {
+      "sx": 1086,
+      "sy": 0,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        19,
+        50,
+        336,
+        336
+      ],
+      "footx": 172.08024691358025,
+      "footy": 336,
+      "bodyWidth": 317,
+      "name": "herbalist-cottage"
+    },
+    {
+      "sx": 0,
+      "sy": 362,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        22,
+        30,
+        343,
+        329
+      ],
+      "footx": 173.72727272727272,
+      "footy": 329,
+      "bodyWidth": 321,
+      "name": "craft-workshop"
+    },
+    {
+      "sx": 362,
+      "sy": 362,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        25,
+        41,
+        341,
+        329
+      ],
+      "footx": 170.66666666666666,
+      "footy": 329,
+      "bodyWidth": 316,
+      "name": "potion-workshop"
+    },
+    {
+      "sx": 724,
+      "sy": 362,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        19,
+        44,
+        340,
+        328
+      ],
+      "footx": 158.05309734513276,
+      "footy": 328,
+      "bodyWidth": 321,
+      "name": "blue-guild"
+    },
+    {
+      "sx": 1086,
+      "sy": 362,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        21,
+        34,
+        339,
+        329
+      ],
+      "footx": 176.68055555555554,
+      "footy": 329,
+      "bodyWidth": 318,
+      "name": "merchant-lodge"
+    },
+    {
+      "sx": 0,
+      "sy": 724,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        26,
+        36,
+        339,
+        313
+      ],
+      "footx": 182.86702127659575,
+      "footy": 313,
+      "bodyWidth": 313,
+      "name": "arcane-atelier"
+    },
+    {
+      "sx": 362,
+      "sy": 724,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        22,
+        37,
+        343,
+        315
+      ],
+      "footx": 167.35714285714286,
+      "footy": 315,
+      "bodyWidth": 321,
+      "name": "jeweller-atelier"
+    },
+    {
+      "sx": 724,
+      "sy": 724,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        50,
+        40,
+        312,
+        304
+      ],
+      "footx": 176.1764705882353,
+      "footy": 304,
+      "bodyWidth": 262,
+      "name": "conifer-cluster"
+    },
+    {
+      "sx": 1086,
+      "sy": 724,
+      "sw": 362,
+      "sh": 362,
+      "bounds": [
+        35,
+        113,
+        324,
+        298
+      ],
+      "footx": 173.26666666666668,
+      "footy": 298,
+      "bodyWidth": 289,
+      "name": "mossy-stones"
+    }
+  ]
+}

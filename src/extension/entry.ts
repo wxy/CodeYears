@@ -86,6 +86,7 @@ declare global {
     heading.append(host); heading.after(bodyHost);
     const hiddenNative = new Map<HTMLElement, { display: string; priority: string }>();
     let active = false, disposed = false, selection = 0, panel: CityPanel | undefined;
+    let roadArrivalPending=location.hash==='#codeyears-city'||location.hash==='#codeyears-town';
     let modulePromise: Promise<typeof import('./content')> | undefined;
     let entryState: 'preparing' | 'error' = 'preparing';
     const localize = () => {
@@ -116,6 +117,10 @@ declare global {
       hiddenNative.clear();
     };
     const selectNative = () => {
+      roadArrivalPending=false;
+      if(location.hash==='#codeyears-city'||location.hash==='#codeyears-town'){
+        const url=new URL(location.href);url.hash='';history.replaceState(history.state,'',url);
+      }
       active = false; selection++; panel?.deactivate(); restoreNative();
       nativeControls.hidden = false; cityControls.hidden = true;
       nativeButton.parentElement!.dataset.active = 'true'; cityButton.parentElement!.dataset.active = 'false';
@@ -160,9 +165,11 @@ declare global {
     host.dataset.view = 'native';
     return {
       root, native, grid, heading, nativeStats, host, bodyHost, profile, sync, localize,
-      open() { host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
+      open() { roadArrivalPending=false; host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
+      openRoadArrival() { if(roadArrivalPending&&!document.hidden){roadArrivalPending=false;host.scrollIntoView({block:'nearest'});void selectCity()} },
       deactivate: selectNative,
       visibility(hidden: boolean) {
+        if(!hidden&&roadArrivalPending){roadArrivalPending=false;host.scrollIntoView({block:'nearest'});void selectCity();return}
         if (!active || disposed) return;
         if (hidden) panel?.deactivate(); else void panel?.activate();
       },
@@ -194,6 +201,7 @@ declare global {
     while (native.parentElement !== root) native = native.parentElement!;
     if (!native.contains(heading)) return;
     mounted = mount(root, native, grid, heading, profile);
+    mounted.openRoadArrival();
   }
   const observer = new MutationObserver(() => {
     if (queued) return;

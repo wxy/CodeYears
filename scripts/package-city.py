@@ -29,7 +29,7 @@ files = {name: dist / name for name in ("manifest.json", "popup.html", "options.
 for locale in ("en", "zh_CN"):
     name = f"_locales/{locale}/messages.json"
     files[name] = dist / name
-for pattern in ("assets/popup-*.js", "assets/options-*.js", "assets/shared-*.js", "assets/city/*.png", "chunks/*.js"):
+for pattern in ("assets/popup-*.js", "assets/options-*.js", "assets/shared-*.js", "assets/city/*.png", "assets/town/*.png", "chunks/*.js"):
     files.update((path.relative_to(dist).as_posix(), path) for path in dist.glob(pattern))
 for table in (manifest["icons"], manifest["action"]["default_icon"]):
     files.update((name, dist / name) for name in table.values())

@@ -1,0 +1,159 @@
+{
+  "projection": "world +X down-right, +Y down-left, 2:1 isometric",
+  "calibration": "Provisional manual ground contact anchors and nominal rectangular footprints; no pixel warping. Longhouse and linear farm frames run along +Y; renderer reflects horizontally for +X.",
+  "frames": [
+    {
+      "name": "rustic-longhouse",
+      "family": "longhouse",
+      "sx": 0,
+      "sy": 0,
+      "sw": 416,
+      "sh": 415,
+      "anchor": [
+        116,
+        354
+      ],
+      "footprint": [
+        1.05,
+        2.8
+      ],
+      "pixelsPerUnit": 105
+    },
+    {
+      "name": "workshop-longhall",
+      "family": "workshop-longhall",
+      "sx": 416,
+      "sy": 0,
+      "sw": 400,
+      "sh": 415,
+      "anchor": [
+        108,
+        343
+      ],
+      "footprint": [
+        1.05,
+        2.8
+      ],
+      "pixelsPerUnit": 100
+    },
+    {
+      "name": "winged-manor",
+      "family": "winged-manor",
+      "sx": 816,
+      "sy": 0,
+      "sw": 438,
+      "sh": 415,
+      "anchor": [
+        215,
+        360
+      ],
+      "footprint": [
+        2.1,
+        2.1
+      ],
+      "pixelsPerUnit": 99.5
+    },
+    {
+      "name": "deep-rustic-longhouse",
+      "family": "longhouse",
+      "sx": 0,
+      "sy": 415,
+      "sw": 414,
+      "sh": 410,
+      "anchor": [
+        117,
+        328
+      ],
+      "footprint": [
+        1.0,
+        3.3
+      ],
+      "pixelsPerUnit": 93.5
+    },
+    {
+      "name": "deep-workshop-longhall",
+      "family": "workshop-longhall",
+      "sx": 414,
+      "sy": 415,
+      "sw": 400,
+      "sh": 410,
+      "anchor": [
+        122,
+        331
+      ],
+      "footprint": [
+        1.0,
+        3.3
+      ],
+      "pixelsPerUnit": 92.6
+    },
+    {
+      "name": "guild-manor",
+      "family": "guild-manor",
+      "sx": 814,
+      "sy": 415,
+      "sw": 440,
+      "sh": 410,
+      "anchor": [
+        220,
+        340
+      ],
+      "footprint": [
+        2.25,
+        2.25
+      ],
+      "pixelsPerUnit": 93
+    },
+    {
+      "name": "complete-farmstead",
+      "family": "farmstead",
+      "sx": 0,
+      "sy": 825,
+      "sw": 418,
+      "sh": 429,
+      "anchor": [
+        285,
+        359
+      ],
+      "footprint": [
+        3.0,
+        2.1
+      ],
+      "pixelsPerUnit": 80
+    },
+    {
+      "name": "linear-farmstead",
+      "family": "linear-farmstead",
+      "sx": 418,
+      "sy": 825,
+      "sw": 384,
+      "sh": 429,
+      "anchor": [
+        94,
+        334
+      ],
+      "footprint": [
+        1.0,
+        4.0
+      ],
+      "pixelsPerUnit": 75.2
+    },
+    {
+      "name": "broad-winged-estate",
+      "family": "broad-estate",
+      "sx": 802,
+      "sy": 825,
+      "sw": 452,
+      "sh": 429,
+      "anchor": [
+        294,
+        320
+      ],
+      "footprint": [
+        3.8,
+        2.0
+      ],
+      "pixelsPerUnit": 74.5
+    }
+  ]
+}

@@ -358,5 +358,119 @@
   },
   "feedback": {
     "message": "Feedback"
+  },
+  "mapType": {
+    "message": "Map type"
+  },
+  "modernCity": {
+    "message": "Modern city"
+  },
+  "magicTown": {
+    "message": "Magic town"
+  },
+  "preparingMap": {
+    "message": "Preparing the map…"
+  },
+  "townLegendHeading": {
+    "message": "Reading the town · courtyard mean daily contributions"
+  },
+  "townLegendRustic": {
+    "message": "Thatched cottages and country courtyards"
+  },
+  "townLegendFarm": {
+    "message": "Farmhouses, stables and farmyards"
+  },
+  "townLegendWorkshop": {
+    "message": "Herbal workshops and artisan yards"
+  },
+  "townLegendArcane": {
+    "message": "Mages' courtyards and small observatories"
+  },
+  "townLegendRegions": {
+    "message": "Adjacent dates with similar contributions form a region represented by cottages around shared courtyards. Area determines the courtyard grouping; mean daily contributions guide craftsmanship, paving and magical amenities. People and ordinary doors keep one scale. Height does not encode contributions."
+  },
+  "townLegendLife": {
+    "message": "Residents, animals, flowering trees, mana wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
+  },
+  "roadsHeading": {
+    "message": "Road destination"
+  },
+  "roadUsername": {
+    "message": "GitHub username"
+  },
+  "removeRoad": {
+    "message": "Remove"
+  },
+  "roadsLocal": {
+    "message": "Destinations are saved in this browser. Only you can edit your city’s roads."
+  },
+  "roadInvalidUsername": {
+    "message": "Enter a GitHub username (up to 39 letters, digits or single hyphens)."
+  },
+  "roadSelf": {
+    "message": "Choose another GitHub account."
+  },
+  "roadDuplicate": {
+    "message": "A road to this account already exists."
+  },
+  "roadsReadError": {
+    "message": "Could not read saved roads. Retry to manage them."
+  },
+  "roadsSaveError": {
+    "message": "Could not save this change. Your saved roads have been kept."
+  },
+  "saveRoad": {
+    "message": "Save"
+  },
+  "closeRoadEditor": {
+    "message": "Close road settings"
+  },
+  "addRoadAt": {
+    "message": "Add a destination to exit $1"
+  },
+  "roadCount": {
+    "message": "$1 / $2 roads"
+  },
+  "changeRoad": {
+    "message": "Change destination"
+  },
+  "editRoad": {
+    "message": "Edit"
+  },
+  "editRoadTo": {
+    "message": "Change the road to $1"
+  },
+  "cityName": {
+    "message": "@$1’s city"
+  },
+  "unknownRoad": {
+    "message": "Unknown destination"
+  },
+  "roadEditHint": {
+    "message": "Right-click or press Shift+F10 to edit the destination"
+  },
+  "roadReturnHint": {
+    "message": "Right-click or press Shift+F10 for all return routes"
+  },
+  "returnToCity": {
+    "message": "Return to @$1’s city"
+  },
+  "returnRoadHeading": {
+    "message": "Return routes"
+  },
+  "returnRoadLocal": {
+    "message": "These return routes follow your visits in this tab. They do not change this city’s exits."
+  },
+  "roadsOwnerOnly": {
+    "message": "Only the signed-in owner can edit this city’s roads."
+  },
+  "roadOwnerCheckFailed": {
+    "message": "Could not confirm your identity and save the road. The previous settings have been kept."
+  },
+  "roadTravelError": {
+    "message": "Could not save the return route. Please try again."
+  },
+  "addRoadHeading": {
+    "message": "Add a road"
   }
 }

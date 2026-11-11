@@ -9,6 +9,8 @@ export interface CityBridge {
 }
 export interface CityRoadNetwork {
   roads: CityRoadRoute[]; junctions: CityRoadJunction[]; bridges: CityBridge[];
+  /** 独立保存出口原段，避免同轴道路归并后丢失出城方向和接点。 */
+  exits?: CityRoadRoute[];
   vehicles: CityVehicle[]; ringOuter: number;
 }
 // 最外年度主路到1.6格，环路内缘2格，二者之间保留0.4格隔离带。
@@ -90,8 +92,8 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
         if (vehicles.length >= 180) return;
         const fraction = direction === 1 ? .32 + (seed % 13) / 100 : .62 + (seed % 11) / 100;
         const offset = (.2 + .4 * (seed % (lanes / 2))) * direction;
-        const position = bridge ? sampleCityBridge(bridge, fraction, offset) : {
-          x: from[0] + dx * fraction + dz / length * offset, z: from[1] + dz * fraction - dx / length * offset,
+        const position = bridge ? sampleCityBridge(bridge, fraction, -offset) : {
+          x: from[0] + dx * fraction - dz / length * offset, z: from[1] + dz * fraction + dx / length * offset,
           elevation: 0, angle: Math.atan2(dz, dx),
         };
         const { x, z } = position;

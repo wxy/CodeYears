@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "source": "magic-town-v2.png",
+  "coordinateSystem": "Native pixels relative to the existing crop. Targets are design units with adult H=0.8, not recovered physical measurements.",
+  "frames": [
+    {
+      "id": "magic-6",
+      "reference": {"top": [226, 239], "bottom": [226, 330]},
+      "target": 0.44,
+      "kind": "front well rim to local base",
+      "basis": "manual/inferred: visible front stone rim and front plinth contact; the base has projected depth, not a precision vertical survey; endpoints about ±6 source pixels. Target is a usable basin near 0.55 adult height."
+    },
+    {
+      "id": "magic-7",
+      "reference": {"top": [160, 38], "bottom": [160, 336]},
+      "target": 1.5,
+      "kind": "lamp finial to pedestal contact",
+      "basis": "manual: visible finial and pedestal at the pole axis; endpoints about ±5 source pixels. Target is an approximately 1.875-adult-high lamp including pedestal."
+    },
+    {
+      "id": "magic-8",
+      "reference": {"top": [200, 115], "bottom": [200, 265]},
+      "target": 1.1,
+      "kind": "clear portal opening",
+      "basis": "manual: visible blue opening at its centre, checked at crop x190/200/210 (blue span roughly y113..265); endpoints about ±5 source pixels. Horizontal base envelope remains inferred; the upright ring is not a horizontal circle."
+    }
+  ]
+}

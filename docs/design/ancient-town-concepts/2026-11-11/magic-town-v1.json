@@ -1,0 +1,363 @@
+{
+  "calibration": "Manual source contact envelopes and visible ground directions. Rendering only: vertical-preserving shear; round bases normalized to 2:1 ellipses. Source PNG unchanged.",
+  "frames": [
+    {
+      "sx": 0,
+      "sy": 0,
+      "sw": 405,
+      "sh": 420,
+      "bounds": [
+        43,
+        78,
+        380,
+        398
+      ],
+      "anchor": [
+        209.03533568904592,
+        398
+      ],
+      "family": "round-observatory",
+      "footprint": [
+        1.05,
+        1.05
+      ],
+      "ellipse": [
+        212,
+        343,
+        170,
+        55
+      ],
+      "heightReference": {
+        "base": [
+          205,
+          367
+        ],
+        "top": [
+          205,
+          310
+        ],
+        "target": 0.44,
+        "basis": "观星者完整人物，手工标注"
+      }
+    },
+    {
+      "sx": 405,
+      "sy": 0,
+      "sw": 367,
+      "sh": 420,
+      "bounds": [
+        24,
+        68,
+        339,
+        392
+      ],
+      "anchor": [
+        177.79496402877697,
+        392
+      ],
+      "family": "round-mage-workshop",
+      "footprint": [
+        1.05,
+        1.05
+      ],
+      "ellipse": [
+        182,
+        343,
+        156,
+        49
+      ],
+      "heightReference": {
+        "base": [
+          256,
+          352
+        ],
+        "top": [
+          256,
+          312
+        ],
+        "target": 0.24,
+        "basis": "开口工作窗内学徒可见上半身，手工标注"
+      }
+    },
+    {
+      "sx": 772,
+      "sy": 0,
+      "sw": 482,
+      "sh": 420,
+      "bounds": [
+        22,
+        96,
+        460,
+        392
+      ],
+      "anchor": [
+        143.22857142857143,
+        392
+      ],
+      "family": "enchanted-greenhouse",
+      "footprint": [
+        1.0,
+        3.3
+      ],
+      "ground": [
+        [
+          30,
+          348
+        ],
+        [
+          148,
+          390
+        ],
+        [
+          457,
+          307
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          256,
+          349
+        ],
+        "top": [
+          256,
+          302
+        ],
+        "target": 0.24,
+        "basis": "温室开放工作窗可见上半身，手工标注"
+      }
+    },
+    {
+      "sx": 0,
+      "sy": 420,
+      "sw": 379,
+      "sh": 400,
+      "bounds": [
+        15,
+        63,
+        373,
+        355
+      ],
+      "anchor": [
+        217.71698113207546,
+        355
+      ],
+      "family": "alchemist-manor",
+      "footprint": [
+        2.1,
+        2.1
+      ],
+      "ground": [
+        [
+          18,
+          280
+        ],
+        [
+          218,
+          355
+        ],
+        [
+          369,
+          286
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          207,
+          320
+        ],
+        "top": [
+          207,
+          246
+        ],
+        "target": 0.44,
+        "basis": "炼金师完整人物，手工标注"
+      }
+    },
+    {
+      "sx": 379,
+      "sy": 420,
+      "sw": 377,
+      "sh": 400,
+      "bounds": [
+        4,
+        71,
+        372,
+        336
+      ],
+      "anchor": [
+        190.2779552715655,
+        336
+      ],
+      "family": "arcane-guild",
+      "footprint": [
+        2.25,
+        2.25
+      ],
+      "ground": [
+        [
+          8,
+          285
+        ],
+        [
+          190,
+          337
+        ],
+        [
+          368,
+          288
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          185,
+          284
+        ],
+        "top": [
+          185,
+          234
+        ],
+        "target": 0.44,
+        "basis": "院内导师完整人物，手工标注"
+      }
+    },
+    {
+      "sx": 756,
+      "sy": 420,
+      "sw": 498,
+      "sh": 400,
+      "bounds": [
+        4,
+        75,
+        489,
+        335
+      ],
+      "anchor": [
+        253.5,
+        335
+      ],
+      "family": "arcane-academy",
+      "footprint": [
+        3.8,
+        2.0
+      ],
+      "ground": [
+        [
+          12,
+          267
+        ],
+        [
+          242,
+          335
+        ],
+        [
+          488,
+          265
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          172,
+          313
+        ],
+        "top": [
+          172,
+          265
+        ],
+        "target": 0.44,
+        "basis": "前院学徒完整人物，手工标注"
+      }
+    },
+    {
+      "sx": 0,
+      "sy": 820,
+      "sw": 420,
+      "sh": 434,
+      "bounds": [
+        88,
+        56,
+        363,
+        331
+      ],
+      "anchor": [
+        221.04605263157896,
+        331
+      ],
+      "family": "mana-well",
+      "worldHeight": 0.72,
+      "footprint": [
+        0.6,
+        0.6
+      ],
+      "ellipse": [
+        225,
+        298,
+        137,
+        34
+      ]
+    },
+    {
+      "sx": 420,
+      "sy": 820,
+      "sw": 380,
+      "sh": 434,
+      "bounds": [
+        102,
+        35,
+        254,
+        339
+      ],
+      "anchor": [
+        160.0,
+        339
+      ],
+      "family": "leyline-lamp",
+      "worldHeight": 0.83,
+      "footprint": [
+        0.3,
+        0.3
+      ],
+      "ground": [
+        [
+          105,
+          309
+        ],
+        [
+          160,
+          340
+        ],
+        [
+          254,
+          311
+        ]
+      ]
+    },
+    {
+      "sx": 800,
+      "sy": 820,
+      "sw": 454,
+      "sh": 434,
+      "bounds": [
+        47,
+        34,
+        353,
+        337
+      ],
+      "anchor": [
+        195.7355623100304,
+        337
+      ],
+      "family": "waygate",
+      "worldHeight": 1.05,
+      "footprint": [
+        0.8,
+        0.4
+      ],
+      "ellipse": [
+        202,
+        304,
+        152,
+        32
+      ]
+    }
+  ]
+}

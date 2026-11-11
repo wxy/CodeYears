@@ -1,0 +1,508 @@
+{
+  "calibration": "Mixed source catalogue: compact round 0/1 preserve v1; corrected lower buildings and utilities 2..8 use v2. Ground axes keep vertical edges upright; visible occupant references cap image scale without enlarging it. Envelopes are manual design measurements, not recovered physical geometry.",
+  "frames": [
+    {
+      "sx": 0,
+      "sy": 0,
+      "sw": 405,
+      "sh": 420,
+      "bounds": [
+        43,
+        78,
+        380,
+        398
+      ],
+      "anchor": [
+        209.03533568904592,
+        398
+      ],
+      "family": "round-observatory",
+      "footprint": [
+        1.05,
+        1.05
+      ],
+      "ellipse": [
+        212,
+        343,
+        170,
+        55
+      ],
+      "heightReference": {
+        "base": [
+          205,
+          367
+        ],
+        "top": [
+          205,
+          310
+        ],
+        "target": 0.44,
+        "basis": "观星者完整人物，手工标注"
+      },
+      "source": "magic-town-v1.png",
+      "ellipseBasis": "inferred: 按可见水平石质基座前半弧和左右极点初拟合；后半弧被主体遮挡，2:1目标不是独立完整圆测量。传送门竖立门环不参与水平椭圆校准。",
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 405,
+      "sy": 0,
+      "sw": 367,
+      "sh": 420,
+      "bounds": [
+        24,
+        68,
+        339,
+        392
+      ],
+      "anchor": [
+        177.79496402877697,
+        392
+      ],
+      "family": "round-mage-workshop",
+      "footprint": [
+        1.05,
+        1.05
+      ],
+      "ellipse": [
+        182,
+        343,
+        156,
+        49
+      ],
+      "heightReference": {
+        "base": [
+          256,
+          352
+        ],
+        "top": [
+          256,
+          312
+        ],
+        "target": 0.24,
+        "basis": "开口工作窗内学徒可见上半身，手工标注"
+      },
+      "source": "magic-town-v1.png",
+      "ellipseBasis": "inferred: 按可见水平石质基座前半弧和左右极点初拟合；后半弧被主体遮挡，2:1目标不是独立完整圆测量。传送门竖立门环不参与水平椭圆校准。",
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 798,
+      "sy": 0,
+      "sw": 456,
+      "sh": 420,
+      "bounds": [
+        13,
+        124,
+        443,
+        383
+      ],
+      "anchor": [
+        156.672131147541,
+        383
+      ],
+      "family": "enchanted-greenhouse",
+      "footprint": [
+        1.0,
+        3.3
+      ],
+      "ground": [
+        [
+          16,
+          329
+        ],
+        [
+          149,
+          386
+        ],
+        [
+          439,
+          271
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          284,
+          318
+        ],
+        "top": [
+          284,
+          292
+        ],
+        "target": 0.24,
+        "basis": "温室窗口内炼金师可见上半身，手工标注"
+      },
+      "axes": {
+        "W": [
+          [
+            30,
+            305
+          ],
+          [
+            143,
+            363
+          ]
+        ],
+        "D": [
+          [
+            201,
+            359
+          ],
+          [
+            414,
+            257
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 温室前侧基础石脚可见直边，避开花箱与门前突出物；端点人工约±3px",
+        "D": "measured: 长侧基础石脚前沿，端点人工约±3px"
+      },
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 0,
+      "sy": 420,
+      "sw": 383,
+      "sh": 400,
+      "bounds": [
+        7,
+        81,
+        377,
+        346
+      ],
+      "anchor": [
+        188.10204081632654,
+        346
+      ],
+      "family": "alchemist-manor",
+      "footprint": [
+        2.1,
+        2.1
+      ],
+      "ground": [
+        [
+          8,
+          260
+        ],
+        [
+          218,
+          354
+        ],
+        [
+          376,
+          274
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          190,
+          278
+        ],
+        "top": [
+          190,
+          240
+        ],
+        "target": 0.44,
+        "basis": "庭院炼金师完整人物，手工标注"
+      },
+      "axes": {
+        "W": [
+          [
+            37,
+            273
+          ],
+          [
+            174,
+            338
+          ]
+        ],
+        "D": [
+          [
+            218,
+            326
+          ],
+          [
+            356,
+            257
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 炼金庄园前左侧平台外缘；端点人工约±3px",
+        "D": "measured: 前右侧平台外缘；端点人工约±3px"
+      },
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 383,
+      "sy": 420,
+      "sw": 394,
+      "sh": 400,
+      "bounds": [
+        5,
+        88,
+        388,
+        349
+      ],
+      "anchor": [
+        195.6727272727273,
+        349
+      ],
+      "family": "arcane-guild",
+      "footprint": [
+        2.25,
+        2.25
+      ],
+      "ground": [
+        [
+          8,
+          260
+        ],
+        [
+          198,
+          358
+        ],
+        [
+          388,
+          262
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          188,
+          274
+        ],
+        "top": [
+          188,
+          234
+        ],
+        "target": 0.44,
+        "basis": "庭院导师完整人物，手工标注"
+      },
+      "axes": {
+        "W": [
+          [
+            37,
+            261
+          ],
+          [
+            172,
+            329
+          ]
+        ],
+        "D": [
+          [
+            220,
+            327
+          ],
+          [
+            355,
+            260
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 行会左前基础外缘；端点人工约±3px",
+        "D": "measured: 行会右前基础外缘；端点人工约±3px"
+      },
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 777,
+      "sy": 420,
+      "sw": 477,
+      "sh": 400,
+      "bounds": [
+        5,
+        85,
+        470,
+        361
+      ],
+      "anchor": [
+        230.57142857142858,
+        361
+      ],
+      "family": "arcane-academy",
+      "footprint": [
+        3.8,
+        2.0
+      ],
+      "ground": [
+        [
+          10,
+          252
+        ],
+        [
+          235,
+          363
+        ],
+        [
+          467,
+          252
+        ]
+      ],
+      "heightReference": {
+        "base": [
+          165,
+          310
+        ],
+        "top": [
+          165,
+          277
+        ],
+        "target": 0.44,
+        "basis": "前院学徒完整人物，手工标注"
+      },
+      "axes": {
+        "W": [
+          [
+            34,
+            256
+          ],
+          [
+            198,
+            337
+          ]
+        ],
+        "D": [
+          [
+            273,
+            337
+          ],
+          [
+            441,
+            254
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 学院左前铺地基础外缘；端点人工约±3px",
+        "D": "measured: 学院右前铺地基础外缘；端点人工约±3px"
+      },
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 0,
+      "sy": 820,
+      "sw": 420,
+      "sh": 434,
+      "bounds": [
+        88,
+        53,
+        364,
+        334
+      ],
+      "anchor": [
+        224.075,
+        334
+      ],
+      "family": "mana-well",
+      "worldHeight": 0.72,
+      "footprint": [
+        0.6,
+        0.6
+      ],
+      "ellipse": [
+        226,
+        298,
+        138,
+        34
+      ],
+      "ellipseBasis": "inferred: 按可见水平石质基座前半弧和左右极点初拟合；后半弧被主体遮挡，2:1目标不是独立完整圆测量。传送门竖立门环不参与水平椭圆校准。",
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 420,
+      "sy": 820,
+      "sw": 380,
+      "sh": 434,
+      "bounds": [
+        99,
+        32,
+        256,
+        342
+      ],
+      "anchor": [
+        162.9090909090909,
+        342
+      ],
+      "family": "leyline-lamp",
+      "worldHeight": 0.83,
+      "footprint": [
+        0.3,
+        0.3
+      ],
+      "ground": [
+        [
+          101,
+          310
+        ],
+        [
+          160,
+          341
+        ],
+        [
+          256,
+          313
+        ]
+      ],
+      "axes": {
+        "W": [
+          [
+            105,
+            310
+          ],
+          [
+            160,
+            337
+          ]
+        ],
+        "D": [
+          [
+            160,
+            337
+          ],
+          [
+            251,
+            310
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured: 路灯低矮石台前左直边；端点人工约±2px，短边误差较大",
+        "D": "measured: 石台前右直边；端点人工约±2px"
+      },
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    },
+    {
+      "sx": 800,
+      "sy": 820,
+      "sw": 454,
+      "sh": 434,
+      "bounds": [
+        46,
+        33,
+        357,
+        340
+      ],
+      "anchor": [
+        200.38141025641025,
+        340
+      ],
+      "family": "waygate",
+      "worldHeight": 1.05,
+      "footprint": [
+        0.8,
+        0.4
+      ],
+      "ellipse": [
+        202,
+        304,
+        154,
+        33
+      ],
+      "ellipseBasis": "inferred: 按可见水平石质基座前半弧和左右极点初拟合；后半弧被主体遮挡，2:1目标不是独立完整圆测量。传送门竖立门环不参与水平椭圆校准。",
+      "contactBasis": "manual: 基础平台接地包络中心用于落位，花草和灯饰外伸不当作结构接地角。"
+    }
+  ]
+}

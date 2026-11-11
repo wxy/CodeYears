@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "status": "new scale candidate annotation only; stable-v1 retained as withdrawn design candidate; no runtime change",
+  "coordinateSystem": "Native source crop pixels, origin top-left. Height uses vertical delta-y. Width is a slanted screen segment, not recovered world width.",
+  "normalizationProposal": {
+    "adultHeightWorld": 0.8,
+    "ordinaryDoorNetHeightWorld": 1.0,
+    "calibratedScaleNote": "Use door height AFTER direction correction (abs(d)*213 if vertical multiplier d). Transform both width endpoints with the same matrix to recover the facade-plane span before checking shoulder clearance. Do not shrink again to ground-fit."
+  },
+  "frames": [
+    {
+      "id": "stable-0",
+      "source": "stable-human-scale-v2.png",
+      "crop": [
+        0,
+        0,
+        1280,
+        1280
+      ],
+      "axes": {
+        "W": [
+          [
+            166,
+            632
+          ],
+          [
+            470,
+            663
+          ]
+        ],
+        "D": [
+          [
+            698,
+            675
+          ],
+          [
+            983,
+            590
+          ]
+        ]
+      },
+      "axisBasis": {
+        "W": "measured/shared-structure: 实际复看v2短立面人门上方大横梁上边界，与v1同构造且可见位置基本未变；端点约±4px。",
+        "D": "measured/shared-structure: 实际复看v2长立面屋檐下连续檐梁直边，避开斜撑和柱头；与v1同构造，端点约±4px。"
+      },
+      "ground": [
+        [
+          110,
+          935
+        ],
+        [
+          618,
+          1005
+        ],
+        [
+          1170,
+          838
+        ]
+      ],
+      "groundBasis": "inferred/shared-structure: 复看v2石基、水槽、柱基轮廓与v1基本未变，保留整体L/F/R支撑近似。包含局部前凸，三点不是完整可见矩形；仅支撑/放置，不作人尺度或方向证据。",
+      "door": {
+        "top": [
+          327,
+          718
+        ],
+        "bottom": [
+          327,
+          931
+        ],
+        "heightPx": 213,
+        "width": [
+          [
+            235,
+            821
+          ],
+          [
+            423,
+            839
+          ]
+        ],
+        "widthScreenDelta": [
+          188,
+          18
+        ],
+        "basis": "measured",
+        "endpointUncertaintyPx": 3,
+        "kind": "ordinary pedestrian door, widened candidate",
+        "note": "实际查看v2：左端木门内拱冠至同竖线上的门叶底边；宽取拱肩以下左右木门叶/石内口边，避开外石拱和门前台阶。宽线顺立面正斜率，不取外框宽或图像水平投影冒充物理净宽。"
+      },
+      "window": {
+        "top": [
+          518,
+          748
+        ],
+        "bottom": [
+          518,
+          817
+        ],
+        "heightPx": 69,
+        "basis": "measured-visible-portion",
+        "endpointUncertaintyPx": 3,
+        "recognition": "partly-occluded",
+        "note": "门右侧玻璃可见段；花叶覆盖完整下边，69px仅可见净高下界，不计花箱外高。v2门旁开口仍近似v1位置和玻璃高度，未用门外石拱作窗框。"
+      },
+      "checkVerticals": [
+        {
+          "points": [
+            [
+              602,
+              739
+            ],
+            [
+              602,
+              922
+            ]
+          ],
+          "basis": "measured/shared-structure: v2两立面交界大柱的可见竖边，复看保持竖直，不含柱基，端点约±3px。"
+        }
+      ],
+      "scaleAssessment": "门净高约213px，净宽屏幕横向跨度188px；与旧候选83px跨度相比约2.27倍，而净高近似不变。必须经同一方向变换恢复门平面宽度，再与成人肩宽共同复验，不能仅以height=1.0通过。此记录不宣布最终净宽或可通行已经验收。",
+      "action": "normalize-door-height-then-verify-door-plane-width-with-adult-shoulders"
+    }
+  ],
+  "sourceSha256": {
+    "stable-human-scale-v2.png": "ae3b6a95cd06af4080dd7d2880db287ca0708ac7858d12dbd47088c8f29c39b8"
+  }
+}
