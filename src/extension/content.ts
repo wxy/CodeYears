@@ -62,7 +62,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .city-road-surface:hover { background:#f8e6a655; }
       .city-road-sign:hover { background:#fff1; }
       .city-road-sign:focus-visible { background:#ffe18044; }
-      .city-road-edit { position:absolute; z-index:2; transform:translateY(-50%); pointer-events:none; opacity:0; padding:5px 9px; min-height:28px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; color:var(--fgColor-default,#1f2328); background:var(--bgColor-default,#fff); box-shadow:0 2px 6px #0002; font-size:11px; cursor:pointer; }
+      .city-road-edit { position:absolute; z-index:2; translate:0 -50%; pointer-events:none; opacity:0; padding:5px 9px; min-height:28px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; color:var(--fgColor-default,#1f2328); background:var(--bgColor-default,#fff); box-shadow:0 2px 6px #0002; font-size:11px; cursor:pointer; }
       .city-road-sign:hover + .city-road-edit,.city-road-sign:focus + .city-road-edit,.city-road-edit:hover,.city-road-edit:focus { opacity:1; pointer-events:auto; }
       @media (hover:none) { .city-road-edit { opacity:1; pointer-events:auto; min-width:44px; min-height:36px; } }
       .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }

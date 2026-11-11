@@ -232,6 +232,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     }));
   });
   let roadCount=4;
+  let returnRoadEnd=1;
   let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined,boardOrder:DirectionBoard[]=[];
   let exitStone:CanvasPattern|undefined;
   if(scene.kind==='town'){
@@ -249,9 +250,9 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     };
   };
   let paintExits=planExits(roadCount);
-  const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return')=>{
+  const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
     const sprite=images[`direction-board-${kind==='outbound'?'z':'x'}`];
-    return sprite?planDirectionBoard(road,label,scene.kind==='town',kind,context,sprite):undefined;
+    return sprite?planDirectionBoard(road,label,scene.kind==='town',kind,context,sprite,exitRoads.slice(0,roadCount),range):undefined;
   };
   const roadScreen=(x:number,z:number,viewport:LandscapeViewport):[number,number]=>{
     const [px,py]=project(x,z),scale=fitScale(viewport)*viewport.zoom;
@@ -282,8 +283,12 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     canvas,
     setRoadCount(count){if(count!==roadCount){roadCount=count;paintExits=planExits(count);frameKey=''}},
     setRoadLabels(labels,returnLabel){
-      boards=labels.flatMap(({label,returning},i)=>{const board=planBoard(exitRoads[i],label,returning?'return':'outbound');return board?[board]:[]});
-      returnBoard=returnLabel?planBoard(baseExits[0],returnLabel,'temporary-return'):undefined;
+      returnRoadEnd=returnLabel&&labels[0]?.label ? .5 : 1;
+      boards=labels.flatMap(({label,returning},i)=>{
+        const start=i===0&&returnRoadEnd===.5 ? .5 : 0;
+        const board=planBoard(exitRoads[i],label,returning?'return':'outbound',[start,1]);return board?[board]:[];
+      });
+      returnBoard=returnLabel?planBoard(baseExits[0],returnLabel,'temporary-return',[0,returnRoadEnd]):undefined;
       boardOrder=[...boards,...(returnBoard?[returnBoard]:[])].sort((a,b)=>a.groundY-b.groundY);frameKey='';
     },
     roadExits(viewport){
@@ -302,7 +307,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       if(!returnBoard)return;
       const road=baseExits[0],a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),half=cityRoadWidth(road)/2;
       const screen=(x:number,z:number)=>roadScreen(x,z,viewport);
-      return {board:returnBoard.polygon.map(([x,y]):[number,number]=>[viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale]),polygon:[screen(...a),screen(...b),screen(b[0]+dz/length*half,b[1]-dx/length*half),screen(a[0]+dz/length*half,a[1]-dx/length*half)]};
+      const end:[number,number]=[a[0]+dx*returnRoadEnd,a[1]+dz*returnRoadEnd];
+      return {board:returnBoard.polygon.map(([x,y]):[number,number]=>[viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale]),polygon:[screen(...a),screen(...end),screen(end[0]-dz/length*half,end[1]+dx/length*half),screen(a[0]-dz/length*half,a[1]+dx/length*half)]};
     },
     buildingAt(x,y,viewport){
       return placed[hitItem(x,y,viewport)]?.item.parcel?.indices;
