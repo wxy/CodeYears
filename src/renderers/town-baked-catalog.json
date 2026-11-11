@@ -434,5 +434,27 @@
     "nativeDepth": 6,
     "baselineHeight": 2,
     "sampleId": "outskirts-hills"
+  },
+  "direction-board-x": {
+    "file": "direction-board-x.png",
+    "left": -3.6227532975602696,
+    "top": -10.186244017778646,
+    "width": 7.030743325422878,
+    "height": 12.004015982903335,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board-x"
+  },
+  "direction-board-z": {
+    "file": "direction-board-z.png",
+    "left": -3.7268890911599866,
+    "top": -11.804344417553594,
+    "width": 7.180995902093712,
+    "height": 13.68966748666072,
+    "nativeWidth": 10,
+    "nativeDepth": 0.5,
+    "baselineHeight": 2.8,
+    "sampleId": "direction-board-z"
   }
 }

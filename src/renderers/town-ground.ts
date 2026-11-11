@@ -20,7 +20,7 @@ export function createTownGround(plan:TownPlan,images:CityImages):(context:Canva
   const streets=new Path2D(),avenues=new Path2D();
   for(const edge of plan.roads)streets.addPath(line(edge));
   plan.yearZ.forEach((z,i)=>avenues.addPath(line([[-.7,z-.55],[plan.yearWidth[i]+.7,z-.55]])));
-  if(plan.yearZ.length>1)avenues.addPath(line([[-.7,plan.yearZ[0]-.55],[-.7,plan.yearZ.at(-1)!-.55]]));
+  if(plan.yearZ.length)avenues.addPath(line([[-.7,plan.yearZ[0]-.55],[-.7,plan.scene.depth+.7]]));
   const plots=plan.plots.map(plot=>({...plot,access:plot.paths.map(line)}));
   const squares=plan.squares.map(square=>({...square,path:line([[square.x,square.z],square.road])}));
   return ctx=>{

@@ -54,7 +54,7 @@ export function planSignalizedApproaches(routes:readonly CityRoadRoute[],junctio
 }
 
 /** 输入为世界 XZ 中心线；所有几何和路口裁段只在创建时计算。 */
-export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:readonly CityRoadJunction[]):(context:CanvasRenderingContext2D)=>void {
+export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:readonly CityRoadJunction[],lineCap:CanvasLineCap='round'):(context:CanvasRenderingContext2D)=>void {
   const surfaces:{path:Path2D;width:number}[]=[];
   const markings:{path:Path2D;color:string;width:number;dash:number[];phase:number}[]=[];
   const cornerFills:{curb:Path2D;pavement:Path2D}[]=[];
@@ -187,7 +187,7 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
   return context=>{
     context.save();
     // 用世界坐标实际宽度描边，再整体做固定2:1等轴测投影。
-    context.transform(.5,.25,-.5,.25,0,0);context.lineJoin='miter';context.miterLimit=3;context.lineCap='round';context.setLineDash([]);context.lineDashOffset=0;
+    context.transform(.5,.25,-.5,.25,0,0);context.lineJoin='miter';context.miterLimit=3;context.lineCap=lineCap;context.setLineDash([]);context.lineDashOffset=0;
     // 所有路缘先画、所有路面随后覆盖交叉处，最后才提交标线。
     context.strokeStyle='#a7b0a1';for(const {path,width}of surfaces){context.lineWidth=width+.12;context.stroke(path)}
     context.fillStyle='#a7b0a1';for(const {curb}of cornerFills)context.fill(curb);
