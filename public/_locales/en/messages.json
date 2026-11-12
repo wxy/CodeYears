@@ -372,7 +372,7 @@
     "message": "Preparing the map…"
   },
   "townLegendHeading": {
-    "message": "Reading the town · daily means and craftsmanship"
+    "message": "Reading the town · activity phases and craftsmanship"
   },
   "townLegendRustic": {
     "message": "Simple timber, thatch and practical fittings"
@@ -387,7 +387,7 @@
     "message": "Carved porches, lavish roofs and magical gardens"
   },
   "townLegendRegions": {
-    "message": "Adjacent dates with similar contributions form a building plot. Its mean daily contributions guide materials, craftsmanship and luxury; height follows the building form and does not encode contribution strength. A main building, its own garden and supporting facilities occupy the plot together. Small buildings receive courtyard walls when needed."
+    "message": "Activity clusters follow time, allowing short pauses and continuing across weeks, months and years. A phase can contain several courtyards; materials and craftsmanship reflect their mean contribution count per active date, while height follows the building form. Natural spaces retain quieter periods and isolated activity. Below each date range are active/total days and total contributions; days after an ellipsis indicate unavailable dates. Roads wind in time order; distance does not measure days."
   },
   "townLegendLife": {
     "message": "Residents, animals, flowering trees, mana wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."

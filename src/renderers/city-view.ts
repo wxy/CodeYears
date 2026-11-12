@@ -341,7 +341,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       highlight.hidden=false;canvas.after(highlight);
     },
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
-    description:()=>scene.kind==='town'?'魔法小镇 · 相近贡献组成庭院聚落 · 建筑平面与设施表达强度 · 拖动平移':groundPainter?`固定视角 · ${wonderCount} 处奇观 · 沿街区外缘环路 / 内部共用道路 · 拖动平移`:`固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
+    description:()=>scene.kind==='town'?'魔法小镇 · 沿时间延续的活动聚落 · 院落工艺表示活跃日均值 · 拖动平移':groundPainter?`固定视角 · ${wonderCount} 处奇观 · 沿街区外缘环路 / 内部共用道路 · 拖动平移`:`固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
     draw(progress,viewport:LandscapeViewport){
       // 同一实例的数据已固定；恢复可见性时沿用已有像素，取景或进度变化才重画。
       const nextFrameKey=[progress,viewport.width,viewport.height,viewport.dpr,viewport.zoom,viewport.panX,viewport.panY,viewport.dark].join(':');

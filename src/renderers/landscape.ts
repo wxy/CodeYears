@@ -42,8 +42,8 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   let cityScene:CityScene|undefined;const assetAbort=new AbortController();
   let joinedDate:string|undefined;
   const townAssetBase=new URL('../town/',assetBase).href;
-  const planMap=(mode:'city'|'town',snapshot:readonly DailyContribution[],joined?:string)=>{
-    if(mode==='town'){const plan=planTownScene(snapshot,reservedYears,joined);return {scene:plan.scene,ground:(ready:CityImages)=>createTownGround(plan,ready)}}
+  const planMap=async(mode:'city'|'town',snapshot:readonly DailyContribution[],joined?:string,signal?:AbortSignal)=>{
+    if(mode==='town'){const plan=await planTownScene(snapshot,reservedYears,joined,signal);return {scene:plan.scene,ground:(ready:CityImages)=>createTownGround(plan,ready)}}
     const plan=planOrganicCity(snapshot,90,reservedYears!,cityWonders,namingOriginYear,joined);
     return {scene:plan.scene,ground:()=>createOrganicGround(plan)};
   };
@@ -102,7 +102,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     const token=++generation;layer?.dispose();layer=undefined;timeline.pause();anchored=false;blocked=false;preparationError=undefined;notify();
     try{
       if(view==='town'){
-        const plan=planTownScene(currentDays,reservedYears,joinedDate);cityScene=plan.scene;
+        const plan=await planTownScene(currentDays,reservedYears,joinedDate,assetAbort.signal);cityScene=plan.scene;
         assetPromise=loadTownImages(townAssetBase,plan.scene.keys,assetAbort.signal);
         const ready=await assetPromise;
         if(disposed||token!==generation){closeCityImages(ready);return}
@@ -211,7 +211,8 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(mode==='terrain')return;
       await assetPromise;assetAbort.signal.throwIfAborted();signal?.throwIfAborted();
       const token=++generation;
-      const plan=planMap(mode,currentDays,joinedDate);
+      const plan=await planMap(mode,currentDays,joinedDate,signal);
+      assetAbort.signal.throwIfAborted();signal?.throwIfAborted();
       let ready:CityImages|undefined,next:LandscapeView|undefined;
       try{
         ready=await (mode==='town'?loadTownImages(townAssetBase,plan.scene.keys,assetAbort.signal):loadCityImages(assetBase,[...plan.scene.keys,'natural-ground'],assetAbort.signal));
@@ -242,7 +243,8 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       await new Promise<void>(resolve=>setTimeout(resolve,0));
       assetAbort.signal.throwIfAborted();
       if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
-      const organic=planMap(view==='town'?'town':'city',nextDays,joinedOn);
+      const organic=await planMap(view==='town'?'town':'city',nextDays,joinedOn,assetAbort.signal);
+      if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
       const nextScene=organic.scene;
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{
