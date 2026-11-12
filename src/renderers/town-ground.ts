@@ -19,8 +19,7 @@ export function createTownGround(plan:TownPlan,images:CityImages):(context:Canva
   };
   const streets=new Path2D(),avenues=new Path2D();
   for(const edge of plan.roads)streets.addPath(line(edge));
-  plan.yearZ.forEach((z,i)=>avenues.addPath(line([[-.7,z-.55],[plan.yearWidth[i]+.7,z-.55]])));
-  if(plan.yearZ.length)avenues.addPath(line([[-.7,plan.yearZ[0]-.55],[-.7,plan.scene.depth+.7]]));
+  for(const edge of plan.avenues)avenues.addPath(line(edge));
   const plots=plan.plots.map(plot=>({...plot,access:plot.paths.map(line)}));
   const squares=plan.squares.map(square=>({...square,path:line([[square.x,square.z],square.road])}));
   return ctx=>{
@@ -43,10 +42,5 @@ export function createTownGround(plan:TownPlan,images:CityImages):(context:Canva
     road(streets,.42);road(avenues,.70);
     for(const square of squares){ctx.fillStyle=paving;ctx.fillRect(square.x-.65,square.z-.65,1.3,1.3);road(square.path,.24)}
     ctx.restore();
-    plan.yearZ.forEach((z,i)=>{
-      const x=plan.yearWidth[i]+1.2;
-      ctx.font='600 .55px system-ui';ctx.textAlign='left';ctx.fillStyle='#ecf0d9';
-      ctx.fillText(String(plan.scene.weekly.districts[i].year),(x-z)*.5,(x+z)*.25);
-    });
   };
 }

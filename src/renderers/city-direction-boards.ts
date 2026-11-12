@@ -10,6 +10,23 @@ export interface DirectionBoard {
   paint(context:CanvasRenderingContext2D):void;
 }
 
+/** 年份沿用标定木牌的竖直牌面，不参与出城链接或路面文字命中。 */
+export function planYearBoard(x:number,z:number,year:number,sprite:CitySprite):Pick<DirectionBoard,'groundY'|'paint'> {
+  const [px,py]=project(x,z),layout=layouts['town-z'];
+  const unit=.28,postScale=.5,split=layout.top+layout.height+.3,lift=split*(postScale-1);
+  return {groundY:py,paint(context){
+    context.save();context.transform(.5*unit,.25*unit,0,unit,px,py);
+    const draw=()=>{context.save();context.transform(2,-.5,0,1,0,0);context.drawImage(sprite.canvas,sprite.left,sprite.top,sprite.width,sprite.height);context.restore()};
+    const extent=sprite.height+sprite.width*2;
+    context.save();context.beginPath();context.rect(-extent,-extent,extent*2,extent+split*postScale);context.clip();context.translate(0,lift);draw();context.restore();
+    context.save();context.beginPath();context.rect(-extent,split*postScale,extent*2,extent-split*postScale);context.clip();context.scale(1,postScale);draw();context.restore();
+    context.restore();
+    context.save();context.transform(.5,.25,0,1,px,py+(layout.top+lift)*unit);
+    context.scale(.01,.01);context.font='700 70px ui-monospace,monospace';context.textAlign='center';context.textBaseline='middle';context.fillStyle='#fff8df';
+    context.fillText(String(year),0,layout.height*unit*50);context.restore();
+  }};
+}
+
 /** 精绘牌面、道路名称和命中区域共用世界坐标；两种朝向保持文字正向。 */
 export function planDirectionBoard(route:CityRoadRoute,label:string,town:boolean,kind:'outbound'|'return'|'temporary-return',measure:CanvasRenderingContext2D,sprite:CitySprite,roads:readonly CityRoadRoute[],range:readonly [number,number]):DirectionBoard {
   const a=route.points[0],b=route.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),ux=dx/length,uz=dz/length;

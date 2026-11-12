@@ -12,13 +12,13 @@ import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
 import { createCityYearMarkers } from './city-year-markers';
 import { createCityOutskirtsPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
 import type { LandscapeView, LandscapeViewport } from './types';
-import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
+import { planDirectionBoard, planYearBoard, type DirectionBoard } from './city-direction-boards';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
 // 素材首次命中时生成共享的一位透明度掩码，后续移动只查掩码、不重画城市。
 const hitMasks=new WeakMap<HTMLCanvasElement,Uint8Array>();
 export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number; revealAfter?:number; /** 独立围院前/后墙的投影深度，只用于绘制/遮挡顺序。 */ sortY?:number }
-export interface CityScene { kind?:'town'; weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
+export interface CityScene { kind?:'town'; yearPosts?:{year:number;x:number;z:number}[]; weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
 export function planCityScene(days:readonly DailyContribution[],wonders=true,reservedYears?:readonly number[],joinedOn?:string):CityScene {
@@ -233,7 +233,9 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   });
   let roadCount=4;
   let returnRoadEnd=1;
-  let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined,boardOrder:DirectionBoard[]=[];
+  const yearBoards=(scene.yearPosts??[]).map(post=>planYearBoard(post.x,post.z,post.year,images['direction-board-z']));
+  let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined;
+  let boardOrder:Pick<DirectionBoard,'groundY'|'paint'>[]=yearBoards.slice().sort((a,b)=>a.groundY-b.groundY);
   let exitStone:CanvasPattern|undefined;
   if(scene.kind==='town'){
     const sprite=images['town-stone'];exitStone=context.createPattern(sprite.canvas,'repeat')!;
@@ -289,7 +291,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         const board=planBoard(exitRoads[i],label,returning?'return':'outbound',[start,1]);return board?[board]:[];
       });
       returnBoard=returnLabel?planBoard(baseExits[0],returnLabel,'temporary-return',[0,returnRoadEnd]):undefined;
-      boardOrder=[...boards,...(returnBoard?[returnBoard]:[])].sort((a,b)=>a.groundY-b.groundY);frameKey='';
+      boardOrder=[...yearBoards,...boards,...(returnBoard?[returnBoard]:[])].sort((a,b)=>a.groundY-b.groundY);frameKey='';
     },
     roadExits(viewport){
       const screen=(x:number,z:number)=>roadScreen(x,z,viewport);
@@ -341,7 +343,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       highlight.hidden=false;canvas.after(highlight);
     },
     maxZoom:viewport=>Math.max(5,192/fitScale(viewport)),
-    description:()=>scene.kind==='town'?'魔法小镇 · 相近贡献组成庭院聚落 · 建筑平面与设施表达强度 · 拖动平移':groundPainter?`固定视角 · ${wonderCount} 处奇观 · 沿街区外缘环路 / 内部共用道路 · 拖动平移`:`固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
+    description:()=>scene.kind==='town'?'魔法小镇 · 从前角沿时间拼接 · 年份木牌定位 · 建设等级表示累计贡献 · 悬停查看成员日历':groundPainter?`固定视角 · ${wonderCount} 处奇观 · 沿街区外缘环路 / 内部共用道路 · 拖动平移`:`固定视角 · ${wonderCount} 处奇观 · 双向2/4/8车道 / 路口对齐河桥 / 静态车辆 · 拖动平移`,
     draw(progress,viewport:LandscapeViewport){
       // 同一实例的数据已固定；恢复可见性时沿用已有像素，取景或进度变化才重画。
       const nextFrameKey=[progress,viewport.width,viewport.height,viewport.dpr,viewport.zoom,viewport.panX,viewport.panY,viewport.dark].join(':');
@@ -391,7 +393,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.restore();
       }
       let boardIndex=0;
-      const paintBoard=(board:DirectionBoard)=>{
+      const paintBoard=(board:Pick<DirectionBoard,'groundY'|'paint'>)=>{
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);board.paint(context);context.restore();
       };
       for(const p of placed){

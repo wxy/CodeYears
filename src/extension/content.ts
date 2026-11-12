@@ -44,12 +44,19 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { position:relative; width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
-      .building-hover { position:absolute; z-index:4; pointer-events:none; width:max-content; max-width:min(340px,calc(100% - 16px)); overflow:hidden; margin:0; padding:11px 13px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:color-mix(in srgb,var(--bgColor-default,#fff) 78%,transparent); backdrop-filter:blur(6px); box-shadow:0 6px 24px #0002; font-size:12px; line-height:1.65; overflow-wrap:anywhere; opacity:0; transition:opacity 90ms ease-out; }
+      .building-hover { position:absolute; z-index:4; pointer-events:auto; box-sizing:border-box; width:420px; max-width:calc(100% - 16px); overflow:auto; overscroll-behavior:contain; margin:0; padding:11px 13px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:color-mix(in srgb,var(--bgColor-default,#fff) 78%,transparent); backdrop-filter:blur(6px); box-shadow:0 6px 24px #0002; font-size:12px; line-height:1.65; overflow-wrap:anywhere; opacity:0; transition:opacity 90ms ease-out; }
       .building-hover[data-open] { opacity:1; transition-duration:120ms; }
       .building-hover-note { color:var(--fgColor-muted,#59636e); font-size:11px; }
       .building-hover-milestone { font-weight:600; }
       @media (prefers-reduced-motion:reduce) { .building-hover { transition:none; } }
-      .building-hover-time { margin-bottom:5px; color:var(--fgColor-muted,#59636e); font-size:11px; }
+      .building-hover-time { margin-bottom:5px; font-weight:600; }
+      .building-hover-calendar { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr)); gap:10px 16px; margin:8px 0; }
+      .building-hover-calendar table { width:100%; table-layout:fixed; border-collapse:separate; border-spacing:2px; font-variant-numeric:tabular-nums; text-align:center; }
+      .building-hover-calendar caption { padding-bottom:4px; font-weight:600; text-align:left; }
+      .building-hover-calendar th { color:var(--fgColor-muted,#59636e); font-size:10px; font-weight:400; }
+      .building-hover-calendar td { height:21px; padding:0; border:1px solid transparent; border-radius:4px; color:var(--fgColor-muted,#59636e); font-size:11px; }
+      .building-hover-calendar .building-hover-member { color:var(--fgColor-default,#1f2328); background:color-mix(in srgb,var(--fgColor-success,#1a7f37) 20%,var(--bgColor-default,#fff)); border-color:var(--fgColor-success,#1a7f37); font-weight:700; }
+      .building-hover:focus-visible { outline:2px solid var(--focus-outlineColor,#0969da); outline-offset:2px; }
       .building-hover p { margin:4px 0 0; }
       .view-tools { position:absolute; z-index:2; right:10px; bottom:10px; display:flex; align-items:center; padding:3px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); }
       .status button { background:transparent; }

@@ -372,10 +372,10 @@
     "message": "Preparing the map…"
   },
   "townLegendHeading": {
-    "message": "Reading the town · daily means and craftsmanship"
+    "message": "Reading the town · total contributions and building grades"
   },
   "townLegendRustic": {
-    "message": "Simple timber, thatch and practical fittings"
+    "message": "Simple homes and practical courtyards"
   },
   "townLegendFarm": {
     "message": "Well-kept homes and comfortable gardens"
@@ -387,10 +387,10 @@
     "message": "Carved porches, lavish roofs and magical gardens"
   },
   "townLegendRegions": {
-    "message": "Adjacent dates with similar contributions form a building plot. Its mean daily contributions guide materials, craftsmanship and luxury; height follows the building form and does not encode contribution strength. A main building, its own garden and supporting facilities occupy the plot together. Small buildings receive courtyard walls when needed."
+    "message": "Buildings fit together in time order from the front corner; wooden year signs mark each year’s start. Activity phases can bridge short breaks, months and years. Courtyards split at year boundaries for placement without changing the phases. Building grades reflect cumulative contributions; height follows the building form. Quiet stretches become compact gardens and scattered courtyards. Distance does not measure days."
   },
   "townLegendLife": {
-    "message": "Residents, animals, flowering trees, mana wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
+    "message": "Residents, animals, flowering trees, mana wells and waygates bring the town to life without counting people, projects or contributions. Hover calendars highlight each building’s actual member dates and show its total, mean per active day and available project summaries."
   },
   "roadsHeading": {
     "message": "Road destination"
