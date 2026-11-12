@@ -18,10 +18,10 @@ export function createCityLegend(language: Language = 'zh-CN',town=false): HTMLE
   legend.innerHTML = town?`
     <h4 data-i18n="townLegendHeading"></h4>
     <ul>
-      <li><strong>1–2</strong> <span data-i18n="townLegendRustic"></span></li>
-      <li><strong>3–5</strong> <span data-i18n="townLegendFarm"></span></li>
-      <li><strong>6–19</strong> <span data-i18n="townLegendWorkshop"></span></li>
-      <li><strong>20+</strong> <span data-i18n="townLegendArcane"></span></li>
+      <li><strong>1–9</strong> <span data-i18n="townLegendRustic"></span></li>
+      <li><strong>10–49</strong> <span data-i18n="townLegendFarm"></span></li>
+      <li><strong>50–199</strong> <span data-i18n="townLegendWorkshop"></span></li>
+      <li><strong>200+</strong> <span data-i18n="townLegendArcane"></span></li>
     </ul><p data-i18n="townLegendRegions"></p><p data-i18n="townLegendLife"></p><p data-i18n="legendMissing"></p>`:`
     <h4 data-i18n="legendHeading"></h4>
     <ul>

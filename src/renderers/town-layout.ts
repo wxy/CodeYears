@@ -10,79 +10,86 @@ interface TownCourt extends Rectangle { id:string; gate:Point }
 interface TownPlot extends Rectangle { parcel:CityParcel; phase:number; bodies:(Rectangle&{id:string})[]; courts:TownCourt[]; entries:Point[]; paths:Point[][]; courtyardPads:Rectangle[]; gate:Point }
 interface TownSquare { cell:CityParcel; kind:string; x:number; z:number; road:Point }
 export interface TownSettlement extends TownActivityPhase,Rectangle { row:number; gapBefore:number }
-export interface TownPlan { scene:CityScene; plots:TownPlot[]; roads:[Point,Point][]; avenues:[Point,Point][]; squares:TownSquare[]; settlements:TownSettlement[] }
-const PITCH=2.8,LANE=1.3;
+export interface TownPlan { scene:CityScene; plots:TownPlot[]; roads:[Point,Point][]; avenues:[Point,Point][]; squares:TownSquare[]; settlements:TownSettlement[]; yearPosts:{year:number;x:number;z:number}[] }
+const PITCH=2.8,GRID_WIDTH=10;
 const sprites:Record<string,{nativeWidth:number;nativeDepth:number;entrancePoint?:number[];entranceAxis?:string;entranceSide?:string}>=catalog;
 const seedFor=(p:CityParcel)=>((Math.imul(p.block+1,73856093)^Math.imul(p.x+1,19349663)^Math.imul(p.z+1,83492791))>>>0);
 
-/** 时间阶段先形成聚落；院落只是阶段内部的原生建筑用地，不按周/月/年切分。 */
+/** 时间阶段保持跨年；原生建筑用地按真实年份从前角向后紧凑拼接。 */
 export async function planTownScene(days:readonly DailyContribution[],reservedYears?:readonly number[],joinedOn?:string,signal?:AbortSignal):Promise<TownPlan> {
   const calendar=planWeeklyCity(days,false,false,reservedYears,joinedOn);
   const cells=calendar.cells;
   const byIndex=new Map(cells.map(cell=>[cell.indices[0],cell]));
   const phases=await planTownActivity(days,signal),used=new Set<number>(),parcels:CityParcel[]=[];
-  const lots:{parcel:CityParcel;x:number;z:number;phase:number;lane:number}[]=[];
-  const settlements:TownSettlement[]=[],rows:{members:number[];width:number;depth:number;z:number;road:number}[]=[];
+  // 整数格是拼接用地，不再对应星期；每年从上一年的最高边缘继续。
+  const lots:{parcel:CityParcel;x:number;z:number;phase:number;model:string}[]=[];
+  const gardens:{u:number;v:number;phase:number}[]=[],yearEdges:{year:number;v:number}[]=[];
+  const pendingLots:{parcel:CityParcel;phase:number;year:number;order:number}[]=[];
+  const pools=[['estate-farmhouse','estate-windmill','forms-0','cottages-1','stable-0','rustic-hut-front'],
+    ['estate-farmhouse','estate-windmill','forms-0','cottages-2','cottages-3','cottages-4'],
+    ['forms-2','forms-4','forms-1','magic-2','mage-0','cottages-9'],
+    ['estate-villa','magic-3','magic-0','cottages-9','mage-0']];
   for(const [phaseIndex,phase]of phases.entries()){
-    const positive=phase.indices.filter(index=>days[index].count>0),groups:number[][]=[];
-    let pending:number[]=[];
-    const flush=()=>{if(pending.length){groups.push(pending);pending=[]}};
-    if(phase.density>=.2){
-      // 每段最多24个活跃日期，均衡分配尾部；零记录日留在聚落的园地中。
-      const runs:number[][]=[];
-      for(const index of positive){
-        if(days[index].date===joinedOn){if(pending.length)runs.push(pending);pending=[];runs.push([index])}
-        else pending.push(index);
-      }
-      if(pending.length)runs.push(pending);pending=[];
-      for(const run of runs){
-        const count=Math.ceil(run.length/24);
-        for(let part=0;part<count;part++)groups.push(run.slice(Math.floor(part*run.length/count),Math.floor((part+1)*run.length/count)));
-      }
-    }else{
-      // 冷淡段不把相隔很远的零星记录圈成大宅；临近记录可共用小院。
-      for(const index of positive){
-        if(pending.length&&(Date.parse(days[index].date)-Date.parse(days[pending.at(-1)!].date)>3*86400000||pending.length===24||days[index].date===joinedOn||days[pending[0]].date===joinedOn))flush();
-        pending.push(index);
-      }
-      flush();
+    const runs:number[][]=[];let run:number[]=[];
+    const flush=()=>{if(run.length)runs.push(run);run=[]};
+    for(const index of phase.indices){
+      if(days[index].count<=0)continue;
+      const previous=run.at(-1);
+      if(previous!==undefined&&(days[index].date.slice(0,4)!==days[previous].date.slice(0,4)||days[index].date===joinedOn||days[previous].date===joinedOn||
+        (phase.density<.2&&Date.parse(days[index].date)-Date.parse(days[previous].date)>3*86400000)))flush();
+      run.push(index);
     }
-    const own=groups.map(indices=>{
-      const cell=byIndex.get(indices[0])!,count=indices.reduce((sum,index)=>sum+days[index].count,0),mean=count/indices.length;
-      const area=Math.ceil(indices.length/2),w=Math.ceil(Math.sqrt(area)),d=Math.ceil(area/w);
-      const parcel:CityParcel={...cell,w,d,indices,count,mean,band:mean<=2?0:mean<=5?1:mean<=19?2:mean<=49?3:4};
-      indices.forEach(index=>used.add(index));parcels.push(parcel);
-      return {parcel,x:0,z:0,phase:phaseIndex,lane:0};
-    });
-    const columns=Math.max(1,Math.ceil(Math.sqrt(own.length))),columnWidths=Array.from({length:columns},(_,col)=>Math.max(0,...own.filter((_,i)=>i%columns===col).map(lot=>lot.parcel.w*PITCH)));
-    const rowCount=Math.ceil(own.length/columns),rowDepths=Array.from({length:rowCount},(_,row)=>Math.max(...own.slice(row*columns,(row+1)*columns).map(lot=>lot.parcel.d*PITCH)));
-    const packedW=columnWidths.reduce((sum,n)=>sum+n,0)+Math.max(0,columns-1)*LANE,packedD=rowDepths.reduce((sum,n)=>sum+n,0)+Math.max(0,rowCount-1)*LANE;
-    const w=Math.max(packedW+3,phase.density<.2?8+Math.sqrt(phase.indices.length)*1.2:0,9);
-    const d=Math.max(packedD+3.4,phase.density<.2?8:0,7);
-    own.forEach((lot,i)=>{
-      const col=i%columns,row=Math.floor(i/columns);
-      lot.x=1.5+columnWidths.slice(0,col).reduce((sum,n)=>sum+n+LANE,0);
-      lot.z=1+rowDepths.slice(0,row).reduce((sum,n)=>sum+n+LANE,0);
-      lot.lane=lot.z+rowDepths[row]+LANE/2;
-    });
-    lots.push(...own);
-    const previous=phases[phaseIndex-1],gapBefore=previous?Math.max(0,(Date.parse(phase.startDate)-Date.parse(previous.endDate))/86400000-1):0;
-    settlements.push({...phase,x:0,z:0,w,d,row:0,gapBefore});
+    flush();
+    for(const indices of runs){
+      const parts=Math.ceil(indices.length/24);
+      for(let part=0;part<parts;part++){
+        const members=indices.slice(Math.floor(part*indices.length/parts),Math.floor((part+1)*indices.length/parts));
+        const count=members.reduce((sum,index)=>sum+days[index].count,0),cell=byIndex.get(members[0])!;
+        const parcel:CityParcel={...cell,w:1,d:1,indices:members,count,mean:count/members.length,band:count<10?0:count<50?1:count<200?2:3};
+        members.forEach(index=>used.add(index));parcels.push(parcel);
+        pendingLots.push({parcel,phase:phaseIndex,year:Number(days[members[0]].date.slice(0,4)),order:members[0]});
+      }
+    }
   }
-  // 规则矩形沿时间主路折返；行只是摆放空间，不代表星期或年份。
-  const targetWidth=Math.max(30,Math.min(84,Math.sqrt(settlements.reduce((sum,p)=>sum+p.w*p.d,0))*1.35),...settlements.map(p=>p.w));
-  for(const [index,settlement]of settlements.entries()){
-    let row=rows.at(-1);
-    if(!row||(row.members.length&&row.width+2+settlement.w>targetWidth)){row={members:[],width:0,depth:0,z:0,road:0};rows.push(row)}
-    settlement.row=rows.length-1;settlement.x=row.width+(row.members.length?2:0);row.width=settlement.x+settlement.w;row.depth=Math.max(row.depth,settlement.d);row.members.push(index);
+  const years=[...new Set(days.map(day=>Number(day.date.slice(0,4))))].sort((a,b)=>a-b);
+  let totalRows=0;
+  for(const year of years){
+    yearEdges.push({year,v:totalRows});
+    const skyline=Array<number>(GRID_WIDTH).fill(totalRows);
+    const entries=[...pendingLots.filter(lot=>lot.year===year).map(lot=>({...lot,garden:false})),
+      ...phases.flatMap((phase,index)=>phase.density<.2&&phase.indices.some(i=>Number(days[i].date.slice(0,4))===year)
+        ?[{parcel:undefined,phase:index,year,order:phase.indices.find(i=>Number(days[i].date.slice(0,4))===year)!,garden:true}]:[])].sort((a,b)=>a.order-b.order);
+    for(const entry of entries){
+      const parcel=entry.parcel;
+      const choices=parcel?(parcel.milestone?['magic-0']:pools[parcel.band]):[];
+      const base=parcel?choices[seedFor(parcel)%choices.length]:'';
+      const ids=parcel?[base,...(sprites[`${base}-x`]?[`${base}-x`]:[])]:[''];
+      let best:{u:number;v:number;w:number;d:number;id:string}|undefined;
+      for(const id of ids){
+        const art=sprites[id];
+        const w=art?Math.ceil((art.nativeWidth+.64)/PITCH):1;
+        const d=art?Math.ceil((art.nativeDepth+.64+(art.nativeWidth<1.8?.7:0))/PITCH):1;
+        for(let u=0;u<=GRID_WIDTH-w;u++){
+          const v=Math.max(...skyline.slice(u,u+w)),candidate={u,v,w,d,id};
+          if(!best||v+d<best.v+best.d||(v+d===best.v+best.d&&v<best.v)||(v===best.v&&d===best.d&&u<best.u))best=candidate;
+        }
+      }
+      const tile=best!;for(let u=tile.u;u<tile.u+tile.w;u++)skyline[u]=tile.v+tile.d;
+      if(parcel){parcel.w=tile.w;parcel.d=tile.d;lots.push({parcel,x:tile.u,z:tile.v,phase:entry.phase,model:tile.id})}
+      else gardens.push({u:tile.u,v:tile.v,phase:entry.phase});
+    }
+    totalRows=Math.max(totalRows,...skyline);
   }
-  const width=Math.max(24,...rows.map(row=>row.width));let nextZ=1;
-  rows.forEach((row,index)=>{
-    row.z=nextZ;row.road=row.z+row.depth+1.2;
-    for(const id of row.members){const stage=settlements[id];if(index%2)stage.x=width-stage.x-stage.w;stage.z=row.z}
-    nextZ=row.z+row.depth+5;
+  totalRows=Math.max(1,totalRows);
+  const townWidth=GRID_WIDTH*PITCH,width=townWidth+8,depth=totalRows*PITCH;
+  // 只转换用地原点；建筑图与其门向保持原生，不镜像人物或门窗。
+  lots.forEach(lot=>{lot.x=townWidth-(lot.x+lot.parcel.w)*PITCH;lot.z=depth-(lot.z+lot.parcel.d)*PITCH});
+  const yearPosts=yearEdges.map(edge=>({year:edge.year,x:townWidth+4.2,z:depth-edge.v*PITCH-.6}));
+  const settlements:TownSettlement[]=phases.map((phase,index)=>{
+    const own=lots.filter(lot=>lot.phase===index),xs=own.map(lot=>lot.x),zs=own.map(lot=>lot.z);
+    const x=own.length?Math.min(...xs):0,z=own.length?Math.min(...zs):0;
+    return {...phase,x,z,w:own.length?Math.max(...own.map(lot=>lot.x+lot.parcel.w*PITCH))-x:0,d:own.length?Math.max(...own.map(lot=>lot.z+lot.parcel.d*PITCH))-z:0,row:0,gapBefore:0};
   });
-  const depth=Math.max(16,nextZ-3);
   const weekly:WeeklyCity={...calendar,parcels:[...parcels,...cells.filter(cell=>!used.has(cell.indices[0]))]};
   const items:CitySceneItem[]=[],plots:TownPlot[]=[],roads:[Point,Point][]=[],avenues:[Point,Point][]=[],squares:TownSquare[]=[];
   const prop=(id:string,x:number,z:number,revealAfter=0)=>{
@@ -90,31 +97,16 @@ export async function planTownScene(days:readonly DailyContribution[],reservedYe
     items.push({id,factor:1,x:x-w/2,z:z-d/2,w,d,flat:false,revealAfter});
   };
   for(const lot of lots){
-    const parcel=lot.parcel,stage=settlements[lot.phase];
+    const parcel=lot.parcel;
     const {w,d}=parcel,seed=seedFor(parcel);
-    const x=stage.x+lot.x,z=stage.z+lot.z,pw=w*PITCH,pd=d*PITCH;
+    const x=lot.x,z=lot.z,pw=w*PITCH,pd=d*PITCH;
     const after=Math.min(...parcel.indices)+1;
     const plot:TownPlot={parcel,phase:lot.phase,x,z,w:pw,d:pd,bodies:[],courts:[],entries:[],paths:[],courtyardPads:[],gate:[x+pw/2,z+pd]};
     const area=w*d,transpose=pw>pd,cw=transpose?pd:pw,cd=transpose?pw:pd;
     const point=(u:number,v:number):Point=>transpose?[x+v,z+u]:[x+u,z+v];
-    // 日均对应材料与工艺等级；同档可高可矮，高档没有朴素小屋回退。
-    const choices=parcel.milestone?['magic-0']:parcel.band===0
-      ?['estate-farmhouse','estate-windmill','forms-0','cottages-1','stable-0','rustic-hut-front']
-      :parcel.band===1?['estate-farmhouse','estate-windmill','forms-0','cottages-2','cottages-3','cottages-4']
-        :parcel.band===2?['forms-2','forms-4','forms-1','magic-2','mage-0','cottages-9']
-          :['estate-villa','magic-3','magic-0','cottages-9','mage-0'];
-    const fitted:{base:string;id:string;w:number;d:number}[]=[];
-    for(const base of choices){
-      const options=[base,...(sprites[`${base}-x`]?[`${base}-x`]:[])].map(id=>{
-        const art=sprites[id];return {base,id,w:transpose?art.nativeDepth:art.nativeWidth,d:transpose?art.nativeWidth:art.nativeDepth};
-      }).filter(body=>body.w<=cw-.64&&body.d<=cd-.64)
-        .sort((a,b)=>Math.max(b.w/cw,b.d/cd)-Math.max(a.w/cw,a.d/cd));
-      if(options.length)fitted.push(options[0]);
-    }
-    const largest=Math.max(...fitted.map(body=>body.w*body.d));
-    const suitable=area>=2?fitted.filter(body=>body.w*body.d>=largest*.5):fitted;
-    const estate=fitted.find(body=>body.base==='estate-villa'||body.base==='estate-farmhouse'||body.base==='estate-windmill');
-    const main=estate??suitable[seed%suitable.length];
+    // 累计贡献编码材料工艺；同档保留多种原生形制。
+    const mainArt=sprites[lot.model],main={base:lot.model.replace(/-x$/,''),id:lot.model,
+      w:transpose?mainArt.nativeDepth:mainArt.nativeWidth,d:transpose?mainArt.nativeWidth:mainArt.nativeDepth};
     // 只有实际排得下时才接一个相容工作设施；主体/设施共用一块真实入口工作面。
     const facilityBase=parcel.band<=1?'stable-0':'magic-2';
     const facilityOptions=area>=9&&main.base!==facilityBase
@@ -186,43 +178,49 @@ export async function planTownScene(days:readonly DailyContribution[],reservedYe
     }
     plots.push(plot);
   }
-  for(const [index,stage]of settlements.entries()){
-    const ownLots=lots.filter(lot=>lot.phase===index),spine=stage.x+.55;
-    for(const lot of ownLots){
-      const plot=plots.find(plot=>plot.parcel===lot.parcel)!,lane=stage.z+lot.lane;
-      roads.push([plot.gate,[plot.gate[0],lane]],[[spine,lane],[plot.x+plot.w+.2,lane]]);
-    }
-    const row=rows[stage.row];
-    roads.push([[spine,stage.z+.4],[spine,row.road]]);
-    const occupied:Rectangle[]=plots.filter(plot=>plot.phase===index);
-    const decorations=stage.density<.2?['magic-6','life-5','life-5',...(stage.indices.length>=28?['life-8','life-5']:[])]:['life-5','magic-7'];
-    for(const id of decorations){
-      const art=sprites[id];
-      for(let position=0;position<30;position++){
-        const px=stage.x+1+(position%6)*(stage.w-2)/5,pz=stage.z+.6+Math.floor(position/6)*(stage.d-3.5)/4;
-        const box={x:px-art.nativeWidth/2,z:pz-art.nativeDepth/2,w:art.nativeWidth,d:art.nativeDepth};
-        if(box.x<stage.x+.2||box.z<stage.z+.2||box.x+box.w>stage.x+stage.w-.2||box.z+box.d>stage.z+stage.d-2)continue;
-        if(occupied.some(other=>box.x+box.w+.25>other.x&&box.x<other.x+other.w+.25&&box.z+box.d+.25>other.z&&box.z<other.z+other.d+.25))continue;
-        if(roads.some(([a,b])=>box.x+box.w+.25>Math.min(a[0],b[0])&&box.x<Math.max(a[0],b[0])+.25&&box.z+box.d+.25>Math.min(a[1],b[1])&&box.z<Math.max(a[1],b[1])+.25))continue;
-        occupied.push(box);prop(id,px,pz,Math.min(...stage.indices)+1);break;
-      }
+  // 边界网格仅允许沿院落外缘通行，共边自然相接，不穿过矩形内部。
+  const owners=Array.from({length:totalRows},()=>Array<number>(GRID_WIDTH).fill(-1));
+  plots.forEach((plot,id)=>{for(let z=Math.round(plot.z/PITCH);z<Math.round((plot.z+plot.d)/PITCH);z++)for(let x=Math.round(plot.x/PITCH);x<Math.round((plot.x+plot.w)/PITCH);x++)owners[z][x]=id});
+  const node=(x:number,z:number)=>z*(GRID_WIDTH+1)+x,parents=new Map<number,number>(),queue:number[]=[];
+  for(let z=0;z<=totalRows;z++){const id=node(GRID_WIDTH,z);parents.set(id,id);queue.push(id)}
+  const owner=(x:number,z:number)=>owners[z]?.[x]??-1;
+  for(let head=0;head<queue.length;head++){
+    const id=queue[head],x=id%(GRID_WIDTH+1),z=Math.floor(id/(GRID_WIDTH+1));
+    for(const [nx,nz]of [[x-1,z],[x+1,z],[x,z-1],[x,z+1]]){
+      if(nx<0||nx>GRID_WIDTH||nz<0||nz>totalRows)continue;
+      const a=nx===x?owner(x-1,Math.min(z,nz)):owner(Math.min(x,nx),z-1),b=nx===x?owner(x,Math.min(z,nz)):owner(Math.min(x,nx),z);
+      if(a>=0&&a===b)continue;
+      const next=node(nx,nz);if(!parents.has(next)){parents.set(next,id);queue.push(next)}
     }
   }
-  rows.forEach((row,index)=>{
-    avenues.push([[-.7,row.road],[width+.7,row.road]]);
-    if(index){const x=index%2?width+.7:-.7;avenues.push([[x,rows[index-1].road],[x,row.road]])}
-  });
-  const northZ=rows[0]?.road??1,southZ=depth+.7;
-  avenues.push([[-.7,-.7],[-.7,southZ]]);
-  const scene:CityScene={kind:'town',weekly,items,keys:[...new Set([...items.map(item=>item.id),'natural-ground','town-stone','town-earth','town-paving','outskirts-forest','outskirts-hills','direction-board-x','direction-board-z'])],width,depth,parkStarts:[],roadNetwork:{roads:[],junctions:[],bridges:[],vehicles:[],ringOuter:.7},layout:{width,districts:[]}};
-  const exitZ=rows[Math.floor(rows.length/2)]?.road??northZ,exitX=width+.7;
+  const edges=new Set<string>();
+  for(const plot of plots){
+    let id=node(Math.round(plot.gate[0]/PITCH),Math.round(plot.gate[1]/PITCH));
+    const start:Point=[id%(GRID_WIDTH+1)*PITCH,Math.floor(id/(GRID_WIDTH+1))*PITCH];roads.push([plot.gate,start]);
+    while(parents.get(id)!==id){const next=parents.get(id)!;const key=[Math.min(id,next),Math.max(id,next)].join(':');if(!edges.has(key)){edges.add(key);roads.push([[id%(GRID_WIDTH+1)*PITCH,Math.floor(id/(GRID_WIDTH+1))*PITCH],[next%(GRID_WIDTH+1)*PITCH,Math.floor(next/(GRID_WIDTH+1))*PITCH]])}id=next}
+    roads.push([[townWidth,Math.floor(id/(GRID_WIDTH+1))*PITCH],[townWidth+.7,Math.floor(id/(GRID_WIDTH+1))*PITCH]]);
+  }
+  for(const garden of gardens){
+    const x=townWidth-(garden.u+.5)*PITCH,z=depth-(garden.v+.5)*PITCH;
+    prop('life-5',x-.4,z-.3,Math.min(...phases[garden.phase].indices)+1);prop('magic-6',x+.4,z+.35,Math.min(...phases[garden.phase].indices)+1);
+  }
+  // 少量树填补skyline无法利用的格间余隙，不把空格再变成建筑或日期。
+  let gapTrees=0;
+  for(let z=0;z<totalRows&&gapTrees<6;z++)for(let x=0;x<GRID_WIDTH&&gapTrees<6;x++){
+    if(owner(x,z)>=0||!owners[z].some(id=>id>=0))continue;
+    if(gardens.some(garden=>GRID_WIDTH-garden.u-1===x&&totalRows-garden.v-1===z))continue;
+    prop('life-5',(x+.5)*PITCH,(z+.5)*PITCH);gapTrees++;
+  }
+  avenues.push([[-.7,-.7],[townWidth+.7,-.7]],[[townWidth+.7,-.7],[townWidth+.7,depth+.7]],[[townWidth+.7,depth+.7],[-.7,depth+.7]],[[-.7,depth+.7],[-.7,-.7]]);
+  const scene:CityScene={kind:'town',yearPosts,weekly,items,keys:[...new Set([...items.map(item=>item.id),'natural-ground','town-stone','town-earth','town-paving','outskirts-forest','outskirts-hills','direction-board-x','direction-board-z'])],width,depth,parkStarts:[],roadNetwork:{roads:[],junctions:[],bridges:[],vehicles:[],ringOuter:.7},layout:{width,districts:[]}};
+  const exitZ=depth/2,exitX=townWidth+.7;
   scene.roadNetwork.roads=[
     {id:'exit-west',lanes:2,points:[[-.7,exitZ],[-8,exitZ]]},
     {id:'exit-east',lanes:2,points:[[exitX,exitZ],[exitX+8,exitZ]]},
     {id:'exit-north',lanes:2,points:[[-.7,-.7],[-.7,-8]]},
     {id:'exit-south',lanes:2,points:[[-.7,depth+.7],[-.7,depth+8]]},
   ];
-  return {scene,plots,roads,avenues,squares,settlements};
+  return {scene,plots,roads,avenues,squares,settlements,yearPosts};
 }
 
 export { createTownGround } from './town-ground';

@@ -42,14 +42,5 @@ export function createTownGround(plan:TownPlan,images:CityImages):(context:Canva
     road(streets,.42);road(avenues,.70);
     for(const square of squares){ctx.fillStyle=paving;ctx.fillRect(square.x-.65,square.z-.65,1.3,1.3);road(square.path,.24)}
     ctx.restore();
-    plan.settlements.forEach(stage=>{
-      const x=stage.x+stage.w-.4,z=stage.z+stage.d+.8;
-      ctx.save();ctx.shadowColor='#213d29';ctx.shadowBlur=.12;
-      ctx.font='600 .5px system-ui';ctx.textAlign='center';ctx.fillStyle='#f0edce';
-      ctx.fillText(`${stage.startDate} — ${stage.endDate}`,(x-z)*.5,(x+z)*.25);
-      ctx.font='.42px system-ui';
-      ctx.fillText(`${stage.activeDays}/${stage.indices.length} d · Σ ${stage.count}${stage.gapBefore?' · … '+stage.gapBefore+' d':''}`,(x-z)*.5,(x+z)*.25+.6);
-      ctx.restore();
-    });
   };
 }

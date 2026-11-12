@@ -1,40 +1,39 @@
 import type { DailyContribution } from '../data/types';
-import { browserCalendarDate } from '../data/calendar-date';
-import { isoWeekDate, isoYearStart } from '../data/iso-week';
 import { confirmViewer, sameContext } from '../platform/github/load-year';
 import { fetchProjectActivities, type ProjectActivity, type DayActivities } from '../platform/github/project-details';
 import type { GitHubPageContext } from '../platform/github/types';
 import type { Language } from './language';
 
-const WEEK=7*86400000;
-
-/** 用成员日的周/星期模式概括节奏，不把不连续日期展开成连续工作。 */
-function describeTime(days:readonly DailyContribution[],language:Language):string {
-  const zh=language==='zh-CN',groups=new Map<number,{year:number;week:number;weekdays:number[]}>();
-  for(const day of days){
-    const value=isoWeekDate(day.date),monday=isoYearStart(value.year)+(value.week-1)*WEEK;
-    const group=groups.get(monday)??{year:value.year,week:value.week,weekdays:[]};
-    if(!group.weekdays.includes(value.weekday))group.weekdays.push(value.weekday);
-    groups.set(monday,group);
+/** 只标记建筑的真实成员日；其余日期不代表零贡献。 */
+function memberCalendar(days:readonly DailyContribution[],language:Language):HTMLElement {
+  const zh=language==='zh-CN',locale=zh?'zh-CN':'en-US',months=new Map<string,Map<string,number>>();
+  for(const day of days){const month=day.date.slice(0,7),members=months.get(month)??new Map<string,number>();members.set(day.date,day.count);months.set(month,members)}
+  const calendar=document.createElement('div');calendar.className='building-hover-calendar';
+  for(const [month,members]of [...months].sort(([a],[b])=>a.localeCompare(b))){
+    const [year,number]=month.split('-').map(Number),first=new Date(Date.UTC(year,number-1,1));
+    const table=document.createElement('table'),caption=document.createElement('caption');
+    caption.textContent=new Intl.DateTimeFormat(locale,{year:'numeric',month:'long',timeZone:'UTC'}).format(first);table.append(caption);
+    const head=document.createElement('thead'),headRow=document.createElement('tr');
+    const labels=zh?['一','二','三','四','五','六','日']:['M','T','W','T','F','S','S'];
+    for(let weekday=0;weekday<7;weekday++){
+      const th=document.createElement('th');th.scope='col';th.textContent=labels[weekday];
+      th.setAttribute('aria-label',new Intl.DateTimeFormat(locale,{weekday:'long',timeZone:'UTC'}).format(new Date(Date.UTC(2024,0,1+weekday))));headRow.append(th);
+    }
+    head.append(headRow);table.append(head);
+    const body=document.createElement('tbody'),offset=(first.getUTCDay()+6)%7,last=new Date(Date.UTC(year,number,0)).getUTCDate();
+    for(let cell=0;cell<Math.ceil((offset+last)/7)*7;cell++){
+      if(cell%7===0)body.append(document.createElement('tr'));
+      const td=document.createElement('td'),day=cell-offset+1;
+      if(day>=1&&day<=last){
+        const date=`${month}-${String(day).padStart(2,'0')}`,count=members.get(date);td.textContent=String(day);
+        const description=count===undefined?(zh?`${date}，不属于此建筑`:`${date}, not part of this building`):(zh?`${date}，${count.toLocaleString(locale)} 次贡献，属于此建筑`:`${date}, ${count.toLocaleString(locale)} contributions, part of this building`);
+        td.title=description;td.setAttribute('aria-label',description);if(count!==undefined)td.className='building-hover-member';
+      }
+      body.lastElementChild!.append(td);
+    }
+    table.append(body);calendar.append(table);
   }
-  const entries=[...groups.entries()].sort((a,b)=>a[0]-b[0]);
-  const weekdays=(values:number[])=>{
-    const sorted=[...values].sort((a,b)=>a-b),names=zh?['周一','周二','周三','周四','周五','周六','周日']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    const runs:number[][]=[];
-    for(const value of sorted){const last=runs.at(-1);if(last&&last.at(-1)!+1===value)last.push(value);else runs.push([value])}
-    return runs.map(run=>run.length===1?names[run[0]-1]:`${names[run[0]-1]}${zh?'至':'–'}${names[run.at(-1)!-1]}`).join(zh?'、':', ');
-  };
-  const now=isoWeekDate(browserCalendarDate(new Date())),thisMonday=isoYearStart(now.year)+(now.week-1)*WEEK;
-  const relative=(monday:number)=>monday===thisMonday?(zh?'本周':'This week'):monday===thisMonday-WEEK?(zh?'上周':'Last week'):undefined;
-  const first=entries[0][1],last=entries.at(-1)![1];
-  const samePattern=entries.every(([,g])=>weekdays(g.weekdays)===weekdays(first.weekdays));
-  const consecutive=entries.every(([monday],i)=>i===0||monday===entries[i-1][0]+WEEK);
-  if(entries.length===1)return `${relative(entries[0][0])??(zh?`${first.year} · 第${first.week}周`:`${first.year} · W${first.week}`)}${zh?'，':' · '}${weekdays(first.weekdays)}`;
-  if(samePattern&&consecutive){
-    if(entries.length===2&&entries[0][0]===thisMonday-WEEK)return zh?`上周和本周的${weekdays(first.weekdays)}`:`Last week and this week · ${weekdays(first.weekdays)}`;
-    return zh?`${first.year} · 第${first.week}—${last.week}周，每周${weekdays(first.weekdays).replace(/^周/,'')}`:`${first.year} · W${first.week}–${last.week} · ${weekdays(first.weekdays)} each week`;
-  }
-  return `${first.year} · `+entries.map(([monday,g])=>`${relative(monday)??(zh?`第${g.week}周`:`W${g.week}`)}${zh?'的':' · '}${weekdays(g.weekdays)}`).join(zh?'；':'; ');
+  return calendar;
 }
 
 function describeProjects(activities:readonly ProjectActivity[],language:Language,partial:boolean):{repository:string;text:string}[] {
@@ -61,7 +60,7 @@ export function createCityHover(host:HTMLElement,options:{
   highlight(point?:{x:number;y:number}):void;
   invalidate():void;
 }) {
-  const card=document.createElement('aside');card.className='building-hover';card.id='building-hover';card.hidden=true;card.setAttribute('role','tooltip');
+  const card=document.createElement('aside');card.className='building-hover';card.id='building-hover';card.hidden=true;card.setAttribute('role','tooltip');card.tabIndex=0;
   host.parentElement!.append(card);
   const cache=new Map<string,{details:DayActivities;expires:number}>();
   let cacheScope='',key='',timer=0,closeTimer=0,request:AbortController|undefined,anchor={x:0,y:0},reveal:Animation|undefined;
@@ -85,9 +84,14 @@ export function createCityHover(host:HTMLElement,options:{
   };
   const hide=()=>dismiss(true),leave=()=>dismiss(false);
   const render=(days:readonly DailyContribution[],details:DayActivities,pending:boolean,partial=false)=>{
-    const before=card.hidden?undefined:card.getBoundingClientRect();reveal?.cancel();reveal=undefined;
+    const before=card.hidden?undefined:card.getBoundingClientRect(),scrollTop=card.scrollTop;reveal?.cancel();reveal=undefined;
     const language=options.language(),zh=language==='zh-CN';
-    card.replaceChildren();const heading=document.createElement('div');heading.className='building-hover-time';heading.textContent=describeTime(days,language);card.append(heading);
+    card.replaceChildren();const heading=document.createElement('div');heading.className='building-hover-time';
+    const total=days.reduce((sum,day)=>sum+day.count,0),activeDays=days.filter(day=>day.count>0).length,locale=zh?'zh-CN':'en-US';
+    const mean=activeDays?total/activeDays:0,average=mean.toLocaleString(locale,{maximumFractionDigits:1});
+    heading.textContent=zh?`累计 ${total.toLocaleString(locale)} 次贡献 · 活跃日均 ${average} 次`:`${total.toLocaleString(locale)} total contributions · ${average} per active day`;
+    const legend=document.createElement('p');legend.className='building-hover-note';legend.textContent=zh?'标记日期属于此建筑':'Marked dates belong to this building';
+    card.setAttribute('aria-label',zh?'建筑贡献日期与活动':'Building contribution dates and activity');card.append(heading,legend,memberCalendar(days,language));
     const projects=describeProjects(details.projects,language,partial);
     if(details.joinedGitHub){const milestone=document.createElement('p');milestone.className='building-hover-milestone';milestone.textContent=zh?'加入 GitHub · 开发旅程的起点':'Joined GitHub · The beginning of the journey';card.append(milestone)}
     for(const project of projects.slice(0,2)){
@@ -103,13 +107,13 @@ export function createCityHover(host:HTMLElement,options:{
     if(!before){
       const parent=host.parentElement!.getBoundingClientRect(),point=host.getBoundingClientRect();
       const x=anchor.x+point.left-parent.left,y=anchor.y+point.top-parent.top;
-      const maxW=Math.min(340,parent.width-16),maxH=Math.min(240,parent.height-16);
+      const maxW=Math.min(420,parent.width-16),maxH=Math.min(440,parent.height-16);
       const toLeft=x+16+maxW>parent.width-8&&x>parent.width/2,toUp=y+16+maxH>parent.height-8&&y>parent.height/2;
       card.style[toLeft?'right':'left']=`${Math.max(8,Math.min(toLeft?parent.width-x+16:x+16,parent.width-maxW-8))}px`;
       card.style[toUp?'bottom':'top']=`${Math.max(8,Math.min(toUp?parent.height-y+16:y+16,parent.height-maxH-8))}px`;
       card.style.maxHeight=`${maxH}px`;
     }
-    const after=card.getBoundingClientRect();card.setAttribute('data-open','');
+    card.scrollTop=scrollTop;const after=card.getBoundingClientRect();card.setAttribute('data-open','');
     if((!before||before.width!==after.width||before.height!==after.height)&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
       const dx=Math.max(0,after.width-(before?.width??4)),dy=Math.max(0,after.height-(before?.height??4));
       const inset=[card.style.bottom?dy:0,card.style.right?0:dx,card.style.bottom?0:dy,card.style.right?dx:0].map(value=>`${value}px`).join(' ');
@@ -159,12 +163,27 @@ export function createCityHover(host:HTMLElement,options:{
     const rect=host.getBoundingClientRect(),x=event.clientX-rect.left,y=event.clientY-rect.top,days=options.pick(x,y);
     const next=days?.length?days.map(d=>d.date).join('|'):'';
     if(next===key)return;
+    // 已显示卡片与命中点之间只保留一个小三角通道，允许跨过定位间隙。
+    if(!card.hidden&&key){
+      const bounds=card.getBoundingClientRect(),origin={x:anchor.x+rect.left,y:anchor.y+rect.top};
+      const edges:[{x:number;y:number},{x:number;y:number}][]=[];
+      if(origin.x<bounds.left||origin.x>bounds.right){const x=origin.x<bounds.left?bounds.left:bounds.right;edges.push([{x,y:bounds.top},{x,y:bounds.bottom}])}
+      if(origin.y<bounds.top||origin.y>bounds.bottom){const y=origin.y<bounds.top?bounds.top:bounds.bottom;edges.push([{x:bounds.left,y},{x:bounds.right,y}])}
+      const cross=(p:{x:number;y:number},q:{x:number;y:number})=>(q.x-p.x)*(event.clientY-p.y)-(q.y-p.y)*(event.clientX-p.x);
+      if(edges.some(([a,b])=>{const signs=[cross(origin,a),cross(a,b),cross(b,origin)];return signs.every(value=>value>=0)||signs.every(value=>value<=0)}))return;
+    }
     leave();if(!next||!days)return;
     key=next;anchor={x,y};options.highlight(anchor);timer=window.setTimeout(()=>{timer=0;void show(days,next)},300);
   };
+  const hostLeave=(event:PointerEvent)=>{if(event.relatedTarget instanceof Node&&card.contains(event.relatedTarget))return;leave()};
+  const cardLeave=(event:PointerEvent)=>{if(event.relatedTarget instanceof Node&&host.contains(event.relatedTarget))return;leave()};
+  const focusLeave=(event:FocusEvent)=>{if(event.relatedTarget instanceof Node&&(card.contains(event.relatedTarget)||host.contains(event.relatedTarget)))return;hide()};
+  const cardWheel=(event:WheelEvent)=>event.stopPropagation();
+  const hostKey=(event:KeyboardEvent)=>{if(event.key!=='Tab')hide()};
+  const escape=(event:KeyboardEvent)=>{if(event.key==='Escape')hide()};
   const visibility=()=>{if(document.hidden)hide()};
   const resize=new ResizeObserver(hide);resize.observe(host);
-  host.addEventListener('pointermove',move);host.addEventListener('pointerleave',leave);host.addEventListener('pointerdown',hide);host.addEventListener('wheel',hide,{passive:true});host.addEventListener('keydown',hide);document.addEventListener('visibilitychange',visibility);
+  host.addEventListener('pointermove',move);host.addEventListener('pointerleave',hostLeave);host.addEventListener('pointerdown',hide);host.addEventListener('wheel',hide,{passive:true});host.addEventListener('keydown',hostKey);card.addEventListener('pointerleave',cardLeave);card.addEventListener('focusout',focusLeave);card.addEventListener('wheel',cardWheel,{passive:true});document.addEventListener('keydown',escape);document.addEventListener('visibilitychange',visibility);
   return {hide,async inspectDay(date:string,signal:AbortSignal):Promise<DayActivities|undefined>{
     const context=options.context();syncCache(context);await confirm(context,signal);
     const cached=cache.get(date);if(cached)return cached.details;
@@ -172,5 +191,5 @@ export function createCityHover(host:HTMLElement,options:{
     try{details=await fetchProjectActivities(context,date,signal)}
     catch(error){signal.throwIfAborted();console.warn('[CodeYears] 注册里程碑读取未完成：'+(error instanceof Error?error.message:'未知请求错误'));return}
     await confirm(context,signal);cache.set(date,{details,expires:Date.now()+5*60000});return details;
-  },clear(){hide();cache.clear()},dispose(){hide();cache.clear();resize.disconnect();card.remove();host.removeEventListener('pointermove',move);host.removeEventListener('pointerleave',leave);host.removeEventListener('pointerdown',hide);host.removeEventListener('wheel',hide);host.removeEventListener('keydown',hide);document.removeEventListener('visibilitychange',visibility)}};
+  },clear(){hide();cache.clear()},dispose(){hide();cache.clear();resize.disconnect();card.remove();host.removeEventListener('pointermove',move);host.removeEventListener('pointerleave',hostLeave);host.removeEventListener('pointerdown',hide);host.removeEventListener('wheel',hide);host.removeEventListener('keydown',hostKey);card.removeEventListener('pointerleave',cardLeave);card.removeEventListener('focusout',focusLeave);card.removeEventListener('wheel',cardWheel);document.removeEventListener('keydown',escape);document.removeEventListener('visibilitychange',visibility)}};
 }
