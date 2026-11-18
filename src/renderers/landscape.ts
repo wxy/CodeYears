@@ -40,7 +40,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const zoomBase=progressiveCity?1.875:initialView==="city"?1.5:1;
   const minZoom=zoomBase*.5;
   let currentDays=days,revealedDays=0,revealFrom=0,revealStarted=0;
-  const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:zoomBase,panX:0,panY:0,dark:false};
+  const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:zoomBase,zoomBase,panX:0,panY:0,dark:false};
   let view=initialView,layer:LandscapeView|undefined,images:CityImages|undefined,assetPromise:Promise<CityImages>|undefined;
   let planVehicles:ReturnType<typeof planOrganicCity>['planVehicles']|undefined;
   let cityScene:CityScene|undefined;const assetAbort=new AbortController();

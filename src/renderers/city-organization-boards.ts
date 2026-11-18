@@ -6,7 +6,7 @@ import { cityRoadWidth, planRoadGeometry, type CityRoadRoute, type RoadPoint } f
 type Bounds = { left:number; right:number; top:number; bottom:number };
 export type OrganizationPoster = { login:string; artwork:HTMLCanvasElement; displayOnly:boolean };
 export interface OrganizationBoard {
-  left:number; top:number; slope:number; bounds:Bounds; groundY:number;
+  left:number; top:number; slope:number; bounds:Bounds; groundX:number; groundY:number;
   paint(context:CanvasRenderingContext2D):void;
 }
 
@@ -85,7 +85,7 @@ export function planOrganizationBoards(network:CityRoadNetwork,exits:readonly Ci
         if(signs.some(s=>overlaps(s,bounds,.45))||boards.some(s=>overlaps(s.bounds,bounds,1.3)))continue;
         if(objects.some(o=>!o.item.flat&&o.groundY>groundY&&o.left<bounds.right&&o.left+o.width>bounds.left&&o.top<bounds.bottom&&o.top+o.height>bounds.top))continue;
         const poster=posters[boards.length];
-        boards.push({left,top,slope,bounds,groundY,paint(context){
+        boards.push({left,top,slope,bounds,groundX:px,groundY,paint(context){
           context.save();
           context.transform(1,slope,0,1,px,groundY);
           context.drawImage(frame.canvas,frame.left,frame.top,frame.width,frame.height);

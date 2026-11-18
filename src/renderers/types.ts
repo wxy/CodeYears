@@ -15,6 +15,8 @@ export interface RendererLifecycle {
 export interface LandscapeViewport {
   width: number; height: number; dpr: number;
   zoom: number; panX: number; panY: number; dark: boolean;
+  /** 面板显示 100% 时的相机倍率，独立预览以 1 为基准。 */
+  zoomBase?: number;
 }
 export interface CityRoadLabel { label:string; returning:boolean }
 export interface LandscapeView {

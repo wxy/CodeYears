@@ -7,7 +7,7 @@ export interface DirectionBoard {
   polygon:RoadPoint[];
   /** 命名路牌的牌面、双柱与脚座在投影平面中的外接边界。 */
   bounds?:{left:number;right:number;top:number;bottom:number};
-  groundY:number;
+  groundX:number; groundY:number;
   paintRoad(context:CanvasRenderingContext2D):void;
   paint(context:CanvasRenderingContext2D):void;
 }
@@ -59,7 +59,7 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,kind:'outbou
   const polygon=[point(-width/2-.55,top-.5),point(width/2+.55,top-.5),point(width/2+.55,top+height+.45),point(-width/2-.55,top+height+.45)];
   const corners=[...polygon,...[sprite.left,sprite.left+sprite.width].flatMap(s=>[point(s,sprite.top),point(s,sprite.top+sprite.height)])];
   return {
-    polygon,groundY:py,
+    polygon,groundX:px,groundY:py,
     bounds:label?{left:Math.min(...corners.map(p=>p[0])),right:Math.max(...corners.map(p=>p[0])),top:Math.min(...corners.map(p=>p[1])),bottom:Math.max(...corners.map(p=>p[1]))}:undefined,
     paintRoad(context){
       if(!label)return;
