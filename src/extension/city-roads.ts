@@ -5,6 +5,7 @@ import { confirmViewer, sameContext } from '../platform/github/load-year';
 import { readCityJourney, rememberCityJourney } from './city-travel';
 
 const MAX_ROADS=8;
+type RoadChange = {slot:number;destination:string|null} | {sync:boolean};
 interface RoadOptions {
   context():GitHubPageContext;
   currentContext():GitHubPageContext;
@@ -19,8 +20,10 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
   const storageEvents=chrome.storage?.onChanged;
   const username=/^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38}$/i;
   const lifetime=new AbortController();
-  let slots:(string|null)[]=[null,null,null,null],ready=false,saving=false,disposed=false,editing=false;
+  let slots:(string|null)[]=[null,null,null,null],synced=false,ready=false,saving=false,disposed=false,editing=false;
+  let readVersion=0;
   let message:MessageKey|undefined,selection:{kind:'road';slot:number}|{kind:'return'}|undefined;
+  let openedDestination:string|null|undefined;
   let rendered:CityRoadControl[]=[],returnPost:CityReturnControl|undefined;
   const owner=(context:GitHubPageContext)=>context.profileLogin.toLowerCase()===profile&&context.viewer.state==='known'&&context.viewer.identity.kind==='authenticated'&&context.viewer.identity.login.toLowerCase()===profile;
   const canEdit=()=>owner(options.currentContext());
@@ -33,16 +36,21 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     <form class="roads-form" hidden><label><span data-i18n="roadUsername"></span><input name="login" type="text" maxlength="40" autocomplete="off" autocapitalize="none" spellcheck="false" required placeholder="octocat"></label><button type="submit" data-i18n="saveRoad"></button></form>
     <output class="note" role="status" aria-live="polite"></output><button class="roads-retry" type="button" data-i18n="retry" hidden></button>
     <div class="road-editor-actions"><span class="note road-count"></span><button class="road-remove" type="button" data-i18n="removeRoad" hidden></button></div>
-    <p class="note roads-local"></p>
+    <label class="road-sync" hidden><input type="checkbox" aria-describedby="road-storage-note"> <span data-i18n="roadSyncLabel"></span></label>
+    <p class="note roads-local" id="road-storage-note"></p>
   </section>`;
   const form=host.querySelector<HTMLFormElement>('form')!,input=host.querySelector<HTMLInputElement>('input')!;
   const submit=host.querySelector<HTMLButtonElement>('button[type=submit]')!,remove=host.querySelector<HTMLButtonElement>('.road-remove')!;
   const change=host.querySelector<HTMLButtonElement>('.road-change')!,status=host.querySelector<HTMLOutputElement>('output')!;
   const retry=host.querySelector<HTMLButtonElement>('.roads-retry')!,destination=host.querySelector<HTMLElement>('.road-destination')!;
   const returns=host.querySelector<HTMLUListElement>('.road-return-list')!;
+  const syncLabel=host.querySelector<HTMLLabelElement>('.road-sync')!,syncBox=syncLabel.querySelector('input')!;
   // Shadow DOM 外的 GitHub 快捷键不能识别内部 INPUT；保留原生编辑与提交。
   for(const name of ['keydown','keypress','keyup'])input.addEventListener(name,event=>event.stopPropagation());
-  const journey=()=>readCityJourney(options.currentContext());
+  const journey=()=>{
+    try{return readCityJourney(options.currentContext())}
+    catch{return []} // A blocked session store only disables the return journey.
+  };
   const close=(restoreFocus=false)=>{
     const selected=selection;selection=undefined;host.hidden=true;
     if(restoreFocus&&selected)(selected.kind==='return'?returnPost?.sign:rendered[selected.slot]?.sign)?.focus();
@@ -51,9 +59,9 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     const link=document.createElement('a');link.className=returning?'road-return-link':'city-road-destination';
     link.href=`https://github.com/${login}#codeyears-city`;link.textContent=t(returning?'returnToCity':'cityName',[login]);link.setAttribute('data-turbo','false');
     link.onclick=event=>{
-      if(event.defaultPrevented||event.button!==0)return;
-      try{rememberCityJourney(options.currentContext(),login)}
-      catch{event.preventDefault();message='roadTravelError';host.hidden=false;updateEditor()}
+      if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+      // The destination is a native link. A missing session trail must never cancel it.
+      try{rememberCityJourney(options.currentContext(),login)}catch{ /* Session storage can be unavailable. */ }
     };
     return link;
   };
@@ -72,11 +80,15 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     status.textContent=message?t(message):'';retry.hidden=ready||saving||!own||back;
     host.querySelector<HTMLElement>('.road-editor-actions')!.hidden=!own||back;
     host.querySelector('.road-count')!.textContent=t('roadCount',[slots.filter(Boolean).length,MAX_ROADS]);
-    host.querySelector('.roads-local')!.textContent=t(back?'returnRoadLocal':own?'roadsLocal':'roadsOwnerOnly');
+    syncLabel.hidden=!own||back;
+    syncBox.disabled=!ready||saving;
+    if(!saving)syncBox.checked=synced;
+    host.querySelector('.roads-local')!.textContent=t(back?'returnRoadLocal':own?(synced?'roadsSynced':'roadsLocal'):'roadsOwnerOnly');
   };
   const open=(selected:NonNullable<typeof selection>,anchor:HTMLElement,edit=false)=>{
     if(selected.kind==='return'&&!journey().length)return;
-    selection=selected;editing=selected.kind==='road'&&(edit||!slots[selected.slot])&&canEdit();
+    selection=selected;openedDestination=selected.kind==='road'?slots[selected.slot]:undefined;
+    editing=selected.kind==='road'&&(edit||!slots[selected.slot])&&canEdit();
     message=ready?undefined:'roadsReadError';input.value=selected.kind==='road'?slots[selected.slot]??'':'';host.hidden=false;
     updateEditor();
     const area=host.parentElement!.getBoundingClientRect(),point=anchor.getBoundingClientRect();
@@ -130,37 +142,79 @@ export function createCityRoads(host:HTMLElement,options:RoadOptions) {
     if(logins.includes(profile)||new Set(logins).size!==logins.length)throw new Error('Invalid roads');
     return next;
   };
-  async function load(){
-    saving=true;message=undefined;render();
-    try{const stored=await chrome.storage.local.get(key);if(disposed)return;slots=readSlots(stored[key]);ready=true}
-    catch{message='roadsReadError';ready=false}
-    finally{saving=false;render()}
+  async function readSettings(){
+    const shared=await chrome.storage.sync.get(key);
+    if(shared[key]!==undefined)return {synced:true,slots:readSlots(shared[key])};
+    const local=await chrome.storage.local.get(key);
+    return {synced:false,slots:readSlots(local[key])};
   }
-  async function save(next:(string|null)[]){
+  async function load(){
+    const version=++readVersion;
+    try{
+      const settings=await readSettings();
+      if(disposed||version!==readVersion)return;
+      slots=settings.slots;synced=settings.synced;ready=true;
+      if(message==='roadsReadError')message=undefined;
+    }catch{
+      if(disposed||version!==readVersion)return;
+      message='roadsReadError';ready=false;
+    }
+    render();
+  }
+  async function save(change:RoadChange){
+    if(!ready||saving)return;
     const before=options.currentContext();
     if(!owner(before)){message='roadsOwnerOnly';render();return}
+    const previousSynced=synced,previousDestination=openedDestination;
     saving=true;message=undefined;render();
+    let failure:MessageKey='roadOwnerCheckFailed';
     try{
-      await confirmViewer(before,lifetime.signal);lifetime.signal.throwIfAborted();
-      if(!sameContext(before,options.currentContext()))throw new Error('Changed visitor');
-      await chrome.storage.local.set({[key]:next});if(disposed)return;slots=next;close();
-    }catch{if(!disposed)message='roadOwnerCheckFailed'}
-    finally{saving=false;render()}
+      await confirmViewer(before,lifetime.signal);
+      failure='roadsSaveError';
+      const current=await readSettings();
+      lifetime.signal.throwIfAborted();
+      if(!sameContext(before,options.currentContext())){message='roadOwnerCheckFailed';return}
+      if('sync' in change){
+        if(change.sync&&!current.synced)await chrome.storage.sync.set({[key]:current.slots});
+        else if(!change.sync&&current.synced){
+          // Keep this device's copy before retiring the synced copy everywhere.
+          await chrome.storage.local.set({[key]:current.slots});
+          if(disposed||!sameContext(before,options.currentContext())){message='roadOwnerCheckFailed';return}
+          await chrome.storage.sync.remove(key);
+        }
+      }else{
+        if(current.synced!==previousSynced||current.slots[change.slot]!==previousDestination){
+          message='roadsChanged';return;
+        }
+        if(change.destination&&current.slots.some((login,slot)=>slot!==change.slot&&login===change.destination)){
+          message='roadDuplicate';return;
+        }
+        current.slots[change.slot]=change.destination;
+        const storage=current.synced?chrome.storage.sync:chrome.storage.local;
+        await storage.set({[key]:current.slots});
+        if(!disposed)close();
+      }
+    }catch{message=failure}
+    finally{
+      saving=false;
+      if(!disposed)await load();
+    }
   }
   form.onsubmit=event=>{
     event.preventDefault();if(!ready||saving||selection?.kind!=='road'||!canEdit())return;
     const slot=selection.slot,login=input.value.trim().replace(/^@/,'').toLowerCase();
     message=!username.test(login)?'roadInvalidUsername':login===profile?'roadSelf':slots.some((target,index)=>index!==slot&&target===login)?'roadDuplicate':undefined;
     if(message){updateEditor();return}
-    const next=[...slots];next[slot]=login;void save(next);
+    void save({slot,destination:login});
   };
   remove.onclick=()=>{
     if(selection?.kind!=='road'||saving||!canEdit())return;
-    const next=[...slots];next[selection.slot]=null;void save(next);
+    void save({slot:selection.slot,destination:null});
   };
+  syncBox.onchange=()=>void save({sync:syncBox.checked});
   change.onclick=()=>{if(canEdit()){editing=true;updateEditor();input.focus();input.select()}};
   const storageChanged=(changes:Record<string,chrome.storage.StorageChange>,area:string)=>{
-    if(area==='local'&&changes[key])void load();
+    if((area==='local'||area==='sync')&&changes[key])void load();
   };
   const outside=(event:PointerEvent)=>{if(!event.composedPath().includes(host))close()};
   const escape=(event:KeyboardEvent)=>{

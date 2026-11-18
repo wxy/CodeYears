@@ -3,7 +3,8 @@ import { cityLegendStyles, createCityLegend } from "./city-legend";
 import { createCityHover } from './city-hover';
 import { createCityRoads } from './city-roads';
 import { readPageContext } from "../platform/github/probe";
-import { clearContributionCache, confirmViewer, sameContext } from "../platform/github/load-year";
+import { isProfileOwner } from "../platform/github/types";
+import { clearContributionCache, confirmViewer, sameContext, ViewerChangedError } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
 import { isoYearStart } from "../data/iso-week";
 import type { ContributionLandscape } from "../renderers/landscape";
@@ -38,7 +39,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
       button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
-      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:0; white-space:nowrap; }
+      .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:0; }
       #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
       .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
       .scene-wrap { position:relative; height:340px; min-height:260px; }
@@ -158,6 +159,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const languageSelect = get<HTMLSelectElement>("#language");
   let active = false, disposed = false, busy = false;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
+  let milestoneRequest: AbortController | undefined;
+  let pendingMilestone: (() => void) | undefined;
+  let retryAction: () => Promise<void> = () => load(false);
   const currentContext = () => readPageContext(document, new URL(location.href));
   const roads=createCityRoads(get<HTMLElement>('#road-editor'),{context:()=>context,currentContext,language:()=>language,changed:(controls,post)=>city?.setRoadControls(controls,post)});
   let reusable: { context: typeof context; range: string; expiresAt: number; status: () => string; summary: () => string } | undefined;
@@ -167,7 +171,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const setSummary = (message: () => string) => { summaryMessage = message; summary.textContent = message(); };
   const showIdentity = () => {
     const identity = context.viewer.state === "unknown" ? t("identityUnknown") : context.viewer.identity.kind === "signed-out" ? t("signedOut") : t("visitor", [context.viewer.identity.login]);
-    get<HTMLElement>("#identity").textContent = active ? t("profileIdentity", [context.profileLogin, identity]) : "";
+    get<HTMLElement>("#identity").textContent = active ? t("profileIdentity", [context.profileLogin, identity, t(isProfileOwner(context) ? "ownerData" : "publicData")]) : "";
   };
   const moreTrigger = more.querySelector<HTMLElement>("summary")!;
   const closeMore = (restoreFocus = false) => {
@@ -187,9 +191,10 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   document.addEventListener("keydown", escapeMenu, true);
   const hover=createCityHover(cityHost,{
     pick:(x,y)=>active&&!busy?city?.buildingAt(x,y):undefined,
+    step:backward=>active&&!busy?city?.stepBuilding(backward):undefined,
     context:()=>context,currentContext,language:()=>language,
     highlight:point=>city?.highlightBuilding(point),
-    invalidate(){resetResult();retry.hidden=false;setStatus(()=>language==='zh-CN'?'GitHub 会话已改变或暂时无法确认，请重新载入城市。':'The GitHub session changed or could not be confirmed. Reload the city.')},
+    invalidate: suspendForIdentity,
   });
   const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
   const collapse = (restoreFocus = true) => {
@@ -206,7 +211,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   dialog.addEventListener("cancel", event => { event.preventDefault(); if (more.open) closeMore(true); else collapse(); });
   const updateControls = () => {
-    const ready = Boolean(cityHost.querySelector("canvas"));
+    const ready = !cityHost.hidden && Boolean(cityHost.querySelector("canvas"));
     expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
     cancel.hidden = !busy;
     cityHost.querySelector("canvas")?.setAttribute("aria-label", t("canvasLabel"));
@@ -218,6 +223,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     clear.disabled = busy || context.viewer.state === "unknown"; updateControls();
   };
   const resetResult = () => {
+    pendingMilestone = undefined;
+    milestoneRequest?.abort();
     hover.clear();
     reusable = undefined;
     city?.dispose(); city = undefined; cityHost.replaceChildren();
@@ -225,8 +232,43 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     setSummary(() => "");
     updateControls();
   };
+  function suspendForIdentity(changed: boolean) {
+    milestoneRequest?.abort();
+    roads.close();
+    if (changed) resetResult();
+    else { hover.clear(); city?.setVisible(false); setSummary(() => ""); }
+    cityHost.hidden = true;
+    retryAction = changed ? () => load(false) : restoreOrLoad;
+    retry.hidden = false;
+    setStatus(() => t(changed ? "errIdentityChanged" : "identityRetry"));
+    updateControls();
+  }
+
+  async function addJoiningTower(field: ContributionLandscape, days: readonly DailyContribution[], date: string) {
+    const request = new AbortController();
+    milestoneRequest = request;
+    try {
+      const details = await hover.inspectDay(date, request.signal);
+      if (!request.signal.aborted && details?.joinedGitHub) {
+        // 单独的纪念物绘制失败时，已完成的基础城市仍然可读。
+        await field.updateDays(days, date).catch(() => {
+          if (!request.signal.aborted) setStatus(() => t("milestoneRenderError"));
+        });
+      }
+    } catch (error) {
+      if (request.signal.aborted) return;
+      if (error instanceof ViewerChangedError) suspendForIdentity(true);
+      else if (isProfileOwner(context) && !cityHost.hidden) suspendForIdentity(false);
+    } finally {
+      if (milestoneRequest === request) {
+        milestoneRequest = undefined;
+        if (!request.signal.aborted) pendingMilestone = undefined;
+      }
+    }
+  }
   const load = async (forceRefresh: boolean) => {
     if (!active || disposed || busy) return;
+    retryAction = () => load(forceRefresh);
     const start = Number(startSelect.value), end = Number(select.value);
     if (start > end) { setStatus(() => t("invalidRange")); return; }
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
@@ -246,7 +288,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     let painting: Promise<void> | undefined;
     let pendingDays: readonly DailyContribution[] | undefined;
     let expiresAt = Infinity;
-    let joinChecked=false,joinedOn:string|undefined;
     const mountEmptyField = () => {
       city = renderer!.createLandscape(cityHost, [], (_state, error) => {
         if (!active || controller !== request) return;
@@ -271,12 +312,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         try {
           while (pendingDays && active && controller === request && !request.signal.aborted) {
             const latest = pendingDays; pendingDays = undefined;
-            if(!joinChecked&&start===years.at(-1)&&latest.some(day=>Number(day.date.slice(0,4))===start)){
-              joinChecked=true;
-              const first=latest.find(day=>Number(day.date.slice(0,4))===start&&day.count>0);
-              if(first&&(await hover.inspectDay(first.date,request.signal))?.joinedGitHub)joinedOn=first.date;
-            }
-            await field.updateDays(latest,joinedOn);
+            await field.updateDays(latest);
           }
         } catch (error) {
           if (request.signal.aborted) return;
@@ -299,9 +335,19 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       const visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
       if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
+      if (firstSource > firstNeeded || (lastSource < lastNeeded && lastSource < calendarYear)) {
+        warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
+      }
       setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
-      setSummary(() => t("totalContributions", [numberText(language, total)]));
+      setSummary(() => t("contributionRange", [numberText(language, total), visibleDays[0].date, visibleDays.at(-1)!.date]));
       if (context.viewer.state === "known") reusable = { context, range, expiresAt, status: statusMessage, summary: summaryMessage };
+      if (start === years.at(-1)) {
+        const first = visibleDays.find(day => day.date.startsWith(String(start)) && day.count > 0);
+        if (first) {
+          pendingMilestone = () => { void addJoiningTower(field, visibleDays, first.date); };
+          pendingMilestone();
+        }
+      }
     } catch (error) {
       if (!active || controller !== request) return;
       const cancelled = request.signal.aborted && !renderFailure;
@@ -318,23 +364,25 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   controls.querySelector<HTMLFormElement>('form')!.addEventListener("submit", event => { event.preventDefault(); void load(false); });
   refresh.onclick = () => { void load(true); };
-  retry.onclick = () => { void load(false); };
+  retry.onclick = () => { void retryAction(); };
   cancel.onclick = () => controller?.abort();
   fitView.onclick = () => city?.resetView();
   maxZoom.onclick = () => city?.zoomToMax();
-  clear.onclick = async () => {
+  const clearYears = async () => {
     if (!active || busy) return;
     const request = new AbortController(); controller = request;
     resetResult(); setBusy(true); cancel.hidden = true; more.open = false; retry.hidden = true;
     setStatus(() => t("confirmingClear"));
     try {
       await clearContributionCache(context, request.signal, currentContext);
-      if (active && !request.signal.aborted) { retry.hidden = false; setStatus(() => t("cacheClearedDetail")); }
+      if (active && !request.signal.aborted) { retryAction = () => load(false); retry.hidden = false; setStatus(() => t("cacheClearedDetail")); }
     } catch (error) {
-      if (active && controller === request) { retry.hidden = false; setStatus(() => error instanceof Error ? externalText(language, error.message) : t("clearFailedDetail")); }
+      if (active && controller === request) { retryAction = clearYears; retry.hidden = false; setStatus(() => error instanceof Error ? externalText(language, error.message) : t("clearFailedDetail")); }
     } finally { if (controller === request) { controller = undefined; setBusy(false); } }
   };
+  clear.onclick = clearYears;
   const deactivate = () => {
+    milestoneRequest?.abort();
     hover.hide();
     active = false; controller?.abort(); controller = undefined; collapse(false);
     cityHost.hidden = true;
@@ -360,30 +408,33 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     try { await settings.change(languageSelect.value as LanguagePreference); }
     catch { languageSelect.value = preference; setStatus(() => t("languageSaveError")); }
   };
+  async function restoreOrLoad() {
+    const nextContext = currentContext(), cached = reusable, field = city;
+    if (!cached || !field || cached.range !== selectedRange() || Date.now() >= cached.expiresAt ||
+        nextContext.viewer.state === "unknown" || !sameContext(cached.context, nextContext)) {
+      await load(false); return;
+    }
+    const request = new AbortController(); controller = request; setBusy(true); retry.hidden = true;
+    setStatus(() => t("readingData"));
+    try {
+      if (isProfileOwner(nextContext)) await confirmViewer(nextContext, request.signal);
+      request.signal.throwIfAborted();
+      if (!active || disposed || controller !== request) return;
+      if (!sameContext(nextContext, currentContext())) { suspendForIdentity(true); return; }
+      context = nextContext; roads.refresh(); cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
+      pendingMilestone?.();
+    } catch (error) {
+      if (!active || controller !== request) return;
+      suspendForIdentity(error instanceof ViewerChangedError);
+    } finally { if (controller === request) { controller = undefined; setBusy(false); } }
+  }
   setLanguage(language, preference);
   return {
     setLanguage,
     async activate() {
       if (disposed || active) return;
       active = true;
-      const nextContext = currentContext(), cached = reusable, field = city;
-      if (!cached || !field || cached.range !== selectedRange() || Date.now() >= cached.expiresAt ||
-          nextContext.viewer.state === "unknown" || !sameContext(cached.context, nextContext)) {
-        await load(false); return;
-      }
-      const request = new AbortController(); controller = request; setBusy(true); retry.hidden = true;
-      setStatus(() => t("readingData"));
-      try {
-        await confirmViewer(nextContext, request.signal);
-        request.signal.throwIfAborted();
-        if (!active || disposed || controller !== request) return;
-        if (!sameContext(nextContext, currentContext())) throw new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
-        context = nextContext; roads.refresh(); cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
-      } catch (error) {
-        if (!active || controller !== request) return;
-        resetResult(); cityHost.hidden = false; retry.hidden = false;
-        setStatus(() => error instanceof Error ? externalText(language, error.message) : t("readFailedDetail"));
-      } finally { if (controller === request) { controller = undefined; setBusy(false); } }
+      await restoreOrLoad();
     },
     deactivate,
     dispose() { if (disposed) return; deactivate(); resetResult(); hover.dispose(); roads.dispose(); disposed = true; document.removeEventListener("pointerdown", outsidePointer, true); document.removeEventListener("keydown", escapeMenu, true); shadow.replaceChildren(); controls.replaceChildren(); },

@@ -1101,24 +1101,24 @@
   },
   "direction-board-x": {
     "file": "direction-board-x.png",
-    "left": -2.6082087236888,
-    "top": -9.550155876314623,
-    "width": 5.197025249061084,
-    "height": 10.452958844773994,
-    "nativeWidth": 10,
+    "left": -3.285862068965517,
+    "top": -3.5572916666666665,
+    "width": 6.571724137931034,
+    "height": 3.5885416666666665,
+    "nativeWidth": 6.5,
     "nativeDepth": 0.5,
-    "baselineHeight": 2.8,
+    "baselineHeight": 1.5,
     "sampleId": "direction-board-x"
   },
   "direction-board-z": {
     "file": "direction-board-z.png",
-    "left": -2.679123488641639,
-    "top": -11.17745891854983,
-    "width": 5.384472552844848,
-    "height": 12.063028425112911,
-    "nativeWidth": 10,
+    "left": -3.285862068965517,
+    "top": -3.5572916666666665,
+    "width": 6.571724137931034,
+    "height": 3.5885416666666665,
+    "nativeWidth": 6.5,
     "nativeDepth": 0.5,
-    "baselineHeight": 2.8,
+    "baselineHeight": 1.5,
     "sampleId": "direction-board-z"
   }
 }

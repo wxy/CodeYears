@@ -1,5 +1,5 @@
 import { parseContributionYear, type ParsedYear } from "../../data/parse-year";
-import type { GitHubPageContext } from "./types";
+import { isProfileOwner, type GitHubPageContext } from "./types";
 import { browserCalendarDate } from "../../data/calendar-date";
 
 export function readPageContext(doc: Document, url: URL): GitHubPageContext {
@@ -23,7 +23,9 @@ export async function fetchContributionYear(context: GitHubPageContext, year: nu
   if (!Number.isInteger(year) || year < 2008 || year > now.getFullYear()) throw new Error("请选择有效历史年份。");
   const url = new URL(`/${context.profileLogin}`, "https://github.com");
   url.search = new URLSearchParams({ action: "show", controller: "profiles", from: `${year}-01-01`, tab: "contributions", to: year === now.getFullYear() ? browserCalendarDate(now) : `${year}-12-31`, user_id: context.profileLogin }).toString();
-  const doc = await requestHTML(url, signal, true);
+  const owner = isProfileOwner(context);
+  const doc = await requestHTML(url, signal, true, owner ? 'same-origin' : 'omit');
+  if (!owner && !doc.querySelector('table.ContributionCalendar-grid')) throw new Error("未取得此主页的公开贡献日历。");
   return parseContributionYear(doc, context.profileLogin, year, now);
 }
 

@@ -1,9 +1,13 @@
 """Package a fresh npm build. Requires Python 3; does not publish or upload."""
 
+import argparse
+import filecmp
 import hashlib
 import json
+import os
 import re
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
 
 root = Path(__file__).resolve().parents[1]
@@ -39,18 +43,39 @@ missing = [name for name, path in files.items() if not path.is_file()]
 if missing:
     raise SystemExit(f"Missing distribution files: {missing}")
 
-release = root / "release"
-release.mkdir(exist_ok=True)
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--output-dir", type=Path, default=root / "release")
+release = parser.parse_args().output_dir.resolve()
+release.mkdir(parents=True, exist_ok=True)
 archive = release / f"codeyears-{version}-city.zip"
-with ZipFile(archive, "w") as output:
-    for name, path in sorted(files.items()):
-        info = ZipInfo(name, (1980, 1, 1, 0, 0, 0))
-        info.create_system = 3
-        info.external_attr = 0o100644 << 16
-        output.writestr(info, path.read_bytes(), compress_type=ZIP_STORED if name.endswith(".png") else ZIP_DEFLATED, compresslevel=9)
-with ZipFile(archive) as output:
-    if output.testzip() is not None:
-        raise SystemExit("ZIP integrity check failed")
-digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-(release / f"{archive.name}.sha256").write_text(f"{digest}  {archive.name}\n")
-print(f"{archive.relative_to(root)}: {len(files)} files, {archive.stat().st_size:,} bytes, SHA-256 {digest}")
+checksum = archive.with_suffix(".zip.sha256")
+
+def install_once(source, destination):
+    """Install a complete file without replacing another build with the same version."""
+    try:
+        os.link(source, destination)
+    except FileExistsError:
+        if not filecmp.cmp(source, destination, shallow=False):
+            raise SystemExit(f"Existing file differs: {destination}. Choose a new version or --output-dir.")
+
+
+with TemporaryDirectory(dir=release) as directory:
+    candidate = Path(directory) / archive.name
+    with ZipFile(candidate, "w") as output:
+        for name, path in sorted(files.items()):
+            info = ZipInfo(name, (1980, 1, 1, 0, 0, 0))
+            info.create_system = 3
+            info.external_attr = 0o100644 << 16
+            output.writestr(info, path.read_bytes(), compress_type=ZIP_STORED if name.endswith(".png") else ZIP_DEFLATED, compresslevel=9)
+    with ZipFile(candidate) as output:
+        if output.testzip() is not None:
+            raise SystemExit("ZIP integrity check failed")
+    digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+    checksum_bytes = f"{digest}  {archive.name}\n".encode()
+    if checksum.exists() and checksum.read_bytes() != checksum_bytes:
+        raise SystemExit(f"Existing checksum differs: {checksum}. Choose a new version or --output-dir.")
+    install_once(candidate, archive)
+    candidate_checksum = Path(directory) / checksum.name
+    candidate_checksum.write_bytes(checksum_bytes)
+    install_once(candidate_checksum, checksum)
+print(f"{archive}: {len(files)} files, {archive.stat().st_size:,} bytes, SHA-256 {digest}")

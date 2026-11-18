@@ -3,7 +3,8 @@ import { PARSER_VERSION } from "../data/parse-year";
 import type { ContributionYear } from "../data/types";
 import type { ViewerIdentity, YearCacheRecord, YearCacheScope } from "./types";
 
-const SCHEMA_VERSION = 1;
+// v1 的已登录访问者可能缓存了同事可见的私有贡献；新的公开视角不得复用。
+const SCHEMA_VERSION = 2;
 const DAY_MS = 86_400_000;
 
 /** 同一份已校验年度数据的磁盘缓存与页内画面共用到期时间。 */
@@ -13,9 +14,9 @@ export function yearCacheExpiresAt(value: ContributionYear): number {
   return Math.min(fetchedAt.getTime() + 3_600_000, new Date(fetchedAt.getFullYear(), fetchedAt.getMonth(), fetchedAt.getDate() + 1).getTime());
 }
 
-function profilePrefix(viewer: ViewerIdentity, profileLogin: string): string {
+function profilePrefix(viewer: ViewerIdentity, profileLogin: string, version = SCHEMA_VERSION): string {
   const identity = viewer.kind === "authenticated" ? `user:${viewer.login.toLowerCase()}` : "signed-out";
-  return `codeyears:year:${SCHEMA_VERSION}:${identity}:${profileLogin.toLowerCase()}:`;
+  return `codeyears:year:${version}:${identity}:${profileLogin.toLowerCase()}:`;
 }
 
 function key(scope: YearCacheScope): string {
@@ -66,8 +67,8 @@ export async function writeYearCache(scope: YearCacheScope, value: ContributionY
 }
 
 export async function clearProfileCache(viewer: ViewerIdentity, profileLogin: string): Promise<void> {
-  const prefix = profilePrefix(viewer, profileLogin);
+  const prefixes = [profilePrefix(viewer, profileLogin), profilePrefix(viewer, profileLogin, 1)];
   const stored = await chrome.storage.local.get(null);
-  const names = Object.keys(stored).filter(name => name.startsWith(prefix));
+  const names = Object.keys(stored).filter(name => prefixes.some(prefix => name.startsWith(prefix)));
   if (names.length) await chrome.storage.local.remove(names);
 }

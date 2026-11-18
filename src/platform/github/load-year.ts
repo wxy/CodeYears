@@ -1,7 +1,7 @@
 import { clearProfileCache, readYearCache, writeYearCache } from "../../cache/year-cache";
 import type { YearCacheScope } from "../../cache/types";
 import type { ContributionYear } from "../../data/types";
-import type { GitHubPageContext } from "./types";
+import { isProfileOwner, type GitHubPageContext } from "./types";
 import { fetchContributionYear, readLivePageContext } from "./probe";
 
 interface LoadedYear {
@@ -17,14 +17,18 @@ export function sameContext(left: GitHubPageContext, right: GitHubPageContext): 
   return left.profileLogin.toLowerCase() === right.profileLogin.toLowerCase() && identity(left) === identity(right);
 }
 
-function ensureCurrent(context: GitHubPageContext, signal: AbortSignal, currentContext: () => GitHubPageContext): void {
+export class ViewerChangedError extends Error {}
+
+export function ensureCurrent(context: GitHubPageContext, signal: AbortSignal, currentContext: () => GitHubPageContext): void {
   signal.throwIfAborted();
-  if (!sameContext(context, currentContext())) throw new Error("主页或访问者身份已改变，请刷新页面后重新打开诊断。");
+  if (!sameContext(context, currentContext())) throw new ViewerChangedError("主页或访问者身份已改变，请刷新页面后重新打开诊断。");
 }
 
 export async function confirmViewer(context: GitHubPageContext, signal: AbortSignal): Promise<void> {
   const live = await readLivePageContext(context.profileLogin, signal);
-  if (live.viewer.state === "unknown" || !sameContext(context, live)) throw new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
+  const message = "当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。";
+  if (live.viewer.state === "unknown") throw new Error(message);
+  if (!sameContext(context, live)) throw new ViewerChangedError(message);
 }
 
 export async function loadContributionYear(context: GitHubPageContext, year: number, forceRefresh: boolean,
@@ -33,16 +37,19 @@ export async function loadContributionYear(context: GitHubPageContext, year: num
   const scope: YearCacheScope | undefined = context.viewer.state === "known" ?
     { viewer: context.viewer.identity, profileLogin: context.profileLogin, year } : undefined;
   const warnings: string[] = [];
-  if (scope) {
+  const owner = isProfileOwner(context);
+  if (owner) {
     await confirmViewer(context, signal);
     ensureCurrent(context, signal, currentContext);
+  }
+  if (scope) {
     if (!forceRefresh) {
       let cached: ContributionYear | undefined;
       try { cached = await readYearCache(scope); }
       catch { warnings.push("缓存读取失败，本次改为联网获取。"); }
       ensureCurrent(context, signal, currentContext);
       if (cached) {
-        await confirmViewer(context, signal);
+        if (owner) await confirmViewer(context, signal);
         ensureCurrent(context, signal, currentContext);
         return { value: cached, source: "cache", warning: warnings.join(" ") };
       }
@@ -51,7 +58,7 @@ export async function loadContributionYear(context: GitHubPageContext, year: num
 
   const result = await fetchContributionYear(context, year, signal);
   if (scope) {
-    await confirmViewer(context, signal);
+    if (owner) await confirmViewer(context, signal);
     ensureCurrent(context, signal, currentContext);
     try { await writeYearCache(scope, result.value); }
     catch { warnings.push("已取得真实数据，但缓存写入失败；本次结果仅保留在页面中。"); }

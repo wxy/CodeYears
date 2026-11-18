@@ -105,7 +105,7 @@
     "message": "城市未能打开，请刷新页面或重新加载 CodeYears；也可返回贡献图。"
   },
   "clearCache": {
-    "message": "清除此主页缓存"
+    "message": "清除年度贡献缓存"
   },
   "refreshData": {
     "message": "刷新所选年份"
@@ -141,7 +141,7 @@
     "message": "拖动平移，滚轮缩放。“全景”恢复完整取景。场地随已读取的数据逐步填入，未返回的区域保持待填充。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。"
   },
   "dataHelp": {
-    "message": "数据只缓存在本机，按访问者与主页隔离。年份按完整周划分（ISO 周规则）：周一至周日归周四所在年；边界会读取相邻公历年，因此合计可能与 GitHub 公历年度不同。缺失或未来日期不会补零。"
+    "message": "本人城市使用 GitHub 当前向你显示的每日贡献。其他城市使用公开日历，包含对方主动公开的匿名私有贡献数。合计旁显示按完整周选取的实际日期，缺失日期留空。"
   },
   "identityUnknown": {
     "message": "身份未识别，本次不读写缓存"
@@ -153,7 +153,7 @@
     "message": "访问者 $1"
   },
   "profileIdentity": {
-    "message": "主页 $1 · $2"
+    "message": "主页 $1 · $2 · $3"
   },
   "language": {
     "message": "语言"
@@ -330,7 +330,7 @@
     "message": "使用与数据说明"
   },
   "keyboardControls": {
-    "message": "聚焦城市后用方向键平移，按 + 放大、- 缩小。"
+    "message": "聚焦城市后用方向键平移，按 + 放大、- 缩小。 聚焦地图后，Enter 查看下一栋，Shift+Enter 查看上一栋，Esc 收起详情。触屏可点选建筑。"
   },
   "canvasKeyboardLabel": {
     "message": "贡献之城。聚焦后可用方向键或拖动平移，按 +、- 或使用滚轮缩放。"
@@ -369,7 +369,16 @@
     "message": "移除"
   },
   "roadsLocal": {
-    "message": "目的地保存在此浏览器，只有你能修改自己城市的道路。"
+    "message": "目的地保存在这台设备。勾选后，这座城市的出口会随已启用的 Chrome 同步保存到你的账号。"
+  },
+  "roadSyncLabel": {
+    "message": "在我的 Chrome 设备间同步路牌"
+  },
+  "roadsSynced": {
+    "message": "取消勾选会移除 Chrome 同步副本，在此设备保留当前路牌。其他设备会使用各自的本机设置。"
+  },
+  "roadsChanged": {
+    "message": "路牌设置有更新，请重新打开路牌查看并编辑最新目的地。"
   },
   "roadInvalidUsername": {
     "message": "请输入 GitHub 用户名：最多 39 位字母、数字或不连续的连字符。"
@@ -434,10 +443,25 @@
   "roadOwnerCheckFailed": {
     "message": "未能确认本人身份并保存道路，原设置已保留，请重试。"
   },
-  "roadTravelError": {
-    "message": "未能保存返程记录，请重试。"
-  },
   "addRoadHeading": {
     "message": "添加道路"
+  },
+  "contributionRange": {
+    "message": "$1 次贡献 · $2 至 $3"
+  },
+  "milestoneRenderError": {
+    "message": "城市已就绪，注册纪念建筑暂时无法绘制。"
+  },
+  "ownerData": {
+    "message": "本人的登录视图"
+  },
+  "publicData": {
+    "message": "公开贡献视图"
+  },
+  "errPublicCalendar": {
+    "message": "未取得此主页的公开贡献日历。"
+  },
+  "identityRetry": {
+    "message": "暂时无法核对 GitHub 会话，重试可恢复城市。"
   }
 }

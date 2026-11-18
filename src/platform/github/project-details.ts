@@ -1,5 +1,5 @@
 import { requestHTML } from './probe';
-import type { GitHubPageContext } from './types';
+import { isProfileOwner, type GitHubPageContext } from './types';
 
 export interface ProjectActivity {
   date: string;
@@ -15,8 +15,7 @@ export interface DayActivities { projects:ProjectActivity[]; joinedGitHub:boolea
 export async function fetchProjectActivities(context: GitHubPageContext, date: string, signal: AbortSignal): Promise<DayActivities> {
   const url=new URL(`/${context.profileLogin}`,'https://github.com');
   url.search=new URLSearchParams({tab:'overview',from:date,to:date}).toString();
-  // 身份未知仍可查匿名公开活动，不能把未知身份当作已确认登录或复用其缓存。
-  const doc=await requestHTML(url,signal,true,context.viewer.state==='unknown'?'omit':'same-origin'),areas=doc.querySelectorAll('.contribution-activity-listing');
+  const doc=await requestHTML(url,signal,true,isProfileOwner(context)?'same-origin':'omit'),areas=doc.querySelectorAll('.contribution-activity-listing');
   if(areas.length!==1)throw new Error('项目活动区域无法确认');
   const area=areas[0],clean=(node:Element|null)=>node?.textContent?.replace(/\s+/g,' ').trim()??'';
   const expected=new Date(`${date}T00:00:00Z`).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'});

@@ -22,6 +22,7 @@ export interface LandscapeView {
   returnPost?(viewport: LandscapeViewport): { board:[number,number][]; polygon:[number,number][] } | undefined;
   /** 已显示建筑在创建此视图的数据快照中的成员索引。 */
   buildingAt?(x: number, y: number, viewport: LandscapeViewport): readonly number[] | undefined;
+  stepBuilding?(backward: boolean, viewport: LandscapeViewport): {x:number;y:number} | undefined;
   highlightBuilding?(point: {x:number;y:number} | undefined, viewport: LandscapeViewport): void;
   maxZoom?(viewport: LandscapeViewport): number;
   draw(progress: number, viewport: LandscapeViewport): void;

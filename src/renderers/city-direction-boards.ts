@@ -1,6 +1,6 @@
 import { cityRoadWidth, type CityRoadRoute, type RoadPoint } from './city-roads';
 import type { CitySprite } from './city-assets';
-import layouts from './direction-board-layout.json';
+import face from './direction-board-layout.json';
 
 const project=(x:number,z:number):RoadPoint=>[(x-z)*.5,(x+z)*.25];
 export interface DirectionBoard {
@@ -13,27 +13,29 @@ export interface DirectionBoard {
 /** 精绘牌面、道路名称和命中区域共用世界坐标；两种朝向保持文字正向。 */
 export function planDirectionBoard(route:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',measure:CanvasRenderingContext2D,sprite:CitySprite,roads:readonly CityRoadRoute[],range:readonly [number,number]):DirectionBoard {
   const a=route.points[0],b=route.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),ux=dx/length,uz=dz/length;
-  const returning=kind!=='outbound',temporary=kind==='temporary-return';
+  const temporary=kind==='temporary-return';
   // 牌面横轴沿道路法线，立杆保持竖直；不再沿路纵向或人为旋转斜路。
   let [vx,vy]=project(-uz,ux);
   if(vx<0){vx=-vx;vy=-vy}
   const arrow=(ux-uz)>=0?1:-1;
-  // x/z 是原素材键；现在蓝色款用于出城，绿色款用于返程，与道路朝向无关。
-  const layout=layouts[returning?'modern-x':'modern-z'];
-  const unit=.55,postScale=.35,split=layout.top+layout.height+.3,lift=split*(postScale-1);
-  const width=layout.width*unit,height=layout.height*unit,top=(layout.top+lift)*unit;
-  measure.save();measure.font='700 100px ui-monospace,monospace';
+  const {width,height,top}=face;
+  measure.save();
+  measure.font='700 100px ui-monospace,monospace';
   const textWidth=(text:string)=>measure.measureText(text).width/100;
   const roadDirection=(ux-uz)>=0?1:-1,roadText=roadDirection>0?`${label} →`:`← ${label}`;
   const roadFont=Math.min(1.05,(length*(range[1]-range[0])-6)/textWidth(roadText));
-  // 比较投影后垂直于文字基线的字高；四个主方向等于路面字号的一半。
-  const targetFont=roadFont*.25*Math.hypot(vx,vy)/(Math.hypot((ux-uz)*.5,(ux+uz)*.25)*Math.abs(vx));
-  const lines=textWidth(label)*targetFont>width-2.6?[label.slice(0,Math.ceil(label.length/2)),label.slice(Math.ceil(label.length/2))]:[label];
-  const font=label?Math.min(targetFont,(width-2.6)/Math.max(...lines.map(textWidth)),(height-.4)/(lines.length*1.1)):targetFont;measure.restore();
+  // 字号在牌面标定空间中计算，箭头单独占位。短名保留整行，长名最多两行。
+  const signTypeface='system-ui, sans-serif';
+  measure.font=`650 100px ${signTypeface}`;
+  const targetFont=height*.57, labelWidth=width-1.75;
+  const split=Math.ceil(label.length/2);
+  const lines=textWidth(label)*targetFont>labelWidth?[label.slice(0,split),label.slice(split)]:[label];
+  const font=label?Math.min(targetFont,labelWidth/Math.max(...lines.map(textWidth)),(height-.38)/(lines.length*1.08)):targetFont;
+  measure.restore();
   // 所有目的地都位于离城右侧，返程沿路错开普通牌。
   const half=cityRoadWidth(route)/2;
-  // 用完整素材包络留出支架/石基余量，整块牌的两脚都在路缘外。
-  const reach=Math.max(Math.abs(sprite.left),Math.abs(sprite.left+sprite.width))*2*unit;
+  // 双柱及脚座的完整包络都要落在道路右侧。
+  const reach=Math.max(Math.abs(sprite.left),Math.abs(sprite.left+sprite.width));
   const along=length-(temporary?8:1);
   let shoulder=half+reach+.8;
   // 出口均为直段；在安装位置横切可见路面，站到最右边缘之外，避免压到分岔。
@@ -67,23 +69,23 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,kind:'outbou
       context.fillStyle='#eff2df';context.fillText(roadText,0,0);context.restore();
     },
     paint(context){
-      // 在竖直牌面坐标中保留原图牌面比例，只缩短牌面以下的支架。
-      const facing=vy>=0?1:-1;
-      context.save();context.transform(vx*unit,vy*unit,0,unit,px,py);
-      const draw=()=>{context.save();context.transform(facing*2,-.5,0,1,0,0);context.drawImage(sprite.canvas,sprite.left,sprite.top,sprite.width,sprite.height);context.restore()};
-      const extent=sprite.height+sprite.width*2;
-      context.save();context.beginPath();context.rect(-extent,-extent,extent*2,extent+split*postScale);context.clip();context.translate(0,lift);draw();context.restore();
-      context.save();context.beginPath();context.rect(-extent,split*postScale,extent*2,extent-split*postScale);context.clip();context.scale(1,postScale);draw();context.restore();
+      // 正视母版与文字接受同一个竖直平面投影；支架和法兰一并落在安装点。
+      context.save();
+      context.transform(vx,vy,0,1,px,py);
+      context.drawImage(sprite.canvas,sprite.left,sprite.top,sprite.width,sprite.height);
+      if(label){
+        context.translate(0,top+height/2);
+        context.fillStyle='#fff9e8';
+        // 实心方向箭头在总览缩小时仍能和字形分开。
+        context.save();context.translate(arrow*(width/2-.88),0);context.scale(arrow,1);
+        context.beginPath();context.moveTo(-.39,-.095);context.lineTo(.04,-.095);
+        context.lineTo(.04,-.31);context.lineTo(.43,0);context.lineTo(.04,.31);
+        context.lineTo(.04,.095);context.lineTo(-.39,.095);context.closePath();context.fill();context.restore();
+        context.scale(.01,.01);context.font=`650 ${font*100}px ${signTypeface}`;
+        context.textAlign='center';context.textBaseline='middle';
+        lines.forEach((line,i)=>context.fillText(line,-arrow*48,(i-(lines.length-1)/2)*font*108));
+      }
       context.restore();
-      if(!label)return;
-      context.save();context.transform(vx,vy,0,1,px,py+top);
-      const ax=arrow*(width/2-.8),ay=height/2;
-      context.strokeStyle='#fff8df';context.lineWidth=.16;context.lineCap='round';context.lineJoin='round';context.beginPath();
-      context.moveTo(ax-.55,ay);context.lineTo(ax+.55,ay);
-      const tip=(direction:number)=>{context.moveTo(ax+direction*.2,ay-.3);context.lineTo(ax+direction*.55,ay);context.lineTo(ax+direction*.2,ay+.3)};
-      tip(arrow);context.stroke();
-      context.scale(.01,.01);context.font=`700 ${font*100}px ui-monospace,monospace`;context.textAlign='center';context.textBaseline='middle';context.fillStyle='#fff8df';
-      lines.forEach((line,i)=>context.fillText(line,-arrow*48,(height/2+(i-(lines.length-1)/2)*font*1.1)*100));context.restore();
     },
   };
 }
