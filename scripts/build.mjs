@@ -47,4 +47,3 @@ for (const name of ['manifest.json', '_locales', 'icons']) {
   await cp(resolve('public', name), resolve(values.outDir, name), { recursive: true });
 }
 await cp(resolve('public/assets/city-runtime'), resolve(values.outDir, 'assets/city'), { recursive: true });
-await cp(resolve('public/assets/town-runtime'), resolve(values.outDir, 'assets/town'), { recursive: true });

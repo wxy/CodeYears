@@ -11,7 +11,7 @@ export interface DirectionBoard {
 }
 
 /** 精绘牌面、道路名称和命中区域共用世界坐标；两种朝向保持文字正向。 */
-export function planDirectionBoard(route:CityRoadRoute,label:string,town:boolean,kind:'outbound'|'return'|'temporary-return',measure:CanvasRenderingContext2D,sprite:CitySprite,roads:readonly CityRoadRoute[],range:readonly [number,number]):DirectionBoard {
+export function planDirectionBoard(route:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',measure:CanvasRenderingContext2D,sprite:CitySprite,roads:readonly CityRoadRoute[],range:readonly [number,number]):DirectionBoard {
   const a=route.points[0],b=route.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),ux=dx/length,uz=dz/length;
   const returning=kind!=='outbound',temporary=kind==='temporary-return';
   // 牌面横轴沿道路法线，立杆保持竖直；不再沿路纵向或人为旋转斜路。
@@ -19,8 +19,8 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,town:boolean
   if(vx<0){vx=-vx;vy=-vy}
   const arrow=(ux-uz)>=0?1:-1;
   // x/z 是原素材键；现在蓝色款用于出城，绿色款用于返程，与道路朝向无关。
-  const layout=layouts[`${town?'town':'modern'}-${returning?'x':'z'}`];
-  const unit=.55,postScale=town?.65:.35,split=layout.top+layout.height+.3,lift=split*(postScale-1);
+  const layout=layouts[returning?'modern-x':'modern-z'];
+  const unit=.55,postScale=.35,split=layout.top+layout.height+.3,lift=split*(postScale-1);
   const width=layout.width*unit,height=layout.height*unit,top=(layout.top+lift)*unit;
   measure.save();measure.font='700 100px ui-monospace,monospace';
   const textWidth=(text:string)=>measure.measureText(text).width/100;
@@ -63,8 +63,8 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,town:boolean
       context.save();context.transform(d*(ux-uz)*.5,d*(ux+uz)*.25,d*(-uz-ux)*.5,d*(-uz+ux)*.25,x,y);context.scale(.01,.01);
       context.font=`700 ${roadFont*100}px ui-monospace,monospace`;context.textAlign='center';context.textBaseline='middle';
       const span=context.measureText(roadText).width;
-      context.fillStyle=town?'#ad9c79':'#626d68';context.fillRect(-span/2-16,-roadFont*65,span+32,roadFont*130);
-      context.fillStyle=town?'#f6edce':'#eff2df';context.fillText(roadText,0,0);context.restore();
+      context.fillStyle='#626d68';context.fillRect(-span/2-16,-roadFont*65,span+32,roadFont*130);
+      context.fillStyle='#eff2df';context.fillText(roadText,0,0);context.restore();
     },
     paint(context){
       // 在竖直牌面坐标中保留原图牌面比例，只缩短牌面以下的支架。
@@ -75,10 +75,6 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,town:boolean
       context.save();context.beginPath();context.rect(-extent,-extent,extent*2,extent+split*postScale);context.clip();context.translate(0,lift);draw();context.restore();
       context.save();context.beginPath();context.rect(-extent,split*postScale,extent*2,extent-split*postScale);context.clip();context.scale(1,postScale);draw();context.restore();
       context.restore();
-      if(town&&returning){
-        // 木框/石基保留，空木牌面呈现绿色漆面，颜色只编码返程。
-        context.save();context.transform(vx,vy,0,1,px,py+top);context.fillStyle='#315c4fbb';context.fillRect(-width/2+.22,.16,width-.44,height-.32);context.restore();
-      }
       if(!label)return;
       context.save();context.transform(vx,vy,0,1,px,py+top);
       const ax=arrow*(width/2-.8),ay=height/2;
