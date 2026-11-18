@@ -4,7 +4,7 @@ import { createTimeline } from "../timeline/controller";
 import type { TimelineState } from "../timeline/types";
 import { closeCityImages, loadCityImages, type CityImages } from "./city-assets";
 import { createCityView, planCityScene, type CityScene } from "./city-view";
-import { prepareOrganizationPoster, type OrganizationPoster } from "./city-organization-boards";
+import { organizationFrameId, prepareOrganizationPoster, type OrganizationPoster } from "./city-organization-boards";
 import { createOrganizationLinks } from "./city-organization-links";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import type { CityRoadLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
@@ -51,6 +51,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     inOverview=false;viewport.panX+=dx;viewport.panY+=dy;schedule();
   });
   let posters:readonly OrganizationPoster[]=[];
+  let frameImages:CityImages|undefined,frameRequested=false;
   let roadAnchors:readonly CityRoadControl[]=[],returnSign:CityReturnControl|undefined;
   let inOverview=false;
   let cityZoomFloor=minZoom;
@@ -90,7 +91,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const configureCanvas=(next:LandscapeView)=>{
     next.setRoadCount?.(Math.max(4,roadAnchors.length));
     next.setRoadLabels?.(roadAnchors,returnSign?.label);
-    if(posters.length)next.setOrganizationPosters?.(posters);
+    if(posters.length)next.setOrganizationPosters?.(posters,frameImages?.[organizationFrameId]);
     refitOverview(next);
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
     next.canvas.setAttribute("aria-label",`${view==="city"?"贡献之城":"连续时光山脉"}，固定视角。拖动平移，滚轮缩放。`);
@@ -214,8 +215,20 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(disposed)return;
       posters=organizations.map(prepareOrganizationPoster);
       const focused=organizationLinks.setPosters(posters,directoryLabel);
-      layer?.setOrganizationPosters?.(posters);refitOverview();
+      layer?.setOrganizationPosters?.(posters,frameImages?.[organizationFrameId]);refitOverview();
       organizationLinks.position(layer,viewport,focused);schedule();
+      if(posters.length&&!frameRequested){
+        frameRequested=true;
+        void loadCityImages(assetBase,[organizationFrameId],assetAbort.signal).then(ready=>{
+          if(disposed){closeCityImages(ready);return}
+          frameImages=ready;
+          layer?.setOrganizationPosters?.(posters,ready[organizationFrameId]);
+          refitOverview();schedule();
+        },error=>{
+          frameRequested=false;
+          if(!disposed)notify(error.message);
+        });
+      }
     },
     setRoadControls(controls,post){
       roadLayer.replaceChildren();roadAnchors=controls;returnSign=post;
@@ -298,6 +311,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       host.removeEventListener("pointerdown",down);host.removeEventListener("pointermove",move);host.removeEventListener("pointerup",up);host.removeEventListener("pointercancel",up);host.removeEventListener("lostpointercapture",up);host.removeEventListener("click",click,true);host.removeEventListener("dragstart",dragStart);host.removeEventListener("wheel",wheel);host.removeEventListener("keydown",keydown);layer?.dispose();layer=undefined;
       roadLayer.remove();roadAnchors=[];returnSign=undefined;
       organizationLinks.dispose();posters=[];
+      if(frameImages)closeCityImages(frameImages);
       if(images)closeCityImages(images);else if(assetPromise)void assetPromise.then(closeCityImages,()=>{});
     },
   };

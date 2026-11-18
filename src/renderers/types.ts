@@ -1,4 +1,5 @@
 import type { CityVehicle } from './city-vehicles';
+import type { CitySprite } from './city-assets';
 import type { OrganizationPoster } from './city-organization-boards';
 
 export type ViewMode = "city" | "terrain";
@@ -21,7 +22,7 @@ export interface LandscapeView {
   setVehicles?(vehicles: readonly CityVehicle[]): void;
   setRoadCount?(count: number): void;
   setRoadLabels?(labels:readonly CityRoadLabel[],returnLabel?:string):void;
-  setOrganizationPosters?(posters:readonly OrganizationPoster[]):void;
+  setOrganizationPosters?(posters:readonly OrganizationPoster[],frame?:CitySprite):void;
   organizationFaces?(viewport:LandscapeViewport):readonly {left:number;top:number;size:number;slope:number}[];
   /** 出城路的屏幕位置，与画布共用投影和取景。 */
   roadExits?(viewport: LandscapeViewport): readonly { board:[number,number][]; polygon: [number, number][] }[];

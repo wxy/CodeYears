@@ -1,6 +1,6 @@
 import type { DailyContribution } from '../data/types';
 import { planWeeklyCity, type CityParcel, type WeeklyCity } from './city-parcels';
-import type { CityImages } from './city-assets';
+import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
 import { createGroundSelector } from './city-ground-style';
 import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from './city-road-network';
@@ -243,12 +243,13 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   let returnRoadEnd=1;
   let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined;
   let posters:readonly OrganizationPoster[]=[],organizationBoards:OrganizationBoard[]=[];
+  let organizationFrame:CitySprite|undefined;
   type PaintedBoard=Pick<DirectionBoard,'bounds'|'groundY'|'paint'>;
   let boardOrder:PaintedBoard[]=[];
   const updateBoards=()=>{
     const signs=returnBoard?[...boards,returnBoard]:boards;
-    organizationBoards=planOrganizationBoards(roadNetwork,exitRoads.slice(0,roadCount),posters,
-      signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),placed);
+    organizationBoards=organizationFrame?planOrganizationBoards(roadNetwork,exitRoads.slice(0,roadCount),posters,organizationFrame,
+      signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),placed):[];
     boardOrder=[...signs,...organizationBoards].sort((a,b)=>a.groundY-b.groundY);
     frameKey='';
   };
@@ -304,7 +305,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       returnBoard=returnLabel?planBoard(baseExits[0],returnLabel,'temporary-return',[0,returnRoadEnd]):undefined;
       updateBoards();
     },
-    setOrganizationPosters(next){posters=next;updateBoards()},
+    setOrganizationPosters(next,frame){posters=next;organizationFrame=frame;updateBoards()},
     organizationFaces(viewport){
       const scale=fitScale(viewport)*viewport.zoom;
       return organizationBoards.map(({left,top,slope})=>({
