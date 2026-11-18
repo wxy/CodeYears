@@ -9,7 +9,7 @@ import { createOrganizationLinks } from "./city-organization-links";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import type { CityRoadLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
-export interface CityRoadControl extends CityRoadLabel { sign: HTMLAnchorElement; surface: HTMLAnchorElement }
+export interface CityRoadControl extends CityRoadLabel { sign: HTMLAnchorElement | HTMLButtonElement; surface?: HTMLAnchorElement }
 export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement; label:string }
 
 export interface ContributionLandscape {
@@ -77,7 +77,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     for(const [slot,{sign,surface}]of roadAnchors.entries()){
       const board=exits[slot]?.board??[];
       placeRoadTarget(sign,board);
-      placeRoadTarget(surface,exits[slot]?.polygon??[]);
+      if(surface)placeRoadTarget(surface,exits[slot]?.polygon??[]);
     }
     if(returnSign){const back=layer?.returnPost?.(viewport);placeRoadTarget(returnSign.sign,back?.board??[]);placeRoadTarget(returnSign.surface,back?.polygon??[])}
   };
@@ -165,7 +165,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   let pointer:{id:number;x:number;y:number;dragging:boolean;road:boolean}|undefined,suppressRoadClick=false;
   const down=(event:PointerEvent)=>{
     if(pointer||event.button!==0)return;
-    const target=event.target instanceof Element?event.target:undefined,road=!!target?.closest('.city-road-surface');
+    const target=event.target instanceof Element?event.target:undefined,road=!!target?.closest('.city-road-surface,button.city-road-sign');
     if(!road&&target?.closest('a,button,input,.city-org-directory'))return;
     suppressRoadClick=false;pointer={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:!road,road};
     if(!road){host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"}
@@ -232,7 +232,10 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     },
     setRoadControls(controls,post){
       roadLayer.replaceChildren();roadAnchors=controls;returnSign=post;
-      for(const {sign,surface}of controls)roadLayer.append(surface,sign);
+      for(const {sign,surface}of controls){
+        if(surface)roadLayer.append(surface);
+        roadLayer.append(sign);
+      }
       if(post)roadLayer.append(post.surface,post.sign);
       layer?.setRoadCount?.(Math.max(4,controls.length));layer?.setRoadLabels?.(controls,post?.label);refitOverview();positionRoads();schedule();
     },

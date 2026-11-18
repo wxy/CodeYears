@@ -41,7 +41,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       form { display:flex; align-items:center; flex-wrap:wrap; min-width:0; gap:6px; margin-right:auto; }
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
-      button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
+      button:where(:not(.city-road-sign)):active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
       .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:0; }
       #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
       .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
@@ -126,6 +126,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
           <section class="more-section" aria-labelledby="help-section">
             <h3 id="help-section" data-i18n="moreHelpSection"></h3>
             <details id="help"><summary data-i18n="help"></summary><p class="note" data-i18n="viewHelp"></p><p class="note" data-i18n="keyboardControls"></p><p class="note" data-i18n="dataHelp"></p></details>
+            <details id="road-help"><summary data-i18n="roadHelpHeading"></summary><p data-i18n="roadHelpExits"></p><p data-i18n="roadHelpReturn"></p><p data-i18n="roadHelpOrganizations"></p></details>
             <details id="legend-section"><summary data-i18n="legendLabel"></summary><div id="legend"></div></details>
           </section>
         </div></details>

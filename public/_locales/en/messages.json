@@ -359,8 +359,32 @@
   "feedback": {
     "message": "Feedback"
   },
-  "closeReturnRoad": {
-    "message": "Close return routes"
+  "roadHelpHeading": {
+    "message": "Where do the road signs and exits come from?"
+  },
+  "roadHelpExits": {
+    "message": "Every city starts with four exits. The first four people mentioned in the profile bio, for example @octocat, get the main exits. The next four get branch roads. CodeYears skips the profile owner and repeated names. Select a named blue sign to visit that person’s city. Select a blank sign to see how to connect a friend."
+  },
+  "roadHelpReturn": {
+    "message": "A green return sign takes you back to the city you just visited in this tab."
+  },
+  "roadHelpOrganizations": {
+    "message": "Billboards along the ring road show organizations from this profile’s bio, profile details, and Organizations list. Each organization appears once. Select a billboard to open its GitHub profile."
+  },
+  "emptyExitLabel": {
+    "message": "Exit $1 has no destination. Show how exits work"
+  },
+  "emptyExitHeading": {
+    "message": "This exit has no destination yet"
+  },
+  "emptyExitOwner": {
+    "message": "On your GitHub profile, choose Edit profile. In Bio, mention a friend by their GitHub username, such as @octocat, then save. Exits follow the order of the mentions in your bio."
+  },
+  "emptyExitVisitor": {
+    "message": "These exits come from @$1’s profile bio. To connect a friend’s city to your own, mention their GitHub username in your own bio, for example @octocat."
+  },
+  "closeRoadInfo": {
+    "message": "Close road sign details"
   },
   "cityOrganizations": {
     "message": "Organizations"

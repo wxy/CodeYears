@@ -252,13 +252,14 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   });
   let roadCount=4;
   let returnRoadEnd=1;
-  let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined;
+  let boards:(DirectionBoard|undefined)[]=[],returnBoard:DirectionBoard|undefined;
   let posters:readonly OrganizationPoster[]=[],organizationBoards:OrganizationBoard[]=[];
   let organizationFrame:CitySprite|undefined;
   type PaintedBoard=Pick<DirectionBoard,'bounds'|'groundX'|'groundY'|'paint'>;
   let boardOrder:PaintedBoard[]=[];
   const updateBoards=()=>{
-    const signs=returnBoard?[...boards,returnBoard]:boards;
+    const signs=boards.filter(board=>board!==undefined);
+    if(returnBoard)signs.push(returnBoard);
     organizationBoards=organizationFrame?planOrganizationBoards(roadNetwork,exitRoads.slice(0,roadCount),posters,organizationFrame,
       signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),placed):[];
     boardOrder=[...signs,...organizationBoards].sort((a,b)=>a.groundY-b.groundY);
@@ -319,11 +320,12 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     setRoadCount(count){if(count!==roadCount){roadCount=count;paintExits=planExits(count);frameKey=''}},
     setRoadLabels(labels,returnLabel){
       returnRoadEnd=returnLabel&&labels[0]?.label ? .5 : 1;
-      boards=exitRoads.slice(0,roadCount).flatMap((road,i)=>{
+      boards=exitRoads.slice(0,roadCount).map((road,i)=>{
         const {label,returning}=labels[i]??{label:'',returning:false};
-        if(i===0&&returnLabel&&!label)return [];
+        // 第一块空牌可由独立返程牌占用，其余牌面的命中区仍使用各自的出口序号。
+        if(i===0&&returnLabel&&!label)return;
         const start=i===0&&returnRoadEnd===.5 ? .5 : 0;
-        const board=planBoard(road,label,returning?'return':'outbound',[start,1]);return board?[board]:[];
+        return planBoard(road,label,returning?'return':'outbound',[start,1]);
       });
       returnBoard=returnLabel?planBoard(baseExits[0],returnLabel,'temporary-return',[0,returnRoadEnd]):undefined;
       updateBoards();
@@ -457,7 +459,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       {
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
         paintExits(context);
-        for(const board of boards)board.paintRoad(context);
+        for(const board of boards)board?.paintRoad(context);
         returnBoard?.paintRoad(context);
         context.restore();
       }

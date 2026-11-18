@@ -359,8 +359,32 @@
   "feedback": {
     "message": "问题反馈"
   },
-  "closeReturnRoad": {
-    "message": "关闭返程列表"
+  "roadHelpHeading": {
+    "message": "路牌和出口从哪里来？"
+  },
+  "roadHelpExits": {
+    "message": "每座城市有四个主出口。个人简介（Bio）里提到的其他个人账号，例如 @octocat，按首次出现的顺序分配到路牌上。前四个连接主出口，第五到第八个连接分岔。点有名字的蓝牌可前往对方的城市，点空牌可查看怎样连接朋友。"
+  },
+  "roadHelpReturn": {
+    "message": "绿色返程牌通往你在当前标签页里刚刚来过的城市。"
+  },
+  "roadHelpOrganizations": {
+    "message": "外环广告牌上的组织来自这个主页的 Bio、资料栏和 Organizations 列表。同一组织只列一次。点广告牌可打开该组织的 GitHub 主页。"
+  },
+  "emptyExitLabel": {
+    "message": "第 $1 个出口尚未连接，查看说明"
+  },
+  "emptyExitHeading": {
+    "message": "这个出口还没有目的地"
+  },
+  "emptyExitOwner": {
+    "message": "在你的 GitHub 主页选择「Edit profile」，在个人简介（Bio）中用 @ 提及朋友的 GitHub 用户名，例如 @octocat，然后保存。对方的城市就会按提及顺序出现在出口牌上。"
+  },
+  "emptyExitVisitor": {
+    "message": "这里的出口取自 @$1 的个人简介（Bio）。想在你自己的城市连接朋友，可以在自己的 Bio 中写上对方的 GitHub 用户名，例如 @octocat。"
+  },
+  "closeRoadInfo": {
+    "message": "关闭路牌说明"
   },
   "cityOrganizations": {
     "message": "组织"

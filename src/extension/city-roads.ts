@@ -1,6 +1,6 @@
 import { localize, text, type Language } from './i18n';
 import type { CityRoadControl, CityReturnControl } from '../renderers/landscape';
-import type { GitHubPageContext } from '../platform/github/types';
+import { isProfileOwner, type GitHubPageContext } from '../platform/github/types';
 import { readCityJourney, rememberCityJourney } from './city-travel';
 
 interface RoadOptions {
@@ -12,18 +12,19 @@ interface RoadOptions {
 /** 出口由主页 Bio 的顺序决定，返程由本标签页的访问路径决定。 */
 export function createCityRoads(host: HTMLElement, options: RoadOptions) {
   let controls: CityRoadControl[] = [], returnPost: CityReturnControl | undefined;
-  let opener: HTMLAnchorElement | undefined;
+  let opener: HTMLElement | undefined;
   const lifetime = new AbortController();
   const { signal } = lifetime;
   host.hidden = true;
-  host.innerHTML = `<section role="dialog" aria-labelledby="road-return-title">
-    <header><h3 id="road-return-title" data-i18n="returnRoadHeading"></h3><button type="button" data-i18n-label="closeReturnRoad">×</button></header>
-    <ul></ul><p class="note" data-i18n="returnRoadLocal"></p>
+  host.innerHTML = `<section id="road-info-dialog" role="dialog" aria-labelledby="road-info-title" aria-describedby="road-info-note">
+    <header><h3 id="road-info-title"></h3><button type="button" data-i18n-label="closeRoadInfo">×</button></header>
+    <ul></ul><p id="road-info-note"></p>
   </section>`;
   const closeButton = host.querySelector('button')!, list = host.querySelector('ul')!;
+  const heading = host.querySelector('h3')!, note = host.querySelector('p')!;
   function close(restoreFocus = false) {
     host.hidden = true;
-    if (restoreFocus) opener?.focus();
+    if (restoreFocus) opener?.focus({ preventScroll: true });
     opener = undefined;
   }
   function journey() {
@@ -41,22 +42,46 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
     };
     return link;
   }
-  function showReturns(anchor: HTMLAnchorElement) {
-    const stops = journey();
-    if (!stops.length) return;
+  function showPanel(anchor: HTMLElement, title: string, description: string) {
     opener = anchor;
-    list.replaceChildren(...[...stops].reverse().map(stop => {
-      const row = document.createElement('li');
-      row.append(cityLink(stop.login, true));
-      return row;
-    }));
+    heading.textContent = title;
+    note.textContent = description;
+    list.hidden = !list.childElementCount;
+    note.classList.toggle('note', !list.hidden);
     host.hidden = false;
     const area = host.parentElement!.getBoundingClientRect(), point = anchor.getBoundingClientRect();
     const below = point.bottom - area.top + 8;
     const top = below + host.offsetHeight <= area.height - 8 ? below : point.top - area.top - host.offsetHeight - 8;
     host.style.left = `${Math.max(8, Math.min(area.width - host.offsetWidth - 8, point.left - area.left))}px`;
     host.style.top = `${Math.max(8, top)}px`;
-    closeButton.focus();
+    closeButton.focus({ preventScroll: true });
+  }
+  function showReturns(anchor: HTMLAnchorElement) {
+    const stops = journey();
+    if (!stops.length) return;
+    list.replaceChildren(...[...stops].reverse().map(stop => {
+      const row = document.createElement('li');
+      row.append(cityLink(stop.login, true));
+      return row;
+    }));
+    const language = options.language();
+    showPanel(anchor, text(language, 'returnRoadHeading'), text(language, 'returnRoadLocal'));
+  }
+  function emptyExit(slot: number): CityRoadControl {
+    const sign = document.createElement('button');
+    sign.type = 'button';
+    sign.className = 'city-road-sign';
+    sign.title = text(options.language(), 'emptyExitLabel', [slot + 1]);
+    sign.setAttribute('aria-label', sign.title);
+    sign.setAttribute('aria-haspopup', 'dialog');
+    sign.setAttribute('aria-controls', 'road-info-dialog');
+    sign.onclick = () => {
+      const context = options.currentContext(), language = options.language();
+      const hint = isProfileOwner(context) ? 'emptyExitOwner' : 'emptyExitVisitor';
+      list.replaceChildren();
+      showPanel(sign, text(language, 'emptyExitHeading'), text(language, hint, [context.profileLogin]));
+    };
+    return { sign, label: '', returning: false };
   }
   function makeExit(login: string, returning: boolean, hasTrail: boolean) {
     const sign = cityLink(login, returning), surface = cityLink(login, returning);
@@ -79,13 +104,15 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
     return { sign, surface, label: login, returning };
   }
   function refresh(people: readonly string[]) {
-    const focusedLogin = opener?.dataset.destination ?? controls.find(({sign}) => sign.matches(':focus'))?.label
-      ?? (returnPost?.sign.matches(':focus') ? returnPost.label : undefined);
+    const focused = opener ?? controls.find(({sign}) => sign.matches(':focus'))?.sign
+      ?? (returnPost?.sign.matches(':focus') ? returnPost.sign : undefined);
+    const focusedSlot = controls.findIndex(({sign}) => sign === focused);
     close();
     localize(host, options.language());
     const trail = journey().map(stop => stop.login), previous = trail.at(-1);
-    controls = people.map((login, slot) => {
-      const exit = makeExit(login, login.toLowerCase() === previous, trail.includes(login.toLowerCase()));
+    controls = Array.from({length: Math.max(4, people.length)}, (_, slot) => {
+      const login = people[slot];
+      const exit = login ? makeExit(login, login.toLowerCase() === previous, trail.includes(login.toLowerCase())) : emptyExit(slot);
       exit.sign.dataset.roadSlot = String(slot);
       return exit;
     });
@@ -96,9 +123,13 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
       returnPost.surface.classList.add('city-return-surface');
     }
     options.changed(controls, returnPost);
-    if (focusedLogin) {
-      const next = controls.find(({label}) => label.toLowerCase() === focusedLogin.toLowerCase()) ?? returnPost;
-      if (next?.label.toLowerCase() === focusedLogin.toLowerCase()) next.sign.focus({ preventScroll: true });
+    if (focused) {
+      const login = focused.dataset.destination?.toLowerCase();
+      const destinations = returnPost ? [...controls, returnPost] : controls;
+      const sameCity = login ? destinations.find(({label}) => label.toLowerCase() === login) : undefined;
+      const slot = controls[focusedSlot];
+      const next = sameCity ?? (slot?.sign.hidden ? returnPost : slot);
+      next?.sign.focus({ preventScroll: true });
     }
   }
   closeButton.onclick = () => close(true);
