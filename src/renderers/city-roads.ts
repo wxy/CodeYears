@@ -1,5 +1,5 @@
 export type RoadPoint=[number,number];
-export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;laneWidth?:number;closed?:boolean;leftShoulder?:number;cornerRadius?:number;junctionCorners?:readonly RoadPoint[]}
+export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;laneWidth?:number;lineCap?:CanvasLineCap;closed?:boolean;leftShoulder?:number;cornerRadius?:number;junctionCorners?:readonly RoadPoint[]}
 export interface CityRoadJunction {x:number;z:number;radius:number;roundabout?:boolean;signalized?:boolean}
 export const CITY_LANE_WIDTH=.4;
 export const cityRoadWidth=(route:Pick<CityRoadRoute,'lanes'|'laneWidth'>)=>route.lanes*(route.laneWidth??CITY_LANE_WIDTH);
@@ -55,7 +55,7 @@ export function planSignalizedApproaches(routes:readonly CityRoadRoute[],junctio
 
 /** 输入为世界 XZ 中心线；所有几何和路口裁段只在创建时计算。 */
 export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:readonly CityRoadJunction[],lineCap:CanvasLineCap='round'):(context:CanvasRenderingContext2D)=>void {
-  const surfaces:{path:Path2D;width:number}[]=[];
+  const surfaces:{path:Path2D;width:number;cap:CanvasLineCap}[]=[];
   const markings:{path:Path2D;color:string;width:number;dash:number[];phase:number}[]=[];
   const cornerFills:{curb:Path2D;pavement:Path2D}[]=[];
   const geometry=routes.map(route=>({route,...planRoadGeometry(route)}));
@@ -90,7 +90,7 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
       points.forEach(([x,z],i)=>{const px=x-first.z*shift,pz=z+first.x*shift;i?path.lineTo(px,pz):path.moveTo(px,pz)});
       if(route.closed)path.closePath();
     }
-    const laneWidth=route.laneWidth??CITY_LANE_WIDTH,half=cityRoadWidth(route)/2;surfaces.push({path,width:half*2+shoulder});
+    const laneWidth=route.laneWidth??CITY_LANE_WIDTH,half=cityRoadWidth(route)/2;surfaces.push({path,width:half*2+shoulder,cap:route.lineCap??lineCap});
     // 平交路口只拉直弯外侧，弯内继续沿原圆弧转弯；命令在地面缓存创建前编译。
     const squared=points.map(p=>route.junctionCorners?.some(q=>p[0]===q[0]&&p[1]===q[1])??false);
     points.forEach(([x,z],i)=>{
@@ -187,11 +187,11 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
   return context=>{
     context.save();
     // 用世界坐标实际宽度描边，再整体做固定2:1等轴测投影。
-    context.transform(.5,.25,-.5,.25,0,0);context.lineJoin='miter';context.miterLimit=3;context.lineCap=lineCap;context.setLineDash([]);context.lineDashOffset=0;
+    context.transform(.5,.25,-.5,.25,0,0);context.lineJoin='miter';context.miterLimit=3;context.setLineDash([]);context.lineDashOffset=0;
     // 所有路缘先画、所有路面随后覆盖交叉处，最后才提交标线。
-    context.strokeStyle='#a7b0a1';for(const {path,width}of surfaces){context.lineWidth=width+.12;context.stroke(path)}
+    context.strokeStyle='#a7b0a1';for(const {path,width,cap}of surfaces){context.lineCap=cap;context.lineWidth=width+.12;context.stroke(path)}
     context.fillStyle='#a7b0a1';for(const {curb}of cornerFills)context.fill(curb);
-    context.strokeStyle='#626d68';for(const {path,width}of surfaces){context.lineWidth=width;context.stroke(path)}
+    context.strokeStyle='#626d68';for(const {path,width,cap}of surfaces){context.lineCap=cap;context.lineWidth=width;context.stroke(path)}
     context.fillStyle='#626d68';for(const {pavement}of cornerFills)context.fill(pavement);
     context.fillStyle='#626d68';for(const {outer}of circles)context.fill(outer);
     context.lineCap='butt';
