@@ -14,6 +14,7 @@ import { createCityOutskirtsPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } f
 import type { LandscapeView, LandscapeViewport } from './types';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
 import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
+import { organizationFace, planOrganizationBoards, type OrganizationBoard, type OrganizationPoster } from './city-organization-boards';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
 // 素材首次命中时生成共享的一位透明度掩码，后续移动只查掩码、不重画城市。
@@ -240,7 +241,17 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   });
   let roadCount=4;
   let returnRoadEnd=1;
-  let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined,boardOrder:DirectionBoard[]=[];
+  let boards:DirectionBoard[]=[],returnBoard:DirectionBoard|undefined;
+  let posters:readonly OrganizationPoster[]=[],organizationBoards:OrganizationBoard[]=[];
+  type PaintedBoard=Pick<DirectionBoard,'bounds'|'groundY'|'paint'>;
+  let boardOrder:PaintedBoard[]=[];
+  const updateBoards=()=>{
+    const signs=returnBoard?[...boards,returnBoard]:boards;
+    organizationBoards=planOrganizationBoards(roadNetwork,exitRoads.slice(0,roadCount),posters,
+      signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),placed);
+    boardOrder=[...signs,...organizationBoards].sort((a,b)=>a.groundY-b.groundY);
+    frameKey='';
+  };
   const planExits=(count:number)=>createCityRoadPainter([...joiningRoads,...exitRoads.slice(0,count)],exitJunctions,'butt');
   let paintExits=planExits(roadCount);
   const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
@@ -284,12 +295,23 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     setRoadCount(count){if(count!==roadCount){roadCount=count;paintExits=planExits(count);frameKey=''}},
     setRoadLabels(labels,returnLabel){
       returnRoadEnd=returnLabel&&labels[0]?.label ? .5 : 1;
-      boards=labels.flatMap(({label,returning},i)=>{
+      boards=exitRoads.slice(0,roadCount).flatMap((road,i)=>{
+        const {label,returning}=labels[i]??{label:'',returning:false};
+        if(i===0&&returnLabel&&!label)return [];
         const start=i===0&&returnRoadEnd===.5 ? .5 : 0;
-        const board=planBoard(exitRoads[i],label,returning?'return':'outbound',[start,1]);return board?[board]:[];
+        const board=planBoard(road,label,returning?'return':'outbound',[start,1]);return board?[board]:[];
       });
       returnBoard=returnLabel?planBoard(baseExits[0],returnLabel,'temporary-return',[0,returnRoadEnd]):undefined;
-      boardOrder=[...boards,...(returnBoard?[returnBoard]:[])].sort((a,b)=>a.groundY-b.groundY);frameKey='';
+      updateBoards();
+    },
+    setOrganizationPosters(next){posters=next;updateBoards()},
+    organizationFaces(viewport){
+      const scale=fitScale(viewport)*viewport.zoom;
+      return organizationBoards.map(({left,top,slope})=>({
+        left:viewport.width/2+viewport.panX+(left-(minX+maxX)/2)*scale,
+        top:viewport.height/2+viewport.panY+(top-(minY+maxY)/2)*scale,
+        size:organizationFace.size*scale,slope,
+      }));
     },
     fitOverview(viewport,topInset,bottomInset){
       const signs=boardOrder.flatMap(board=>board.bounds?[board.bounds]:[]);
@@ -420,7 +442,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.restore();
       }
       let boardIndex=0;
-      const paintBoard=(board:DirectionBoard)=>{
+      const paintBoard=(board:PaintedBoard)=>{
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);board.paint(context);context.restore();
       };
       for(const p of placed){

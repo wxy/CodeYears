@@ -106,6 +106,7 @@ declare global {
 
     const sync = () => {
       if (!active) return;
+      panel?.syncProfileCard();
       // 原生标题保留；日历、设置和活动概览（含蜘蛛图）一起切换，流水在 root 外。
       const blocks = [...native.children, root.querySelector('#user-activity-overview')];
       for (const block of blocks) {

@@ -150,7 +150,7 @@ export function createCityHover(host:HTMLElement,options:{
   let touch:{id:number;x:number;y:number}|undefined;
   const down=(event:PointerEvent)=>{
     hide();touch=undefined;
-    if(event.pointerType==='touch'&&event.isPrimary&&!(event.target instanceof Element&&event.target.closest('a,button'))){
+    if(event.pointerType==='touch'&&event.isPrimary&&!(event.target instanceof Element&&event.target.closest('a,button,.city-organization-layer'))){
       touch={id:event.pointerId,x:event.clientX,y:event.clientY};
     }
   };
@@ -159,7 +159,7 @@ export function createCityHover(host:HTMLElement,options:{
       if(touch?.id===event.pointerId&&Math.hypot(event.clientX-touch.x,event.clientY-touch.y)>6)touch=undefined;
       return;
     }
-    if(event.buttons){hide();return}
+    if(event.buttons || event.target instanceof Element && event.target.closest('.city-organization-layer')){hide();return}
     const rect=host.getBoundingClientRect();
     card.removeAttribute('aria-live');select(event.clientX-rect.left,event.clientY-rect.top,false);
   };

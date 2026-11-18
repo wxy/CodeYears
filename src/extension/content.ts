@@ -2,6 +2,7 @@ import { text, externalText, localize, numberText, type Language, type LanguageP
 import { cityLegendStyles, createCityLegend } from "./city-legend";
 import { createCityHover } from './city-hover';
 import { createCityRoads } from './city-roads';
+import { findProfileCard, readProfilePlaces } from '../data/profile-places';
 import { readPageContext } from "../platform/github/probe";
 import { isProfileOwner } from "../platform/github/types";
 import { clearContributionCache, confirmViewer, sameContext, ViewerChangedError } from "../platform/github/load-year";
@@ -13,6 +14,7 @@ import type { DailyContribution } from "../data/types";
 export interface CityPanel {
   activate(visitSeed: number): Promise<void>;
   setLanguage(language: Language, preference: LanguagePreference): void;
+  syncProfileCard(): void;
   deactivate(): void;
   dispose(): void;
 }
@@ -64,28 +66,16 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .city-road-surface:hover { background:#f8e6a655; }
       .city-road-sign:hover { background:#fff1; }
       .city-road-sign:focus-visible { background:#ffe18044; }
-      .city-road-edit { position:absolute; z-index:2; translate:0 -50%; pointer-events:none; opacity:0; padding:5px 9px; min-height:28px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; color:var(--fgColor-default,#1f2328); background:var(--bgColor-default,#fff); box-shadow:0 2px 6px #0002; font-size:11px; cursor:pointer; }
-      .city-road-sign:hover + .city-road-edit,.city-road-sign:focus + .city-road-edit,.city-road-edit:hover,.city-road-edit:focus { opacity:1; pointer-events:auto; }
-      @media (hover:none) { .city-road-edit { opacity:1; pointer-events:auto; min-width:44px; min-height:36px; } }
       .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }
       .more-panel { position:absolute; z-index:3; right:0; top:100%; width:390px; max-width:100%; max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
-      #road-editor { position:absolute; z-index:5; width:320px; max-width:calc(100% - 16px); max-height:calc(100% - 16px); overflow:auto; }
-      .roads-panel { padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
-      .roads-panel h3 { margin:0 0 6px; font-size:13px; } .roads-panel p { margin:0 0 10px; }
-      .road-editor-heading,.road-editor-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-      .road-editor-heading h3 { min-width:0; }
-      .road-editor-heading h3,.road-destination,.road-return-list { overflow-wrap:anywhere; }
-      .road-editor-heading .road-close { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
-      .roads-form { margin:10px 0; align-items:flex-end; } .roads-form label { flex:1; min-width:100px; } .roads-form label span { display:block; font-size:12px; }
-      .roads-form input { width:100%; padding:5px 8px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; font:inherit; color:inherit; background:var(--bgColor-default,#fff); }
-      .roads-form input:focus-visible { outline:2px solid #268f80; outline-offset:2px; }
-      .road-destination { margin:8px 0 10px; } .road-destination a,.road-return-list a { color:var(--fgColor-accent,#0969da); text-decoration:none; }
-      .road-destination a:hover,.road-return-list a:hover { text-decoration:underline; }
-      .road-return-list { list-style:none; margin:6px 0; padding:0; } .road-return-list li { padding:5px 0; }
-      .road-change { margin:0 0 10px; }
-      .roads-local { margin-top:10px!important; } .roads-retry { margin:8px 0; }
+      #road-returns { position:absolute; z-index:5; width:320px; max-width:calc(100% - 16px); max-height:calc(100% - 16px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
+      #road-returns header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      #road-returns h3 { margin:0; font-size:13px; } #road-returns p { margin:10px 0 0; }
+      #road-returns button { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
+      #road-returns ul { list-style:none; margin:6px 0; padding:0; overflow-wrap:anywhere; } #road-returns li { padding:5px 0; }
+      #road-returns a { color:var(--fgColor-accent,#0969da); text-decoration:none; } #road-returns a:hover { text-decoration:underline; }
       .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       .more-panel h3 { margin:0 0 8px; font-size:12px; font-weight:600; }
       .more-section + .more-section { margin-top:12px; padding-top:12px; border-top:1px solid var(--borderColor-default,#d1d9e0); }
@@ -107,7 +97,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     <section class="panel" data-i18n-label="cityRegion">
       <div id="expanded-controls"></div>
       <div class="scene-wrap"><div id="scene" tabindex="0" role="region" data-i18n-label="canvasKeyboardLabel"></div>
-        <div id="road-editor" hidden></div>
+        <div id="road-returns" hidden></div>
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
         <div class="view-tools" hidden>
           <button id="reset-view" type="button" data-i18n-label="fitView"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3v5H3m18 0h-5V3M3 16h5v5m8 0v-5h5M8 8 3 3m13 5 5-5M8 16l-5 5m13-5 5 5"/></svg></button>
@@ -166,7 +156,43 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   let pendingMilestone: (() => void) | undefined;
   let retryAction: () => Promise<void> = () => load(false);
   const currentContext = () => readPageContext(document, new URL(location.href));
-  const roads=createCityRoads(get<HTMLElement>('#road-editor'),{context:()=>context,currentContext,language:()=>language,changed:(controls,post)=>city?.setRoadControls(controls,post)});
+  const roads = createCityRoads(get<HTMLElement>('#road-returns'), {
+    currentContext, language: () => language, changed: (controls, post) => city?.setRoadControls(controls, post),
+  });
+  let places: ReturnType<typeof readProfilePlaces> = { people: [], organizations: [] };
+  let profileCard: Element | undefined;
+  let organizationSources: (string | undefined)[] = [];
+  const cardObserver = new MutationObserver(() => syncProfileCard(true));
+  function avatarLoaded(event: Event) { if (event.target instanceof HTMLImageElement) syncProfileCard(true); }
+  function stopObservingCard() {
+    cardObserver.disconnect();
+    profileCard?.removeEventListener('load', avatarLoaded, true);
+    profileCard?.removeEventListener('error', avatarLoaded, true);
+    profileCard = undefined;
+  }
+  // GitHub 可延迟挂载或整体替换资料栏。入口已有的页面观察器负责重新绑定。
+  function syncProfileCard(refresh = false) {
+    if (!active) return;
+    const card = findProfileCard(document, context.profileLogin);
+    if (card !== profileCard) {
+      stopObservingCard();
+      profileCard = card;
+      if (card) {
+        card.addEventListener('load', avatarLoaded, true);
+        card.addEventListener('error', avatarLoaded, true);
+        cardObserver.observe(card, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['href', 'src', 'srcset', 'data-hovercard-type', 'class'] });
+      }
+    } else if (!refresh) return;
+    const next = card ? readProfilePlaces(document, context.profileLogin, card) : { people: [], organizations: [] };
+    if (next.people.length !== places.people.length || next.people.some((login, i) => places.people[i] !== login)) roads.refresh(next.people);
+    const sources = next.organizations.map(org => org.avatar?.currentSrc);
+    if (next.organizations.length !== places.organizations.length || next.organizations.some((org, i) =>
+      org.login !== places.organizations[i].login || org.avatar !== places.organizations[i].avatar || sources[i] !== organizationSources[i])) {
+      city?.setOrganizations(next.organizations, t('cityOrganizations'));
+    }
+    places = next;
+    organizationSources = sources;
+  }
   let reusable: { context: typeof context; range: string; expiresAt: number; status: () => string; summary: () => string } | undefined;
   let statusMessage = () => "", summaryMessage = () => "";
   const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
@@ -214,10 +240,10 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   dialog.addEventListener("cancel", event => { event.preventDefault(); if (more.open) closeMore(true); else collapse(); });
   const updateControls = () => {
-    const ready = !cityHost.hidden && Boolean(cityHost.querySelector("canvas"));
+    const ready = !cityHost.hidden && Boolean(cityHost.querySelector(":scope > canvas"));
     expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
     cancel.hidden = !busy;
-    cityHost.querySelector("canvas")?.setAttribute("aria-label", t("canvasLabel"));
+    cityHost.querySelector(":scope > canvas")?.setAttribute("aria-label", t("canvasLabel"));
     updateFeedback();
   };
   const setBusy = (value: boolean) => {
@@ -298,13 +324,14 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         updateControls();
       }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!, trafficSeed);
       city.setRoadControls(roads.controls(),roads.returnPost());
+      city.setOrganizations(places.organizations, t("cityOrganizations"));
       fieldCreated = true;
       return city;
     };
     const warnings = new Set<string>();
     try {
       context = currentContext();
-      roads.refresh();showIdentity();
+      roads.refresh(places.people);showIdentity();
       if (context.viewer.state === "unknown") warnings.add("访问者身份未识别，本次不读取或写入缓存。");
       renderer = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
       request.signal.throwIfAborted();
@@ -385,6 +412,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   clear.onclick = clearYears;
   const deactivate = () => {
+    stopObservingCard();
     milestoneRequest?.abort();
     hover.hide();
     active = false; controller?.abort(); controller = undefined; collapse(false);
@@ -400,7 +428,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     hover.hide();
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
-    roads.refresh();
+    roads.refresh(places.people);
+    city?.setOrganizations(places.organizations, t("cityOrganizations"));
     fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
     cityHost.setAttribute("aria-description", t("keyboardControls"));
     expand.textContent = t(dialog.open ? "collapse" : "expand");
@@ -424,7 +453,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       request.signal.throwIfAborted();
       if (!active || disposed || controller !== request) return;
       if (!sameContext(nextContext, currentContext())) { suspendForIdentity(true); return; }
-      context = nextContext; roads.refresh(); cityHost.hidden = false; field.setVisible(true, trafficSeed); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
+      context = nextContext; roads.refresh(places.people); cityHost.hidden = false; field.setVisible(true, trafficSeed); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
       pendingMilestone?.();
     } catch (error) {
       if (!active || controller !== request) return;
@@ -433,11 +462,12 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   }
   setLanguage(language, preference);
   return {
-    setLanguage,
+    setLanguage, syncProfileCard,
     async activate(visitSeed) {
       if (disposed || active) return;
       trafficSeed = visitSeed;
       active = true;
+      syncProfileCard(true);
       await restoreOrLoad();
     },
     deactivate,

@@ -359,71 +359,14 @@
   "feedback": {
     "message": "Feedback"
   },
-  "roadsHeading": {
-    "message": "Road destination"
+  "closeReturnRoad": {
+    "message": "Close return routes"
   },
-  "roadUsername": {
-    "message": "GitHub username"
-  },
-  "removeRoad": {
-    "message": "Remove"
-  },
-  "roadsLocal": {
-    "message": "Destinations stay on this device. Turn on sync to copy this city’s exits to your Chrome account when Chrome sync is enabled."
-  },
-  "roadSyncLabel": {
-    "message": "Sync road signs across my Chrome devices"
-  },
-  "roadsSynced": {
-    "message": "Turning this off removes the Chrome sync copy, keeps these exits here and restores each other device’s local roads."
-  },
-  "roadsChanged": {
-    "message": "Your road settings changed. Reopen the road to edit its latest destination."
-  },
-  "roadInvalidUsername": {
-    "message": "Enter a GitHub username (up to 39 letters, digits or single hyphens)."
-  },
-  "roadSelf": {
-    "message": "Choose another GitHub account."
-  },
-  "roadDuplicate": {
-    "message": "A road to this account already exists."
-  },
-  "roadsReadError": {
-    "message": "Could not read saved roads. Retry to manage them."
-  },
-  "roadsSaveError": {
-    "message": "Could not save this change. Your saved roads have been kept."
-  },
-  "saveRoad": {
-    "message": "Save"
-  },
-  "closeRoadEditor": {
-    "message": "Close road settings"
-  },
-  "addRoadAt": {
-    "message": "Add a destination to exit $1"
-  },
-  "roadCount": {
-    "message": "$1 / $2 roads"
-  },
-  "changeRoad": {
-    "message": "Change destination"
-  },
-  "editRoad": {
-    "message": "Edit"
-  },
-  "editRoadTo": {
-    "message": "Change the road to $1"
+  "cityOrganizations": {
+    "message": "Organizations"
   },
   "cityName": {
     "message": "@$1’s city"
-  },
-  "unknownRoad": {
-    "message": "Unknown destination"
-  },
-  "roadEditHint": {
-    "message": "Right-click or press Shift+F10 to edit the destination"
   },
   "roadReturnHint": {
     "message": "Right-click or press Shift+F10 for all return routes"
@@ -436,15 +379,6 @@
   },
   "returnRoadLocal": {
     "message": "These return routes follow your visits in this tab. They do not change this city’s exits."
-  },
-  "roadsOwnerOnly": {
-    "message": "Only the signed-in owner can edit this city’s roads."
-  },
-  "roadOwnerCheckFailed": {
-    "message": "Could not confirm your identity and save the road. The previous settings have been kept."
-  },
-  "addRoadHeading": {
-    "message": "Add a road"
   },
   "contributionRange": {
     "message": "$1 contributions · $2 – $3"

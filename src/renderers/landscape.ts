@@ -1,15 +1,19 @@
 import type { DailyContribution } from "../data/types";
+import type { ProfileOrganization } from "../data/profile-places";
 import { createTimeline } from "../timeline/controller";
 import type { TimelineState } from "../timeline/types";
 import { closeCityImages, loadCityImages, type CityImages } from "./city-assets";
 import { createCityView, planCityScene, type CityScene } from "./city-view";
+import { prepareOrganizationPoster, type OrganizationPoster } from "./city-organization-boards";
+import { createOrganizationLinks } from "./city-organization-links";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import type { CityRoadLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
-export interface CityRoadControl extends CityRoadLabel { sign: HTMLElement; surface: HTMLAnchorElement | HTMLButtonElement; edit?:HTMLButtonElement }
+export interface CityRoadControl extends CityRoadLabel { sign: HTMLAnchorElement; surface: HTMLAnchorElement }
 export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement; label:string }
 
 export interface ContributionLandscape {
+  setOrganizations(organizations:readonly ProfileOrganization[], directoryLabel?:string):void;
   setRoadControls(controls: readonly CityRoadControl[], returnPost?:CityReturnControl): void;
   buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
   stepBuilding(backward: boolean): {x:number;y:number} | undefined;
@@ -43,6 +47,10 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   let disposed=false,blocked=false,suspended=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
   let preparationError: string | undefined;
   const roadLayer=document.createElement('div');roadLayer.className='city-road-links';host.append(roadLayer);
+  const organizationLinks=createOrganizationLinks(host,(dx,dy)=>{
+    inOverview=false;viewport.panX+=dx;viewport.panY+=dy;schedule();
+  });
+  let posters:readonly OrganizationPoster[]=[];
   let roadAnchors:readonly CityRoadControl[]=[],returnSign:CityReturnControl|undefined;
   let inOverview=false;
   let cityZoomFloor=minZoom;
@@ -63,12 +71,12 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     Object.assign(element.style,{left:`${left}px`,top:`${top}px`,width:`${width}px`,height:`${height}px`,clipPath:`polygon(${polygon.map(([x,y])=>`${(x-left)/width*100}% ${(y-top)/height*100}%`).join(',')})`});
   };
   const positionRoads=()=>{
+    organizationLinks.position(layer,viewport);
     const exits=layer?.roadExits?.(viewport)??[];
-    for(const [slot,{sign,surface,edit}]of roadAnchors.entries()){
+    for(const [slot,{sign,surface}]of roadAnchors.entries()){
       const board=exits[slot]?.board??[];
       placeRoadTarget(sign,board);
       placeRoadTarget(surface,exits[slot]?.polygon??[]);
-      if(edit){edit.hidden=!board.length;if(board.length){edit.style.left=`${board[1][0]}px`;edit.style.top=`${(board[1][1]+board[2][1])/2}px`}}
     }
     if(returnSign){const back=layer?.returnPost?.(viewport);placeRoadTarget(returnSign.sign,back?.board??[]);placeRoadTarget(returnSign.surface,back?.polygon??[])}
   };
@@ -80,8 +88,9 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     layer.canvas.setAttribute("aria-label",`${text}固定视角，拖动平移，滚轮缩放。`);
   };
   const configureCanvas=(next:LandscapeView)=>{
-    next.setRoadCount?.(roadAnchors.length||4);
+    next.setRoadCount?.(Math.max(4,roadAnchors.length));
     next.setRoadLabels?.(roadAnchors,returnSign?.label);
+    if(posters.length)next.setOrganizationPosters?.(posters);
     refitOverview(next);
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
     next.canvas.setAttribute("aria-label",`${view==="city"?"贡献之城":"连续时光山脉"}，固定视角。拖动平移，滚轮缩放。`);
@@ -156,7 +165,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const down=(event:PointerEvent)=>{
     if(pointer||event.button!==0)return;
     const target=event.target instanceof Element?event.target:undefined,road=!!target?.closest('.city-road-surface');
-    if(!road&&target?.closest('a,button,input'))return;
+    if(!road&&target?.closest('a,button,input,.city-org-directory'))return;
     suppressRoadClick=false;pointer={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:!road,road};
     if(!road){host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"}
   };
@@ -181,6 +190,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule();
   };
   const wheel=(event:WheelEvent)=>{
+    if(event.target instanceof Element&&event.target.closest('.city-org-directory'))return;
     const before = viewport.zoom, rect = host.getBoundingClientRect();
     zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2);
     if (viewport.zoom !== before || host.closest('dialog[open]')) event.preventDefault();
@@ -200,11 +210,18 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("click",click,true);host.addEventListener("dragstart",dragStart);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
+    setOrganizations(organizations,directoryLabel='Organizations'){
+      if(disposed)return;
+      posters=organizations.map(prepareOrganizationPoster);
+      const focused=organizationLinks.setPosters(posters,directoryLabel);
+      layer?.setOrganizationPosters?.(posters);refitOverview();
+      organizationLinks.position(layer,viewport,focused);schedule();
+    },
     setRoadControls(controls,post){
       roadLayer.replaceChildren();roadAnchors=controls;returnSign=post;
-      for(const {sign,surface,edit}of controls){roadLayer.append(surface,sign);if(edit)roadLayer.append(edit)}
+      for(const {sign,surface}of controls)roadLayer.append(surface,sign);
       if(post)roadLayer.append(post.surface,post.sign);
-      layer?.setRoadCount?.(controls.length);layer?.setRoadLabels?.(controls,post?.label);refitOverview();positionRoads();schedule();
+      layer?.setRoadCount?.(Math.max(4,controls.length));layer?.setRoadLabels?.(controls,post?.label);refitOverview();positionRoads();schedule();
     },
     buildingAt(x,y){
       if(disposed||suspended||!progressiveCity)return;
@@ -280,6 +297,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(disposed)return;disposed=true;generation++;assetAbort.abort();playing=false;timeline.pause();cancelAnimationFrame(raf);raf=0;observer.disconnect();themeObserver.disconnect();preference.removeEventListener("change",theme);document.removeEventListener("visibilitychange",visibility);
       host.removeEventListener("pointerdown",down);host.removeEventListener("pointermove",move);host.removeEventListener("pointerup",up);host.removeEventListener("pointercancel",up);host.removeEventListener("lostpointercapture",up);host.removeEventListener("click",click,true);host.removeEventListener("dragstart",dragStart);host.removeEventListener("wheel",wheel);host.removeEventListener("keydown",keydown);layer?.dispose();layer=undefined;
       roadLayer.remove();roadAnchors=[];returnSign=undefined;
+      organizationLinks.dispose();posters=[];
       if(images)closeCityImages(images);else if(assetPromise)void assetPromise.then(closeCityImages,()=>{});
     },
   };
