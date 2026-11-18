@@ -274,28 +274,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     updateControls();
   }
 
-  async function addJoiningTower(field: ContributionLandscape, days: readonly DailyContribution[], date: string) {
-    const request = new AbortController();
-    milestoneRequest = request;
-    try {
-      const details = await hover.inspectDay(date, request.signal);
-      if (!request.signal.aborted && details?.joinedGitHub) {
-        // 单独的纪念物绘制失败时，已完成的基础城市仍然可读。
-        await field.updateDays(days, date).catch(() => {
-          if (!request.signal.aborted) setStatus(() => t("milestoneRenderError"));
-        });
-      }
-    } catch (error) {
-      if (request.signal.aborted) return;
-      if (error instanceof ViewerChangedError) suspendForIdentity(true);
-      else if (isProfileOwner(context) && !cityHost.hidden) suspendForIdentity(false);
-    } finally {
-      if (milestoneRequest === request) {
-        milestoneRequest = undefined;
-        if (!request.signal.aborted) pendingMilestone = undefined;
-      }
-    }
-  }
   const load = async (forceRefresh: boolean) => {
     if (!active || disposed || busy) return;
     retryAction = () => load(forceRefresh);
@@ -304,7 +282,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
     const firstNeeded = new Date(windowStart).getUTCFullYear(), lastNeeded = new Date(windowEnd - 86400000).getUTCFullYear();
     const calendarYear = new Date().getFullYear();
-    const firstSource = Math.max(firstNeeded, years.at(-1)!), lastSource = Math.min(lastNeeded, years[0], calendarYear);
+    const oldestYear = years.at(-1)!;
+    const firstSource = Math.max(firstNeeded, oldestYear), lastSource = Math.min(lastNeeded, years[0], calendarYear);
     const requestedYears = Array.from({ length: lastSource - firstSource + 1 }, (_, index) => firstSource + index);
     const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
     const range = selectedRange();
@@ -313,23 +292,33 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     setStatus(() => t("readingData"));
     const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
     let renderer: typeof import("../renderers/landscape") | undefined;
-    let renderFailure: Error | undefined;
+    let loadFailure: Error | undefined;
     let fieldCreated = false;
     let painting: Promise<void> | undefined;
     let pendingDays: readonly DailyContribution[] | undefined;
+    let visibleDays: readonly DailyContribution[] = [];
+    const oldestYearPrefix = String(oldestYear) + "-";
+    let waitingForJoiningDay = false, joinedOn: string | undefined;
+    let towerUnavailable = false;
     let expiresAt = Infinity;
     const mountEmptyField = () => {
       city = renderer!.createLandscape(cityHost, [], (_state, error) => {
         if (!active || controller !== request) return;
-        if (error) { renderFailure = new Error(error); request.abort(); }
+        if (error) { loadFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!, trafficSeed);
+      }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed);
       city.setRoadControls(roads.controls(),roads.returnPost());
       city.setOrganizations(places.organizations, t("cityOrganizations"));
       fieldCreated = true;
       return city;
     };
     const warnings = new Set<string>();
+    const completedStatus = () => {
+      const messages = [...warnings].map(message => externalText(language, message));
+      if (waitingForJoiningDay) messages.push(t("checkingJoiningDay"));
+      if (towerUnavailable) messages.push(t("milestoneRenderError"));
+      return messages.join(" ");
+    };
     try {
       context = currentContext();
       roads.refresh(places.people);showIdentity();
@@ -341,51 +330,87 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       request.signal.addEventListener("abort", () => field.dispose(), { once: true });
       const paint = async () => {
         try {
-          while (pendingDays && active && controller === request && !request.signal.aborted) {
+          while (pendingDays && active && city === field && !request.signal.aborted) {
             const latest = pendingDays; pendingDays = undefined;
-            await field.updateDays(latest);
+            await field.updateDays(latest, joinedOn);
           }
         } catch (error) {
-          if (request.signal.aborted) return;
-          renderFailure = error instanceof Error ? error : new Error("城市素材加载失败，请重试。");
-          request.abort();
+          if (request.signal.aborted || city !== field) return;
+          const failure = error instanceof Error ? error : new Error("城市素材加载失败，请重试。");
+          if (controller === request) { loadFailure = failure; request.abort(); }
+          else {
+            resetResult(); retry.hidden = false;
+            setStatus(() => externalText(language, failure.message));
+          }
         } finally { painting = undefined; }
       };
-      const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
+      const queuePaint = () => {
+        pendingDays = waitingForJoiningDay ? visibleDays.filter(day => !day.date.startsWith(oldestYearPrefix)) : visibleDays;
+        return painting ??= paint();
+      };
+      const includeJoiningYear = async (date: string) => {
+        const inspection = new AbortController();
+        milestoneRequest = inspection;
+        try {
+          const joined = (await hover.inspectDay(date, inspection.signal))?.joinedGitHub === true;
+          const towerReady = joined && await field.prepareJoiningTower(inspection.signal);
+          inspection.signal.throwIfAborted();
+          joinedOn = towerReady ? date : undefined;
+          towerUnavailable = joined && !towerReady;
+          waitingForJoiningDay = false;
+          await queuePaint();
+          if (controller !== request && city === field && !inspection.signal.aborted) setStatus(completedStatus);
+        } catch (error) {
+          if (inspection.signal.aborted) return;
+          if (controller === request) {
+            // 身份核对失败时，正在读取的其他年份也不能继续展示。
+            loadFailure = error instanceof Error ? error : new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
+            request.abort();
+          } else suspendForIdentity(error instanceof ViewerChangedError);
+        } finally {
+          if (milestoneRequest === inspection) {
+            milestoneRequest = undefined;
+            if (!inspection.signal.aborted) pendingMilestone = undefined;
+          }
+        }
+      };
+      await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
         if (request.signal.aborted) return;
         if (result.warning) warnings.add(result.warning);
         expiresAt = Math.min(expiresAt, result.expiresAt);
-        pendingDays = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
+        visibleDays = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
         setStatus(() => t("readingRange", [range]));
-        painting ??= paint();
+        if (result.year === oldestYear) {
+          const first = result.history.days.find(day => day.date.startsWith(oldestYearPrefix) && day.count > 0);
+          if (first && firstDate <= first.date && first.date < endDate) {
+            // 查明楼型后再将最早源年纳入绘制，其余已验证的年份可先入画。
+            waitingForJoiningDay = true;
+            pendingMilestone = () => { void includeJoiningYear(first.date); };
+            pendingMilestone();
+            return;
+          }
+        }
+        queuePaint();
       });
       await painting;
-      if (renderFailure) throw renderFailure;
+      if (loadFailure) throw loadFailure;
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
-      const visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
       if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       if (firstSource > firstNeeded || (lastSource < lastNeeded && lastSource < calendarYear)) {
         warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
       }
-      setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
+      setStatus(completedStatus);
       setSummary(() => t("contributionRange", [numberText(language, total), visibleDays[0].date, visibleDays.at(-1)!.date]));
       if (context.viewer.state === "known") reusable = { context, range, expiresAt, status: statusMessage, summary: summaryMessage };
-      if (start === years.at(-1)) {
-        const first = visibleDays.find(day => day.date.startsWith(String(start)) && day.count > 0);
-        if (first) {
-          pendingMilestone = () => { void addJoiningTower(field, visibleDays, first.date); };
-          pendingMilestone();
-        }
-      }
     } catch (error) {
       if (!active || controller !== request) return;
-      const cancelled = request.signal.aborted && !renderFailure;
+      const cancelled = request.signal.aborted && !loadFailure;
       request.abort();
       resetResult();
       if (renderer && fieldCreated) mountEmptyField();
-      const failure = renderFailure ?? error;
+      const failure = loadFailure ?? error;
       retry.hidden = false;
       setStatus(() => cancelled ? t("cancelledDetail") : failure instanceof Error ? externalText(language, failure.message) : t("readFailedDetail"));
     } finally {

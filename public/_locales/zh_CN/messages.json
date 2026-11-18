@@ -407,6 +407,9 @@
   "contributionRange": {
     "message": "$1 次贡献 · $2 至 $3"
   },
+  "checkingJoiningDay": {
+    "message": "正在核对最早活跃日的活动记录…"
+  },
   "milestoneRenderError": {
     "message": "城市已就绪，注册纪念建筑暂时无法绘制。"
   },

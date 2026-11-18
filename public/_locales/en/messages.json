@@ -407,6 +407,9 @@
   "contributionRange": {
     "message": "$1 contributions · $2 – $3"
   },
+  "checkingJoiningDay": {
+    "message": "Checking activity on the earliest active day…"
+  },
   "milestoneRenderError": {
     "message": "Your city is available. Its joining landmark could not be drawn."
   },

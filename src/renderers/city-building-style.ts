@@ -1,5 +1,7 @@
 import type { CityParcel } from './city-parcels';
 
+export const joiningTowerId = 'github-joining-tower';
+
 // 公共设施只是外观变体；仅使用兼容占地的低/中层地块，不改变贡献档或合并。
 const PUBLIC_VARIANTS:Record<string,readonly string[]>={
   '1:1x1':['civic-clinic','civic-post'],
@@ -11,7 +13,7 @@ const PUBLIC_VARIANTS:Record<string,readonly string[]>={
 
 /** 仅用于已规划的合法建筑地块；由调用方提供稳定 seed，不随缩放或播放变化。 */
 export function selectCityBuilding(parcel: CityParcel, seed: number): { id: string; factor: number } {
-  if(parcel.milestone==='joined-github')return {id:'github-joining-tower',factor:1};
+  if(parcel.milestone==='joined-github')return {id:joiningTowerId,factor:1};
   const variant = (seed >>> 0) % 2 === 0 ? 'a' : 'b';
   const { band, w, d } = parcel;
   const mixed=Math.imul(seed^(seed>>>16),0x45d9f3b),appearanceSeed=(mixed^(mixed>>>16))>>>0;

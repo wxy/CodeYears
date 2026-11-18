@@ -3,6 +3,7 @@ import type { ProfileOrganization } from "../data/profile-places";
 import { createTimeline } from "../timeline/controller";
 import type { TimelineState } from "../timeline/types";
 import { closeCityImages, loadCityImages, type CityImages } from "./city-assets";
+import { joiningTowerId } from "./city-building-style";
 import { createCityView, planCityScene, type CityScene } from "./city-view";
 import { organizationFrameId, prepareOrganizationPoster, type OrganizationPoster } from "./city-organization-boards";
 import { createOrganizationLinks } from "./city-organization-links";
@@ -28,6 +29,8 @@ export interface ContributionLandscape {
   replay(): void;
   /** 隐藏时停止绘制，保留当前场景、素材和取景。 */
   setVisible(visible: boolean, trafficSeed?: number): void;
+  /** 仅为已确认的注册日准备纪念物。失败可继续按普通贡献规划这一批。 */
+  prepareJoiningTower(signal: AbortSignal): Promise<boolean>;
   /** 渐进City：该批素材就绪并交换画面后resolve，不等待短填入动画。 */
   updateDays(days: readonly DailyContribution[], joinedOn?:string): Promise<void>;
   dispose(): void;
@@ -276,6 +279,19 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     resume(){if(disposed||blocked||state().status==="completed")return;playing=true;anchored=false;schedule()},
     skip(){if(disposed)return;playing=false;if(progressiveCity){revealedDays=currentDays.length;labelCity()}else timeline.skip();schedule();notify()},
     replay(){if(disposed||progressiveCity)return;timeline.replay(performance.now());timeline.pause();playing=true;anchored=false;schedule();notify()},
+    async prepareJoiningTower(signal) {
+      if (images?.[joiningTowerId]) return true;
+      const pending = AbortSignal.any([signal, assetAbort.signal]);
+      try {
+        const loaded = await loadCityImages(assetBase, [joiningTowerId], pending);
+        if (disposed) closeCityImages(loaded);
+        else Object.assign(images!, loaded);
+        return !disposed;
+      } catch {
+        pending.throwIfAborted();
+        return false;
+      }
+    },
     async updateDays(nextDays,joinedOn){
       if(!progressiveCity)throw new Error("逐年填入仅适用于预留年份的City。");
       if(disposed)throw new DOMException("城市已关闭。","AbortError");
