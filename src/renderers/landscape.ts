@@ -12,6 +12,7 @@ export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement
 export interface ContributionLandscape {
   setRoadControls(controls: readonly CityRoadControl[], returnPost?:CityReturnControl): void;
   buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
+  stepBuilding(backward: boolean): {x:number;y:number} | undefined;
   highlightBuilding(point?: {x:number;y:number}): void;
   setView(view: ViewMode): Promise<void>;
   zoomBy(factor: number): void;
@@ -149,7 +150,11 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const click=(event:MouseEvent)=>{if(suppressRoadClick){suppressRoadClick=false;event.preventDefault();event.stopPropagation()}};
   const dragStart=(event:DragEvent)=>{if(event.target instanceof Element&&event.target.closest('.city-road-surface'))event.preventDefault()};
   const zoomAt=(factor:number,x=0,y=0)=>{if(disposed)return;const max=Math.min(layer?.maxZoom?.(viewport)??5,view==="city"?zoomBase*20:5),next=Math.min(max,Math.max(view==="city"?minZoom:.35,viewport.zoom*factor)),ratio=next/viewport.zoom;viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule()};
-  const wheel=(event:WheelEvent)=>{event.preventDefault();const rect=host.getBoundingClientRect();zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2)};
+  const wheel=(event:WheelEvent)=>{
+    const before = viewport.zoom, rect = host.getBoundingClientRect();
+    zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2);
+    if (viewport.zoom !== before || host.closest('dialog[open]')) event.preventDefault();
+  };
   // Only the stable, focused scene host owns arrows; inputs and browser shortcuts keep theirs.
   const keydown=(event:KeyboardEvent)=>{
     if(disposed||view==="terrain"||event.target!==host||!host.matches(":focus")||event.altKey||event.ctrlKey||event.metaKey)return;
@@ -174,6 +179,9 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     buildingAt(x,y){
       if(disposed||suspended||!progressiveCity)return;
       return layer?.buildingAt?.(x,y,viewport)?.map(index=>currentDays[index]).filter(day=>day.count>0);
+    },
+    stepBuilding(backward){
+      if (!disposed && !suspended && progressiveCity) return layer?.stepBuilding?.(backward,viewport);
     },
     highlightBuilding(point){
       if(disposed||suspended||!progressiveCity)return;

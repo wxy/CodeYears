@@ -25,7 +25,7 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true,res
   const weekly=planWeeklyCity(days,true,wonders,reservedYears,joinedOn),selectGround=createGroundSelector(weekly);
   const layout=createCityLayout(weekly);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
-    const {w,d,kind}=parcel,hash=Math.imul(parcel.block+1,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
+    const {w,d,kind}=parcel,hash=Math.imul(weekly.districts[parcel.block].year,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
     const seed=(hash^(hash>>>16))>>>0,variant=seed%2?'b':'a';
     let id:string,factor=1,flat=kind==='grass';
     if(parcel.wonder)id=parcel.wonder;
@@ -298,6 +298,23 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     },
     buildingAt(x,y,viewport){
       return placed[hitItem(x,y,viewport)]?.item.parcel?.indices;
+    },
+    stepBuilding(backward,viewport){
+      if(!frameKey)return;
+      const scale=fitScale(viewport)*viewport.zoom;
+      const start=highlighted>=0?highlighted:backward?0:-1;
+      for(let offset=1;offset<=placed.length;offset++){
+        const index=(start+(backward?-offset:offset)+placed.length)%placed.length;
+        const p=placed[index];
+        if(p.item.parcel?.kind!=='building'||(progressive&&p.after>visiblePrefix))continue;
+        const x=viewport.width/2+viewport.panX+(p.left+p.width/2-(minX+maxX)/2)*scale;
+        if(x<0||x>=viewport.width)continue;
+        // 先试立面中心，再试屋顶。沿用指针实际命中，避免选中被前排完全挡住的楼。
+        for(const height of [.55,.25]){
+          const y=viewport.height/2+viewport.panY+(p.top+p.height*height-(minY+maxY)/2)*scale;
+          if(y>=0&&y<viewport.height&&hitItem(x,y,viewport)===index)return {x,y};
+        }
+      }
     },
     highlightBuilding(point,viewport){
       const index=point?hitItem(point.x,point.y,viewport):-1;

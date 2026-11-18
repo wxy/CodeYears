@@ -105,7 +105,7 @@
     "message": "Could not open City. Refresh the page or reload CodeYears. You can return to Contributions."
   },
   "clearCache": {
-    "message": "Clear profile cache"
+    "message": "Clear yearly contribution cache"
   },
   "refreshData": {
     "message": "Refresh selected years"
@@ -141,7 +141,7 @@
     "message": "Drag to pan and scroll to zoom. “Fit view” restores the full city. Data fills the field as it arrives; unavailable areas remain empty. Frame your view, then right-click the canvas and choose “Save image as…” or “Copy image”."
   },
   "dataHelp": {
-    "message": "Data stays on this device, separated by visitor and profile. Years use complete ISO weeks: Monday–Sunday belongs to the year containing Thursday. Adjacent calendar years may be requested at the boundary, so totals can differ from GitHub’s calendar-year totals. Missing and future dates are never filled with zeros."
+    "message": "Your city uses the daily counts visible to your signed-in account on your own profile. Other cities show the public calendar, including any anonymous private counts their owners share. Dates shown beside the total follow complete ISO weeks. Missing dates are left unfilled."
   },
   "identityUnknown": {
     "message": "Identity unknown; cache is not used"
@@ -153,7 +153,7 @@
     "message": "Visitor $1"
   },
   "profileIdentity": {
-    "message": "Profile $1 · $2"
+    "message": "Profile $1 · $2 · $3"
   },
   "language": {
     "message": "Language"
@@ -330,7 +330,7 @@
     "message": "Help and data"
   },
   "keyboardControls": {
-    "message": "Focus the city and use arrow keys to pan, + to zoom in, and - to zoom out."
+    "message": "Focus the city and use arrow keys to pan, + to zoom in, and - to zoom out. Focus the map and use Enter / Shift+Enter for the next / previous visible building. Escape closes its details. Tap a building on touchscreens."
   },
   "canvasKeyboardLabel": {
     "message": "Contribution City. Use arrow keys or drag to pan, and +, - or the scroll wheel to zoom."
@@ -369,7 +369,16 @@
     "message": "Remove"
   },
   "roadsLocal": {
-    "message": "Destinations are saved in this browser. Only you can edit your city’s roads."
+    "message": "Destinations stay on this device. Turn on sync to copy this city’s exits to your Chrome account when Chrome sync is enabled."
+  },
+  "roadSyncLabel": {
+    "message": "Sync road signs across my Chrome devices"
+  },
+  "roadsSynced": {
+    "message": "Turning this off removes the Chrome sync copy, keeps these exits here and restores each other device’s local roads."
+  },
+  "roadsChanged": {
+    "message": "Your road settings changed. Reopen the road to edit its latest destination."
   },
   "roadInvalidUsername": {
     "message": "Enter a GitHub username (up to 39 letters, digits or single hyphens)."
@@ -434,10 +443,25 @@
   "roadOwnerCheckFailed": {
     "message": "Could not confirm your identity and save the road. The previous settings have been kept."
   },
-  "roadTravelError": {
-    "message": "Could not save the return route. Please try again."
-  },
   "addRoadHeading": {
     "message": "Add a road"
+  },
+  "contributionRange": {
+    "message": "$1 contributions · $2 – $3"
+  },
+  "milestoneRenderError": {
+    "message": "Your city is available. Its joining landmark could not be drawn."
+  },
+  "ownerData": {
+    "message": "Your signed-in contributions"
+  },
+  "publicData": {
+    "message": "Public contributions"
+  },
+  "errPublicCalendar": {
+    "message": "No public contribution calendar was available for this profile."
+  },
+  "identityRetry": {
+    "message": "Your GitHub session could not be verified. Retry to restore your city."
   }
 }

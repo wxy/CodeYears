@@ -1,55 +1,84 @@
-import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
-// 与建筑一样：保留源图，按实测牌面控制点离线校准，运行时只解码小尺寸PNG。
-const calibration=JSON.parse(await readFile('docs/design/city-wayposts/v1/calibration.json','utf8'));
-const sources=await Promise.all(['modern-x','modern-z'].map(async style=>{
-  const entry=calibration[style];
-  return {style,...entry,image:'data:image/png;base64,'+(await readFile(entry.source)).toString('base64')};
-}));
-const temporary=await mkdtemp(join(tmpdir(),'codeyears-waypost-bake-'));
-try{
-  const page=`<!doctype html><meta charset="utf-8"><script>
-  (async()=>{
+// 母版正视图的牌面边缘、足底及裁切包络（像素）。朝向仅在地图投影时决定。
+const crop = { x: 353, y: 18, width: 1466, height: 689 };
+const face = { left: 361, right: 1811, top: 41, bottom: 329, ground: 701 };
+const worldWidth = 6.5;
+const worldHeight = 1.5;
+const scaleX = worldWidth / (face.right - face.left);
+const scaleY = worldHeight / (face.bottom - face.top);
+const source = await readFile('docs/design/city-wayposts/v2/motorway-guide-source.png');
+const temporary = await mkdtemp(join(tmpdir(), 'codeyears-waypost-bake-'));
+
+try {
+  // 在同一正视空间中换漆，只调整蓝色反光膜，保留铝边、支柱和螺栓的受光。
+  const page = `<!doctype html><meta charset="utf-8"><body><script>
+  (async () => {
     document.currentScript.remove();
-    const records=[];
-    for(const entry of ${JSON.stringify(sources)}){
-      const image=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=reject;image.src=entry.image;});
-      const [a,b,c]=entry.face,sx=entry.width*.5/(b[0]-a[0]),sy=entry.height/(c[1]-a[1]),shear=.5*sx-sy*(b[1]-a[1])/(b[0]-a[0]);
-      const point=(x,y)=>[(x-entry.anchor[0])*sx,(x-entry.anchor[0])*shear+(y-entry.anchor[1])*sy];
-      const corners=[[0,0],[image.width,0],[image.width,image.height],[0,image.height]].map(([x,y])=>point(x,y));
-      const left=Math.min(...corners.map(p=>p[0])),top=Math.min(...corners.map(p=>p[1])),right=Math.max(...corners.map(p=>p[0])),bottom=Math.max(...corners.map(p=>p[1]));
-      const ratio=2048/Math.max(right-left,bottom-top),padding=2;
-      const canvas=document.createElement('canvas');canvas.width=Math.ceil((right-left)*ratio)+padding*2;canvas.height=Math.ceil((bottom-top)*ratio)+padding*2;
-      const ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.translate(padding-left*ratio,padding-top*ratio);ctx.scale(ratio,ratio);ctx.transform(sx,shear,0,sy,0,0);ctx.translate(-entry.anchor[0],-entry.anchor[1]);ctx.filter=entry.style.startsWith('modern')?'saturate(.42) brightness(.9) sepia(.12)':'saturate(.6) brightness(.95)';ctx.drawImage(image,0,0);ctx.filter='none';ctx.resetTransform();
-      const pixels=ctx.getImageData(0,0,canvas.width,canvas.height);let x0=canvas.width,y0=canvas.height,x1=-1,y1=-1;
-      for(let y=0;y<canvas.height;y++)for(let x=0;x<canvas.width;x++){
-        const i=(y*canvas.width+x)*4+3;if(pixels.data[i]<=8)pixels.data[i]=0;
-        if(pixels.data[i]){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
+    const image = new Image();
+    image.src = 'data:image/png;base64,${source.toString('base64')}';
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = ${crop.width};
+    canvas.height = ${crop.height};
+    const ctx = canvas.getContext('2d', {willReadFrequently:true});
+    const records = [];
+    for (const finish of ['blue', 'green']) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, -${crop.x}, -${crop.y});
+      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = pixels.data;
+      for (let i = 0; i < data.length; i += 4) {
+        // 原图有淡背景辉光；保留金属的实边和亚像素抗锯齿。
+        data[i+3] = (data[i+3]-120)*255/(249-120);
+        if (!data[i+3]) continue;
+        const r = data[i], g = data[i+1], b = data[i+2];
+        const enamel = Math.min(1, Math.max(0, (b - Math.max(r, g) - 15) / 60));
+        if (!enamel) continue;
+        const light = .21*r + .72*g + .07*b;
+        const color = finish === 'blue'
+          ? [18+.52*light, 53+.78*light, 99+.98*light]
+          : [18+.46*light, 69+.74*light, 48+.69*light];
+        for (let c = 0; c < 3; c++) data[i+c] += (color[c]-data[i+c])*enamel;
       }
-      ctx.putImageData(pixels,0,0);const trimmed=document.createElement('canvas');trimmed.width=x1-x0+3;trimmed.height=y1-y0+3;trimmed.getContext('2d').drawImage(canvas,x0,y0,x1-x0+1,y1-y0+1,1,1,x1-x0+1,y1-y0+1);
-      const centerX=(a[0]+b[0])/2,faceTop=point(centerX,a[1]+(b[1]-a[1])*.5)[1];
-      records.push({style:entry.style,png:trimmed.toDataURL('image/png').split(',')[1],layout:{width:entry.width,height:entry.height,top:faceTop},metadata:{left:left+(x0-padding-1)/ratio,top:top+(y0-padding-1)/ratio,width:trimmed.width/ratio,height:trimmed.height/ratio,nativeWidth:entry.width,nativeDepth:.5,baselineHeight:entry.height},proof:{sourceSlope:(b[1]-a[1])/(b[0]-a[0]),mappedSlope:(shear+sy*(b[1]-a[1])/(b[0]-a[0]))/sx}});
+      ctx.putImageData(pixels, 0, 0);
+      records.push(canvas.toDataURL('image/png').split(',')[1]);
     }
-    document.body.innerHTML='<pre id="result"></pre>';document.querySelector('#result').textContent=JSON.stringify(records);
-  })().catch(error=>{document.body.innerHTML='<pre id="error"></pre>';document.querySelector('#error').textContent=String(error.stack||error)});
+    document.body.innerHTML = '<pre id="result"></pre>';
+    document.querySelector('#result').textContent = JSON.stringify(records);
+  })().catch(error => document.body.textContent = String(error.stack || error));
   </script>`;
-  await writeFile(join(temporary,'index.html'),page);
-  const {stdout}=await promisify(execFile)('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',['--headless=new','--no-first-run','--no-default-browser-check','--disable-background-networking','--disable-sync','--virtual-time-budget=12000','--user-data-dir='+join(temporary,'profile'),'--dump-dom','file://'+join(temporary,'index.html')],{timeout:90000,maxBuffer:8*1024*1024});
-  const result=[...stdout.matchAll(/<pre id="result">([\s\S]*?)<\/pre>/g)].at(-1);
-  if(!result)throw new Error('路牌预烘焙失败：'+stdout.slice(-2000));
-  const records=JSON.parse(result[1].replaceAll('&quot;','"').replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&amp;','&'));
-  const catalogPath='src/renderers/city-baked-catalog.json';
-  const catalog=JSON.parse(await readFile(catalogPath,'utf8'));
-  for(const record of records){
-    const id='direction-board-'+(record.style.endsWith('-z')?'z':'x');
-    await writeFile('public/assets/city-runtime/'+id+'.png',Buffer.from(record.png,'base64'));
-    catalog[id]={file:id+'.png',...record.metadata,sampleId:id};
+  await writeFile(join(temporary, 'index.html'), page);
+  const { stdout } = await promisify(execFile)(
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    ['--headless=new', '--no-first-run', '--disable-background-networking', '--disable-sync',
+      '--virtual-time-budget=12000', '--user-data-dir='+join(temporary,'profile'),
+      '--dump-dom', 'file://'+join(temporary,'index.html')],
+    {timeout:90000, maxBuffer:12*1024*1024},
+  );
+  const encoded = stdout.match(/<pre id="result">([^<]+)<\/pre>/)?.[1];
+  if (!encoded) throw new Error('路牌预烘焙失败：'+stdout.slice(-1000));
+  const images = JSON.parse(encoded.replaceAll('&quot;', '"'));
+  const catalogPath = 'src/renderers/city-baked-catalog.json';
+  const catalog = JSON.parse(await readFile(catalogPath,'utf8'));
+  // 既有键 z 表示出城，x 表示返程。
+  for (const [i, id] of ['direction-board-z','direction-board-x'].entries()) {
+    const file = id+'.png';
+    await writeFile('public/assets/city-runtime/'+file, Buffer.from(images[i], 'base64'));
+    catalog[id] = {
+      file, left:(crop.x - (face.left+face.right)/2)*scaleX, top:(crop.y-face.ground)*scaleY,
+      width:crop.width*scaleX, height:crop.height*scaleY,
+      nativeWidth:worldWidth, nativeDepth:.5, baselineHeight:worldHeight, sampleId:id,
+    };
   }
-  await writeFile(catalogPath,JSON.stringify(catalog,null,2)+'\n');
-  await writeFile('src/renderers/direction-board-layout.json',JSON.stringify(Object.fromEntries(records.map(record=>[record.style,record.layout])),null,2)+'\n');
-  console.log(JSON.stringify(records.map(({style,layout,proof})=>({style,layout,proof})),null,2));
-}finally{await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:100});}
+  await writeFile(catalogPath, JSON.stringify(catalog,null,2)+'\n');
+  const layout = {width:worldWidth, height:worldHeight, top:(face.top-face.ground)*scaleY};
+  await writeFile('src/renderers/direction-board-layout.json', JSON.stringify(layout,null,2)+'\n');
+  console.log(`蓝色出城和绿色返程：${crop.width}×${crop.height}`);
+} finally {
+  await rm(temporary, {recursive:true, force:true, maxRetries:5, retryDelay:100});
+}

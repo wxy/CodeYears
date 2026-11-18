@@ -40,15 +40,18 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     if (i && (day.time-ordered[i-1].time!==DAY || removed.has(ordered[i-1].index))) segment++;
     if (!removed.has(day.index)) segments.set(day.index, segment);
   });
-  const active = new Map<number, number[]>();
+  const active = new Map<number, { first: number; last: number }>();
   for (const day of ordered) if (day.count>0) {
-    const s=segments.get(day.index)!; active.set(s,[...(active.get(s)??[]),day.time]);
+    const id = segments.get(day.index)!;
+    const bounds = active.get(id);
+    if (bounds) bounds.last = day.time;
+    else active.set(id, { first: day.time, last: day.time });
   }
   const retained = new Set<number>();
   for (const day of ordered) {
     const s=segments.get(day.index), times=s===undefined?undefined:active.get(s);
     // 只有已知连续段的首尾退让；不跨缺失日期填补地面。
-    if (times && day.time>=times[0]-7*DAY && day.time<=times.at(-1)!+7*DAY) retained.add(day.index);
+    if (times && day.time>=times.first-7*DAY && day.time<=times.last+7*DAY) retained.add(day.index);
   }
   let items=original.items.filter(item=>item.parcel && (item.parcel.count>0 || item.parcel.indices.every(i=>retained.has(i))));
   // 日期位置仍按周年/星期；外缘取整片活动地块的包围盒，内部零贡献保留为庭院，不逐日挖洞。

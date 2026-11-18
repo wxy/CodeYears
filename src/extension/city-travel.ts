@@ -35,12 +35,12 @@ export function readCityJourney(context:GitHubPageContext):readonly CityStop[] {
 /** 只写当前标签的旅行路径；不写任何城市的持久化道路设置。 */
 export function rememberCityJourney(context:GitHubPageContext,destination:string):void {
   const viewer=viewerKey(context);
-  if(!viewer)throw new Error('Unknown visitor');
+  if(!viewer)return;
   const trail:CityStop[]=[...readCityJourney(context),{login:context.profileLogin.toLowerCase(),map:'city'}];
   const returning=trail.findIndex(stop=>stop.login===destination);
   const next=returning<0?trail:trail.slice(0,returning);
-  sessionStorage.setItem(PENDING,JSON.stringify({viewer,target:destination,trail:next} satisfies CityJourney));
   sessionStorage.setItem(entryKey(),JSON.stringify({viewer,target:context.profileLogin.toLowerCase(),trail:trail.slice(0,-1)} satisfies CityJourney));
   const source=new URL(location.href);source.hash='codeyears-city';
   history.replaceState(history.state,'',source);
+  sessionStorage.setItem(PENDING,JSON.stringify({viewer,target:destination,trail:next} satisfies CityJourney));
 }

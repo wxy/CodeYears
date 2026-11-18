@@ -1,6 +1,7 @@
 {
   "当前页面没有可识别的年度入口。": "errNoYears",
   "请在 GitHub 个人主页的贡献日历加载完成后打开诊断。": "errProfilePage",
+  "未取得此主页的公开贡献日历。": "errPublicCalendar",
   "请选择有效历史年份。": "errYear",
   "页面没有唯一贡献日历，可能为会话跳转或页面结构变化。": "errGrid",
   "年度标题无法识别；当前解析器仅验证了英文年度格式。": "errHeading",
