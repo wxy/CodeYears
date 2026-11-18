@@ -11,8 +11,9 @@ const organizationLink = 'a[data-hovercard-type="organization"][href]';
 
 export function findProfileCard(doc: Document, profile: string): Element | undefined {
   const owner = profile.toLowerCase();
+  // 登录页可在同一个元素中显示「账号 · 代词」。
   return [...doc.querySelectorAll(PROFILE_CARD_SELECTOR)].find(element =>
-    element.querySelector(".vcard-username")?.textContent.trim().toLowerCase() === owner);
+    element.querySelector(".vcard-username")?.textContent.split("·", 1)[0].trim().toLowerCase() === owner);
 }
 
 export function readProfilePlaces(doc: Document, profile: string, card = findProfileCard(doc, profile)): { people: string[]; organizations: ProfileOrganization[] } {
