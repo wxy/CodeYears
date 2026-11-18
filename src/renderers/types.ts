@@ -1,3 +1,5 @@
+import type { CityVehicle } from './city-vehicles';
+
 export type ViewMode = "city" | "terrain";
 export type Theme = "signature" | "natural";
 
@@ -15,6 +17,7 @@ export interface LandscapeViewport {
 export interface CityRoadLabel { label:string; returning:boolean }
 export interface LandscapeView {
   canvas: HTMLCanvasElement;
+  setVehicles?(vehicles: readonly CityVehicle[]): void;
   setRoadCount?(count: number): void;
   setRoadLabels?(labels:readonly CityRoadLabel[],returnLabel?:string):void;
   /** 出城路的屏幕位置，与画布共用投影和取景。 */
@@ -24,6 +27,7 @@ export interface LandscapeView {
   buildingAt?(x: number, y: number, viewport: LandscapeViewport): readonly number[] | undefined;
   stepBuilding?(backward: boolean, viewport: LandscapeViewport): {x:number;y:number} | undefined;
   highlightBuilding?(point: {x:number;y:number} | undefined, viewport: LandscapeViewport): void;
+  fitOverview?(viewport:LandscapeViewport,topInset:number,bottomInset:number):Pick<LandscapeViewport,'zoom'|'panX'|'panY'> | undefined;
   maxZoom?(viewport: LandscapeViewport): number;
   draw(progress: number, viewport: LandscapeViewport): void;
   description(): string;

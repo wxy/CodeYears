@@ -11,7 +11,7 @@ import type { ContributionLandscape } from "../renderers/landscape";
 import type { DailyContribution } from "../data/types";
 
 export interface CityPanel {
-  activate(): Promise<void>;
+  activate(visitSeed: number): Promise<void>;
   setLanguage(language: Language, preference: LanguagePreference): void;
   deactivate(): void;
   dispose(): void;
@@ -19,6 +19,7 @@ export interface CityPanel {
 
 /** 用户选择城市后才加载；入口负责原图切换、后台与导航生命周期。 */
 export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, settings: LanguageSettings): CityPanel {
+  let trafficSeed: number;
   let language = settings.language, preference = settings.preference;
   const t = (key: MessageKey, values: readonly (string | number)[] = []) => text(language, key, values);
   let context = readPageContext(document, new URL(location.href));
@@ -74,6 +75,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .roads-panel { padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
       .roads-panel h3 { margin:0 0 6px; font-size:13px; } .roads-panel p { margin:0 0 10px; }
       .road-editor-heading,.road-editor-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      .road-editor-heading h3 { min-width:0; }
+      .road-editor-heading h3,.road-destination,.road-return-list { overflow-wrap:anywhere; }
       .road-editor-heading .road-close { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
       .roads-form { margin:10px 0; align-items:flex-end; } .roads-form label { flex:1; min-width:100px; } .roads-form label span { display:block; font-size:12px; }
       .roads-form input { width:100%; padding:5px 8px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; font:inherit; color:inherit; background:var(--bgColor-default,#fff); }
@@ -293,7 +296,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (!active || controller !== request) return;
         if (error) { renderFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!);
+      }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!, trafficSeed);
       city.setRoadControls(roads.controls(),roads.returnPost());
       fieldCreated = true;
       return city;
@@ -366,7 +369,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   refresh.onclick = () => { void load(true); };
   retry.onclick = () => { void retryAction(); };
   cancel.onclick = () => controller?.abort();
-  fitView.onclick = () => city?.resetView();
+  fitView.onclick = () => city?.resetView({top:feedback,bottom:tools});
   maxZoom.onclick = () => city?.zoomToMax();
   const clearYears = async () => {
     if (!active || busy) return;
@@ -421,7 +424,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       request.signal.throwIfAborted();
       if (!active || disposed || controller !== request) return;
       if (!sameContext(nextContext, currentContext())) { suspendForIdentity(true); return; }
-      context = nextContext; roads.refresh(); cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
+      context = nextContext; roads.refresh(); cityHost.hidden = false; field.setVisible(true, trafficSeed); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
       pendingMilestone?.();
     } catch (error) {
       if (!active || controller !== request) return;
@@ -431,8 +434,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   setLanguage(language, preference);
   return {
     setLanguage,
-    async activate() {
+    async activate(visitSeed) {
       if (disposed || active) return;
+      trafficSeed = visitSeed;
       active = true;
       await restoreOrLoad();
     },

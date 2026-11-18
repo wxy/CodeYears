@@ -60,7 +60,7 @@
     "message": "$1% zoom"
   },
   "zoomFitHelp": {
-    "message": "Starts at 100%; minimum 50%, maximum 2000%. Click “Fit view” to zoom out and center the city."
+    "message": "Starts at 100% and zooms up to 2000%. Click “Fit view” to see the city and all named road signs."
   },
   "fitView": {
     "message": "Fit view"

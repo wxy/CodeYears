@@ -5,6 +5,8 @@ import face from './direction-board-layout.json';
 const project=(x:number,z:number):RoadPoint=>[(x-z)*.5,(x+z)*.25];
 export interface DirectionBoard {
   polygon:RoadPoint[];
+  /** 命名路牌的牌面、双柱与脚座在投影平面中的外接边界。 */
+  bounds?:{left:number;right:number;top:number;bottom:number};
   groundY:number;
   paintRoad(context:CanvasRenderingContext2D):void;
   paint(context:CanvasRenderingContext2D):void;
@@ -55,8 +57,10 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,kind:'outbou
   const [px,py]=project(a[0]+ux*along-uz*shoulder,a[1]+uz*along+ux*shoulder);
   const point=(s:number,y:number):RoadPoint=>[px+vx*s,py+vy*s+y];
   const polygon=[point(-width/2-.55,top-.5),point(width/2+.55,top-.5),point(width/2+.55,top+height+.45),point(-width/2-.55,top+height+.45)];
+  const corners=[...polygon,...[sprite.left,sprite.left+sprite.width].flatMap(s=>[point(s,sprite.top),point(s,sprite.top+sprite.height)])];
   return {
     polygon,groundY:py,
+    bounds:label?{left:Math.min(...corners.map(p=>p[0])),right:Math.max(...corners.map(p=>p[0])),top:Math.min(...corners.map(p=>p[1])),bottom:Math.max(...corners.map(p=>p[1]))}:undefined,
     paintRoad(context){
       if(!label)return;
       // 临时返程也是离城目的地，标字始终位于右半幅；共路时沿路分段。

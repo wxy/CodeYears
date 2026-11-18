@@ -3,7 +3,7 @@ import { planCityScene, type CityScene } from './city-view';
 import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_DEPTH, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
-import { planCityTransport, type CityTrafficSignal } from './city-transport';
+import { cityVehicleSprites, planCityTransport, type CityTrafficSignal } from './city-transport';
 import type { CityBridge } from './city-road-network';
 import { createCityBridgeApproachPainter } from './city-bridges';
 import catalog from './city-baked-catalog.json';
@@ -14,11 +14,12 @@ export interface OrganicGap { from: string; to: string; days: number; indices: n
 export interface OrganicRegion { block: number; segment: number; left: number; right: number; top:number;bottom:number;milestone?:boolean }
 export interface OrganicCity {
   scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[]; labels:CityRoadLabel[]; signals:CityTrafficSignal[];
+  planVehicles(seed: number): CityVehicle[];
   rivers: { left: number; right: number; z: number; top:number; bottom:number }[];
 }
 
 /** City轮廓候选。输入沿用已校验date/count；阈值不是产品默认值。 */
-export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true, namingOriginYear = years[0], joinedOn?:string): OrganicCity {
+export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true, namingOriginYear = years[0], joinedOn?:string, trafficSeed = 0): OrganicCity {
   const original = planCityScene(days, wonders, years,joinedOn);
   const ordered = days.map((day, index) => ({ ...day, index, time: Date.parse(day.date) })).sort((a,b)=>a.time-b.time);
   const gaps: OrganicGap[] = [];
@@ -263,28 +264,52 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       z-Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z)))<=cityRoadWidth(road)/2+.35))
       signals.push({x,z,heads:[item.id==='traffic-signal-w'?'x':'z']});
   }
-  // 只在最终圆角直道的车道内布车，避开路口、文字和彼此；缩放不重新布置。
-  const vehicles:CityVehicle[]=[],kinds:CityVehicleKind[]=['sedan','suv','van','bus'];
-  const colors=['#b65f4f','#52768b','#dbbd62','#e1ded1','#647e70','#7d6b88'];
-  for(const {a,b,road} of straights){
-    const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);if(length<3)continue;
-    let seed=2166136261;for(const c of road.id)seed=Math.imul(seed^c.charCodeAt(0),16777619)>>>0;
-    for(const direction of [1,-1]){
-      if(vehicles.length>=180)break;
-      const fraction=direction===1?.32+(seed%13)/100:.62+(seed%11)/100;
-      const laneWidth=cityRoadWidth(road)/road.lanes,offset=laneWidth*(.5+seed%(road.lanes/2))*direction;
-      const x=a[0]+dx*fraction-dz/length*offset,z=a[1]+dz*fraction+dx/length*offset;
-      if(junctions.some(j=>Math.hypot(j.x-x,j.z-z)<j.radius+.8)||
-        bridges.some(bridge=>Math.abs(x-bridge.from[0])<catalog[`transport-bridge-${bridge.style}`].nativeWidth/2+.3&&z>bridge.landings.from[1]-.6&&z<bridge.landings.to[1]+.6)||
-        labels.some(label=>Math.hypot(label.x-x,label.z-z)<cityRoadLabelLength(label.text,label.kind)/2+.65)||
-        vehicles.some(v=>Math.hypot(v.x-x,v.z-z)<1.1))continue;
-      vehicles.push({x,z,angle:Math.atan2(dz,dx)+(direction===-1?Math.PI:0),kind:kinds[(seed+(direction===1?0:1))%4],color:colors[seed%colors.length]});
+  // 以地面上固定的八格路段抽样。相邻批次扩展直路时，原有格不会因路名或长度改变而挪位。
+  const planVehicles = (seed: number): CityVehicle[] => {
+    const vehicles: CityVehicle[] = [];
+    if (!days.length) return vehicles;
+    const kinds: CityVehicleKind[] = ['sedan', 'suv', 'sedan', 'van', 'suv', 'sedan', 'bus', 'van'];
+    const colors = { sedan:'#b65f4f', suv:'#52768b', van:'#e1ded1', bus:'#dbbd62' };
+    for (const {a, b, road} of straights) {
+      const horizontal = a[1] === b[1], axis = horizontal ? 0 : 1;
+      const start = Math.min(a[axis], b[axis]), end = Math.max(a[axis], b[axis]);
+      const line = horizontal ? a[1] : a[0];
+      for (let cell = Math.floor(start / 8); cell <= Math.floor(end / 8); cell++) {
+        for (const direction of [1, -1]) {
+          if (vehicles.length === 180) return vehicles;
+          // 两个行车方向独立抽签，分别从散列值取出车流、纵向位置、车道和车型。
+          let bits = seed ^ 2166136261;
+          for (const char of `${axis}/${line}/${cell}/${direction}`) bits = Math.imul(bits ^ char.charCodeAt(0), 16777619);
+          bits = Math.imul(bits ^ (bits >>> 16), 0x85ebca6b);
+          bits = (bits ^ (bits >>> 13)) >>> 0;
+          if ((bits & 255) >= 62 + road.lanes * 9) continue;
+          const along = (cell + ((bits >>> 8 & 255) + .5) / 256) * 8;
+          if (along < start + .65 || along > end - .65) continue;
+          const lane = (bits >>> 16 & 3) % (road.lanes / 2);
+          const offset = cityRoadWidth(road) / road.lanes * (.5 + lane) * direction;
+          const x = horizontal ? along : line - offset, z = horizontal ? line + offset : along;
+          // 出口在显示层加宽，并可能拆为出城、返程两段标字；预留整个出口车行面。
+          if (exits.some(({points:[from, to]}) =>
+            x >= Math.min(from[0], to[0]) - 1.6 && x <= Math.max(from[0], to[0]) + 1.6 &&
+            z >= Math.min(from[1], to[1]) - 1.6 && z <= Math.max(from[1], to[1]) + 1.6)) continue;
+          if (junctions.some(j => Math.hypot(j.x-x, j.z-z) < j.radius+.8) ||
+              bridges.some(bridge => Math.abs(x-bridge.from[0]) < catalog[`transport-bridge-${bridge.style}`].nativeWidth/2+.3 &&
+                z > bridge.landings.from[1]-.6 && z < bridge.landings.to[1]+.6) ||
+              labels.some(label => Math.hypot(label.x-x, label.z-z) < cityRoadLabelLength(label.text,label.kind)/2+.65) ||
+              vehicles.some(v => Math.hypot(v.x-x, v.z-z) < 1.1)) continue;
+          const kind = kinds[bits >>> 24 & 7];
+          const angle = (horizontal ? 0 : Math.PI / 2) + (direction === 1 ? 0 : Math.PI);
+          vehicles.push({x, z, kind, angle, color:colors[kind]});
+        }
+      }
     }
-  }
+    return vehicles;
+  };
+  const vehicles = planVehicles(trafficSeed);
   items.push(...planCityTransport(vehicles,signals,bridges));
-  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),'natural-ground','direction-board-x','direction-board-z'])],roadNetwork:{...original.roadNetwork,roads,exits,junctions,bridges,vehicles}};
+  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),...(days.length ? cityVehicleSprites : []),'natural-ground','direction-board-x','direction-board-z'])],roadNetwork:{...original.roadNetwork,roads,exits,junctions,bridges,vehicles}};
   const shown=new Set(items.flatMap(item=>item.parcel?.indices??[]));
-  return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,signals,rivers};
+  return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,signals,rivers,planVehicles};
 }
 
 /** 所有标识以已完成的真实路段定位，编号基于主页最早可展示年份。 */

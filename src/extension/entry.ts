@@ -48,7 +48,7 @@ declare global {
     const bodyShadow = bodyHost.attachShadow({ mode: 'open' });
     bodyShadow.innerHTML = `
       <style>
-        :host { display:block; position:relative; min-height:340px; border:1px solid var(--borderColor-default,#d1d9e0); border-top:0; border-radius:0 0 8px 8px; color:var(--fgColor-default,#1f2328); font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+        :host { display:block; position:relative; isolation:isolate; min-height:340px; border:1px solid var(--borderColor-default,#d1d9e0); border-top:0; border-radius:0 0 8px 8px; color:var(--fgColor-default,#1f2328); font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
         :host([hidden]),[hidden] { display:none!important; }
         #city-panel { min-height:340px; }
         @media(max-width:500px) { :host, #city-panel { min-height:300px; } }
@@ -85,7 +85,7 @@ declare global {
     host.append(nativeStats, toolbarHost); if (nativeSettings) host.append(nativeSettings);
     heading.append(host); heading.after(bodyHost);
     const hiddenNative = new Map<HTMLElement, { display: string; priority: string }>();
-    let active = false, disposed = false, selection = 0, panel: CityPanel | undefined;
+    let active = false, disposed = false, selection = 0, trafficSeed = 0, panel: CityPanel | undefined;
     if (location.hash === '#codeyears-town') {
       const url = new URL(location.href);
       url.hash = 'codeyears-city';
@@ -137,6 +137,7 @@ declare global {
     const selectCity = async () => {
       if (active || disposed || document.hidden) return;
       active = true; const token = ++selection;
+      trafficSeed = Math.floor(Math.random() * 0x100000000);
       sync(); nativeControls.hidden = true; cityControls.hidden = false;
       nativeButton.parentElement!.dataset.active = 'false'; cityButton.parentElement!.dataset.active = 'true';
       nativeButton.setAttribute('aria-pressed', 'false'); cityButton.setAttribute('aria-pressed', 'true');
@@ -148,7 +149,7 @@ declare global {
         if (disposed || token !== selection || !active) return;
         panel ??= module.mountCityPanel(panelHost, toolbarHost, languageSettings());
         status.hidden = feedback.hidden = true;
-        if (!document.hidden) await panel.activate();
+        if (!document.hidden) await panel.activate(trafficSeed);
       } catch {
         if (disposed || token !== selection || !active) return;
         modulePromise = undefined; panel?.deactivate(); panelHost.hidden = true;
@@ -176,7 +177,7 @@ declare global {
       visibility(hidden: boolean) {
         if(!hidden&&roadArrivalPending){roadArrivalPending=false;host.scrollIntoView({block:'nearest'});void selectCity();return}
         if (!active || disposed) return;
-        if (hidden) panel?.deactivate(); else void panel?.activate();
+        if (hidden) panel?.deactivate(); else void panel?.activate(trafficSeed);
       },
       dispose() {
         disposed = true; selection++; panel?.dispose(); restoreNative();
