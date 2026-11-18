@@ -86,7 +86,12 @@ declare global {
     heading.append(host); heading.after(bodyHost);
     const hiddenNative = new Map<HTMLElement, { display: string; priority: string }>();
     let active = false, disposed = false, selection = 0, panel: CityPanel | undefined;
-    let roadArrivalPending=location.hash==='#codeyears-city'||location.hash==='#codeyears-town';
+    if (location.hash === '#codeyears-town') {
+      const url = new URL(location.href);
+      url.hash = 'codeyears-city';
+      history.replaceState(history.state, '', url);
+    }
+    let roadArrivalPending=location.hash==='#codeyears-city';
     let modulePromise: Promise<typeof import('./content')> | undefined;
     let entryState: 'preparing' | 'error' = 'preparing';
     const localize = () => {
@@ -118,7 +123,7 @@ declare global {
     };
     const selectNative = () => {
       roadArrivalPending=false;
-      if(location.hash==='#codeyears-city'||location.hash==='#codeyears-town'){
+      if(location.hash==='#codeyears-city'){
         const url=new URL(location.href);url.hash='';history.replaceState(history.state,'',url);
       }
       active = false; selection++; panel?.deactivate(); restoreNative();

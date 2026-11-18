@@ -6,8 +6,6 @@
 | --- | --- | --- |
 | 现代返程 | [薄铝板、绿底白边、镀锌立柱](modern-highway-source.png) | [PNG](../../../../public/assets/city-runtime/direction-board-x.png) |
 | 现代出城 | [蓝底双白边、细立柱](modern-highway-mutual-source.png) | [PNG](../../../../public/assets/city-runtime/direction-board-z.png) |
-| 小镇返程 | [木框、石基、灯笼与藤蔓](town-source.png) | [PNG](../../../../public/assets/town-runtime/direction-board-x.png) |
-| 小镇出城 | [蓝色木牌、雕花与金属嵌边](town-mutual-source.png) | [PNG](../../../../public/assets/town-runtime/direction-board-z.png) |
 
 现代厚重装饰框的早稿已弃用。正式现代款参考真实公路指路牌的薄板和立柱比例，仍采用项目所需的绘画质感；不宣称符合交通工程认证。
 
@@ -18,7 +16,7 @@ node scripts/bake-direction-boards.mjs
 npm run build
 ```
 
-前置条件为 macOS、本机 Google Chrome 和仓库 Node 依赖。脚本从[实际控制点](calibration.json)从原图按2048上限生成四张运行 PNG，并离线降低饱和度，更新城市/小镇目录与 `direction-board-layout.json`。运行图保留透明背景；不把生成源图直接打入扩展。每种地图只加载自己的出城、返程两张图，图片生命周期沿用建筑缓存。源文件名中的 mutual 保留原始制作记录，当前不承担连接状态含义。
+前置条件为 macOS、本机 Google Chrome 和仓库 Node 依赖。脚本用[标定控制点](calibration.json)从现代路牌源图生成出城和返程两张透明 PNG，长边上限 2048 像素，并更新城市素材目录和 `direction-board-layout.json`。源文件名中的 mutual 是历史命名。
 
 源图实际牌面斜率与提示词的目标不同；脚本将实测牌面轴校准到 +0.5，另一朝向通过世界变换镜像造型，文字始终正向。不重画图片内容，不把透明像素当成地面；支架的隐藏几何、地脚完整包络与物理相机恢复不作保证。牌面以55%世界尺度绘制、仅缩短支架；所有牌放在离城方向右侧，脚点按完整图片横向包络及安装处的路面横切留余量，位于车行面外。字号按两种平面投影的视觉字高与路面文字对齐。已连接牌面绘制 ID 与出城箭头，未指定的牌面不绘制文字或箭头；路面在普通出城半幅绘制目标 ID，临时返程也在右半幅绘制来源 ID并可点击；与普通目的地共路时沿路分段。
 
@@ -28,7 +26,5 @@ npm run build
 | --- | --- | ---: |
 | 现代返程 | 794×1597 | 920,347 |
 | 现代出城 | 595×1333 | 593,957 |
-| 小镇返程 | 1114×1902 | 2,028,553 |
-| 小镇出城 | 1004×1914 | 2,076,442 |
 
-只保留这四张选定源图和正式运行图；真实公路参考照片、截图、浏览器配置及中间制作页面使用系统临时目录，完成后清理。
+目录中保留了两款现代路牌和两款早期小镇路牌的源图。扩展使用表中列出的两张现代路牌运行图。

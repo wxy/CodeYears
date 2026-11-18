@@ -359,39 +359,6 @@
   "feedback": {
     "message": "Feedback"
   },
-  "mapType": {
-    "message": "Map type"
-  },
-  "modernCity": {
-    "message": "Modern city"
-  },
-  "magicTown": {
-    "message": "Magic town"
-  },
-  "preparingMap": {
-    "message": "Preparing the map…"
-  },
-  "townLegendHeading": {
-    "message": "Reading the town · daily means and craftsmanship"
-  },
-  "townLegendRustic": {
-    "message": "Simple timber, thatch and practical fittings"
-  },
-  "townLegendFarm": {
-    "message": "Well-kept homes and comfortable gardens"
-  },
-  "townLegendWorkshop": {
-    "message": "Fine masonry, crafted roofs and ornament"
-  },
-  "townLegendArcane": {
-    "message": "Carved porches, lavish roofs and magical gardens"
-  },
-  "townLegendRegions": {
-    "message": "Adjacent dates with similar contributions form a building plot. Its mean daily contributions guide materials, craftsmanship and luxury; height follows the building form and does not encode contribution strength. A main building, its own garden and supporting facilities occupy the plot together. Small buildings receive courtyard walls when needed."
-  },
-  "townLegendLife": {
-    "message": "Residents, animals, flowering trees, mana wells and waygates bring the town to life. They do not count people, projects or contributions. Hover a contribution building for its actual member dates and available project activity."
-  },
   "roadsHeading": {
     "message": "Road destination"
   },

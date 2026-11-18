@@ -6,7 +6,10 @@ import { promisify } from 'node:util';
 
 // 与建筑一样：保留源图，按实测牌面控制点离线校准，运行时只解码小尺寸PNG。
 const calibration=JSON.parse(await readFile('docs/design/city-wayposts/v1/calibration.json','utf8'));
-const sources=await Promise.all(Object.entries(calibration).map(async([style,entry])=>({style,...entry,image:'data:image/png;base64,'+(await readFile(entry.source)).toString('base64')})));
+const sources=await Promise.all(['modern-x','modern-z'].map(async style=>{
+  const entry=calibration[style];
+  return {style,...entry,image:'data:image/png;base64,'+(await readFile(entry.source)).toString('base64')};
+}));
 const temporary=await mkdtemp(join(tmpdir(),'codeyears-waypost-bake-'));
 try{
   const page=`<!doctype html><meta charset="utf-8"><script>
@@ -39,11 +42,14 @@ try{
   const result=[...stdout.matchAll(/<pre id="result">([\s\S]*?)<\/pre>/g)].at(-1);
   if(!result)throw new Error('路牌预烘焙失败：'+stdout.slice(-2000));
   const records=JSON.parse(result[1].replaceAll('&quot;','"').replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&amp;','&'));
+  const catalogPath='src/renderers/city-baked-catalog.json';
+  const catalog=JSON.parse(await readFile(catalogPath,'utf8'));
   for(const record of records){
-    const kind=record.style.startsWith('modern')?'city':'town',id='direction-board-'+(record.style.endsWith('-z')?'z':'x'),catalogPath='src/renderers/'+kind+'-baked-catalog.json';
-    await writeFile('public/assets/'+kind+'-runtime/'+id+'.png',Buffer.from(record.png,'base64'));
-    const catalog=JSON.parse(await readFile(catalogPath,'utf8'));catalog[id]={file:id+'.png',...record.metadata,sampleId:id};await writeFile(catalogPath,JSON.stringify(catalog,null,2)+'\n');
+    const id='direction-board-'+(record.style.endsWith('-z')?'z':'x');
+    await writeFile('public/assets/city-runtime/'+id+'.png',Buffer.from(record.png,'base64'));
+    catalog[id]={file:id+'.png',...record.metadata,sampleId:id};
   }
+  await writeFile(catalogPath,JSON.stringify(catalog,null,2)+'\n');
   await writeFile('src/renderers/direction-board-layout.json',JSON.stringify(Object.fromEntries(records.map(record=>[record.style,record.layout])),null,2)+'\n');
   console.log(JSON.stringify(records.map(({style,layout,proof})=>({style,layout,proof})),null,2));
 }finally{await rm(temporary,{recursive:true,force:true,maxRetries:5,retryDelay:100});}
