@@ -1,8 +1,10 @@
 import catalog from './city-baked-catalog.json';
 import { createCityDecoration } from './city-decorations';
+import { CITY_GROUND_ATLAS, prepareCityGroundAtlas } from './city-ground-tiles';
 
 export interface CitySprite {
   canvas: HTMLCanvasElement;
+  groundDetail?: HTMLCanvasElement;
   left: number; top: number; width: number; height: number;
   nativeWidth: number; nativeDepth: number;
   baselineHeight: number;
@@ -31,8 +33,9 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
         const context = canvas.getContext('2d');
         if (!context) throw new Error('无法创建城市素材画布。');
         context.drawImage(bitmap, 0, 0);
+        const groundDetail=id===CITY_GROUND_ATLAS?prepareCityGroundAtlas(context):undefined;
         const { file: _file, ...metadata } = entry;
-        return { [id]: { canvas, ...metadata } };
+        return { [id]: { canvas, ...metadata, groundDetail } };
       } catch (error) {
         canvas.width = canvas.height = 0;
         throw error;
@@ -52,4 +55,5 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
 
 export const closeCityImages = (images: CityImages) => Object.values(images).forEach(sprite => {
   sprite.canvas.width = sprite.canvas.height = 0;
+  if(sprite.groundDetail)sprite.groundDetail.width=sprite.groundDetail.height=0;
 });

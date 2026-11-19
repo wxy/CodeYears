@@ -1,9 +1,73 @@
 import { sampleCityBridge, type CityBridge } from './city-road-network';
 import { CITY_ROAD_WIDTH } from './city-layout';
+import { projectGround } from './city-mountain-roads';
+import { cityRoadWidth, planRoadGeometry, type CityRoadRoute, type RoadPoint } from './city-roads';
+import { mergeWaterSpans, type RoadWater } from './city-waterways';
 import catalog from './city-baked-catalog.json';
 import bridgeLevels from './city-bridge-levels.json';
 
 export const CITY_PAINTED_BRIDGE_ELEVATION=bridgeLevels.deckElevation;
+
+/** 用车行面两侧和中心与岸线的交点定位桥台。桥面接续原车道标线。 */
+export function createHighwayBridgePainter(routes:readonly CityRoadRoute[],water:RoadWater) {
+  const deck=new Path2D(),fascia=new Path2D(),rails=new Path2D(),posts=new Path2D();
+  let hasCrossing=false;
+  for(const route of routes){
+    const {points,directions}=planRoadGeometry(route),half=cityRoadWidth(route)/2;
+    if(!directions.length)continue;
+    let distance=0;
+    const stations=directions.map(d=>{const start=distance;distance+=d.length;return start});
+    const normals=points.map((_,i):RoadPoint=>{
+      const prev=directions[Math.max(0,i-1)],next=directions[Math.min(i,directions.length-1)];
+      const join=1+prev.x*next.x+prev.z*next.z;
+      return join>.05?[-(prev.z+next.z)/join,(prev.x+next.x)/join]:[-next.z,next.x];
+    });
+    const edge=(i:number,offset:number)=>projectGround(points[i][0]+normals[i][0]*offset,points[i][1]+normals[i][1]*offset);
+    const wet:[number,number][]=[];
+    for(const offset of [-half,0,half]){
+      const line=points.map((_,i)=>edge(i,offset));
+      for(const [i,{length}] of directions.entries())for(const [from,to] of water.spans(line[i],line[i+1])){
+        wet.push([Math.max(0,stations[i]+from*length-.42),Math.min(distance,stations[i]+to*length+.42)]);
+      }
+    }
+    for(const [from,to] of mergeWaterSpans(wet,.09)){
+      hasCrossing=true;
+      const span=to-from,stepCount=Math.ceil(span/1.05);
+      const postsAt=Array.from({length:stepCount+1},(_,i)=>from+span*i/stepCount);
+      const along=[...new Set([...postsAt,...stations.filter(t=>t>from&&t<to)])].sort((a,b)=>a-b);
+      const section=(t:number,offset:number,drop=0):RoadPoint=>{
+        let i=0;
+        while(i+1<stations.length&&stations[i+1]<=t)i++;
+        const u=(t-stations[i])/directions[i].length;
+        const a=edge(i,offset),b=edge(i+1,offset);
+        return [a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u+drop];
+      };
+      const path=(shape:Path2D,line:readonly RoadPoint[],close=false)=>{
+        for(const [i,p] of line.entries())i?shape.lineTo(...p):shape.moveTo(...p);
+        if(close)shape.closePath();
+      };
+      const width=half+.15,reverse=[...along].reverse();
+      path(deck,[...along.map(t=>section(t,-width)),...reverse.map(t=>section(t,width))],true);
+      for(const side of [-width,width]){
+        path(fascia,[...along.map(t=>section(t,side,.28)),...reverse.map(t=>section(t,side))],true);
+        path(rails,along.map(t=>section(t,side,-.19)));
+        for(const t of postsAt)path(posts,[section(t,side),section(t,side,-.19)]);
+      }
+    }
+  }
+  if(!hasCrossing)return;
+  return {
+    deck(context:CanvasRenderingContext2D){
+      context.fillStyle='#687b73';context.fill(fascia);
+      context.fillStyle='#b8c4b8';context.fill(deck);
+    },
+    rails(context:CanvasRenderingContext2D){
+      context.setLineDash([]);context.lineJoin='round';context.lineCap='round';
+      context.strokeStyle='#73867e';context.lineWidth=.055;context.stroke(posts);
+      context.strokeStyle='#e0e2cf';context.lineWidth=.047;context.stroke(rails);
+    },
+  };
+}
 
 /** 引桥由年度大道的靠河路缘向外起坡，不能覆盖岸路的任何一条车道。 */
 export function createCityBridgeApproachPainter(bridges:readonly CityBridge[]):(context:CanvasRenderingContext2D)=>void {

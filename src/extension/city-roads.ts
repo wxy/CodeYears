@@ -12,6 +12,7 @@ interface RoadOptions {
 /** 出口由主页 Bio 的顺序决定，返程由本标签页的访问路径决定。 */
 export function createCityRoads(host: HTMLElement, options: RoadOptions) {
   let controls: CityRoadControl[] = [], returnPost: CityReturnControl | undefined;
+  let mentions:readonly string[] = [], exitCount = 4;
   let opener: HTMLElement | undefined;
   const lifetime = new AbortController();
   const { signal } = lifetime;
@@ -104,20 +105,22 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
     return { sign, surface, label: login, returning };
   }
   function refresh(people: readonly string[]) {
+    mentions = people;
     const focused = opener ?? controls.find(({sign}) => sign.matches(':focus'))?.sign
       ?? (returnPost?.sign.matches(':focus') ? returnPost.sign : undefined);
     const focusedSlot = controls.findIndex(({sign}) => sign === focused);
     close();
     localize(host, options.language());
     const trail = journey().map(stop => stop.login), previous = trail.at(-1);
-    controls = Array.from({length: Math.max(4, people.length)}, (_, slot) => {
-      const login = people[slot];
+    const destinations = people.slice(0,exitCount);
+    controls = Array.from({length: exitCount}, (_, slot) => {
+      const login = destinations[slot];
       const exit = login ? makeExit(login, login.toLowerCase() === previous, trail.includes(login.toLowerCase())) : emptyExit(slot);
       exit.sign.dataset.roadSlot = String(slot);
       return exit;
     });
     returnPost = undefined;
-    if (previous && !people.some(login => login.toLowerCase() === previous)) {
+    if (previous && !destinations.some(login => login.toLowerCase() === previous)) {
       returnPost = makeExit(previous, true, true);
       returnPost.sign.classList.add('city-return-post');
       returnPost.surface.classList.add('city-return-surface');
@@ -140,5 +143,11 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
   }, { capture: true, signal });
   host.parentElement!.addEventListener('wheel', event => { if (!host.hidden && !event.composedPath().includes(host)) close(); }, { passive: true, signal });
   window.addEventListener('resize', () => close(), { signal });
-  return { controls: () => controls, returnPost: () => returnPost, close, refresh, dispose() { lifetime.abort(); host.replaceChildren(); } };
+  return { controls: () => controls, returnPost: () => returnPost, close, refresh,
+    setExitCount(count:number) {
+      if (exitCount === count) return;
+      exitCount = count;
+      refresh(mentions);
+    },
+    dispose() { lifetime.abort(); host.replaceChildren(); } };
 }

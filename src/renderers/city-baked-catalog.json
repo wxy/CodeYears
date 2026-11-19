@@ -615,6 +615,17 @@
     "baselineHeight": 2,
     "sampleId": "outskirts-hills"
   },
+  "outskirts-ground-tiles": {
+    "file": "outskirts-ground-tiles.png",
+    "left": 0,
+    "top": 0,
+    "width": 54,
+    "height": 54,
+    "nativeWidth": 54,
+    "nativeDepth": 54,
+    "baselineHeight": 0,
+    "sampleId": "outskirts-ground-tiles"
+  },
   "natural-ground": {
     "file": "natural-ground.png",
     "left": 0,
@@ -625,6 +636,61 @@
     "nativeDepth": 32,
     "baselineHeight": 0,
     "sampleId": "natural-ground"
+  },
+  "outskirts-mountains": {
+    "file": "outskirts-mountains.png",
+    "left": -24,
+    "top": -24,
+    "width": 48,
+    "height": 24,
+    "nativeWidth": 48,
+    "nativeDepth": 24,
+    "baselineHeight": 9,
+    "sampleId": "outskirts-mountains"
+  },
+  "outskirts-snowy-mountains": {
+    "file": "outskirts-snowy-mountains.png",
+    "left": -24,
+    "top": -24,
+    "width": 48,
+    "height": 24,
+    "nativeWidth": 48,
+    "nativeDepth": 24,
+    "baselineHeight": 12,
+    "sampleId": "outskirts-snowy-mountains"
+  },
+  "outskirts-mountain-massif": {
+    "file": "outskirts-mountain-massif.png",
+    "left": -24,
+    "top": -24,
+    "width": 48,
+    "height": 24,
+    "nativeWidth": 48,
+    "nativeDepth": 24,
+    "baselineHeight": 12,
+    "sampleId": "outskirts-mountain-massif"
+  },
+  "outskirts-wooded-ridge": {
+    "file": "outskirts-wooded-ridge.png",
+    "left": -24,
+    "top": -24,
+    "width": 48,
+    "height": 24,
+    "nativeWidth": 48,
+    "nativeDepth": 24,
+    "baselineHeight": 12,
+    "sampleId": "outskirts-wooded-ridge"
+  },
+  "outskirts-dry-meadow": {
+    "file": "outskirts-dry-meadow.png",
+    "left": -20,
+    "top": -10,
+    "width": 40,
+    "height": 20,
+    "nativeWidth": 40,
+    "nativeDepth": 20,
+    "baselineHeight": 0,
+    "sampleId": "outskirts-dry-meadow"
   },
   "transport-sedan-xp": {
     "file": "transport-sedan-xp.png",

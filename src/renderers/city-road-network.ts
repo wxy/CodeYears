@@ -27,7 +27,7 @@ export function sampleCityBridge(bridge: CityBridge, t: number, offset = 0) {
 }
 
 /** 日期地块不动；道路、桥和车辆共用这一份世界坐标计划。 */
-export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStarts: readonly number[]): CityRoadNetwork {
+export function planCityRoadNetwork(layout: CityLayout, depth: number): CityRoadNetwork {
   const { width } = layout;
   const roads: CityRoadRoute[] = [], junctions: CityRoadJunction[] = [], bridges: CityBridge[] = [];
   const districts = layout.districts.map(({ z,quarterPadding }) => ({ z,quarterPadding,
@@ -67,8 +67,8 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
     roads.push({ id: `avenue-${z}`, lanes: 4, laneWidth:CITY_STREET_LANE_WIDTH,points: [[-CITY_RING_CENTER, z], [width + CITY_RING_CENTER, z]] });
     junctions.push({ x: -CITY_RING_CENTER, z, radius: 1.7 }, { x: width + CITY_RING_CENTER, z, radius: 1.7 });
   }
-  parkStarts.forEach((_, band) => {
-    const block = (band + 1) * 5, before = districts[block - 1], after = districts[block];
+  for (const block of layout.bandStarts) {
+    const before = districts[block - 1], after = districts[block], band = layout.districts[block - 1].band;
     for (const from of before.quarters) {
       const to = after.quarters.find(q => q.quarter === from.quarter);
       if (to) bridges.push({ id: `bridge-${band}-${from.quarter}`, band, quarter: from.quarter,
@@ -76,7 +76,7 @@ export function planCityRoadNetwork(layout: CityLayout, depth: number, parkStart
         from: [from.x, before.z + 7 + halfYear], to: [to.x, after.z - halfYear],
         landings:{from:[from.x,before.z+7+halfYear],to:[to.x,after.z-halfYear]} });
     }
-  });
+  }
 
   const vehicles: CityVehicle[] = [], kinds: CityVehicleKind[] = ['sedan', 'suv', 'van', 'bus'];
   const colors = ['#b65f4f', '#52768b', '#dbbd62', '#e1ded1', '#647e70', '#7d6b88'];
