@@ -12,10 +12,12 @@ export function createOrganizationLinks(host:HTMLElement,panBy:(dx:number,dy:num
     .city-org-link:hover,.city-org-link:focus-visible { outline:2px solid #318286; outline-offset:1px; }
     .city-org-link>canvas { display:block; position:absolute; pointer-events:none; }
     .city-org-tooltip { position:absolute; z-index:2; translate:-50% -100%; padding:3px 7px; border-radius:5px; font:600 12px/1.4 system-ui,sans-serif; background:#213838; color:white; overflow-wrap:anywhere; }
-    .city-map-corner { position:absolute; z-index:1; inset-inline-start:12px; inset-block-end:12px; inline-size:min(264px,calc(100% - 24px)); display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
-    .city-map-credit { display:block; inline-size:100%; block-size:68px; border-radius:13px; pointer-events:auto; }
+    .city-map-corner { position:absolute; z-index:3; inset-inline-start:12px; inset-block-end:12px; inline-size:min(264px,calc(100% - 24px)); display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+    .city-map-credit { display:block; inline-size:100%; block-size:68px; border-radius:13px; overflow:clip; visibility:hidden; pointer-events:none; }
+    .city-map-credit[data-visible] { visibility:visible; pointer-events:auto; }
+    .city-map-credit > canvas { display:block; inline-size:100%; block-size:100%; pointer-events:none; }
     .city-map-credit[hidden] { display:none; }
-    .city-map-credit:hover { box-shadow:inset 0 0 0 1px #efe0a9; }
+    .city-map-credit:hover { outline:1px solid #efe0a9; outline-offset:-1px; }
     .city-map-credit:focus-visible { outline:2px solid #efe0a9; outline-offset:2px; }
     .city-org-directory { max-inline-size:100%; pointer-events:auto; padding:3px; border:1px solid var(--borderColor-default,#b8c4bc); border-radius:7px; background:var(--bgColor-default,#fff); color:var(--fgColor-default,#263c3a); }
     .city-org-directory summary { cursor:pointer; padding:3px 7px; font:600 12px/1.4 system-ui,sans-serif; }

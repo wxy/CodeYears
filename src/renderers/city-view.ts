@@ -299,7 +299,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   };
   let exitPaintKey='',paintExits:(target:CanvasRenderingContext2D)=>void;
   let highwayBridges:ReturnType<typeof createHighwayBridgePainter>;
-  let shareCredit:CityShareCredit|undefined;
+  let shareCredit:CityShareCredit|undefined,creditChanged=false;
   const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
     const sprite=images[`direction-board-${kind==='outbound'?'z':'x'}`];
     return sprite?planDirectionBoard(road,label,kind,context,sprite,baseExits,range):undefined;
@@ -366,9 +366,10 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     setOrganizationPosters(next,frame){posters=next;organizationFrame=frame;updateBoards()},
     setShareCredit(credit){
       const previous=shareCredit;
-      if(previous?.login===credit.login&&previous.icon===credit.icon&&previous.x===credit.x&&previous.y===credit.y&&
+      if(previous?.login===credit.login&&previous.icon===credit.icon&&previous.visible===credit.visible&&
+        previous.x===credit.x&&previous.y===credit.y&&
         previous.width===credit.width&&previous.height===credit.height)return;
-      shareCredit=credit;frameKey='';
+      shareCredit=credit;creditChanged=true;
     },
     organizationFaces(viewport){
       const projection=boardProjection(viewport);
@@ -455,8 +456,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     draw(progress,viewport:LandscapeViewport){
       // 同一实例的数据已固定；恢复可见性时沿用已有像素，取景或进度变化才重画。
       const nextFrameKey=[progress,viewport.width,viewport.height,viewport.dpr,viewport.zoom,viewport.zoomBase,viewport.panX,viewport.panY,viewport.dark].join(':');
-      if(nextFrameKey===frameKey)return;
-      clearHighlight();
+      if(nextFrameKey===frameKey&&!creditChanged)return;
+      if(nextFrameKey!==frameKey)clearHighlight();
       const prefix=progress===1?weekly.cells.length:Math.floor(progress*weekly.cells.length);
       // 新批次只有短填入期间逐帧画增量地面；完成后恢复整块缓存，不续连续帧。
       if(progressive&&prefix===weekly.cells.length&&cachedPrefix<prefix){
@@ -558,7 +559,17 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.drawImage(source,x,y,w,h);context.restore();
       }
       while(boardIndex<boardOrder.length)paintBoard(boardOrder[boardIndex++]);
-      if(shareCredit)paintShareCredit(context,shareCredit);
+      if(shareCredit?.visible){
+        paintShareCredit(context,shareCredit);
+        // 把主画布已合成的牌面铺在组织图标上方，屏幕与保存用同一份像素。
+        const {x,y,width,height,foreground}=shareCredit,{dpr}=viewport;
+        const w=Math.round(width*dpr),h=Math.round(height*dpr);
+        if(foreground.width!==w||foreground.height!==h){foreground.width=w;foreground.height=h}
+        const target=foreground.getContext('2d')!;
+        target.globalCompositeOperation='copy';
+        target.drawImage(canvas,Math.round(x*dpr),Math.round(y*dpr),w,h,0,0,w,h);
+      }
+      creditChanged=false;
       frameKey=nextFrameKey;
       visiblePrefix=prefix;
     },

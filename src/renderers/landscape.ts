@@ -57,18 +57,33 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const organizationLinks=createOrganizationLinks(host,(dx,dy)=>{
     inOverview=false;viewport.panX+=dx;viewport.panY+=dy;schedule();
   });
-  const {corner}=organizationLinks,creditLink=document.createElement('a');
+  const {corner}=organizationLinks,creditLink=document.createElement('a'),creditForeground=document.createElement('canvas');
   creditLink.className='city-map-credit';creditLink.lang='en';creditLink.hidden=true;
   creditLink.href='https://chromewebstore.google.com/detail/codeyears-github-contribu/mhbphbpbjbndjhodbdmijdopidhcibia';
   creditLink.target='_blank';creditLink.rel='noreferrer';
   creditLink.setAttribute('aria-label','CodeYears on the Chrome Web Store');
-  corner.append(creditLink);
+  creditForeground.width=creditForeground.height=0;
+  creditForeground.setAttribute('aria-hidden','true');
+  creditLink.append(creditForeground);corner.append(creditLink);
   let creditLogin:string|undefined,creditIcon:HTMLImageElement|undefined;
+  let creditVisible=false,creditTimeout=0;
   // 浏览器决定角落的排布，画布沿同一链接矩形绘制，PNG 保留完整铭牌。
   const positionCredit=(target=layer)=>{
     if(!creditLogin||!target?.setShareCredit)return;
-    target.setShareCredit({login:creditLogin,icon:creditIcon,x:corner.offsetLeft+creditLink.offsetLeft,
+    target.setShareCredit({login:creditLogin,icon:creditIcon,foreground:creditForeground,visible:creditVisible,
+      x:corner.offsetLeft+creditLink.offsetLeft,
       y:corner.offsetTop+creditLink.offsetTop,width:creditLink.offsetWidth,height:creditLink.offsetHeight});
+  };
+  const setCreditVisible=(visible:boolean)=>{
+    if(visible===creditVisible)return;
+    creditVisible=visible;creditLink.toggleAttribute('data-visible',visible);
+    positionCredit();schedule();
+  };
+  const hideCredit=()=>{window.clearTimeout(creditTimeout);setCreditVisible(false)};
+  const revealCredit=()=>{
+    if(!creditLogin||disposed||suspended||document.hidden)return;
+    setCreditVisible(true);window.clearTimeout(creditTimeout);
+    creditTimeout=window.setTimeout(hideCredit,5000);
   };
   let posters:readonly OrganizationPoster[]=[];
   let frameImages:CityImages|undefined,frameRequested=false;
@@ -120,6 +135,13 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     next.canvas.setAttribute("aria-label",`${view==="city"?"贡献之城":"连续时光山脉"}，固定视角。拖动平移，滚轮缩放。`);
   };
   const schedule=()=>{if(!disposed&&!blocked&&!suspended&&!document.hidden&&!raf)raf=requestAnimationFrame(tick)};
+  const drawCurrent=()=>{
+    if(progressiveCity)layer?.draw(currentDays.length?revealedDays/currentDays.length:1,viewport);
+    else{
+      const current=timeline.getState();
+      layer?.draw(current.revealedDays/current.totalDays,viewport);
+    }
+  };
   function tick(now:number){
     raf=0;if(disposed||blocked||suspended||document.hidden||!layer)return;
     if(progressiveCity){
@@ -129,12 +151,10 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         revealedDays=revealFrom+(currentDays.length-revealFrom)*fraction;
         if(fraction===1){revealedDays=currentDays.length;playing=false;labelCity()}
       }
-      layer.draw(currentDays.length?revealedDays/currentDays.length:1,viewport);
     }else{
       if(playing){if(!anchored){timeline.play(now);anchored=true}timeline.advance(now);playing=timeline.getState().status==="playing"}
-      const current=timeline.getState();layer.draw(current.revealedDays/current.totalDays,viewport);
     }
-    positionRoads();notify();if(playing)schedule();
+    drawCurrent();positionRoads();notify();if(playing)schedule();
   }
   const pause=()=>{playing=false;timeline.pause();anchored=false;notify()};
   async function prepare(){
@@ -190,12 +210,14 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   let pointer:{id:number;x:number;y:number;dragging:boolean;road:boolean}|undefined,suppressRoadClick=false;
   const down=(event:PointerEvent)=>{
     if(pointer||event.button!==0)return;
+    if(event.pointerType==='mouse')revealCredit();
     const target=event.target instanceof Element?event.target:undefined,road=!!target?.closest('.city-road-surface,button.city-road-sign');
     if(!road&&target?.closest('a,button,input,.city-org-directory'))return;
     suppressRoadClick=false;pointer={id:event.pointerId,x:event.clientX,y:event.clientY,dragging:!road,road};
     if(!road){host.setPointerCapture(event.pointerId);host.style.cursor="grabbing"}
   };
   const move=(event:PointerEvent)=>{
+    if(event.pointerType==='mouse')revealCredit();
     if(!pointer||pointer.id!==event.pointerId)return;
     if(!pointer.dragging){
       if(Math.hypot(event.clientX-pointer.x,event.clientY-pointer.y)<4)return;
@@ -221,9 +243,15 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   const wheel=(event:WheelEvent)=>{
     if(!event.deltaY||event.target instanceof Element&&event.target.closest('.city-org-directory'))return;
+    revealCredit();
     event.preventDefault();
     const rect = host.getBoundingClientRect();
     zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2);
+  };
+  const creditContextMenu=(event:MouseEvent)=>{
+    revealCredit();
+    // 原生图片菜单取得画布时，铭牌已经在这张图里。
+    if(creditVisible&&event.target===layer?.canvas)drawCurrent();
   };
   // Only the stable, focused scene host owns arrows; inputs and browser shortcuts keep theirs.
   const keydown=(event:KeyboardEvent)=>{
@@ -238,6 +266,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   };
   const visibility = () => {
     if (!document.hidden) { schedule(); return; }
+    hideCredit();
     cancelAnimationFrame(raf);
     raf = 0;
     // 浏览器标签页暂离只冻结逐年填入，回到同一画布时接着播放。
@@ -245,6 +274,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     else pause();
   };
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("click",click,true);host.addEventListener("dragstart",dragStart);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
+  host.addEventListener('contextmenu',creditContextMenu,true);host.addEventListener('focus',revealCredit);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
     setShareCredit(login){
@@ -305,7 +335,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     setVisible(visible, nextSeed = trafficSeed){
       if(disposed)return;
       suspended=!visible;
-      if(suspended){layer?.highlightBuilding?.(undefined,viewport);cancelAnimationFrame(raf);raf=0;pointer=undefined;host.style.cursor="grab";return}
+      if(suspended){hideCredit();layer?.highlightBuilding?.(undefined,viewport);cancelAnimationFrame(raf);raf=0;pointer=undefined;host.style.cursor="grab";return}
       if(nextSeed!==trafficSeed){
         trafficSeed=nextSeed;
         if(planVehicles)layer?.setVehicles?.(planVehicles(trafficSeed,trafficConnections));
@@ -377,6 +407,8 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     dispose(){
       if(disposed)return;disposed=true;generation++;assetAbort.abort();playing=false;timeline.pause();cancelAnimationFrame(raf);raf=0;observer.disconnect();themeObserver.disconnect();preference.removeEventListener("change",theme);document.removeEventListener("visibilitychange",visibility);
       host.removeEventListener("pointerdown",down);host.removeEventListener("pointermove",move);host.removeEventListener("pointerup",up);host.removeEventListener("pointercancel",up);host.removeEventListener("lostpointercapture",up);host.removeEventListener("click",click,true);host.removeEventListener("dragstart",dragStart);host.removeEventListener("wheel",wheel);host.removeEventListener("keydown",keydown);layer?.dispose();layer=undefined;
+      host.removeEventListener('contextmenu',creditContextMenu,true);host.removeEventListener('focus',revealCredit);
+      window.clearTimeout(creditTimeout);creditForeground.width=creditForeground.height=0;
       roadLayer.remove();roadAnchors=[];returnSign=undefined;
       organizationLinks.dispose();posters=[];
       if(frameImages)closeCityImages(frameImages);
