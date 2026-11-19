@@ -1,10 +1,11 @@
-import { cityRoadWidth, type CityRoadRoute } from './city-roads';
+import { cityRoadWidth, clipCityExit, type CityRoadRoute } from './city-roads';
 import type { CityImages } from './city-assets';
 import { loadUnit } from './unit-calibration';
 
 export const CITY_OUTSKIRT_MARGIN=12;
 
 export const CITY_OUTSKIRT_IDS=['outskirts-forest','outskirts-hills','natural-ground'] as const;
+export const CITY_SCENERY_IDS=[...CITY_OUTSKIRT_IDS,'outskirts-mountains','outskirts-dry-meadow','outskirts-snowy-mountains'] as const;
 
 /** 原图经过共享低alpha清理后一次缩图；返回画布由closeCityImages统一释放。 */
 export async function loadCityOutskirtsImages(base:string,signal?:AbortSignal):Promise<CityImages> {
@@ -90,5 +91,67 @@ export function createCityOutskirtsPainter(width:number,depth:number,ringOuter:n
     context.save();context.clip(outer);for(const clip of clips)context.clip(clip,'evenodd');
     for(const command of commands)context.drawImage(command.canvas,command.left,command.top,command.width,command.height);
     context.restore();
+  };
+}
+
+/** 城郊坡色和位图使用地图坐标，格外宽阔的远景才摆放雪山。 */
+export function createCitySceneryPainter(width:number,depth:number,exits:readonly CityRoadRoute[],images:CityImages,
+  {left,top,right,bottom}:{left:number;top:number;right:number;bottom:number}) {
+  const span=right-left,height=bottom-top;
+  const fields=[
+    [.24,.43,.23,.32,'rgba(202,181,121,.51)'],
+    [.73,.36,.25,.33,'rgba(101,130,126,.57)'],
+    [.31,.75,.26,.24,'rgba(192,172,116,.56)'],
+    [.72,.76,.26,.23,'rgba(115,142,107,.53)'],
+  ] as const;
+  const mountains=images['outskirts-mountains'];
+  const mountainWidth=Math.min(54,Math.max(34,(width+depth)*.46));
+  const snow=images['outskirts-snowy-mountains'];
+  const snowWidth=Math.min(25,span*.24),snowHeight=snow?snowWidth*snow.height/snow.width:0;
+  const snowLeft=depth>=42?[left+span*.62,left+span*.53,right-snowWidth-2,left+2].find(x=>
+    !exits.some(exit=>clipCityExit(exit,x,top+1,x+snowWidth,top+snowHeight+1))):undefined;
+  const meadow=images['outskirts-dry-meadow'];
+  const meadowWidth=Math.min(45,span*.36);
+  const stands=[
+    [-12,-8,'forest',1.05],[-19,depth*.27,'hills',1.42],[-24,depth*.64+3,'forest',1.55],
+    [width*.18,-13,'forest',1.45],[width*.56,-19,'hills',1.5],[width*.88,-11,'forest',1.12],
+    [width+13,depth*.18,'hills',1.68],[width+23,depth*.63,'forest',1.58],
+    [width*.78,depth+13,'forest',1.35],[width*.43,depth+17,'hills',1.6],[width*.16,depth+9,'forest',1.17],
+    [-15,depth+13,'hills',1.52],[width+7,depth+13,'hills',1.28],
+  ] as const;
+  const trees=stands.flatMap(([x,z,kind,factor])=>{
+    const sprite=images[`outskirts-${kind}`];
+    if(!sprite||exits.some(route=>{
+      const [a,b]=route.points,dx=b[0]-a[0],dz=b[1]-a[1];
+      const t=Math.max(0,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz));
+      return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz)<cityRoadWidth(route)/2+4.6*factor;
+    }))return [];
+    const px=(x-z)*.5+(sprite.left-.5)*factor,py=(x+z)*.25+(sprite.top-1.75)*factor;
+    const w=sprite.width*factor,h=sprite.height*factor;
+    if(px<left||px+w>right||py<top||py+h>bottom)return [];
+    return [{sprite,px,py,w,h,order:x+z}];
+  }).sort((a,b)=>a.order-b.order);
+  return (context:CanvasRenderingContext2D)=>{
+    for(const [x,y,rx,ry,color] of fields){
+      context.save();
+      context.translate(left+x*span,top+y*height);
+      context.scale(rx*span,ry*height);
+      const shade=context.createRadialGradient(0,0,0,0,0,1);
+      shade.addColorStop(0,color);
+      shade.addColorStop(1,'transparent');
+      context.fillStyle=shade;
+      context.fillRect(-1,-1,2,2);
+      context.restore();
+    }
+    if(meadow){
+      const meadowHeight=meadowWidth*meadow.height/meadow.width;
+      context.save();
+      context.globalAlpha=.88;
+      context.drawImage(meadow.canvas,left+span*.12,Math.min(top+height*.61,bottom-meadowHeight-1),meadowWidth,meadowHeight);
+      context.restore();
+    }
+    if(snow&&snowLeft!==undefined)context.drawImage(snow.canvas,snowLeft,top+1,snowWidth,snowHeight);
+    if(mountains)context.drawImage(mountains.canvas,Math.max(left+1,-mountainWidth*.60),top+1,mountainWidth,mountainWidth*mountains.height/mountains.width);
+    for(const {sprite,px,py,w,h} of trees)context.drawImage(sprite.canvas,px,py,w,h);
   };
 }

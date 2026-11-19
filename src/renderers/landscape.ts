@@ -8,6 +8,7 @@ import { createCityView, planCityScene, type CityScene } from "./city-view";
 import { organizationFrameId, prepareOrganizationPoster, type OrganizationPoster } from "./city-organization-boards";
 import { createOrganizationLinks } from "./city-organization-links";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
+import { CITY_SCENERY_IDS } from "./city-outskirts";
 import type { CityRoadLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface CityRoadControl extends CityRoadLabel { sign: HTMLAnchorElement | HTMLButtonElement; surface?: HTMLAnchorElement }
@@ -15,6 +16,7 @@ export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement
 
 export interface ContributionLandscape {
   setOrganizations(organizations:readonly ProfileOrganization[], directoryLabel?:string):void;
+  setTrafficConnections(connections:number):void;
   setRoadControls(controls: readonly CityRoadControl[], returnPost?:CityReturnControl): void;
   buildingAt(x: number, y: number): readonly DailyContribution[] | undefined;
   stepBuilding(backward: boolean): {x:number;y:number} | undefined;
@@ -46,6 +48,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const timeline=createTimeline(days.length,initialView==="city"?3000:8000),viewport:LandscapeViewport={width:1,height:1,dpr:Math.min(devicePixelRatio,1.5),zoom:zoomBase,zoomBase,panX:0,panY:0,dark:false};
   let view=initialView,layer:LandscapeView|undefined,images:CityImages|undefined,assetPromise:Promise<CityImages>|undefined;
   let planVehicles:ReturnType<typeof planOrganicCity>['planVehicles']|undefined;
+  let trafficConnections=0;
   let cityScene:CityScene|undefined;const assetAbort=new AbortController();
   let disposed=false,blocked=false,suspended=false,generation=0,raf=0,playing=!progressiveCity,anchored=false;
   let preparationError: string | undefined;
@@ -127,12 +130,13 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
           images={};layer=createCityView(cityScene,images,0,ground);configureCanvas(layer);host.append(layer.canvas);
           layer.draw(1,viewport);labelCity();schedule();notify();
           // 场地先同步显示；本地自然图片独立于网络贡献加载，且与后续批次共用。
-          assetPromise=loadCityImages(assetBase,["natural-ground","direction-board-x","direction-board-z"],assetAbort.signal).then(ready=>{
+          assetPromise=loadCityImages(assetBase,[...CITY_SCENERY_IDS,"direction-board-x","direction-board-z"],assetAbort.signal).then(ready=>{
             if(disposed){closeCityImages(ready);throw new DOMException('城市已关闭。','AbortError')}
             Object.assign(images!,ready);return ready;
           });
           await assetPromise;if(disposed||token!==generation)return;
-          const previous=layer;layer=createCityView(cityScene,images,0,ground);previous.canvas.replaceWith(layer.canvas);previous.dispose();
+          const previous=layer;layer=createCityView(cityScene,images,0,ground);configureCanvas(layer);
+          previous.canvas.replaceWith(layer.canvas);previous.dispose();schedule();
         }
         else{
           cityScene??=planCityScene(days,cityWonders,reservedYears);
@@ -221,6 +225,12 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("click",click,true);host.addEventListener("dragstart",dragStart);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
+    setTrafficConnections(connections){
+      if(disposed||trafficConnections===connections)return;
+      trafficConnections=connections;
+      if(planVehicles)layer?.setVehicles?.(planVehicles(trafficSeed,trafficConnections));
+      schedule();
+    },
     setOrganizations(organizations,directoryLabel='Organizations'){
       if(disposed)return;
       posters=organizations.map(prepareOrganizationPoster);
@@ -266,7 +276,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(suspended){layer?.highlightBuilding?.(undefined,viewport);cancelAnimationFrame(raf);raf=0;pointer=undefined;host.style.cursor="grab";return}
       if(nextSeed!==trafficSeed){
         trafficSeed=nextSeed;
-        if(planVehicles)layer?.setVehicles?.(planVehicles(trafficSeed));
+        if(planVehicles)layer?.setVehicles?.(planVehicles(trafficSeed,trafficConnections));
       }
       resize();
     },
@@ -307,8 +317,8 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       await new Promise<void>(resolve=>setTimeout(resolve,0));
       assetAbort.signal.throwIfAborted();
       if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
-      const plannedSeed=trafficSeed;
-      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders,namingOriginYear,joinedOn,plannedSeed);
+      const plannedSeed=trafficSeed,plannedConnections=trafficConnections;
+      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders,namingOriginYear,joinedOn,plannedSeed,plannedConnections);
       const nextScene=organic.scene;
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{
@@ -322,7 +332,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         const prefix=reduced?nextDays.length:Math.min(Math.floor(revealedDays),nextDays.length);
         next=createCityView(nextScene,images,prefix,createOrganicGround(organic));configureCanvas(next);
         // 纪念物素材可能跨过一次返回城市；交换画面前使用当前访问的车阵。
-        if(plannedSeed!==trafficSeed)next.setVehicles?.(organic.planVehicles(trafficSeed));
+        if(plannedSeed!==trafficSeed||plannedConnections!==trafficConnections)next.setVehicles?.(organic.planVehicles(trafficSeed,trafficConnections));
         // 新层先完成一次绘制再交换，素材准备期间原图和取景始终保留。
         next.draw(nextDays.length?prefix/nextDays.length:1,viewport);
         const previous=layer;

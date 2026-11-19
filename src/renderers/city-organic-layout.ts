@@ -1,25 +1,27 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
-import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_DEPTH, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { cityVehicleSprites, planCityTransport, type CityTrafficSignal } from './city-transport';
 import type { CityBridge } from './city-road-network';
 import { createCityBridgeApproachPainter } from './city-bridges';
 import catalog from './city-baked-catalog.json';
-import { createCityRoadPainter, planRoadGeometry, planSignalizedApproaches, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
+import { cityExitWithSign, createCityRoadPainter, planRoadGeometry, planSignalizedApproaches, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
+import { CITY_SCENERY_IDS } from './city-outskirts';
+import type { CityRiver } from './city-waterways';
 
 const DAY = 86400000;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
 export interface OrganicRegion { block: number; segment: number; left: number; right: number; top:number;bottom:number;milestone?:boolean }
 export interface OrganicCity {
   scene: CityScene; gaps: OrganicGap[]; omitted: number[]; regions: OrganicRegion[]; labels:CityRoadLabel[]; signals:CityTrafficSignal[];
-  planVehicles(seed: number): CityVehicle[];
-  rivers: { left: number; right: number; z: number; top:number; bottom:number }[];
+  planVehicles(seed: number, connections?: number): CityVehicle[];
+  rivers: CityRiver[];
 }
 
 /** City轮廓候选。输入沿用已校验date/count；阈值不是产品默认值。 */
-export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true, namingOriginYear = years[0], joinedOn?:string, trafficSeed = 0): OrganicCity {
+export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true, namingOriginYear = years[0], joinedOn?:string, trafficSeed = 0, trafficConnections = 0): OrganicCity {
   const original = planCityScene(days, wonders, years,joinedOn);
   const ordered = days.map((day, index) => ({ ...day, index, time: Date.parse(day.date) })).sort((a,b)=>a.time-b.time);
   const gaps: OrganicGap[] = [];
@@ -265,26 +267,41 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       z-Math.max(Math.min(a[1],b[1]),Math.min(Math.max(a[1],b[1]),z)))<=cityRoadWidth(road)/2+.35))
       signals.push({x,z,heads:[item.id==='traffic-signal-w'?'x':'z']});
   }
-  // 以地面上固定的八格路段抽样。相邻批次扩展直路时，原有格不会因路名或长度改变而挪位。
-  const planVehicles = (seed: number): CityVehicle[] => {
+  const highways = exits.map(stub => {
+    const road = cityExitWithSign(stub);
+    const [start,end] = road.points;
+    const dx=end[0]-start[0],dz=end[1]-start[1],length=Math.hypot(dx,dz);
+    // 目的地标字附近留空；车辆出现在路牌之外的同一条公路上。
+    const along = (distance:number):RoadPoint => [end[0]+dx/length*distance,end[1]+dz/length*distance];
+    return {a:along(2),b:along(30),road};
+  });
+  const trafficRoutes = [...highways,...straights.filter(({road})=>!road.id.startsWith('exit-'))];
+  // 各道路按固定世界格抽样，放大和平移共用同一车阵。
+  const planVehicles = (seed: number, connections = trafficConnections): CityVehicle[] => {
     const vehicles: CityVehicle[] = [];
     if (!days.length) return vehicles;
     const kinds: CityVehicleKind[] = ['sedan', 'suv', 'sedan', 'van', 'suv', 'sedan', 'bus', 'van'];
     const colors = { sedan:'#b65f4f', suv:'#52768b', van:'#e1ded1', bus:'#dbbd62' };
-    for (const {a, b, road} of straights) {
+    const community = Math.min(1, Math.log1p(connections)/Math.log(5001));
+    const density = (road:CityRoadRoute) => 78 + road.lanes*12 + community*64;
+    const step = (road:CityRoadRoute) => road.lanes>=4 ? 5 : 6.5;
+    const expected = trafficRoutes.reduce((sum,{a,b,road}) => sum+Math.hypot(b[0]-a[0],b[1]-a[1])/step(road)*2*density(road)/256,0);
+    const scale = Math.min(1,300/Math.max(1,expected));
+    for (const {a, b, road} of trafficRoutes) {
       const horizontal = a[1] === b[1], axis = horizontal ? 0 : 1;
       const start = Math.min(a[axis], b[axis]), end = Math.max(a[axis], b[axis]);
       const line = horizontal ? a[1] : a[0];
-      for (let cell = Math.floor(start / 8); cell <= Math.floor(end / 8); cell++) {
+      const spacing=step(road),threshold=density(road)*scale;
+      for (let cell = Math.floor(start / spacing); cell <= Math.floor(end / spacing); cell++) {
         for (const direction of [1, -1]) {
-          if (vehicles.length === 180) return vehicles;
+          if (vehicles.length === 300) return vehicles;
           // 两个行车方向独立抽签，分别从散列值取出车流、纵向位置、车道和车型。
           let bits = seed ^ 2166136261;
           for (const char of `${axis}/${line}/${cell}/${direction}`) bits = Math.imul(bits ^ char.charCodeAt(0), 16777619);
           bits = Math.imul(bits ^ (bits >>> 16), 0x85ebca6b);
           bits = (bits ^ (bits >>> 13)) >>> 0;
-          if ((bits & 255) >= 62 + road.lanes * 9) continue;
-          const along = (cell + ((bits >>> 8 & 255) + .5) / 256) * 8;
+          if ((bits & 255) >= threshold) continue;
+          const along = (cell + ((bits >>> 8 & 255) + .5) / 256) * spacing;
           if (along < start + .65 || along > end - .65) continue;
           const lane = (bits >>> 16 & 3) % (road.lanes / 2);
           const offset = cityRoadWidth(road) / road.lanes * (.5 + lane) * direction;
@@ -308,7 +325,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
   };
   const vehicles = planVehicles(trafficSeed);
   items.push(...planCityTransport(vehicles,signals,bridges));
-  const scene={...original,items,keys:[...new Set([...items.map(i=>i.id),...(days.length ? cityVehicleSprites : []),'natural-ground','direction-board-x','direction-board-z'])],roadNetwork:{...original.roadNetwork,roads,exits,junctions,bridges,vehicles}};
+  const scene={...original,items,rivers,keys:[...new Set([...items.map(i=>i.id),...(days.length ? cityVehicleSprites : []),...CITY_SCENERY_IDS,'direction-board-x','direction-board-z'])],roadNetwork:{...original.roadNetwork,roads,exits,junctions,bridges,vehicles}};
   const shown=new Set(items.flatMap(item=>item.parcel?.indices??[]));
   return {scene,gaps,omitted:days.flatMap((d,i)=>d.count===0&&!shown.has(i)?[i]:[]),regions,labels,signals,rivers,planVehicles};
 }
@@ -504,51 +521,9 @@ export function createOrganicGround(plan: OrganicCity): (context: CanvasRenderin
   });
   const paintRoads=createCityRoadPainter(groundRoads,plan.scene.roadNetwork.junctions);
   const paintApproaches=createCityBridgeApproachPainter(plan.scene.roadNetwork.bridges);
-  const water=plan.rivers.map(({left,right,z,top,bottom})=>{
-    const half=(bottom-top)/2-CITY_RIVER_BANK_DEPTH;
-    const crossings=plan.scene.roadNetwork.bridges.filter(b=>b.landings.from[1]===top&&b.landings.to[1]===bottom);
-    const samples=Array.from({length:Math.ceil((right-left)*4)+1},(_,i)=>{
-      const x=left+(right-left)*i/Math.ceil((right-left)*4);
-      // 桥台范围修成直岸，桥脚与两岸接触处不能再被装饰性波动挪开。
-      const bankBlend=crossings.reduce((blend,b)=>Math.min(blend,Math.max(0,Math.min(1,Math.abs(x-b.from[0])-catalog[`transport-bridge-${b.style}`].nativeWidth/2-.25))),1);
-      const wave=.06*Math.sin(x*1.7+z)*bankBlend;
-      return {x,near:z-half+wave,far:z+half-wave};
-    });
-    const bank=(side:'near'|'far')=>{const path=new Path2D();samples.forEach((p,i)=>i?path.lineTo(...project(p.x,p[side])):path.moveTo(...project(p.x,p[side])));return path};
-    const lower=(x:number,z:number):[number,number]=>{const p=project(x,z);return [p[0],p[1]+CITY_RIVER_DEPTH*.5]};
-    const path=new Path2D();samples.forEach((p,i)=>i?path.lineTo(...lower(p.x,p.near)):path.moveTo(...lower(p.x,p.near)));
-    for(const p of [...samples].reverse())path.lineTo(...lower(p.x,p.far));path.closePath();
-    const walls=(side:'near'|'far')=>{const wall=new Path2D(bank(side));for(const p of [...samples].reverse())wall.lineTo(...lower(p.x,p[side]));wall.closePath();return wall};
-    const ripples=new Path2D(),stones=new Path2D();
-    for(let x=left+.5;x<right-.5;x+=.67){
-      for(const fraction of [-.7,-.23,.32,.74]){
-        const offset=fraction*half;
-        const start=x+.21*Math.sin(x*7+offset*13),length=.1+.17*(1+Math.sin(x*9+offset*17))/2;
-        const dz=offset+.09*Math.sin(x*2.1+offset*7),a=lower(start,z+dz),b=lower(start+length,z+dz-.015);
-        ripples.moveTo(...a);ripples.quadraticCurveTo(...lower(start+length*.5,z+dz-.035),...b);
-      }
-      for(const side of [-1,1]){const p=project(x,z+side*(half+.1)),radius=.06+.015*Math.sin(x);stones.moveTo(p[0]+radius*Math.cos(side*.4),p[1]+radius*Math.sin(side*.4));stones.ellipse(p[0],p[1],radius,.026,side*.4,0,Math.PI*2)}
-    }
-    // 渐变沿投影河岸的法线，不能沿斜投影Z轴，否则长河的两端会变成大块纯色。
-    const center=lower((left+right)/2,z);
-    return {path,near:bank('near'),far:bank('far'),nearWall:walls('near'),farWall:walls('far'),ripples,stones,
-      from:[center[0]+half*.2,center[1]-half*.4] as [number,number],
-      to:[center[0]-half*.2,center[1]+half*.4] as [number,number]};
-  });
   return context=>{
     context.save();
     for(const path of paths){context.fillStyle='#b3b4a2';context.fill(path);context.strokeStyle='#d2cbb6';context.lineWidth=.12;context.stroke(path)}
-    for(const river of water){
-      context.strokeStyle='#8f9f85';context.lineWidth=.28;context.stroke(river.near);context.stroke(river.far);
-      const gradient=context.createLinearGradient(...river.from,...river.to);
-      gradient.addColorStop(0,'#829e8c');gradient.addColorStop(.2,'#608f8b');gradient.addColorStop(.55,'#497c81');gradient.addColorStop(.82,'#689c96');gradient.addColorStop(1,'#91aa94');
-      context.fillStyle=gradient;context.fill(river.path);
-      context.strokeStyle='#d5e7d840';context.lineWidth=.012;context.stroke(river.ripples);
-      context.fillStyle='#7f8e77';context.fill(river.nearWall);
-      context.fillStyle='#6c7967';context.fill(river.farWall);
-      context.strokeStyle='#c2d0b4';context.lineWidth=.035;context.stroke(river.near);context.stroke(river.far);
-      context.fillStyle='#b2b49a';context.fill(river.stones);
-    }
     paintRoads(context);
     paintApproaches(context);
     paintLabels(context);

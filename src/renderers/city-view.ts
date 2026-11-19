@@ -4,13 +4,14 @@ import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
 import { createGroundSelector } from './city-ground-style';
 import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from './city-road-network';
-import { createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute } from './city-roads';
+import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute } from './city-roads';
 import { createCityVehiclePainter } from './city-vehicles';
 import { createCityBridgePainter } from './city-bridges';
 import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
   CITY_YEAR_GAP as YEAR_GAP, CITY_PARK_DEPTH as PARK, type CityLayout } from './city-layout';
 import { createCityYearMarkers } from './city-year-markers';
-import { createCityOutskirtsPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
+import { createCityOutskirtsPainter, createCitySceneryPainter, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
+import { createCityWaterways, type CityRiver } from './city-waterways';
 import type { LandscapeView, LandscapeViewport } from './types';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
 import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
@@ -31,7 +32,7 @@ function roadsideScale(zoom:number):number {
 // 素材首次命中时生成共享的一位透明度掩码，后续移动只查掩码、不重画城市。
 const hitMasks=new WeakMap<HTMLCanvasElement,Uint8Array>();
 export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x:number; z:number; w:number; d:number; flat:boolean; elevation?:number }
-export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork }
+export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork; rivers?:readonly CityRiver[] }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
 export function planCityScene(days:readonly DailyContribution[],wonders=true,reservedYears?:readonly number[],joinedOn?:string):CityScene {
@@ -99,6 +100,22 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   // 渐进场地的包围盒只取预留布局和既有外围余量，不随后到楼宇改变取景。
   const minX=Math.min(-depth/2-outer-.4,...(progressive?[]:placed.map(p=>p.left)))-.3,maxX=Math.max(width/2+outer+.4,...(progressive?[]:placed.map(p=>p.left+p.width)))+.3;
   const minY=Math.min(-outer/2-.4,...(progressive?[]:placed.map(p=>p.top)))-4.5,maxY=Math.max((width+depth)/4+outer/2+.5,...(progressive?[]:placed.map(p=>p.top+p.height)));
+  // 近城四向路牌锚点保持固定；分岔沿现有路段向外延续。
+  const direction=(road:CityRoadRoute)=>{
+    const a=road.points[0],b=road.points.at(-1)!;
+    return b[0]<a[0]?0:b[0]>a[0]?1:b[1]<a[1]?2:3;
+  };
+  const baseExits=[...(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')))]
+    .sort((a,b)=>direction(a)-direction(b)).map(cityExitWithSign);
+  const extraExits=baseExits.map((road,index)=>{
+    const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+    return {...road,id:`extra-exit-${index}`,points:[[a[0]+dx*.25,a[1]+dz*.25],[b[0]+dx/length*18-dz/length*20,b[1]+dz/length*18+dx/length*20]] as [number,number][]};
+  });
+  const exitRoads=[...baseExits,...extraExits];
+  const scenery=groundPainter?createCitySceneryPainter(width,depth,exitRoads,images,{left:minX,top:minY,right:maxX,bottom:maxY}):undefined;
+  const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork.bridges,width,depth):undefined;
+  const background=waterways?document.createElement('canvas'):undefined;
+  let backdropKey='';
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
   // 窗格在远景大幅缩小时容易随像素相位跳闪；逐级预滤波，避免每帧直接从384像素缩到十几像素。
   const samples=new Map<HTMLCanvasElement,HTMLCanvasElement[]>();
@@ -222,20 +239,6 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const clearHighlight=()=>{highlighted=-1;highlight.remove();highlight.hidden=true;highlight.width=highlight.height=0};
   let frameKey='',visiblePrefix=0;
   const fitScale=(viewport:LandscapeViewport)=>Math.min(Math.max(1,viewport.width-32)/(maxX-minX),Math.max(1,viewport.height-24)/(maxY-minY));
-  // 前四个出口保持西、东、北、南；额外四条从现有出城段分岔，不穿过贡献地块。
-  const direction=(road:CityRoadNetwork['roads'][number])=>{
-    const a=road.points[0],b=road.points.at(-1)!;
-    return b[0]<a[0]?0:b[0]>a[0]?1:b[1]<a[1]?2:3;
-  };
-  const baseExits=[...(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')))].sort((a,b)=>direction(a)-direction(b)).map(road=>{
-    const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-    return {...road,lanes:4 as const,laneWidth:.8,points:[a,[b[0]+dx/length*14,b[1]+dz/length*14]] as [number,number][]};
-  });
-  const extraExits=baseExits.map((road,index)=>{
-    const a=road.points[0],b=road.points.at(-1)!,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-    return {...road,id:`extra-exit-${index}`,points:[[a[0]+dx*.25,a[1]+dz*.25],[b[0]+dx/length*18-dz/length*20,b[1]+dz/length*18+dx/length*20]] as [number,number][]};
-  });
-  const exitRoads=[...baseExits,...extraExits];
   // 接点只重画环路的相邻直段；与出口共同铺路/裁标线，避免独立圆端帽压进环路。
   const exitJunctions=baseExits.map(road=>({x:road.points[0][0],z:road.points[0][1],radius:cityRoadWidth(road)/2}));
   const joiningRoads:CityRoadRoute[]=baseExits.flatMap(exit=>{
@@ -265,8 +268,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     boardOrder=[...signs,...organizationBoards].sort((a,b)=>a.groundY-b.groundY);
     frameKey='';
   };
-  const planExits=(count:number)=>createCityRoadPainter([...joiningRoads,...exitRoads.slice(0,count)],exitJunctions,'butt');
-  let paintExits=planExits(roadCount);
+  let exitPaintKey='',paintExits:(target:CanvasRenderingContext2D)=>void;
   const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
     const sprite=images[`direction-board-${kind==='outbound'?'z':'x'}`];
     return sprite?planDirectionBoard(road,label,kind,context,sprite,exitRoads.slice(0,roadCount),range):undefined;
@@ -317,7 +319,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       clearHighlight();
       frameKey = '';
     },
-    setRoadCount(count){if(count!==roadCount){roadCount=count;paintExits=planExits(count);frameKey=''}},
+    setRoadCount(count){if(count!==roadCount){roadCount=count;frameKey=''}},
     setRoadLabels(labels,returnLabel){
       returnRoadEnd=returnLabel&&labels[0]?.label ? .5 : 1;
       boards=exitRoads.slice(0,roadCount).map((road,i)=>{
@@ -428,15 +430,36 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       context.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);context.clearRect(0,0,viewport.width,viewport.height);
       const scale=fitScale(viewport)*viewport.zoom;
       const sx=(x:number)=>viewport.width/2+viewport.panX+(x-(minX+maxX)/2)*scale,sy=(y:number)=>viewport.height/2+viewport.panY+(y-(minY+maxY)/2)*scale;
-      context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
-      // 本地PNG未就绪也先铺平地，不把空场地变回空白。背景只填当前视口。
-      context.fillStyle='#a3b58d';context.fillRect(0,0,viewport.width,viewport.height);
-      if(terrainPattern){
-        context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
-        // 远景让城外的细碎草纹融入底色；地块、道路和建筑仍以完整对比绘制。
-        context.globalAlpha=Math.min(1,.65+scale/160);
-        context.fillStyle=terrainPattern;context.fillRect(-sx(0)/scale,-sy(0)/scale,viewport.width/scale,viewport.height/scale);context.restore();
+      const left=-sx(0)/scale,top=-sy(0)/scale,right=left+viewport.width/scale,bottom=top+viewport.height/scale;
+      const exitKey=[roadCount,left,top,right,bottom].join(':');
+      if(exitKey!==exitPaintKey){
+        const routes=exitRoads.slice(0,roadCount).flatMap(route=>clipCityExit(route,left,top,right,bottom)??[]);
+        paintExits=createCityRoadPainter([...joiningRoads,...routes],exitJunctions,'butt');
+        exitPaintKey=exitKey;
       }
+      context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
+      // 河道重算与视口绑定，渐进绘制建筑时复用同一层地貌。
+      const nextBackdropKey=[pw,ph,left,top,right,bottom].join(':');
+      if(!background||backdropKey!==nextBackdropKey){
+        if(background&&(background.width!==pw||background.height!==ph)){background.width=pw;background.height=ph}
+        const land=background?.getContext('2d')??context;
+        land.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);
+        land.imageSmoothingEnabled=true;land.imageSmoothingQuality='high';
+        land.fillStyle='#a3b58d';land.fillRect(0,0,viewport.width,viewport.height);
+        land.save();
+        land.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
+        if(terrainPattern){
+          // 远景让城外的细碎草纹融入底色。
+          land.globalAlpha=Math.min(1,(groundPainter ? .52 : .65)+scale/160);
+          land.fillStyle=terrainPattern;land.fillRect(left,top,viewport.width/scale,viewport.height/scale);
+          land.globalAlpha=1;
+        }
+        scenery?.(land);
+        waterways?.(land,left,top,right,bottom);
+        land.restore();
+        backdropKey=nextBackdropKey;
+      }
+      if(background)context.drawImage(background,0,0,viewport.width,viewport.height);
       if(scale<=unit*1.25)context.drawImage(ground,sx(minX),sy(minY),(maxX-minX)*scale,(maxY-minY)*scale);
       else{
         const key=[pw,ph,scale,viewport.panX,viewport.panY].join(',');
@@ -491,6 +514,6 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       frameKey=nextFrameKey;
       visiblePrefix=prefix;
     },
-    dispose(){clearHighlight();canvas.remove();canvas.width=canvas.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
+    dispose(){clearHighlight();canvas.remove();canvas.width=canvas.height=0;if(background)background.width=background.height=0;ground.width=ground.height=0;detailGround.width=detailGround.height=0;groundPaint.length=0;edges.clear();for(const levels of samples.values())for(const sample of levels.slice(1))sample.width=sample.height=0;samples.clear()},
   };
 }

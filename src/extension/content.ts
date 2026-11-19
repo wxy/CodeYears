@@ -161,7 +161,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const roads = createCityRoads(get<HTMLElement>('#road-returns'), {
     currentContext, language: () => language, changed: (controls, post) => city?.setRoadControls(controls, post),
   });
-  let places: ReturnType<typeof readProfilePlaces> = { people: [], organizations: [] };
+  let places: ReturnType<typeof readProfilePlaces> = { people: [], organizations: [], connections: 0 };
   let profileCard: Element | undefined;
   let organizationSources: (string | undefined)[] = [];
   const cardObserver = new MutationObserver(() => syncProfileCard(true));
@@ -185,13 +185,14 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         cardObserver.observe(card, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['href', 'src', 'srcset', 'data-hovercard-type', 'class'] });
       }
     } else if (!refresh) return;
-    const next = card ? readProfilePlaces(document, context.profileLogin, card) : { people: [], organizations: [] };
+    const next = card ? readProfilePlaces(document, context.profileLogin, card) : { people: [], organizations: [], connections: 0 };
     if (next.people.length !== places.people.length || next.people.some((login, i) => places.people[i] !== login)) roads.refresh(next.people);
     const sources = next.organizations.map(org => org.avatar?.currentSrc);
     if (next.organizations.length !== places.organizations.length || next.organizations.some((org, i) =>
       org.login !== places.organizations[i].login || org.avatar !== places.organizations[i].avatar || sources[i] !== organizationSources[i])) {
       city?.setOrganizations(next.organizations, t('cityOrganizations'));
     }
+    if (next.connections !== places.connections) city?.setTrafficConnections(next.connections);
     places = next;
     organizationSources = sources;
   }
@@ -313,6 +314,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed);
       city.setRoadControls(roads.controls(),roads.returnPost());
       city.setOrganizations(places.organizations, t("cityOrganizations"));
+      city.setTrafficConnections(places.connections);
       fieldCreated = true;
       return city;
     };

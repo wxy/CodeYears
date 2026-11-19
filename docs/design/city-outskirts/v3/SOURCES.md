@@ -1,0 +1,26 @@
+# 城郊远山、雪山与草场
+
+2026-11-19 使用内置 ImageGen 生成远山、偏暖的开阔草场与雪山。远山和草场以项目已经使用的 `outskirts-hills.png` 作质感与光照参考，雪山以同批远山为参考。图像输入只有项目素材。
+
+| 文件 | 规格 | 字节 | SHA-256 |
+| --- | --- | ---: | --- |
+| `mountains-source.png` | 1774 × 887，透明 PNG | 1,879,019 | `885db65c6b0913e9ff16ae30722a2bba6a9c327ce2255f4533f17accbda2f67c` |
+| `public/assets/city-runtime/outskirts-mountains.png` | 1152 × 576，透明 PNG | 810,960 | `9bf9bdd1dc044ded4ff0d21cc59caf1cfba678d457814a86e5784ad19f9e2979` |
+| `meadow-source.png` | 1774 × 887，透明 PNG | 2,640,291 | `070329b249f3e2e0fb09bd5961f8b57be984a405bdac3b8f33b54b5fa200b42b` |
+| `public/assets/city-runtime/outskirts-dry-meadow.png` | 1152 × 576，透明 PNG | 1,084,661 | `58123cc33531b797ee227ce32c96fde2c993c0a314bf3fa322aeb4becc0c1647` |
+| `snowy-mountains-source.png` | 1774 × 887，透明 PNG | 2,535,101 | `5de33d3c32047c7c9939b6cccbfe81492d1667bd9c717b7f951c4ffbca65f356` |
+| `public/assets/city-runtime/outskirts-snowy-mountains.png` | 1152 × 576，透明 PNG | 1,028,598 | `de05538ca8ddd1361ad1bedf32770e3e1014d369d97d161aa63dd975de7ea839` |
+
+使用 `sips -Z 1152 <原画> --out <运行PNG>` 等比缩小。运行图在 `src/renderers/city-baked-catalog.json` 登记，原画留作素材母版。
+
+生成提示如下。
+
+```text
+Create ONE new production raster environment sprite for the far outskirts of CodeYears, an original miniature isometric modern contribution city map. Use the reference only as a style and sunlight reference. Wide landscape composition, one long, coherent low mountain range with a calm asymmetrical ridgeline stretching diagonally from upper left to lower right (isometric map X axis, about +0.5 apparent slope), several rounded rocky summits that vary in height, tree-speckled foothills and a feathered grass/moss foot. Orthographic high oblique architectural isometric view, ground axes approximately ±0.5, vertical trees vertical, daytime sun upper left, tactile weathered stone and believable fine grass/woodland textures. Cooler and more subdued than the reference: muted blue-gray and dusty sage rock on the distant peaks, moss and olive-green toward the ground, light atmospheric depth baked into the mountains themselves, no snow. Reasonably broad low foothills and no matching adjacent mountain copies; it will occupy a strip beyond the city and should never look like a poster. All mountains fully inside the image with transparent padding, true alpha around the silhouette and a natural thinning edge at the base that blends into a grassy map. ONLY the mountain range sprite, no foreground, no sky, no frame, no rectangular ground slab, no visible soil cross-section, no buildings, roads, rivers, text, numbers, logo or watermark. Premium realistic miniature art matching the reference. Transparent background.
+```
+
+```text
+One transparent raster sprite for the terrain of CodeYears, a realistic miniature isometric contribution city. Use the supplied image only to match the texture, palette restraint, and upper-left daylight. Subject is a broad open dry meadow and rocky heath, FLAT land, viewed from the same high orthographic isometric angle. Broad areas of muted straw-gold short grass, dry olive heath, softly blending exposed dusty sandy soil and a few low pale gray weathered stones. Finer mossy sage grass around the outer edge. Very low soft relief, distant low shrubs only, no hills or peaks, no tall trees. One completely organic elongated irregular footprint in landscape format, wider than tall, with softly feathered semi-transparent grass ends fading naturally into real alpha on all sides. The subject should occupy most of the canvas without touching edges. This is a patch of natural land that will be laid across a predominantly green map. Not an island or a raised tile, no rectangular outline, no shadow under the edge, no cross-section, no artificial straight boundaries. No water, no roads or trails, no buildings, no sky, no people, text or logos. Tactile realistic pre-rendered miniature art, not cartoon, no grid. True transparent background.
+```
+
+雪山使用同批远山作为视角和日照参考，要求灰蓝裸岩、低饱和积雪和逐渐变低的林地山脚，输出四周带透明留白的宽幅独立位图。

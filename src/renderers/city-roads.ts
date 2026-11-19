@@ -1,8 +1,35 @@
 export type RoadPoint=[number,number];
-export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;laneWidth?:number;lineCap?:CanvasLineCap;closed?:boolean;leftShoulder?:number;cornerRadius?:number;junctionCorners?:readonly RoadPoint[]}
+export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|8;laneWidth?:number;lineCap?:CanvasLineCap;closed?:boolean;leftShoulder?:number;cornerRadius?:number;junctionCorners?:readonly RoadPoint[];lineDashPhase?:number}
 export interface CityRoadJunction {x:number;z:number;radius:number;roundabout?:boolean;signalized?:boolean}
 export const CITY_LANE_WIDTH=.4;
 export const cityRoadWidth=(route:Pick<CityRoadRoute,'lanes'|'laneWidth'>)=>route.lanes*(route.laneWidth??CITY_LANE_WIDTH);
+
+/** 牌面和目的地文字只占出城公路靠近城市的一段。 */
+export function cityExitWithSign(route:CityRoadRoute):CityRoadRoute {
+  const [a,b]=route.points,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+  return {...route,lanes:4,laneWidth:.8,points:[a,[b[0]+dx/length*14,b[1]+dz/length*14]]};
+}
+
+/** 沿出城方向保留穿过取景范围的路面。裁掉的长度仍用于车道虚线的相位。 */
+export function clipCityExit(route:CityRoadRoute,left:number,top:number,right:number,bottom:number):CityRoadRoute|undefined {
+  const [a,b]=route.points,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+  const x=dx/length,z=dz/length,pad=cityRoadWidth(route)+.2;
+  let from=0,to=Infinity;
+  for(const [origin,velocity,min,max] of [
+    [(a[0]-a[1])*.5,(x-z)*.5,left-pad,right+pad],
+    [(a[0]+a[1])*.25,(x+z)*.25,top-pad,bottom+pad],
+  ]){
+    if(Math.abs(velocity)<1e-9){
+      if(origin<min||origin>max)return;
+      continue;
+    }
+    const t1=(min-origin)/velocity,t2=(max-origin)/velocity;
+    from=Math.max(from,Math.min(t1,t2));
+    to=Math.min(to,Math.max(t1,t2));
+  }
+  if(to<=from)return;
+  return {...route,points:[[a[0]+x*from,a[1]+z*from],[a[0]+x*to,a[1]+z*to]],lineDashPhase:from};
+}
 
 /** 绘制、接路和路面年份共用圆角后的真实切线，避免各自猜测拐角位置。 */
 export function planRoadGeometry(route:CityRoadRoute) {
@@ -129,7 +156,7 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
         // 每个90度弧12段，只供既有路口裁段；路面仍由上方arcTo绘制。
         return Array.from({length:13},(_,step):RoadPoint=>{const angle=start+turn*Math.PI/2*step/12;return [cx+Math.cos(angle)*r,cz+Math.sin(angle)*r]});
       }):corners;
-      let distance=0;
+      let distance=route.lineDashPhase??0;
       for(let i=0;i<(route.closed?parallel.length:parallel.length-1);i++){
         const a=parallel[i],b=parallel[(i+1)%parallel.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
         if(length<1e-6)continue;

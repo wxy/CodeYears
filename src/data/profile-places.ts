@@ -5,6 +5,12 @@ export interface ProfileOrganization {
 
 export const PROFILE_CARD_SELECTOR = ".Layout-sidebar .h-card";
 
+interface ProfilePlaces {
+  people: string[];
+  organizations: ProfileOrganization[];
+  connections: number;
+}
+
 // GitHub 的账号提及和组织徽标链接都直接指向 /login。
 const accountLink = /^(?:https:\/\/github\.com)?\/([a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){0,38})\/?$/i;
 const organizationLink = 'a[data-hovercard-type="organization"][href]';
@@ -16,8 +22,20 @@ export function findProfileCard(doc: Document, profile: string): Element | undef
     element.querySelector(".vcard-username")?.textContent.split("·", 1)[0].trim().toLowerCase() === owner);
 }
 
-export function readProfilePlaces(doc: Document, profile: string, card = findProfileCard(doc, profile)): { people: string[]; organizations: ProfileOrganization[] } {
-  if (!card) return { people: [], organizations: [] };
+export function readProfilePlaces(doc: Document, profile: string, card = findProfileCard(doc, profile)): ProfilePlaces {
+  if (!card) return { people: [], organizations: [], connections: 0 };
+
+  // 两个已显示计数只调节车流，合计无需请求账号列表。
+  let connections = 0;
+  for (const tab of ["followers", "following"]) {
+    const count = card.querySelector(`a[href$="?tab=${tab}"] .text-bold`)?.textContent.trim();
+    const match = count?.match(/^(?:(\d+(?:,\d{3})*)|(\d+(?:\.\d+)?)([km]))$/i);
+    if (!match) continue;
+    const suffix = match[3]?.toLowerCase();
+    const value = Math.round(Number((match[1] ?? match[2]).replaceAll(",", "")) *
+      (suffix === "k" ? 1_000 : suffix === "m" ? 1_000_000 : 1));
+    if (Number.isSafeInteger(value)) connections += value;
+  }
 
   const organizations = new Map<string, ProfileOrganization>();
   for (const selector of [`${organizationLink}.avatar-group-item`, `.user-profile-bio ${organizationLink}`, `.vcard-details ${organizationLink}`]) {
@@ -41,5 +59,5 @@ export function readProfilePlaces(doc: Document, profile: string, card = findPro
     people.push(login);
     if (people.length === 8) break;
   }
-  return { people, organizations: [...organizations.values()] };
+  return { people, organizations: [...organizations.values()], connections };
 }
