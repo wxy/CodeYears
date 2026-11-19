@@ -14,6 +14,9 @@
   "city": {
     "message": "城市"
   },
+  "cityShareTitle": {
+    "message": "GitHub 贡献城市"
+  },
   "contributions": {
     "message": "贡献图"
   },

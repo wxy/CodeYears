@@ -1,6 +1,7 @@
 import { CITY_RIVER_BANK_DEPTH, CITY_RIVER_DEPTH } from './city-layout';
 import type { CityBridge } from './city-road-network';
-import { lakeOutline } from './city-mountain-roads';
+import { clipReliefSegment, unprojectGround, waterOutline, type ProjectedBounds } from './city-mountain-roads';
+import type { RoadPoint } from './city-roads';
 import catalog from './city-baked-catalog.json';
 
 export interface CityRiver {
@@ -17,6 +18,20 @@ interface Watercourse {
   to:number;
   axis:0|1;
   sample(t:number):WaterSample;
+}
+export interface RoadWater {
+  bankPoints: RoadPoint[];
+  spans(a:RoadPoint,b:RoadPoint): [number,number][];
+}
+
+export function mergeWaterSpans(spans:[number,number][],gap=1e-5) {
+  const joined:[number,number][]=[];
+  for(const span of spans.sort((a,b)=>a[0]-b[0])){
+    const prior=joined.at(-1);
+    if(prior&&span[0]<=prior[1]+gap)prior[1]=Math.max(prior[1],span[1]);
+    else joined.push(span);
+  }
+  return joined;
 }
 
 const project=(x:number,z:number,drop=0):[number,number]=>[(x-z)*.5,(x+z)*.25+drop];
@@ -65,7 +80,7 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
       return {x:fork.x+direction*(distance*.26+split*(6.1+6.5*Math.sin(distance*.103+.3))),
         z,half:.55+.13*Math.sin(distance*.16)+lake,drop:0};
     }};
-    return {stream,center:fork.z+direction*lakeAt};
+    return stream;
   });
   // 河谷外侧保留一片小的牛轭湖，和支流汇出的湖湾一起形成不同形状的水面。
   const lakeX=width*.64,lakeRadius=5.4;
@@ -74,14 +89,42 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     return {x,z:wilderness.sample(x).z+7.7-2.8*t*t+.34*Math.sin(x*.73),
       half:Math.sqrt(Math.max(0,1-t*t))*(1.8+.32*Math.sin(x*.86)),drop:0};
   }};
-  const streams=[wilderness,oxbow,...tributaries.map(({stream})=>stream),...main];
-  // 道路用同一批岸线的宽水面包络。狭窄河段仍留有穿越位置。
-  const lakes=[{stream:oxbow,center:lakeX,radius:lakeRadius},...tributaries.map(tributary=>({...tributary,radius:4.8}))]
-    .map(({stream,center,radius})=>{
-      const shores=Array.from({length:25},(_,i)=>crossSection(stream,center-radius+2*radius*i/24))
-        .flatMap(s=>[bankPoint(s,-s.half),bankPoint(s,s.half)]);
-      return lakeOutline(shores);
+  const streams=[wilderness,oxbow,...tributaries,...main];
+  // 保留真实河湾、支流和湖泊的岸线。按河道轴索引截面，长路也只检查它经过的水段。
+  const roadWater=({left,top,right,bottom}:ProjectedBounds,clearance=0):RoadWater=>{
+    const pad=clearance?24:8,step=.8;
+    const lows=[left+2*top-pad,2*top-right-pad],highs=[right+2*bottom+pad,2*bottom-left+pad];
+    const bankPoints:RoadPoint[]=[];
+    const courses=streams.flatMap(stream=>{
+      const {axis}=stream,from=Math.max(lows[axis],stream.from),to=Math.min(highs[axis],stream.to);
+      if(to<=from)return [];
+      const first=Math.floor(from/step),last=Math.ceil(to/step);
+      let margin=0;
+      const banks=Array.from({length:last-first+1},(_,i)=>{
+        const s=crossSection(stream,Math.min(to,Math.max(from,(first+i)*step))),half=s.half+clearance;
+        margin=Math.max(margin,half);
+        if(clearance&&(i%5===0||i===last-first)){
+          bankPoints.push(bankPoint(s,-half-.65,0),bankPoint(s,half+.65,0));
+        }
+        return [bankPoint(s,-half,0),bankPoint(s,half,0)];
+      });
+      const strips=banks.slice(1).map((next,i)=>waterOutline([...banks[i],...next]));
+      return [{axis,first,margin,strips}];
     });
+    return {bankPoints,spans(a,b){
+      const spans:[number,number][]=[];
+      const worldA=unprojectGround(a),worldB=unprojectGround(b);
+      for(const {axis,first,margin,strips} of courses){
+        const start=Math.max(0,Math.floor((Math.min(worldA[axis],worldB[axis])-margin)/step)-first);
+        const end=Math.min(strips.length,Math.ceil((Math.max(worldA[axis],worldB[axis])+margin)/step)-first);
+        for(let i=start;i<end;i++){
+          const span=clipReliefSegment(a,b,strips[i]);
+          if(span)spans.push(span);
+        }
+      }
+      return spans.length<2?spans:mergeWaterSpans(spans);
+    }};
+  };
   const paint=(context:CanvasRenderingContext2D,left:number,top:number,right:number,bottom:number)=>{
     // 反解等轴测视口的角点，给最大河宽留余量。边界使用对应的河谷轴。
     const lows=[left+2*top-7,2*top-right-7],highs=[right+2*bottom+7,2*bottom-left+7];
@@ -140,5 +183,5 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     }
     return false;
   });
-  return {paint,clears,lakes};
+  return {paint,clears,roadWater};
 }

@@ -4,9 +4,9 @@ import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
 import { createGroundSelector } from './city-ground-style';
 import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from './city-road-network';
-import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute } from './city-roads';
+import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute, type RoadPoint } from './city-roads';
 import { createCityVehiclePainter } from './city-vehicles';
-import { createCityBridgePainter } from './city-bridges';
+import { createCityBridgePainter, createHighwayBridgePainter } from './city-bridges';
 import { createCityLayout, CITY_BAND_YEARS, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
   CITY_YEAR_GAP as YEAR_GAP, CITY_PARK_DEPTH as PARK, type CityLayout } from './city-layout';
 import { createCityYearMarkers } from './city-year-markers';
@@ -14,12 +14,49 @@ import { createCityOutskirtsPainter, createCitySceneryPainter, planCityRelief, C
 import { planCityMountainRoads } from './city-mountain-roads';
 import { CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
 import { createCityWaterways, type CityRiver } from './city-waterways';
-import type { LandscapeView, LandscapeViewport } from './types';
+import type { CityShareLabel, LandscapeView, LandscapeViewport } from './types';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
 import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
 import { organizationFace, planOrganizationBoards, type OrganizationBoard, type OrganizationPoster } from './city-organization-boards';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
+const shareLabelHeight=46;
+const shareLabelBottom=(width:number)=>width<338?54:12;
+
+function paintShareLabel(context:CanvasRenderingContext2D,viewport:LandscapeViewport,{title,login}:CityShareLabel) {
+  const x=12,y=viewport.height-shareLabelHeight-shareLabelBottom(viewport.width),textX=x+46;
+  const maxWidth=Math.max(1,viewport.width-(viewport.width<338?24:132));
+  const caption=`@${login} · CodeYears`,titleFont='600 14px system-ui, sans-serif',captionFont='11px system-ui, sans-serif';
+  context.save();
+  context.font=titleFont;
+  const titleWidth=context.measureText(title).width;
+  context.font=captionFont;
+  const width=Math.min(maxWidth,Math.ceil(Math.max(titleWidth,context.measureText(caption).width))+58);
+  const background=context.createLinearGradient(0,y,0,y+shareLabelHeight);
+  background.addColorStop(0,'#293a33f5');background.addColorStop(1,'#1c2b25f7');
+  context.beginPath();context.roundRect(x,y,width,shareLabelHeight,9);
+  context.shadowColor='#1a211c50';context.shadowBlur=10;context.shadowOffsetY=2;
+  context.fillStyle=background;context.fill();
+  context.shadowColor='transparent';context.lineWidth=1;context.strokeStyle='#e0e7c543';context.stroke();
+  context.clip();
+
+  // 同城市投影的楼体剪影，呼应道路和路牌的暖色金属。
+  context.translate(x+22,y+23);
+  context.beginPath();context.roundRect(-13,-13,26,26,5);context.fillStyle='#bacb9e24';context.fill();
+  const prism=(points:readonly RoadPoint[],color:string)=>{
+    context.beginPath();points.forEach((p,i)=>i?context.lineTo(...p):context.moveTo(...p));context.closePath();
+    context.fillStyle=color;context.fill();
+  };
+  prism([[-8,2],[0,6],[8,2],[0,-2]],'#8d9d7b');
+  prism([[-5,-5],[0,-2],[0,6],[-5,3]],'#cfbb8c');
+  prism([[0,-2],[5,-5],[5,3],[0,6]],'#92835e');
+  prism([[-5,-5],[0,-8],[5,-5],[0,-2]],'#eddeb6');
+  context.translate(-x-22,-y-23);
+  context.textBaseline='middle';context.textAlign='left';
+  context.fillStyle='#f7f4e4';context.font=titleFont;context.fillText(title,textX,y+16,Math.max(1,width-58));
+  context.fillStyle='#c4d4c2';context.font=captionFont;context.fillText(caption,textX,y+33,Math.max(1,width-58));
+  context.restore();
+}
 
 /** 相对原绘制尺寸。50% 保留远景占地，200%–250% 平滑过渡到近景的固定比例。 */
 function roadsideScale(zoom:number):number {
@@ -114,9 +151,10 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const relief=waterways?planCityRelief(width,depth,baseExits,sceneryBounds,waterways.clears):[];
   let highways=baseExits;
   if(waterways){
+    const water=waterways.roadWater(sceneryBounds,1.75);
     // 并行谷带留不出通路时在地形阶段打开山口，再按可见山地重算整张图的公路。
     for(;;){
-      const plan=planCityMountainRoads(baseExits,relief.map(ridge=>ridge.barrier),waterways.lakes,sceneryBounds);
+      const plan=planCityMountainRoads(baseExits,relief.map(ridge=>ridge.barrier),water,sceneryBounds);
       if(plan.highways){highways=plan.highways;break}
       relief.splice(plan.blockedRidge,1);
     }
@@ -276,6 +314,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     frameKey='';
   };
   let exitPaintKey='',paintExits:(target:CanvasRenderingContext2D)=>void;
+  let highwayBridges:ReturnType<typeof createHighwayBridgePainter>;
+  let shareLabel:CityShareLabel|undefined;
   const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
     const sprite=images[`direction-board-${kind==='outbound'?'z':'x'}`];
     return sprite?planDirectionBoard(road,label,kind,context,sprite,baseExits,range):undefined;
@@ -340,6 +380,10 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       updateBoards();
     },
     setOrganizationPosters(next,frame){posters=next;organizationFrame=frame;updateBoards()},
+    setShareLabel(label){
+      if(shareLabel?.title===label.title&&shareLabel.login===label.login)return;
+      shareLabel=label;frameKey='';
+    },
     organizationFaces(viewport){
       const projection=boardProjection(viewport);
       return organizationBoards.map(board=>{
@@ -349,7 +393,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     },
     fitOverview(viewport,topInset,bottomInset){
       const signs=boardOrder.flatMap(board=>board.bounds?[board.bounds]:[]);
-      if(!signs.length)return;
+      if(!signs.length&&!shareLabel)return;
+      if(shareLabel)bottomInset=Math.max(bottomInset,shareLabelBottom(viewport.width)+shareLabelHeight);
       const left=Math.min(minX,...signs.map(b=>b.left)),right=Math.max(maxX,...signs.map(b=>b.right));
       const top=Math.min(minY,...signs.map(b=>b.top)),bottom=Math.max(maxY,...signs.map(b=>b.bottom));
       // 远景占地是所有倍率下的最大占地，涵盖完整牌架并为提示、缩放工具和四边留空。
@@ -442,6 +487,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       if(exitKey!==exitPaintKey){
         const routes=highways.flatMap(route=>clipCityExit(route,left,top,right,bottom)??[]);
         paintExits=createCityRoadPainter([...joiningRoads,...routes],exitJunctions,'butt');
+        highwayBridges=waterways&&createHighwayBridgePainter(routes,waterways.roadWater({left,top,right,bottom}));
         exitPaintKey=exitKey;
       }
       context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
@@ -495,7 +541,9 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const level=(1-Math.pow(1-progress,1.4))*tallest;
       {
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
+        highwayBridges?.deck(context);
         paintExits(context);
+        highwayBridges?.rails(context);
         for(const board of boards)board?.paintRoad(context);
         returnBoard?.paintRoad(context);
         context.restore();
@@ -525,6 +573,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.drawImage(source,x,y,w,h);context.restore();
       }
       while(boardIndex<boardOrder.length)paintBoard(boardOrder[boardIndex++]);
+      if(shareLabel)paintShareLabel(context,viewport,shareLabel);
       frameKey=nextFrameKey;
       visiblePrefix=prefix;
     },

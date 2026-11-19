@@ -9,12 +9,13 @@ import { organizationFrameId, prepareOrganizationPoster, type OrganizationPoster
 import { createOrganizationLinks } from "./city-organization-links";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import { CITY_SCENERY_IDS } from "./city-outskirts";
-import type { CityRoadLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
+import type { CityRoadLabel, CityShareLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface CityRoadControl extends CityRoadLabel { sign: HTMLAnchorElement | HTMLButtonElement; surface?: HTMLAnchorElement }
 export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement; label:string }
 
 export interface ContributionLandscape {
+  setShareLabel(label:CityShareLabel):void;
   setOrganizations(organizations:readonly ProfileOrganization[], directoryLabel?:string):void;
   setTrafficConnections(connections:number):void;
   setRoadControls(controls: readonly CityRoadControl[], returnPost?:CityReturnControl): void;
@@ -57,6 +58,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     inOverview=false;viewport.panX+=dx;viewport.panY+=dy;schedule();
   });
   let posters:readonly OrganizationPoster[]=[];
+  let shareLabel:CityShareLabel|undefined;
   let frameImages:CityImages|undefined,frameRequested=false;
   let roadAnchors:readonly CityRoadControl[]=[],returnSign:CityReturnControl|undefined;
   let inOverview=false;
@@ -97,6 +99,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const configureCanvas=(next:LandscapeView)=>{
     if(next.exitCount!==undefined)onExitCount?.(next.exitCount);
     next.setRoadLabels?.(roadAnchors,returnSign?.label);
+    if(shareLabel)next.setShareLabel?.(shareLabel);
     if(posters.length)next.setOrganizationPosters?.(posters,frameImages?.[organizationFrameId]);
     refitOverview(next);
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
@@ -229,6 +232,9 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("click",click,true);host.addEventListener("dragstart",dragStart);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
+    setShareLabel(label){
+      shareLabel=label;layer?.setShareLabel?.(label);refitOverview();schedule();
+    },
     setTrafficConnections(connections){
       if(disposed||trafficConnections===connections)return;
       trafficConnections=connections;

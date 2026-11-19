@@ -312,6 +312,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (error) { loadFailure = new Error(error); request.abort(); }
         updateControls();
       }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed, roads.setExitCount);
+      city.setShareLabel({title:t('cityShareTitle'),login:context.profileLogin});
       city.setRoadControls(roads.controls(),roads.returnPost());
       city.setOrganizations(places.organizations, t("cityOrganizations"));
       city.setTrafficConnections(places.connections);
@@ -464,6 +465,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
     roads.refresh(places.people);
+    city?.setShareLabel({title:t('cityShareTitle'),login:context.profileLogin});
     city?.setOrganizations(places.organizations, t("cityOrganizations"));
     fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
     cityHost.setAttribute("aria-description", t("keyboardControls"));
