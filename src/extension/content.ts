@@ -2,6 +2,7 @@ import { text, externalText, localize, numberText, type Language, type LanguageP
 import { cityLegendStyles, createCityLegend } from "./city-legend";
 import { createCityHover } from './city-hover';
 import { createCityRoads } from './city-roads';
+import { readCityYears, writeCityYears } from './city-url';
 import { findProfileCard, readProfilePlaces } from '../data/profile-places';
 import { readPageContext } from "../platform/github/probe";
 import { isProfileOwner } from "../platform/github/types";
@@ -15,6 +16,7 @@ export interface CityPanel {
   activate(visitSeed: number): Promise<void>;
   setLanguage(language: Language, preference: LanguagePreference): void;
   syncProfileCard(): void;
+  syncYearUrl(): void;
   suspendPrivateView(): void;
   deactivate(): void;
   dispose(): void;
@@ -137,6 +139,13 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const startSelect = get<HTMLSelectElement>("#start-year"), endSelect = get<HTMLSelectElement>("#year");
   for (const year of years) { endSelect.add(new Option(String(year), String(year))); startSelect.add(new Option(String(year), String(year))); }
   startSelect.value = String(years[Math.min(2, years.length - 1)]);
+  const applyYearUrl = () => {
+    const linked = readCityYears(years);
+    const changed = !!linked && (String(linked[0]) !== startSelect.value || String(linked[1]) !== endSelect.value);
+    if (linked) [startSelect.value, endSelect.value] = linked.map(String);
+    writeCityYears(startSelect.value, endSelect.value);
+    return changed;
+  };
   const refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
   const cancel = get<HTMLButtonElement>("#cancel"), retry = get<HTMLButtonElement>("#retry"), expand = get<HTMLButtonElement>("#expand");
   const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
@@ -421,6 +430,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   const changeRange = (changed: HTMLSelectElement, other: HTMLSelectElement) => {
     if (Number(startSelect.value) > Number(endSelect.value)) other.value = changed.value;
+    writeCityYears(startSelect.value, endSelect.value);
     void load(false);
   };
   startSelect.onchange = () => changeRange(startSelect, endSelect);
@@ -496,10 +506,14 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   setLanguage(language, preference);
   return {
     setLanguage, syncProfileCard,
+    syncYearUrl() {
+      if (active && applyYearUrl()) void load(false);
+    },
     async activate(visitSeed) {
       if (disposed || active) return;
       trafficSeed = visitSeed;
       active = true;
+      applyYearUrl();
       syncProfileCard(true);
       await restoreOrLoad();
     },
