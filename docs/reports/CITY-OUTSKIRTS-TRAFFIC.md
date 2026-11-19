@@ -64,3 +64,14 @@
 - **年份与包**。组合构建改选后生成 `#codeyears-city?from=2018&to=2026`，两端读取完成后得到对应日期范围。刷新和跨城返回见 [年份链接报告](CITY-013-POLISH.md#城市链接恢复年份)。`npm run build` 含类型检查。使用 `python3 scripts/package-city.py --output-dir <临时目录>` 和 `python3 scripts/verify-city-package.py <临时目录>/codeyears-0.1.3-city.zip --build-dir dist`，通过 127 条目核验。ZIP 为 33,303,628 字节，SHA-256 为 `8f66c3c0de0917e10bbb6a6adb889adead9395d9120e22cc0a4ee9cd7e4b73ff`。
 
 本轮观察范围为 Chrome 公开主页中的实际路径和绘制结果。跨浏览器、真实登录态、非调试浏览器的性能预算及商店验收未复测。
+
+## 固定五年城区与 City of Code 铭牌
+
+2026-11-19，在独立 macOS Chrome 157.0.8103.79 中通过 CDP `Extensions.loadUnpacked` 加载构建，以旧版 `6bd6169` 对照。打开未登录的公开 wxy 主页，以主页最早的年度入口 2009 为锚点。视口分别为 1380 × 980 和 320 × 800，DPR 1，启用减少动态效果。
+
+- **固定边界**。真实主页分别选择 2022–2025、2023–2025，旧版均只产生 4 个出口。新版在两组范围内均以 2024 年为界呈现两个城区，合计 6 个出口。再选 2024–2025 时回到一个城区和 4 个出口。原贡献日期区间沿用 ISO 周规则。街区、河带、桥梁和出城口使用同一组五年边界。
+- **重叠对照**。临时在公开页面资料栏加入 40 个符合组织链接结构的占位项，触发「更多组织」，贡献请求与数据保留真实公开输入。在展开全景的桌面图上，旧名录覆盖铭牌约 28.6 CSS 像素高。新版名录位于铭牌上方，间距约 8 CSS 像素。320px 窗口中按空格展开名录后，列表在铭牌上方滚动，铭牌和缩放控件也保留约 8 CSS 像素间距。
+- **英文铭牌与安装**。记录主画布绘制的官方图标与英文三行文字，切换界面为简体中文后内容一致。比对构建内嵌位图与 `public/icons/codeyears-128.png` 的字节，完全一致。主画布可导出 PNG。键盘聚焦铭牌并按 Enter 在新标签打开 CodeYears 官方商店条目，该导航返回 HTTP 200。
+- **构建**。执行 `npm run build`，根目录 `dist` 与 Chrome 实测构建通过 `diff -qr` 的逐文件核对。执行 `python3 scripts/package-city.py --output-dir <临时目录>` 和 `python3 scripts/verify-city-package.py <临时目录>/codeyears-0.1.3-city.zip --build-dir dist`，通过 127 项随包检查。ZIP 为 33,308,034 字节，SHA-256 为 `3d1b7c2ed5dcb6ee107e5889419d39b11a37748220f7af423da6271c4594a6fe`。
+
+本轮浏览器验收覆盖 Chrome 公开主页与受控组织名录。0.1.3 的商店发布保持暂停。

@@ -9,13 +9,13 @@ import { organizationFrameId, prepareOrganizationPoster, type OrganizationPoster
 import { createOrganizationLinks } from "./city-organization-links";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import { CITY_SCENERY_IDS } from "./city-outskirts";
-import type { CityRoadLabel, CityShareLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
+import type { CityRoadLabel, LandscapeView, LandscapeViewport, ViewMode } from "./types";
 
 export interface CityRoadControl extends CityRoadLabel { sign: HTMLAnchorElement | HTMLButtonElement; surface?: HTMLAnchorElement }
 export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement; label:string }
 
 export interface ContributionLandscape {
-  setShareLabel(label:CityShareLabel):void;
+  setShareCredit(login:string):void;
   setOrganizations(organizations:readonly ProfileOrganization[], directoryLabel?:string):void;
   setTrafficConnections(connections:number):void;
   setRoadControls(controls: readonly CityRoadControl[], returnPost?:CityReturnControl): void;
@@ -40,7 +40,7 @@ export interface ContributionLandscape {
 }
 
 /** 两种引擎共享播放/缩放/平移；缩放通知按面板的100%基准归一化。City不创建WebGL。 */
-export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void, namingOriginYear?: number, trafficSeed = 0, onExitCount?: (count:number)=>void): ContributionLandscape {
+export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void, originYear?: number, trafficSeed = 0, onExitCount?: (count:number)=>void): ContributionLandscape {
   const progressiveCity=initialView==="city"&&reservedYears!==undefined;
   // 原City的150%作为新100%；City缩放固定下限50%，上限不超过2000%。
   const zoomBase=progressiveCity?1.875:initialView==="city"?1.5:1;
@@ -57,8 +57,20 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const organizationLinks=createOrganizationLinks(host,(dx,dy)=>{
     inOverview=false;viewport.panX+=dx;viewport.panY+=dy;schedule();
   });
+  const {corner}=organizationLinks,creditLink=document.createElement('a');
+  creditLink.className='city-map-credit';creditLink.lang='en';creditLink.hidden=true;
+  creditLink.href='https://chromewebstore.google.com/detail/codeyears-github-contribu/mhbphbpbjbndjhodbdmijdopidhcibia';
+  creditLink.target='_blank';creditLink.rel='noreferrer';
+  creditLink.setAttribute('aria-label','CodeYears on the Chrome Web Store');
+  corner.append(creditLink);
+  let creditLogin:string|undefined,creditIcon:HTMLImageElement|undefined;
+  // 浏览器决定角落的排布，画布沿同一链接矩形绘制，PNG 保留完整铭牌。
+  const positionCredit=(target=layer)=>{
+    if(!creditLogin||!target?.setShareCredit)return;
+    target.setShareCredit({login:creditLogin,icon:creditIcon,x:corner.offsetLeft+creditLink.offsetLeft,
+      y:corner.offsetTop+creditLink.offsetTop,width:creditLink.offsetWidth,height:creditLink.offsetHeight});
+  };
   let posters:readonly OrganizationPoster[]=[];
-  let shareLabel:CityShareLabel|undefined;
   let frameImages:CityImages|undefined,frameRequested=false;
   let roadAnchors:readonly CityRoadControl[]=[],returnSign:CityReturnControl|undefined;
   let inOverview=false;
@@ -68,7 +80,9 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     if(!inOverview)return;
     const top=overviewOverlays?.top,bottom=overviewOverlays?.bottom;
     const topInset=top?.offsetHeight ? top.offsetTop+top.offsetHeight : 0;
-    const bottomInset=bottom?.offsetHeight ? viewport.height-bottom.offsetTop : 0;
+    const zoomInset=bottom?.offsetHeight ? viewport.height-bottom.offsetTop : 0;
+    const creditInset=creditLink.hidden?0:viewport.height-corner.offsetTop-creditLink.offsetTop;
+    const bottomInset=Math.max(zoomInset,creditInset);
     const fit=target?.fitOverview?.(viewport,topInset,bottomInset);
     Object.assign(viewport,fit??{zoom:view==="city"?minZoom:1,panX:0,panY:0});
     cityZoomFloor=Math.min(minZoom,viewport.zoom);
@@ -99,7 +113,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const configureCanvas=(next:LandscapeView)=>{
     if(next.exitCount!==undefined)onExitCount?.(next.exitCount);
     next.setRoadLabels?.(roadAnchors,returnSign?.label);
-    if(shareLabel)next.setShareLabel?.(shareLabel);
+    positionCredit(next);
     if(posters.length)next.setOrganizationPosters?.(posters,frameImages?.[organizationFrameId]);
     refitOverview(next);
     next.canvas.style.cssText="display:block;width:100%;height:100%;background:transparent";
@@ -128,7 +142,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     try{
       if(view==="city"){
         if(progressiveCity){
-          const plan=planOrganicCity(days,90,reservedYears!,cityWonders,namingOriginYear,undefined,trafficSeed),ground=createOrganicGround(plan);
+          const plan=planOrganicCity(days,90,reservedYears!,cityWonders,originYear,undefined,trafficSeed),ground=createOrganicGround(plan);
           cityScene=plan.scene;
           images={};layer=createCityView(cityScene,images,0,ground);configureCanvas(layer);host.append(layer.canvas);
           layer.draw(1,viewport);labelCity();schedule();notify();
@@ -142,7 +156,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
           previous.canvas.replaceWith(layer.canvas);previous.dispose();schedule();
         }
         else{
-          cityScene??=planCityScene(days,cityWonders,reservedYears);
+          cityScene??=planCityScene(days,cityWonders,reservedYears,undefined,originYear);
           assetPromise??=loadCityImages(assetBase,cityScene.keys,assetAbort.signal);const ready=await assetPromise;
           if(disposed||token!==generation)return;
           images=ready;layer=createCityView(cityScene,ready);
@@ -160,6 +174,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   const resize=()=>{
     if(suspended)return;
     viewport.width=Math.max(host.clientWidth,1);viewport.height=Math.max(host.clientHeight,1);
+    positionCredit();
     if(inOverview){refitOverview();schedule()}else zoomAt(1);
   };
   const observer=new ResizeObserver(entries=>{
@@ -232,8 +247,15 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("click",click,true);host.addEventListener("dragstart",dragStart);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{
-    setShareLabel(label){
-      shareLabel=label;layer?.setShareLabel?.(label);refitOverview();schedule();
+    setShareCredit(login){
+      creditLogin=login;creditLink.hidden=false;
+      positionCredit();refitOverview();schedule();
+      const icon=new Image();
+      icon.addEventListener('load',()=>{
+        if(disposed)return;
+        creditIcon=icon;positionCredit();schedule();
+      },{once:true});
+      icon.src=new URL('../../public/icons/codeyears-128.png',import.meta.url).href;
     },
     setTrafficConnections(connections){
       if(disposed||trafficConnections===connections)return;
@@ -328,7 +350,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       assetAbort.signal.throwIfAborted();
       if(disposed||token!==generation)throw new DOMException("城市已关闭或替换。","AbortError");
       const plannedSeed=trafficSeed,plannedConnections=trafficConnections;
-      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders,namingOriginYear,joinedOn,plannedSeed,plannedConnections);
+      const organic=planOrganicCity(nextDays,90,reservedYears!,cityWonders,originYear,joinedOn,plannedSeed,plannedConnections);
       const nextScene=organic.scene;
       let added:CityImages|undefined,next:LandscapeView|undefined,merged=false;
       try{

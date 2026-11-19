@@ -4,57 +4,41 @@ import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
 import { createGroundSelector } from './city-ground-style';
 import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from './city-road-network';
-import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute, type RoadPoint } from './city-roads';
+import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute } from './city-roads';
 import { createCityVehiclePainter } from './city-vehicles';
 import { createCityBridgePainter, createHighwayBridgePainter } from './city-bridges';
-import { createCityLayout, CITY_BAND_YEARS, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
+import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
   CITY_YEAR_GAP as YEAR_GAP, CITY_PARK_DEPTH as PARK, type CityLayout } from './city-layout';
 import { createCityYearMarkers } from './city-year-markers';
 import { createCityOutskirtsPainter, createCitySceneryPainter, planCityRelief, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
 import { planCityMountainRoads } from './city-mountain-roads';
 import { CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
 import { createCityWaterways, type CityRiver } from './city-waterways';
-import type { CityShareLabel, LandscapeView, LandscapeViewport } from './types';
+import type { CityShareCredit, LandscapeView, LandscapeViewport } from './types';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
 import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
 import { organizationFace, planOrganizationBoards, type OrganizationBoard, type OrganizationPoster } from './city-organization-boards';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
-const shareLabelHeight=46;
-const shareLabelBottom=(width:number)=>width<338?54:12;
-
-function paintShareLabel(context:CanvasRenderingContext2D,viewport:LandscapeViewport,{title,login}:CityShareLabel) {
-  const x=12,y=viewport.height-shareLabelHeight-shareLabelBottom(viewport.width),textX=x+46;
-  const maxWidth=Math.max(1,viewport.width-(viewport.width<338?24:132));
-  const caption=`@${login} · CodeYears`,titleFont='600 14px system-ui, sans-serif',captionFont='11px system-ui, sans-serif';
+function paintShareCredit(context:CanvasRenderingContext2D,{x,y,width,height,login,icon}:CityShareCredit) {
+  const textX=x+58,textWidth=width-70;
   context.save();
-  context.font=titleFont;
-  const titleWidth=context.measureText(title).width;
-  context.font=captionFont;
-  const width=Math.min(maxWidth,Math.ceil(Math.max(titleWidth,context.measureText(caption).width))+58);
-  const background=context.createLinearGradient(0,y,0,y+shareLabelHeight);
-  background.addColorStop(0,'#293a33f5');background.addColorStop(1,'#1c2b25f7');
-  context.beginPath();context.roundRect(x,y,width,shareLabelHeight,9);
-  context.shadowColor='#1a211c50';context.shadowBlur=10;context.shadowOffsetY=2;
+  const background=context.createLinearGradient(x,y,x+width*.6,y+height);
+  background.addColorStop(0,'#31463edb');background.addColorStop(1,'#162924ed');
+  context.beginPath();context.roundRect(x,y,width,height,13);
+  context.shadowColor='#131c1955';context.shadowBlur=13;context.shadowOffsetY=3;
   context.fillStyle=background;context.fill();
-  context.shadowColor='transparent';context.lineWidth=1;context.strokeStyle='#e0e7c543';context.stroke();
+  context.shadowColor='transparent';context.lineWidth=1;context.strokeStyle='#e8e7c984';context.stroke();
   context.clip();
-
-  // 同城市投影的楼体剪影，呼应道路和路牌的暖色金属。
-  context.translate(x+22,y+23);
-  context.beginPath();context.roundRect(-13,-13,26,26,5);context.fillStyle='#bacb9e24';context.fill();
-  const prism=(points:readonly RoadPoint[],color:string)=>{
-    context.beginPath();points.forEach((p,i)=>i?context.lineTo(...p):context.moveTo(...p));context.closePath();
-    context.fillStyle=color;context.fill();
-  };
-  prism([[-8,2],[0,6],[8,2],[0,-2]],'#8d9d7b');
-  prism([[-5,-5],[0,-2],[0,6],[-5,3]],'#cfbb8c');
-  prism([[0,-2],[5,-5],[5,3],[0,6]],'#92835e');
-  prism([[-5,-5],[0,-8],[5,-5],[0,-2]],'#eddeb6');
-  context.translate(-x-22,-y-23);
+  if(icon)context.drawImage(icon,x+12,y+(height-36)/2,36,36);
   context.textBaseline='middle';context.textAlign='left';
-  context.fillStyle='#f7f4e4';context.font=titleFont;context.fillText(title,textX,y+16,Math.max(1,width-58));
-  context.fillStyle='#c4d4c2';context.font=captionFont;context.fillText(caption,textX,y+33,Math.max(1,width-58));
+  context.fillStyle='#fff9ea';context.font='700 17px system-ui, sans-serif';
+  context.fillText('City of Code',textX,y+19,textWidth-19);
+  context.fillStyle='#d3ded4';context.font='500 11px system-ui, sans-serif';
+  context.fillText(`@${login} on GitHub`,textX,y+36,textWidth);
+  context.fillStyle='#f2dfad';context.font='600 10px system-ui, sans-serif';
+  context.fillText('Made with CodeYears · Chrome Web Store',textX,y+52,textWidth);
+  context.fillText('↗',x+width-20,y+17);
   context.restore();
 }
 
@@ -74,9 +58,9 @@ export interface CitySceneItem { parcel?:CityParcel; id:string; factor:number; x
 export interface CityScene { weekly:WeeklyCity; layout:CityLayout; items:CitySceneItem[]; keys:string[]; parkStarts:number[]; width:number; depth:number; roadNetwork:CityRoadNetwork; rivers?:readonly CityRiver[] }
 
 /** 数据/占地与素材选择只在创建时确定，观看缩放不改变城市。 */
-export function planCityScene(days:readonly DailyContribution[],wonders=true,reservedYears?:readonly number[],joinedOn?:string):CityScene {
+export function planCityScene(days:readonly DailyContribution[],wonders=true,reservedYears?:readonly number[],joinedOn?:string,originYear?:number):CityScene {
   const weekly=planWeeklyCity(days,true,wonders,reservedYears,joinedOn),selectGround=createGroundSelector(weekly);
-  const layout=createCityLayout(weekly);
+  const layout=createCityLayout(weekly,originYear);
   const items:CitySceneItem[]=weekly.parcels.map(parcel=>{
     const {w,d,kind}=parcel,hash=Math.imul(weekly.districts[parcel.block].year,73856093)^Math.imul(parcel.x+1,19349663)^Math.imul(parcel.z+1,83492791);
     const seed=(hash^(hash>>>16))>>>0,variant=seed%2?'b':'a';
@@ -88,7 +72,7 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true,res
     else ({id,factor}=selectCityBuilding(parcel,seed));
     return {parcel,id,factor,x:layout.districts[parcel.block].weekX(parcel.x),z:layout.districts[parcel.block].z+parcel.z,w,d,flat};
   });
-  const parkStarts=Array.from({length:Math.floor((weekly.rows-1)/CITY_BAND_YEARS)},(_,i)=>(i+1)*CITY_BAND_YEARS*(7+YEAR_GAP)+i*PARK-YEAR_GAP/2);
+  const parkStarts=layout.bandStarts.map(block=>layout.districts[block].z-PARK-YEAR_GAP/2);
   const width=layout.width;
   for(const start of parkStarts)for(let x=1;x<width;x+=2.6)for(const z of [start+.2,start+PARK-1]){
     items.push({id:Math.round(x)%2?'broadleaf-a':'conifer-b',factor:.75,x,z,w:.75,d:.75,flat:false});
@@ -107,7 +91,7 @@ export function planCityScene(days:readonly DailyContribution[],wonders=true,res
     });
   });
   const depth=weekly.rows*(7+YEAR_GAP)-YEAR_GAP+parkStarts.length*PARK;
-  const roadNetwork=planCityRoadNetwork(layout,depth,parkStarts);
+  const roadNetwork=planCityRoadNetwork(layout,depth);
   const visibleItems=items.filter(item=>item.parcel||!['broadleaf-a','conifer-b'].includes(item.id)
     ||cityTreeClearsBridges(item.x,item.z,item.w,item.d,roadNetwork.bridges));
   const keys=[...new Set([...visibleItems.map(i=>i.id),...CITY_OUTSKIRT_IDS,'direction-board-x','direction-board-z'])];
@@ -315,7 +299,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   };
   let exitPaintKey='',paintExits:(target:CanvasRenderingContext2D)=>void;
   let highwayBridges:ReturnType<typeof createHighwayBridgePainter>;
-  let shareLabel:CityShareLabel|undefined;
+  let shareCredit:CityShareCredit|undefined;
   const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
     const sprite=images[`direction-board-${kind==='outbound'?'z':'x'}`];
     return sprite?planDirectionBoard(road,label,kind,context,sprite,baseExits,range):undefined;
@@ -380,9 +364,11 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       updateBoards();
     },
     setOrganizationPosters(next,frame){posters=next;organizationFrame=frame;updateBoards()},
-    setShareLabel(label){
-      if(shareLabel?.title===label.title&&shareLabel.login===label.login)return;
-      shareLabel=label;frameKey='';
+    setShareCredit(credit){
+      const previous=shareCredit;
+      if(previous?.login===credit.login&&previous.icon===credit.icon&&previous.x===credit.x&&previous.y===credit.y&&
+        previous.width===credit.width&&previous.height===credit.height)return;
+      shareCredit=credit;frameKey='';
     },
     organizationFaces(viewport){
       const projection=boardProjection(viewport);
@@ -393,8 +379,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     },
     fitOverview(viewport,topInset,bottomInset){
       const signs=boardOrder.flatMap(board=>board.bounds?[board.bounds]:[]);
-      if(!signs.length&&!shareLabel)return;
-      if(shareLabel)bottomInset=Math.max(bottomInset,shareLabelBottom(viewport.width)+shareLabelHeight);
+      if(!signs.length&&!shareCredit)return;
       const left=Math.min(minX,...signs.map(b=>b.left)),right=Math.max(maxX,...signs.map(b=>b.right));
       const top=Math.min(minY,...signs.map(b=>b.top)),bottom=Math.max(maxY,...signs.map(b=>b.bottom));
       // 远景占地是所有倍率下的最大占地，涵盖完整牌架并为提示、缩放工具和四边留空。
@@ -573,7 +558,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         context.drawImage(source,x,y,w,h);context.restore();
       }
       while(boardIndex<boardOrder.length)paintBoard(boardOrder[boardIndex++]);
-      if(shareLabel)paintShareLabel(context,viewport,shareLabel);
+      if(shareCredit)paintShareCredit(context,shareCredit);
       frameKey=nextFrameKey;
       visiblePrefix=prefix;
     },

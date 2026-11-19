@@ -1,6 +1,6 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
-import { CITY_BAND_YEARS, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH, type CityLayout } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { cityVehicleSprites, planCityTransport, type CityTrafficSignal } from './city-transport';
@@ -22,8 +22,8 @@ export interface OrganicCity {
 }
 
 /** City轮廓候选。输入沿用已校验date/count；阈值不是产品默认值。 */
-export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true, namingOriginYear = years[0], joinedOn?:string, trafficSeed = 0, trafficConnections = 0): OrganicCity {
-  const original = planCityScene(days, wonders, years,joinedOn);
+export function planOrganicCity(days: readonly DailyContribution[], threshold: number, years: readonly number[], wonders = true, originYear = years[0], joinedOn?:string, trafficSeed = 0, trafficConnections = 0): OrganicCity {
+  const original = planCityScene(days, wonders, years,joinedOn,originYear);
   const ordered = days.map((day, index) => ({ ...day, index, time: Date.parse(day.date) })).sort((a,b)=>a.time-b.time);
   const gaps: OrganicGap[] = [];
   let run: typeof ordered = [];
@@ -152,7 +152,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
         const profile=catalog[`transport-bridge-${style}`],waterNear=top+CITY_RIVER_BANK_DEPTH,waterFar=bottom-CITY_RIVER_BANK_DEPTH;
         const from=style==='stone'?waterNear-Math.min(...profile.supportAnchors.map(p=>p.z)):(waterNear+waterFar)/2-profile.supportAnchors[0].z;
         // 桥身跨过两岸，桥跨由模型基础间距决定；引桥使用余下岸带接回路缘。
-        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/CITY_BAND_YEARS)-1,quarter:index+1,style,
+        bridges.push({id:`organic-bridge-${bridges.length}`,band:original.layout.districts[region.block].band,quarter:index+1,style,
           from:[x,from],to:[x,from+profile.nativeDepth],landings:{from:[x,top],to:[x,bottom]}});
       }});
     } else{
@@ -210,7 +210,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
     roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,...(area<0?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),cornerRadius:members.length&&members.every(region=>region.milestone) ? .45 : lanes===8?2.4:1.2,closed:true,points:corners});
   }
-  const {links,exits}=connectSettlements(roads,footprints,regions);
+  const {links,exits}=connectSettlements(roads,footprints,regions,original.layout);
   // 零贡献城市仍保留装饰性环路与出口，允许手动访问别人的城市。
   if(!regions.length){
     roads.push(...original.roadNetwork.roads.filter(road=>road.id==='ring'));
@@ -255,7 +255,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     if(x>=Math.min(a[0],b[0])&&x<=Math.max(a[0],b[0])&&z>=Math.min(c[1],d[1])&&z<=Math.max(c[1],d[1])&&
       !junctions.some(j=>Math.hypot(j.x-x,j.z-z)<=j.radius))junctions.push({x,z,radius:.9});
   }
-  const labels=planRoadLabels(original,regions,roads,junctions,namingOriginYear);
+  const labels=planRoadLabels(original,regions,roads,junctions,originYear);
   const straights=roads.flatMap(road=>planRoadGeometry(road).straights.map(edge=>({...edge,road})));
   const signals:CityTrafficSignal[]=planSignalizedApproaches(roads,junctions).map(({x,z,dx,dz,half})=>({
     x:x-dx*.18-dz*(half-.09),z:z-dz*.18+dx*(half-.09),heads:[dx!==0?'x':'z'],
@@ -434,7 +434,7 @@ function contains(points:readonly RoadPoint[],x:number,z:number):boolean {
 
 /** 在闭环直道上选最近的可行接点；最小生成树连通片区，不再统一绕到西侧。 */
 function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:readonly {left:number;right:number;top:number;bottom:number}[],
-  regions:readonly OrganicRegion[]) {
+  regions:readonly OrganicRegion[],layout:CityLayout) {
   const links:CityRoadRoute[]=[],exits:CityRoadRoute[]=[];
   const rings=boundaries.filter(ring=>ring.id.startsWith('organic-ring'));
   if(!rings.length)return {links,exits};
@@ -491,7 +491,7 @@ function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:reado
   const outer=edges.filter(e=>e.outer);
   const bandBounds=new Map<number,{top:number;bottom:number}>();
   for(const {block,top,bottom} of regions){
-    const band=Math.floor(block/CITY_BAND_YEARS),previous=bandBounds.get(band);
+    const band=layout.districts[block].band,previous=bandBounds.get(band);
     bandBounds.set(band,previous?{top:Math.min(top,previous.top),bottom:Math.max(bottom,previous.bottom)}:{top,bottom});
   }
   const bands=[...bandBounds.entries()];

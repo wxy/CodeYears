@@ -6,23 +6,28 @@ export function createOrganizationLinks(host:HTMLElement,panBy:(dx:number,dy:num
   const layer=document.createElement('div');layer.className='city-organization-layer';
   const style=document.createElement('style');
   style.textContent=`
-    .city-organization-layer { position:absolute; z-index:1; inset:0; overflow:clip; pointer-events:none; container-type:inline-size; }
+    .city-organization-layer { position:absolute; z-index:1; inset:0; overflow:clip; pointer-events:none; container:city-map / size; }
     .city-org-link { position:absolute; display:block; pointer-events:auto; transform-origin:0 0; -webkit-user-drag:none; }
     .city-org-link[hidden],.city-org-directory[hidden] { display:none; }
     .city-org-link:hover,.city-org-link:focus-visible { outline:2px solid #318286; outline-offset:1px; }
     .city-org-link>canvas { display:block; position:absolute; pointer-events:none; }
     .city-org-tooltip { position:absolute; z-index:2; translate:-50% -100%; padding:3px 7px; border-radius:5px; font:600 12px/1.4 system-ui,sans-serif; background:#213838; color:white; overflow-wrap:anywhere; }
-    .city-org-directory { position:absolute; left:10px; bottom:10px; pointer-events:auto; padding:3px; border:1px solid var(--borderColor-default,#b8c4bc); border-radius:7px; background:var(--bgColor-default,#fff); color:var(--fgColor-default,#263c3a); }
+    .city-map-corner { position:absolute; z-index:1; inset-inline-start:12px; inset-block-end:12px; inline-size:min(264px,calc(100% - 24px)); display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+    .city-map-credit { display:block; inline-size:100%; block-size:68px; border-radius:13px; pointer-events:auto; }
+    .city-map-credit[hidden] { display:none; }
+    .city-map-credit:hover { box-shadow:inset 0 0 0 1px #efe0a9; }
+    .city-map-credit:focus-visible { outline:2px solid #efe0a9; outline-offset:2px; }
+    .city-org-directory { max-inline-size:100%; pointer-events:auto; padding:3px; border:1px solid var(--borderColor-default,#b8c4bc); border-radius:7px; background:var(--bgColor-default,#fff); color:var(--fgColor-default,#263c3a); }
     .city-org-directory summary { cursor:pointer; padding:3px 7px; font:600 12px/1.4 system-ui,sans-serif; }
-    .city-org-directory ul { list-style:none; padding:0; margin:4px; max-height:min(150px,30vh); max-width:min(250px,65vw); overflow:auto; overscroll-behavior:contain; touch-action:pan-y; }
+    .city-org-directory ul { list-style:none; padding:0; margin:4px; max-block-size:min(150px,32cqh); max-inline-size:min(250px,65cqw); overflow:auto; overscroll-behavior:contain; touch-action:pan-y; }
     .city-org-directory li a { display:block; padding:4px; color:var(--fgColor-accent,#0969da); overflow-wrap:anywhere; }
-    @container (max-width:400px) { .city-org-directory[open] { bottom:54px; } }
-    @container (max-width:280px) { .city-org-directory { bottom:54px; } }
+    @container city-map (width < 410px) { .city-map-corner { inset-block-end:56px; } }
   `;
   const directory=document.createElement('details');directory.className='city-org-directory';directory.hidden=true;
   const summary=document.createElement('summary'),list=document.createElement('ul');
   const tooltip=document.createElement('span');tooltip.className='city-org-tooltip';tooltip.hidden=true;tooltip.setAttribute('aria-hidden','true');
-  directory.append(summary,list);layer.append(style,tooltip,directory);host.append(layer);
+  const corner=document.createElement('div');corner.className='city-map-corner';
+  directory.append(summary,list);corner.append(directory);layer.append(style,tooltip,corner);host.append(layer);
   const inset=100*organizationFace.inset/organizationFace.size;
   let links:HTMLAnchorElement[]=[],visibleCount=-1,label='Organizations';
   let selected:HTMLAnchorElement|undefined;
@@ -44,6 +49,7 @@ export function createOrganizationLinks(host:HTMLElement,panBy:(dx:number,dy:num
     }
   };
   return {
+    corner,
     setPosters(posters:readonly OrganizationPoster[],name:string){
       const root=layer.getRootNode(),focused=root instanceof ShadowRoot?root.activeElement:document.activeElement;
       const focusedLink=focused instanceof HTMLAnchorElement?focused.href:undefined;

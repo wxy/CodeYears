@@ -19,10 +19,10 @@ export interface LandscapeViewport {
   zoomBase?: number;
 }
 export interface CityRoadLabel { label:string; returning:boolean }
-export interface CityShareLabel { title:string; login:string }
+export interface CityShareCredit { login:string; icon?:HTMLImageElement; x:number; y:number; width:number; height:number }
 export interface LandscapeView {
   canvas: HTMLCanvasElement;
-  setShareLabel?(label:CityShareLabel):void;
+  setShareCredit?(credit:CityShareCredit):void;
   setVehicles?(vehicles: readonly CityVehicle[]): void;
   exitCount?:number;
   setRoadLabels?(labels:readonly CityRoadLabel[],returnLabel?:string):void;
