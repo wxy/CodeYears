@@ -15,6 +15,7 @@ export interface CityPanel {
   activate(visitSeed: number): Promise<void>;
   setLanguage(language: Language, preference: LanguagePreference): void;
   syncProfileCard(): void;
+  suspendPrivateView(): void;
   deactivate(): void;
   dispose(): void;
 }
@@ -38,7 +39,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       * { box-sizing:border-box; } [hidden] { display:none !important; }
       .panel { background:var(--bgColor-default,#fff); }
       .bar { position:relative; display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:10px 12px; }
-      form { display:flex; align-items:center; flex-wrap:wrap; min-width:0; gap:6px; margin-right:auto; }
+      .year-range { display:flex; align-items:center; flex-wrap:wrap; min-width:0; gap:4px; margin-right:auto; }
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
       button:where(:not(.city-road-sign)):active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
@@ -109,12 +110,11 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   controls.innerHTML = `<style>${styles}
     :host { display:block; width:100%; min-width:0; }
     .bar { padding:0; gap:6px; }
-    .bar > form { gap:4px; }
-    .bar > form select,.bar > form button { padding:4px 6px; }
+    .year-range select { padding:4px 6px; }
   </style>
     <div class="bar">
-        <form data-i18n-label="yearRange"><select id="start-year" data-i18n-label="startYear"></select><span>—</span><select id="year" data-i18n-label="endYear"></select><button id="run" type="submit" data-i18n="apply"></button></form>
-        <span id="city-summary" class="summary"></span>
+        <div class="year-range" role="group" data-i18n-label="yearRange"><select id="start-year" data-i18n-label="startYear"></select><span aria-hidden="true">—</span><select id="year" data-i18n-label="endYear"></select></div>
+        <span id="city-summary" class="summary" role="status"></span>
         <button id="expand" type="button" aria-expanded="false" disabled></button>
         <details id="more"><summary data-i18n-label="moreLabel" data-i18n="more"></summary><div class="more-panel">
           <label class="language"><span data-i18n="language"></span><select id="language"><option value="auto" data-i18n="followBrowser"></option><option value="en" lang="en">English</option><option value="zh-CN" lang="zh-CN">简体中文</option></select></label>
@@ -134,10 +134,10 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   controls.querySelector("#legend")!.append(createCityLegend(language));
   const get = <T extends Element>(selector: string) => (shadow.querySelector<T>(selector) ?? controls.querySelector<T>(selector))!;
   const panel = get<HTMLElement>(".panel"), dialog = get<HTMLDialogElement>("dialog");
-  const startSelect = get<HTMLSelectElement>("#start-year"), select = get<HTMLSelectElement>("#year");
-  for (const year of years) { select.add(new Option(String(year), String(year))); startSelect.add(new Option(String(year), String(year))); }
+  const startSelect = get<HTMLSelectElement>("#start-year"), endSelect = get<HTMLSelectElement>("#year");
+  for (const year of years) { endSelect.add(new Option(String(year), String(year))); startSelect.add(new Option(String(year), String(year))); }
   startSelect.value = String(years[Math.min(2, years.length - 1)]);
-  const run = get<HTMLButtonElement>("#run"), refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
+  const refresh = get<HTMLButtonElement>("#refresh"), clear = get<HTMLButtonElement>("#clear");
   const cancel = get<HTMLButtonElement>("#cancel"), retry = get<HTMLButtonElement>("#retry"), expand = get<HTMLButtonElement>("#expand");
   const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
   const more = get<HTMLDetailsElement>("#more");
@@ -151,7 +151,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     zoomLevel.setAttribute("aria-label", t("zoomLevel", [percent]));
   };
   const languageSelect = get<HTMLSelectElement>("#language");
-  let active = false, disposed = false, busy = false;
+  type PanelWork = "reading" | "verifying" | "clearing";
+  let active = false, disposed = false, busy: PanelWork | undefined;
   let controller: AbortController | undefined, city: ContributionLandscape | undefined;
   let milestoneRequest: AbortController | undefined;
   let pendingMilestone: (() => void) | undefined;
@@ -226,7 +227,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     highlight:point=>city?.highlightBuilding(point),
     invalidate: suspendForIdentity,
   });
-  const selectedRange = () => startSelect.value === select.value ? select.value : `${startSelect.value}–${select.value}`;
+  const selectedRange = () => startSelect.value === endSelect.value ? endSelect.value : `${startSelect.value}–${endSelect.value}`;
   const collapse = (restoreFocus = true) => {
     if (!dialog.open) return;
     dialog.close(); dialog.before(panel); toolbarHome.append(toolbarHost); panel.classList.remove("expanded");
@@ -243,14 +244,17 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const updateControls = () => {
     const ready = !cityHost.hidden && Boolean(cityHost.querySelector(":scope > canvas"));
     expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
-    cancel.hidden = !busy;
+    cancel.hidden = busy !== "reading";
     cityHost.querySelector(":scope > canvas")?.setAttribute("aria-label", t("canvasLabel"));
     updateFeedback();
   };
-  const setBusy = (value: boolean) => {
-    if(value)hover.hide();
-    busy = value; run.disabled = refresh.disabled = select.disabled = startSelect.disabled = busy;
-    clear.disabled = busy || context.viewer.state === "unknown"; updateControls();
+  const setBusy = (work?: PanelWork) => {
+    if (work) hover.hide();
+    busy = work;
+    refresh.disabled = Boolean(work);
+    startSelect.disabled = endSelect.disabled = work === "clearing";
+    clear.disabled = Boolean(work) || context.viewer.state === "unknown";
+    updateControls();
   };
   const resetResult = () => {
     pendingMilestone = undefined;
@@ -275,10 +279,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   }
 
   const load = async (forceRefresh: boolean) => {
-    if (!active || disposed || busy) return;
+    if (!active || disposed) return;
     retryAction = () => load(forceRefresh);
-    const start = Number(startSelect.value), end = Number(select.value);
-    if (start > end) { setStatus(() => t("invalidRange")); return; }
+    const start = Number(startSelect.value), end = Number(endSelect.value);
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
     const firstNeeded = new Date(windowStart).getUTCFullYear(), lastNeeded = new Date(windowEnd - 86400000).getUTCFullYear();
     const calendarYear = new Date().getFullYear();
@@ -287,8 +290,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     const requestedYears = Array.from({ length: lastSource - firstSource + 1 }, (_, index) => firstSource + index);
     const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
     const range = selectedRange();
+    controller?.abort();
     const request = new AbortController(); controller = request;
-    resetResult(); cityHost.hidden = false; setBusy(true); more.open = false; roads.close(); retry.hidden = true;
+    resetResult(); cityHost.hidden = false; setBusy("reading"); more.open = false; roads.close(); retry.hidden = true;
     setStatus(() => t("readingData"));
     const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
     let renderer: typeof import("../renderers/landscape") | undefined;
@@ -398,9 +402,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       if (!active || !host.isConnected) return;
       if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
-      if (firstSource > firstNeeded || (lastSource < lastNeeded && lastSource < calendarYear)) {
-        warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
-      }
       setStatus(completedStatus);
       setSummary(() => t("contributionRange", [numberText(language, total), visibleDays[0].date, visibleDays.at(-1)!.date]));
       if (context.viewer.state === "known") reusable = { context, range, expiresAt, status: statusMessage, summary: summaryMessage };
@@ -415,10 +416,15 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       setStatus(() => cancelled ? t("cancelledDetail") : failure instanceof Error ? externalText(language, failure.message) : t("readFailedDetail"));
     } finally {
       // 切回城市会开始新请求，旧请求不能撤销新一轮的忙碌状态。
-      if (controller === request) { controller = undefined; setBusy(false); }
+      if (controller === request) { controller = undefined; setBusy(); }
     }
   };
-  controls.querySelector<HTMLFormElement>('form')!.addEventListener("submit", event => { event.preventDefault(); void load(false); });
+  const changeRange = (changed: HTMLSelectElement, other: HTMLSelectElement) => {
+    if (Number(startSelect.value) > Number(endSelect.value)) other.value = changed.value;
+    void load(false);
+  };
+  startSelect.onchange = () => changeRange(startSelect, endSelect);
+  endSelect.onchange = () => changeRange(endSelect, startSelect);
   refresh.onclick = () => { void load(true); };
   retry.onclick = () => { void retryAction(); };
   cancel.onclick = () => controller?.abort();
@@ -427,28 +433,29 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const clearYears = async () => {
     if (!active || busy) return;
     const request = new AbortController(); controller = request;
-    resetResult(); setBusy(true); cancel.hidden = true; more.open = false; retry.hidden = true;
+    resetResult(); setBusy("clearing"); more.open = false; retry.hidden = true;
     setStatus(() => t("confirmingClear"));
     try {
       await clearContributionCache(context, request.signal, currentContext);
       if (active && !request.signal.aborted) { retryAction = () => load(false); retry.hidden = false; setStatus(() => t("cacheClearedDetail")); }
     } catch (error) {
       if (active && controller === request) { retryAction = clearYears; retry.hidden = false; setStatus(() => error instanceof Error ? externalText(language, error.message) : t("clearFailedDetail")); }
-    } finally { if (controller === request) { controller = undefined; setBusy(false); } }
+    } finally { if (controller === request) { controller = undefined; setBusy(); } }
   };
   clear.onclick = clearYears;
-  const deactivate = () => {
+  const deactivate = (collapseView = true) => {
     stopObservingCard();
     milestoneRequest?.abort();
     hover.hide();
-    active = false; controller?.abort(); controller = undefined; collapse(false);
+    active = false; controller?.abort(); controller = undefined;
+    if (collapseView) collapse(false);
     cityHost.hidden = true;
     if (reusable && city) { city.setVisible(false); city.skip(); }
     else resetResult();
     setSummary(() => "");
     more.open = false; retry.hidden = true; setStatus(() => "");
     roads.close();
-    get<HTMLElement>("#identity").textContent = ""; setBusy(false);
+    get<HTMLElement>("#identity").textContent = ""; setBusy();
   };
   const setLanguage = (next: Language, selected: LanguagePreference) => {
     hover.hide();
@@ -472,8 +479,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         nextContext.viewer.state === "unknown" || !sameContext(cached.context, nextContext)) {
       await load(false); return;
     }
-    const request = new AbortController(); controller = request; setBusy(true); retry.hidden = true;
-    setStatus(() => t("readingData"));
+    const request = new AbortController(); controller = request; setBusy("verifying"); retry.hidden = true;
+    setStatus(() => "");
     try {
       if (isProfileOwner(nextContext)) await confirmViewer(nextContext, request.signal);
       request.signal.throwIfAborted();
@@ -484,7 +491,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     } catch (error) {
       if (!active || controller !== request) return;
       suspendForIdentity(error instanceof ViewerChangedError);
-    } finally { if (controller === request) { controller = undefined; setBusy(false); } }
+    } finally { if (controller === request) { controller = undefined; setBusy(); } }
   }
   setLanguage(language, preference);
   return {
@@ -495,6 +502,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       active = true;
       syncProfileCard(true);
       await restoreOrLoad();
+    },
+    suspendPrivateView() {
+      if (active && isProfileOwner(context) && (busy || reusable)) deactivate(false);
     },
     deactivate,
     dispose() { if (disposed) return; deactivate(); resetResult(); hover.dispose(); roads.dispose(); disposed = true; document.removeEventListener("pointerdown", outsidePointer, true); document.removeEventListener("keydown", escapeMenu, true); shadow.replaceChildren(); controls.replaceChildren(); },

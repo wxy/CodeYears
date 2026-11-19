@@ -210,7 +210,14 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     const move=delta[event.key];if(!move)return;
     event.preventDefault();event.stopPropagation();inOverview=false;viewport.panX+=move[0];viewport.panY+=move[1];schedule();
   };
-  const visibility=()=>{if(document.hidden){pause();cancelAnimationFrame(raf);raf=0}else schedule()};
+  const visibility = () => {
+    if (!document.hidden) { schedule(); return; }
+    cancelAnimationFrame(raf);
+    raf = 0;
+    // 浏览器标签页暂离只冻结逐年填入，回到同一画布时接着播放。
+    if (progressiveCity) anchored = false;
+    else pause();
+  };
   host.style.touchAction="none";host.style.cursor="grab";host.addEventListener("pointerdown",down);host.addEventListener("pointermove",move);host.addEventListener("pointerup",up);host.addEventListener("pointercancel",up);host.addEventListener("lostpointercapture",up);host.addEventListener("click",click,true);host.addEventListener("dragstart",dragStart);host.addEventListener("wheel",wheel,{passive:false});host.addEventListener("keydown",keydown);document.addEventListener("visibilitychange",visibility);
   resize();theme();if(matchMedia("(prefers-reduced-motion: reduce)").matches){playing=false;timeline.skip()}void prepare();
   return{

@@ -24,7 +24,6 @@
   "图形上下文已中断，请重新生成风景。": "errGraphics",
   "风景加载失败，请重新生成。": "errLandscape",
   "网络请求失败，请检查连接后重试。": "errNetwork",
-  "可用年度不足，年份边界不完整；仅显示已提供的日期。": "warnYearBoundary",
   "请求年份重复。": "errRequestedDuplicate",
   "贡献记录与请求的主页不一致。": "errProfileMismatch",
   "贡献年份未被请求。": "errUnexpectedYear",

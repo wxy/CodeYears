@@ -178,7 +178,7 @@ declare global {
       visibility(hidden: boolean) {
         if(!hidden&&roadArrivalPending){roadArrivalPending=false;host.scrollIntoView({block:'nearest'});void selectCity();return}
         if (!active || disposed) return;
-        if (hidden) panel?.deactivate(); else void panel?.activate(trafficSeed);
+        if (hidden) panel?.suspendPrivateView(); else void panel?.activate(trafficSeed);
       },
       dispose() {
         disposed = true; selection++; panel?.dispose(); restoreNative();

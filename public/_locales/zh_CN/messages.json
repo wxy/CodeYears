@@ -23,9 +23,6 @@
   "cancel": {
     "message": "取消"
   },
-  "apply": {
-    "message": "应用"
-  },
   "expand": {
     "message": "展开"
   },
@@ -76,9 +73,6 @@
   },
   "readingRange": {
     "message": "正在读取 $1 的贡献数据，场地随数据填入…"
-  },
-  "invalidRange": {
-    "message": "起始年份不能晚于结束年份。"
   },
   "noData": {
     "message": "暂无数据"
@@ -286,9 +280,6 @@
   },
   "errNetwork": {
     "message": "网络请求失败，请检查连接后重试。"
-  },
-  "warnYearBoundary": {
-    "message": "可用年度不足，年份边界不完整；仅显示已提供的日期。"
   },
   "errRequestedDuplicate": {
     "message": "请求年份重复。"
