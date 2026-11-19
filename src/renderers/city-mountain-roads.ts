@@ -100,14 +100,18 @@ function routeAcrossValley(start:RoadPoint,ends:readonly RoadPoint[],obstacles:r
     }
     if(current<0)break;
     closed.add(current);
+    const here=nodes[current],previous=nodes[parents[current]];
     nodes.forEach((node,i)=>{
-      // 离开路牌直段时继续向外，避免为了贴近岸线立刻掉头。
-      if(closed.has(i)||fewest>crossings[i]||current===0&&progress[i]<progress[0])return;
-      const length=distance(nodes[current],node);
-      const dryCost=costs[current]+length+.5*Math.max(0,progress[current]-progress[i]);
-      if(fewest===crossings[i]&&dryCost>=costs[i]||!clear(nodes[current],node))return;
+      if(closed.has(i)||fewest>crossings[i])return;
+      const length=distance(here,node);
+      // 保持出城走势，避免沿岸找路时在同一座山前折返。
+      if(progress[i]-progress[current]<=length*.55)return;
+      const bend=previous?1-((here[0]-previous[0])*(node[0]-here[0])+
+        4*(here[1]-previous[1])*(node[1]-here[1]))/(distance(previous,here)*length):0;
+      const dryCost=costs[current]+length+5*bend;
+      if(fewest===crossings[i]&&dryCost>=costs[i]||!clear(here,node))return;
       // 沿岸方案排在任何过河方案之前。同样需要过河时，优先选择跨水更短的路线。
-      const spans=water.spans(nodes[current],node),nextCrossings=fewest+spans.length;
+      const spans=water.spans(here,node),nextCrossings=fewest+spans.length;
       const next=dryCost+3*length*spans.reduce((sum,[from,to])=>sum+to-from,0);
       if(nextCrossings<crossings[i]||nextCrossings===crossings[i]&&next<costs[i]){
         crossings[i]=nextCrossings;costs[i]=next;parents[i]=current;
@@ -118,6 +122,15 @@ function routeAcrossValley(start:RoadPoint,ends:readonly RoadPoint[],obstacles:r
 }
 
 function roundValleyCorners(points:readonly RoadPoint[],water:RoadWater) {
+  const crossings=(line:readonly RoadPoint[])=>{
+    let count=0,continues=false;
+    for(let i=1;i<line.length;i++){
+      const spans=water.spans(line[i-1],line[i]);
+      count+=spans.length-(continues&&(spans[0]?.[0]??1)<1e-5?1:0);
+      continues=(spans.at(-1)?.[1]??0)>1-1e-5;
+    }
+    return count;
+  };
   const result=[points[0],points[1]];
   for(let i=2;i<points.length-1;i++){
     const a=points[i-1],b=points[i],c=points[i+1];
@@ -131,8 +144,9 @@ function roundValleyCorners(points:readonly RoadPoint[],water:RoadWater) {
       return [u*u*incoming[0]+2*u*t*b[0]+t*t*outgoing[0],u*u*incoming[1]+2*u*t*b[1]+t*t*outgoing[1]];
     });
     const projected=curve.map(p=>projectGround(...p));
-    // 水边收小圆角，保留原先已找到的沿岸路径。
-    if(projected.some((p,j)=>j>0&&water.spans(projected[j-1],p).length))result.push(b);
+    // 圆滑桥头和河岸上的拐弯，只在圆角不会新增过河时采用。
+    const legs=[projected[0],projectGround(...b),projected.at(-1)!];
+    if(crossings(projected)>crossings(legs))result.push(b);
     else result.push(...curve);
   }
   result.push(points.at(-1)!);
