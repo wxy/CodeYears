@@ -2,6 +2,7 @@ import { text, externalText, localize, numberText, type Language, type LanguageP
 import { cityLegendStyles, createCityLegend } from "./city-legend";
 import { createCityHover } from './city-hover';
 import { createCityRoads } from './city-roads';
+import { findProfileCard, readProfilePlaces } from '../data/profile-places';
 import { readPageContext } from "../platform/github/probe";
 import { isProfileOwner } from "../platform/github/types";
 import { clearContributionCache, confirmViewer, sameContext, ViewerChangedError } from "../platform/github/load-year";
@@ -11,14 +12,16 @@ import type { ContributionLandscape } from "../renderers/landscape";
 import type { DailyContribution } from "../data/types";
 
 export interface CityPanel {
-  activate(): Promise<void>;
+  activate(visitSeed: number): Promise<void>;
   setLanguage(language: Language, preference: LanguagePreference): void;
+  syncProfileCard(): void;
   deactivate(): void;
   dispose(): void;
 }
 
 /** 用户选择城市后才加载；入口负责原图切换、后台与导航生命周期。 */
 export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, settings: LanguageSettings): CityPanel {
+  let trafficSeed: number;
   let language = settings.language, preference = settings.preference;
   const t = (key: MessageKey, values: readonly (string | number)[] = []) => text(language, key, values);
   let context = readPageContext(document, new URL(location.href));
@@ -38,7 +41,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       form { display:flex; align-items:center; flex-wrap:wrap; min-width:0; gap:6px; margin-right:auto; }
       select,button,summary { font:inherit; color:inherit; } select,button { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:7px; background:var(--bgColor-default,#fff); padding:4px 9px; }
       button,summary { cursor:pointer; } button:disabled { cursor:default; opacity:.45; }
-      button:active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
+      button:where(:not(.city-road-sign)):active { transform:scale(.97); } button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #268f80; outline-offset:3px; }
       .summary,.note { color:var(--fgColor-muted,#59636e); font-size:12px; } .summary { margin:0; min-width:0; }
       #expanded-controls { padding:12px 16px; } #expanded-controls:empty { display:none; }
       .status { position:absolute; z-index:2; top:12px; left:12px; right:12px; width:fit-content; max-width:calc(100% - 24px); display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:color-mix(in srgb,var(--bgColor-default,#fff) 75%,transparent); box-shadow:0 2px 8px #0002; } output { white-space:pre-line; } output:empty { display:none; }
@@ -63,26 +66,16 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .city-road-surface:hover { background:#f8e6a655; }
       .city-road-sign:hover { background:#fff1; }
       .city-road-sign:focus-visible { background:#ffe18044; }
-      .city-road-edit { position:absolute; z-index:2; translate:0 -50%; pointer-events:none; opacity:0; padding:5px 9px; min-height:28px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; color:var(--fgColor-default,#1f2328); background:var(--bgColor-default,#fff); box-shadow:0 2px 6px #0002; font-size:11px; cursor:pointer; }
-      .city-road-sign:hover + .city-road-edit,.city-road-sign:focus + .city-road-edit,.city-road-edit:hover,.city-road-edit:focus { opacity:1; pointer-events:auto; }
-      @media (hover:none) { .city-road-edit { opacity:1; pointer-events:auto; min-width:44px; min-height:36px; } }
       .zoom-level { min-width:6ch; padding:0 6px; border-inline:1px solid var(--borderColor-muted,#d1d9e0b3); font-size:12px; font-variant-numeric:tabular-nums; text-align:center; white-space:nowrap; }
       details { position:relative; } summary { list-style:none; border-radius:7px; padding:4px 9px; } summary::-webkit-details-marker { display:none; }
       #more { position:static; }
       .more-panel { position:absolute; z-index:3; right:0; top:100%; width:390px; max-width:100%; max-height:min(55vh,460px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
-      #road-editor { position:absolute; z-index:5; width:320px; max-width:calc(100% - 16px); max-height:calc(100% - 16px); overflow:auto; }
-      .roads-panel { padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
-      .roads-panel h3 { margin:0 0 6px; font-size:13px; } .roads-panel p { margin:0 0 10px; }
-      .road-editor-heading,.road-editor-actions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-      .road-editor-heading .road-close { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
-      .roads-form { margin:10px 0; align-items:flex-end; } .roads-form label { flex:1; min-width:100px; } .roads-form label span { display:block; font-size:12px; }
-      .roads-form input { width:100%; padding:5px 8px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; font:inherit; color:inherit; background:var(--bgColor-default,#fff); }
-      .roads-form input:focus-visible { outline:2px solid #268f80; outline-offset:2px; }
-      .road-destination { margin:8px 0 10px; } .road-destination a,.road-return-list a { color:var(--fgColor-accent,#0969da); text-decoration:none; }
-      .road-destination a:hover,.road-return-list a:hover { text-decoration:underline; }
-      .road-return-list { list-style:none; margin:6px 0; padding:0; } .road-return-list li { padding:5px 0; }
-      .road-change { margin:0 0 10px; }
-      .roads-local { margin-top:10px!important; } .roads-retry { margin:8px 0; }
+      #road-returns { position:absolute; z-index:5; width:320px; max-width:calc(100% - 16px); max-height:calc(100% - 16px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
+      #road-returns header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+      #road-returns h3 { margin:0; font-size:13px; } #road-returns p { margin:10px 0 0; }
+      #road-returns button { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
+      #road-returns ul { list-style:none; margin:6px 0; padding:0; overflow-wrap:anywhere; } #road-returns li { padding:5px 0; }
+      #road-returns a { color:var(--fgColor-accent,#0969da); text-decoration:none; } #road-returns a:hover { text-decoration:underline; }
       .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       .more-panel h3 { margin:0 0 8px; font-size:12px; font-weight:600; }
       .more-section + .more-section { margin-top:12px; padding-top:12px; border-top:1px solid var(--borderColor-default,#d1d9e0); }
@@ -104,7 +97,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     <section class="panel" data-i18n-label="cityRegion">
       <div id="expanded-controls"></div>
       <div class="scene-wrap"><div id="scene" tabindex="0" role="region" data-i18n-label="canvasKeyboardLabel"></div>
-        <div id="road-editor" hidden></div>
+        <div id="road-returns" hidden></div>
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
         <div class="view-tools" hidden>
           <button id="reset-view" type="button" data-i18n-label="fitView"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 3v5H3m18 0h-5V3M3 16h5v5m8 0v-5h5M8 8 3 3m13 5 5-5M8 16l-5 5m13-5 5 5"/></svg></button>
@@ -133,6 +126,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
           <section class="more-section" aria-labelledby="help-section">
             <h3 id="help-section" data-i18n="moreHelpSection"></h3>
             <details id="help"><summary data-i18n="help"></summary><p class="note" data-i18n="viewHelp"></p><p class="note" data-i18n="keyboardControls"></p><p class="note" data-i18n="dataHelp"></p></details>
+            <details id="road-help"><summary data-i18n="roadHelpHeading"></summary><p data-i18n="roadHelpExits"></p><p data-i18n="roadHelpReturn"></p><p data-i18n="roadHelpOrganizations"></p></details>
             <details id="legend-section"><summary data-i18n="legendLabel"></summary><div id="legend"></div></details>
           </section>
         </div></details>
@@ -163,7 +157,43 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   let pendingMilestone: (() => void) | undefined;
   let retryAction: () => Promise<void> = () => load(false);
   const currentContext = () => readPageContext(document, new URL(location.href));
-  const roads=createCityRoads(get<HTMLElement>('#road-editor'),{context:()=>context,currentContext,language:()=>language,changed:(controls,post)=>city?.setRoadControls(controls,post)});
+  const roads = createCityRoads(get<HTMLElement>('#road-returns'), {
+    currentContext, language: () => language, changed: (controls, post) => city?.setRoadControls(controls, post),
+  });
+  let places: ReturnType<typeof readProfilePlaces> = { people: [], organizations: [] };
+  let profileCard: Element | undefined;
+  let organizationSources: (string | undefined)[] = [];
+  const cardObserver = new MutationObserver(() => syncProfileCard(true));
+  function avatarLoaded(event: Event) { if (event.target instanceof HTMLImageElement) syncProfileCard(true); }
+  function stopObservingCard() {
+    cardObserver.disconnect();
+    profileCard?.removeEventListener('load', avatarLoaded, true);
+    profileCard?.removeEventListener('error', avatarLoaded, true);
+    profileCard = undefined;
+  }
+  // GitHub 可延迟挂载或整体替换资料栏。入口已有的页面观察器负责重新绑定。
+  function syncProfileCard(refresh = false) {
+    if (!active) return;
+    const card = findProfileCard(document, context.profileLogin);
+    if (card !== profileCard) {
+      stopObservingCard();
+      profileCard = card;
+      if (card) {
+        card.addEventListener('load', avatarLoaded, true);
+        card.addEventListener('error', avatarLoaded, true);
+        cardObserver.observe(card, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['href', 'src', 'srcset', 'data-hovercard-type', 'class'] });
+      }
+    } else if (!refresh) return;
+    const next = card ? readProfilePlaces(document, context.profileLogin, card) : { people: [], organizations: [] };
+    if (next.people.length !== places.people.length || next.people.some((login, i) => places.people[i] !== login)) roads.refresh(next.people);
+    const sources = next.organizations.map(org => org.avatar?.currentSrc);
+    if (next.organizations.length !== places.organizations.length || next.organizations.some((org, i) =>
+      org.login !== places.organizations[i].login || org.avatar !== places.organizations[i].avatar || sources[i] !== organizationSources[i])) {
+      city?.setOrganizations(next.organizations, t('cityOrganizations'));
+    }
+    places = next;
+    organizationSources = sources;
+  }
   let reusable: { context: typeof context; range: string; expiresAt: number; status: () => string; summary: () => string } | undefined;
   let statusMessage = () => "", summaryMessage = () => "";
   const updateFeedback = () => { feedback.hidden = !status.textContent && cancel.hidden && retry.hidden; };
@@ -211,10 +241,10 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   dialog.addEventListener("cancel", event => { event.preventDefault(); if (more.open) closeMore(true); else collapse(); });
   const updateControls = () => {
-    const ready = !cityHost.hidden && Boolean(cityHost.querySelector("canvas"));
+    const ready = !cityHost.hidden && Boolean(cityHost.querySelector(":scope > canvas"));
     expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
     cancel.hidden = !busy;
-    cityHost.querySelector("canvas")?.setAttribute("aria-label", t("canvasLabel"));
+    cityHost.querySelector(":scope > canvas")?.setAttribute("aria-label", t("canvasLabel"));
     updateFeedback();
   };
   const setBusy = (value: boolean) => {
@@ -244,28 +274,6 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     updateControls();
   }
 
-  async function addJoiningTower(field: ContributionLandscape, days: readonly DailyContribution[], date: string) {
-    const request = new AbortController();
-    milestoneRequest = request;
-    try {
-      const details = await hover.inspectDay(date, request.signal);
-      if (!request.signal.aborted && details?.joinedGitHub) {
-        // 单独的纪念物绘制失败时，已完成的基础城市仍然可读。
-        await field.updateDays(days, date).catch(() => {
-          if (!request.signal.aborted) setStatus(() => t("milestoneRenderError"));
-        });
-      }
-    } catch (error) {
-      if (request.signal.aborted) return;
-      if (error instanceof ViewerChangedError) suspendForIdentity(true);
-      else if (isProfileOwner(context) && !cityHost.hidden) suspendForIdentity(false);
-    } finally {
-      if (milestoneRequest === request) {
-        milestoneRequest = undefined;
-        if (!request.signal.aborted) pendingMilestone = undefined;
-      }
-    }
-  }
   const load = async (forceRefresh: boolean) => {
     if (!active || disposed || busy) return;
     retryAction = () => load(forceRefresh);
@@ -274,7 +282,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
     const firstNeeded = new Date(windowStart).getUTCFullYear(), lastNeeded = new Date(windowEnd - 86400000).getUTCFullYear();
     const calendarYear = new Date().getFullYear();
-    const firstSource = Math.max(firstNeeded, years.at(-1)!), lastSource = Math.min(lastNeeded, years[0], calendarYear);
+    const oldestYear = years.at(-1)!;
+    const firstSource = Math.max(firstNeeded, oldestYear), lastSource = Math.min(lastNeeded, years[0], calendarYear);
     const requestedYears = Array.from({ length: lastSource - firstSource + 1 }, (_, index) => firstSource + index);
     const firstDate = new Date(windowStart).toISOString().slice(0, 10), endDate = new Date(windowEnd).toISOString().slice(0, 10);
     const range = selectedRange();
@@ -283,25 +292,36 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     setStatus(() => t("readingData"));
     const reservedYears = Array.from({ length: end - start + 1 }, (_, index) => start + index);
     let renderer: typeof import("../renderers/landscape") | undefined;
-    let renderFailure: Error | undefined;
+    let loadFailure: Error | undefined;
     let fieldCreated = false;
     let painting: Promise<void> | undefined;
     let pendingDays: readonly DailyContribution[] | undefined;
+    let visibleDays: readonly DailyContribution[] = [];
+    const oldestYearPrefix = String(oldestYear) + "-";
+    let waitingForJoiningDay = false, joinedOn: string | undefined;
+    let towerUnavailable = false;
     let expiresAt = Infinity;
     const mountEmptyField = () => {
       city = renderer!.createLandscape(cityHost, [], (_state, error) => {
         if (!active || controller !== request) return;
-        if (error) { renderFailure = new Error(error); request.abort(); }
+        if (error) { loadFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears, showZoom, years.at(-1)!);
+      }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed);
       city.setRoadControls(roads.controls(),roads.returnPost());
+      city.setOrganizations(places.organizations, t("cityOrganizations"));
       fieldCreated = true;
       return city;
     };
     const warnings = new Set<string>();
+    const completedStatus = () => {
+      const messages = [...warnings].map(message => externalText(language, message));
+      if (waitingForJoiningDay) messages.push(t("checkingJoiningDay"));
+      if (towerUnavailable) messages.push(t("milestoneRenderError"));
+      return messages.join(" ");
+    };
     try {
       context = currentContext();
-      roads.refresh();showIdentity();
+      roads.refresh(places.people);showIdentity();
       if (context.viewer.state === "unknown") warnings.add("访问者身份未识别，本次不读取或写入缓存。");
       renderer = await import(/* @vite-ignore */ chrome.runtime.getURL("landscape.js")) as typeof import("../renderers/landscape");
       request.signal.throwIfAborted();
@@ -310,51 +330,87 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       request.signal.addEventListener("abort", () => field.dispose(), { once: true });
       const paint = async () => {
         try {
-          while (pendingDays && active && controller === request && !request.signal.aborted) {
+          while (pendingDays && active && city === field && !request.signal.aborted) {
             const latest = pendingDays; pendingDays = undefined;
-            await field.updateDays(latest);
+            await field.updateDays(latest, joinedOn);
           }
         } catch (error) {
-          if (request.signal.aborted) return;
-          renderFailure = error instanceof Error ? error : new Error("城市素材加载失败，请重试。");
-          request.abort();
+          if (request.signal.aborted || city !== field) return;
+          const failure = error instanceof Error ? error : new Error("城市素材加载失败，请重试。");
+          if (controller === request) { loadFailure = failure; request.abort(); }
+          else {
+            resetResult(); retry.hidden = false;
+            setStatus(() => externalText(language, failure.message));
+          }
         } finally { painting = undefined; }
       };
-      const history = await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
+      const queuePaint = () => {
+        pendingDays = waitingForJoiningDay ? visibleDays.filter(day => !day.date.startsWith(oldestYearPrefix)) : visibleDays;
+        return painting ??= paint();
+      };
+      const includeJoiningYear = async (date: string) => {
+        const inspection = new AbortController();
+        milestoneRequest = inspection;
+        try {
+          const joined = (await hover.inspectDay(date, inspection.signal))?.joinedGitHub === true;
+          const towerReady = joined && await field.prepareJoiningTower(inspection.signal);
+          inspection.signal.throwIfAborted();
+          joinedOn = towerReady ? date : undefined;
+          towerUnavailable = joined && !towerReady;
+          waitingForJoiningDay = false;
+          await queuePaint();
+          if (controller !== request && city === field && !inspection.signal.aborted) setStatus(completedStatus);
+        } catch (error) {
+          if (inspection.signal.aborted) return;
+          if (controller === request) {
+            // 身份核对失败时，正在读取的其他年份也不能继续展示。
+            loadFailure = error instanceof Error ? error : new Error("当前 GitHub 会话身份无法确认或已经改变；未使用旧缓存，请刷新页面后重试。");
+            request.abort();
+          } else suspendForIdentity(error instanceof ViewerChangedError);
+        } finally {
+          if (milestoneRequest === inspection) {
+            milestoneRequest = undefined;
+            if (!inspection.signal.aborted) pendingMilestone = undefined;
+          }
+        }
+      };
+      await loadContributionHistory(context, requestedYears, forceRefresh, request.signal, currentContext, result => {
         if (request.signal.aborted) return;
         if (result.warning) warnings.add(result.warning);
         expiresAt = Math.min(expiresAt, result.expiresAt);
-        pendingDays = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
+        visibleDays = result.history.days.filter(day => firstDate <= day.date && day.date < endDate);
         setStatus(() => t("readingRange", [range]));
-        painting ??= paint();
+        if (result.year === oldestYear) {
+          const first = result.history.days.find(day => day.date.startsWith(oldestYearPrefix) && day.count > 0);
+          if (first && firstDate <= first.date && first.date < endDate) {
+            // 查明楼型后再将最早源年纳入绘制，其余已验证的年份可先入画。
+            waitingForJoiningDay = true;
+            pendingMilestone = () => { void includeJoiningYear(first.date); };
+            pendingMilestone();
+            return;
+          }
+        }
+        queuePaint();
       });
       await painting;
-      if (renderFailure) throw renderFailure;
+      if (loadFailure) throw loadFailure;
       request.signal.throwIfAborted();
       if (!active || !host.isConnected) return;
-      const visibleDays = history.days.filter(day => firstDate <= day.date && day.date < endDate);
       if (!visibleDays.length) { setStatus(() => t("noDates")); return; }
       const total = visibleDays.reduce((sum, day) => sum + day.count, 0);
       if (firstSource > firstNeeded || (lastSource < lastNeeded && lastSource < calendarYear)) {
         warnings.add("可用年度不足，年份边界不完整；仅显示已提供的日期。");
       }
-      setStatus(() => [...warnings].map(message => externalText(language, message)).join(" "));
+      setStatus(completedStatus);
       setSummary(() => t("contributionRange", [numberText(language, total), visibleDays[0].date, visibleDays.at(-1)!.date]));
       if (context.viewer.state === "known") reusable = { context, range, expiresAt, status: statusMessage, summary: summaryMessage };
-      if (start === years.at(-1)) {
-        const first = visibleDays.find(day => day.date.startsWith(String(start)) && day.count > 0);
-        if (first) {
-          pendingMilestone = () => { void addJoiningTower(field, visibleDays, first.date); };
-          pendingMilestone();
-        }
-      }
     } catch (error) {
       if (!active || controller !== request) return;
-      const cancelled = request.signal.aborted && !renderFailure;
+      const cancelled = request.signal.aborted && !loadFailure;
       request.abort();
       resetResult();
       if (renderer && fieldCreated) mountEmptyField();
-      const failure = renderFailure ?? error;
+      const failure = loadFailure ?? error;
       retry.hidden = false;
       setStatus(() => cancelled ? t("cancelledDetail") : failure instanceof Error ? externalText(language, failure.message) : t("readFailedDetail"));
     } finally {
@@ -366,7 +422,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   refresh.onclick = () => { void load(true); };
   retry.onclick = () => { void retryAction(); };
   cancel.onclick = () => controller?.abort();
-  fitView.onclick = () => city?.resetView();
+  fitView.onclick = () => city?.resetView({top:feedback,bottom:tools});
   maxZoom.onclick = () => city?.zoomToMax();
   const clearYears = async () => {
     if (!active || busy) return;
@@ -382,6 +438,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   };
   clear.onclick = clearYears;
   const deactivate = () => {
+    stopObservingCard();
     milestoneRequest?.abort();
     hover.hide();
     active = false; controller?.abort(); controller = undefined; collapse(false);
@@ -397,7 +454,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     hover.hide();
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
-    roads.refresh();
+    roads.refresh(places.people);
+    city?.setOrganizations(places.organizations, t("cityOrganizations"));
     fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
     cityHost.setAttribute("aria-description", t("keyboardControls"));
     expand.textContent = t(dialog.open ? "collapse" : "expand");
@@ -421,7 +479,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       request.signal.throwIfAborted();
       if (!active || disposed || controller !== request) return;
       if (!sameContext(nextContext, currentContext())) { suspendForIdentity(true); return; }
-      context = nextContext; roads.refresh(); cityHost.hidden = false; field.setVisible(true); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
+      context = nextContext; roads.refresh(places.people); cityHost.hidden = false; field.setVisible(true, trafficSeed); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
       pendingMilestone?.();
     } catch (error) {
       if (!active || controller !== request) return;
@@ -430,10 +488,12 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   }
   setLanguage(language, preference);
   return {
-    setLanguage,
-    async activate() {
+    setLanguage, syncProfileCard,
+    async activate(visitSeed) {
       if (disposed || active) return;
+      trafficSeed = visitSeed;
       active = true;
+      syncProfileCard(true);
       await restoreOrLoad();
     },
     deactivate,

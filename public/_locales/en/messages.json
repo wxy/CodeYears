@@ -60,7 +60,7 @@
     "message": "$1% zoom"
   },
   "zoomFitHelp": {
-    "message": "Starts at 100%; minimum 50%, maximum 2000%. Click “Fit view” to zoom out and center the city."
+    "message": "Starts at 100% and zooms up to 2000%. Click “Fit view” to see the city and all named road signs."
   },
   "fitView": {
     "message": "Fit view"
@@ -359,71 +359,38 @@
   "feedback": {
     "message": "Feedback"
   },
-  "roadsHeading": {
-    "message": "Road destination"
+  "roadHelpHeading": {
+    "message": "Where do the road signs and exits come from?"
   },
-  "roadUsername": {
-    "message": "GitHub username"
+  "roadHelpExits": {
+    "message": "Every city starts with four exits. The first four people mentioned in the profile bio, for example @octocat, get the main exits. The next four get branch roads. CodeYears skips the profile owner and repeated names. Select a named blue sign to visit that person’s city. Select a blank sign to see how to connect a friend."
   },
-  "removeRoad": {
-    "message": "Remove"
+  "roadHelpReturn": {
+    "message": "A green return sign takes you back to the city you just visited in this tab."
   },
-  "roadsLocal": {
-    "message": "Destinations stay on this device. Turn on sync to copy this city’s exits to your Chrome account when Chrome sync is enabled."
+  "roadHelpOrganizations": {
+    "message": "Billboards along the ring road show organizations from this profile’s bio, profile details, and Organizations list. Each organization appears once. Select a billboard to open its GitHub profile."
   },
-  "roadSyncLabel": {
-    "message": "Sync road signs across my Chrome devices"
+  "emptyExitLabel": {
+    "message": "Exit $1 has no destination. Show how exits work"
   },
-  "roadsSynced": {
-    "message": "Turning this off removes the Chrome sync copy, keeps these exits here and restores each other device’s local roads."
+  "emptyExitHeading": {
+    "message": "This exit has no destination yet"
   },
-  "roadsChanged": {
-    "message": "Your road settings changed. Reopen the road to edit its latest destination."
+  "emptyExitOwner": {
+    "message": "On your GitHub profile, choose Edit profile. In Bio, mention a friend by their GitHub username, such as @octocat, then save. Exits follow the order of the mentions in your bio."
   },
-  "roadInvalidUsername": {
-    "message": "Enter a GitHub username (up to 39 letters, digits or single hyphens)."
+  "emptyExitVisitor": {
+    "message": "These exits come from @$1’s profile bio. To connect a friend’s city to your own, mention their GitHub username in your own bio, for example @octocat."
   },
-  "roadSelf": {
-    "message": "Choose another GitHub account."
+  "closeRoadInfo": {
+    "message": "Close road sign details"
   },
-  "roadDuplicate": {
-    "message": "A road to this account already exists."
-  },
-  "roadsReadError": {
-    "message": "Could not read saved roads. Retry to manage them."
-  },
-  "roadsSaveError": {
-    "message": "Could not save this change. Your saved roads have been kept."
-  },
-  "saveRoad": {
-    "message": "Save"
-  },
-  "closeRoadEditor": {
-    "message": "Close road settings"
-  },
-  "addRoadAt": {
-    "message": "Add a destination to exit $1"
-  },
-  "roadCount": {
-    "message": "$1 / $2 roads"
-  },
-  "changeRoad": {
-    "message": "Change destination"
-  },
-  "editRoad": {
-    "message": "Edit"
-  },
-  "editRoadTo": {
-    "message": "Change the road to $1"
+  "cityOrganizations": {
+    "message": "Organizations"
   },
   "cityName": {
     "message": "@$1’s city"
-  },
-  "unknownRoad": {
-    "message": "Unknown destination"
-  },
-  "roadEditHint": {
-    "message": "Right-click or press Shift+F10 to edit the destination"
   },
   "roadReturnHint": {
     "message": "Right-click or press Shift+F10 for all return routes"
@@ -437,17 +404,11 @@
   "returnRoadLocal": {
     "message": "These return routes follow your visits in this tab. They do not change this city’s exits."
   },
-  "roadsOwnerOnly": {
-    "message": "Only the signed-in owner can edit this city’s roads."
-  },
-  "roadOwnerCheckFailed": {
-    "message": "Could not confirm your identity and save the road. The previous settings have been kept."
-  },
-  "addRoadHeading": {
-    "message": "Add a road"
-  },
   "contributionRange": {
     "message": "$1 contributions · $2 – $3"
+  },
+  "checkingJoiningDay": {
+    "message": "Checking activity on the earliest active day…"
   },
   "milestoneRenderError": {
     "message": "Your city is available. Its joining landmark could not be drawn."

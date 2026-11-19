@@ -1120,5 +1120,16 @@
     "nativeDepth": 0.5,
     "baselineHeight": 1.5,
     "sampleId": "direction-board-z"
+  },
+  "organization-billboard": {
+    "file": "organization-billboard.png",
+    "left": -1.175686746987952,
+    "top": -3.1694457831325304,
+    "width": 2.3560481927710843,
+    "height": 3.192819277108434,
+    "nativeWidth": 2.3560481927710843,
+    "nativeDepth": 0.5,
+    "baselineHeight": 3.192819277108434,
+    "sampleId": "organization-billboard"
   }
 }

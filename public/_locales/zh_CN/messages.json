@@ -60,7 +60,7 @@
     "message": "当前缩放比例：$1%"
   },
   "zoomFitHelp": {
-    "message": "初始缩放为100%；最小50%，最大不超过2000%。点击“全景”可缩小并回到城市中心。"
+    "message": "初始缩放为 100%，最高可达 2000%。点击“全景”可同时看全城市和已命名的路牌。"
   },
   "fitView": {
     "message": "全景"
@@ -359,71 +359,38 @@
   "feedback": {
     "message": "问题反馈"
   },
-  "roadsHeading": {
-    "message": "设置道路目的地"
+  "roadHelpHeading": {
+    "message": "路牌和出口从哪里来？"
   },
-  "roadUsername": {
-    "message": "GitHub 用户名"
+  "roadHelpExits": {
+    "message": "每座城市有四个主出口。个人简介（Bio）里提到的其他个人账号，例如 @octocat，按首次出现的顺序分配到路牌上。前四个连接主出口，第五到第八个连接分岔。点有名字的蓝牌可前往对方的城市，点空牌可查看怎样连接朋友。"
   },
-  "removeRoad": {
-    "message": "移除"
+  "roadHelpReturn": {
+    "message": "绿色返程牌通往你在当前标签页里刚刚来过的城市。"
   },
-  "roadsLocal": {
-    "message": "目的地保存在这台设备。勾选后，这座城市的出口会随已启用的 Chrome 同步保存到你的账号。"
+  "roadHelpOrganizations": {
+    "message": "外环广告牌上的组织来自这个主页的 Bio、资料栏和 Organizations 列表。同一组织只列一次。点广告牌可打开该组织的 GitHub 主页。"
   },
-  "roadSyncLabel": {
-    "message": "在我的 Chrome 设备间同步路牌"
+  "emptyExitLabel": {
+    "message": "第 $1 个出口尚未连接，查看说明"
   },
-  "roadsSynced": {
-    "message": "取消勾选会移除 Chrome 同步副本，在此设备保留当前路牌。其他设备会使用各自的本机设置。"
+  "emptyExitHeading": {
+    "message": "这个出口还没有目的地"
   },
-  "roadsChanged": {
-    "message": "路牌设置有更新，请重新打开路牌查看并编辑最新目的地。"
+  "emptyExitOwner": {
+    "message": "在你的 GitHub 主页选择「Edit profile」，在个人简介（Bio）中用 @ 提及朋友的 GitHub 用户名，例如 @octocat，然后保存。对方的城市就会按提及顺序出现在出口牌上。"
   },
-  "roadInvalidUsername": {
-    "message": "请输入 GitHub 用户名：最多 39 位字母、数字或不连续的连字符。"
+  "emptyExitVisitor": {
+    "message": "这里的出口取自 @$1 的个人简介（Bio）。想在你自己的城市连接朋友，可以在自己的 Bio 中写上对方的 GitHub 用户名，例如 @octocat。"
   },
-  "roadSelf": {
-    "message": "请选择其他 GitHub 账号。"
+  "closeRoadInfo": {
+    "message": "关闭路牌说明"
   },
-  "roadDuplicate": {
-    "message": "已经有通往此账号的道路。"
-  },
-  "roadsReadError": {
-    "message": "暂时无法读取已保存的道路，请重试后管理。"
-  },
-  "roadsSaveError": {
-    "message": "此次更改未能保存，原有道路已保留。"
-  },
-  "saveRoad": {
-    "message": "保存"
-  },
-  "closeRoadEditor": {
-    "message": "关闭道路设置"
-  },
-  "addRoadAt": {
-    "message": "为出口 $1 添加目的地"
-  },
-  "roadCount": {
-    "message": "$1 / $2 条道路"
-  },
-  "changeRoad": {
-    "message": "修改目的地"
-  },
-  "editRoad": {
-    "message": "修改"
-  },
-  "editRoadTo": {
-    "message": "修改前往 $1 的道路"
+  "cityOrganizations": {
+    "message": "组织"
   },
   "cityName": {
     "message": "@$1 的城市"
-  },
-  "unknownRoad": {
-    "message": "未知目的地"
-  },
-  "roadEditHint": {
-    "message": "右键或按 Shift+F10 修改目的地"
   },
   "roadReturnHint": {
     "message": "右键或按 Shift+F10 查看全部返程"
@@ -437,17 +404,11 @@
   "returnRoadLocal": {
     "message": "返程入口只跟随你在此标签页的访问路径，不改变这座城市的出城道路。"
   },
-  "roadsOwnerOnly": {
-    "message": "只有登录后的城主可以修改这座城市的道路。"
-  },
-  "roadOwnerCheckFailed": {
-    "message": "未能确认本人身份并保存道路，原设置已保留，请重试。"
-  },
-  "addRoadHeading": {
-    "message": "添加道路"
-  },
   "contributionRange": {
     "message": "$1 次贡献 · $2 至 $3"
+  },
+  "checkingJoiningDay": {
+    "message": "正在核对最早活跃日的活动记录…"
   },
   "milestoneRenderError": {
     "message": "城市已就绪，注册纪念建筑暂时无法绘制。"

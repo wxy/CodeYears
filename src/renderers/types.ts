@@ -1,3 +1,7 @@
+import type { CityVehicle } from './city-vehicles';
+import type { CitySprite } from './city-assets';
+import type { OrganizationPoster } from './city-organization-boards';
+
 export type ViewMode = "city" | "terrain";
 export type Theme = "signature" | "natural";
 
@@ -11,12 +15,17 @@ export interface RendererLifecycle {
 export interface LandscapeViewport {
   width: number; height: number; dpr: number;
   zoom: number; panX: number; panY: number; dark: boolean;
+  /** 面板显示 100% 时的相机倍率，独立预览以 1 为基准。 */
+  zoomBase?: number;
 }
 export interface CityRoadLabel { label:string; returning:boolean }
 export interface LandscapeView {
   canvas: HTMLCanvasElement;
+  setVehicles?(vehicles: readonly CityVehicle[]): void;
   setRoadCount?(count: number): void;
   setRoadLabels?(labels:readonly CityRoadLabel[],returnLabel?:string):void;
+  setOrganizationPosters?(posters:readonly OrganizationPoster[],frame?:CitySprite):void;
+  organizationFaces?(viewport:LandscapeViewport):readonly {left:number;top:number;size:number;slope:number}[];
   /** 出城路的屏幕位置，与画布共用投影和取景。 */
   roadExits?(viewport: LandscapeViewport): readonly { board:[number,number][]; polygon: [number, number][] }[];
   returnPost?(viewport: LandscapeViewport): { board:[number,number][]; polygon:[number,number][] } | undefined;
@@ -24,6 +33,7 @@ export interface LandscapeView {
   buildingAt?(x: number, y: number, viewport: LandscapeViewport): readonly number[] | undefined;
   stepBuilding?(backward: boolean, viewport: LandscapeViewport): {x:number;y:number} | undefined;
   highlightBuilding?(point: {x:number;y:number} | undefined, viewport: LandscapeViewport): void;
+  fitOverview?(viewport:LandscapeViewport,topInset:number,bottomInset:number):Pick<LandscapeViewport,'zoom'|'panX'|'panY'> | undefined;
   maxZoom?(viewport: LandscapeViewport): number;
   draw(progress: number, viewport: LandscapeViewport): void;
   description(): string;
