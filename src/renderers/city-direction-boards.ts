@@ -40,7 +40,7 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,kind:'outbou
   const reach=Math.max(Math.abs(sprite.left),Math.abs(sprite.left+sprite.width));
   const along=length-(temporary?8:1);
   let shoulder=half+reach+.8;
-  // 出口均为直段；在安装位置横切可见路面，站到最右边缘之外，避免压到分岔。
+  // 横切安装点附近的车行面，只有碰到路肩的近邻会影响牌脚。
   for(const road of roads){
     const p=road.points[0],q=road.points.at(-1)!,ex=q[0]-p[0],ez=q[1]-p[1],size=Math.hypot(ex,ez),edge=cityRoadWidth(road)/2+.1;
     const nx=-ez/size*edge,nz=ex/size*edge;
@@ -52,7 +52,8 @@ export function planDirectionBoard(route:CityRoadRoute,label:string,kind:'outbou
       if((p[0]<=along&&along<q[0])||(q[0]<=along&&along<p[0]))cuts.push(p[1]+(q[1]-p[1])*(along-p[0])/(q[0]-p[0]));
       else if(p[0]===along&&q[0]===along)cuts.push(p[1],q[1]);
     });
-    if(cuts.length)shoulder=Math.max(shoulder,Math.max(...cuts)+reach+.8);
+    if(cuts.length&&Math.min(...cuts)<=shoulder+reach&&Math.max(...cuts)>=half)
+      shoulder=Math.max(shoulder,Math.max(...cuts)+reach+.8);
   }
   const [px,py]=project(a[0]+ux*along-uz*shoulder,a[1]+uz*along+ux*shoulder);
   const point=(s:number,y:number):RoadPoint=>[px+vx*s,py+vy*s+y];

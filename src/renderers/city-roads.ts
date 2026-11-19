@@ -10,25 +10,33 @@ export function cityExitWithSign(route:CityRoadRoute):CityRoadRoute {
   return {...route,lanes:4,laneWidth:.8,points:[a,[b[0]+dx/length*14,b[1]+dz/length*14]]};
 }
 
-/** 沿出城方向保留穿过取景范围的路面。裁掉的长度仍用于车道虚线的相位。 */
+/** 保留穿过视野的弯道路段，末段沿切线延伸。裁掉的长度仍计入车道虚线相位。 */
 export function clipCityExit(route:CityRoadRoute,left:number,top:number,right:number,bottom:number):CityRoadRoute|undefined {
-  const [a,b]=route.points,dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-  const x=dx/length,z=dz/length,pad=cityRoadWidth(route)+.2;
-  let from=0,to=Infinity;
-  for(const [origin,velocity,min,max] of [
-    [(a[0]-a[1])*.5,(x-z)*.5,left-pad,right+pad],
-    [(a[0]+a[1])*.25,(x+z)*.25,top-pad,bottom+pad],
-  ]){
-    if(Math.abs(velocity)<1e-9){
-      if(origin<min||origin>max)return;
-      continue;
+  const {points}=route,pad=cityRoadWidth(route)+.2;
+  let start:{segment:number;point:RoadPoint;distance:number}|undefined;
+  let end:{segment:number;point:RoadPoint}|undefined;
+  let distance=0;
+  for(let i=1;i<points.length;i++){
+    const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
+    const x=dx/length,z=dz/length;
+    let from=0,to=i===points.length-1?Infinity:length;
+    for(const [origin,velocity,min,max] of [
+      [(a[0]-a[1])*.5,(x-z)*.5,left-pad,right+pad],
+      [(a[0]+a[1])*.25,(x+z)*.25,top-pad,bottom+pad],
+    ]){
+      if(Math.abs(velocity)<1e-9){if(origin<min||origin>max){to=0;break}}
+      else{
+        const t1=(min-origin)/velocity,t2=(max-origin)/velocity;
+        from=Math.max(from,Math.min(t1,t2));to=Math.min(to,Math.max(t1,t2));
+      }
     }
-    const t1=(min-origin)/velocity,t2=(max-origin)/velocity;
-    from=Math.max(from,Math.min(t1,t2));
-    to=Math.min(to,Math.max(t1,t2));
+    if(to>from){
+      start??={segment:i,point:[a[0]+x*from,a[1]+z*from],distance:distance+from};
+      end={segment:i,point:[a[0]+x*to,a[1]+z*to]};
+    }
+    distance+=length;
   }
-  if(to<=from)return;
-  return {...route,points:[[a[0]+x*from,a[1]+z*from],[a[0]+x*to,a[1]+z*to]],lineDashPhase:from};
+  if(start&&end)return {...route,points:[start.point,...points.slice(start.segment,end.segment),end.point],lineDashPhase:start.distance};
 }
 
 /** 绘制、接路和路面年份共用圆角后的真实切线，避免各自猜测拐角位置。 */
@@ -156,7 +164,8 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
         // 每个90度弧12段，只供既有路口裁段；路面仍由上方arcTo绘制。
         return Array.from({length:13},(_,step):RoadPoint=>{const angle=start+turn*Math.PI/2*step/12;return [cx+Math.cos(angle)*r,cz+Math.sin(angle)*r]});
       }):corners;
-      let distance=route.lineDashPhase??0;
+      let distance=route.lineDashPhase??0,previousEnd=-Infinity;
+      let marking:Path2D|undefined;
       for(let i=0;i<(route.closed?parallel.length:parallel.length-1);i++){
         const a=parallel[i],b=parallel[(i+1)%parallel.length],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
         if(length<1e-6)continue;
@@ -183,8 +192,13 @@ export function createCityRoadPainter(routes:readonly CityRoadRoute[],junctions:
         for(const [start,end]of cuts){if(start>cursor)visible.push([cursor,start]);cursor=Math.max(cursor,end)}
         if(cursor<1)visible.push([cursor,1]);
         for(const [start,end]of visible){
-          const segment=new Path2D();segment.moveTo(a[0]+dx*start,a[1]+dz*start);segment.lineTo(a[0]+dx*end,a[1]+dz*end);
-          markings.push({path:segment,color,width,dash,phase:distance+start*length});
+          const phase=distance+start*length;
+          if(!marking||phase-previousEnd>1e-6){
+            marking=new Path2D();marking.moveTo(a[0]+dx*start,a[1]+dz*start);
+            markings.push({path:marking,color,width,dash,phase});
+          }
+          marking.lineTo(a[0]+dx*end,a[1]+dz*end);
+          previousEnd=distance+end*length;
         }
         distance+=length;
       }

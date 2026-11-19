@@ -354,7 +354,7 @@
     "message": "Where do the road signs and exits come from?"
   },
   "roadHelpExits": {
-    "message": "Every city starts with four exits. The first four people mentioned in the profile bio, for example @octocat, get the main exits. The next four get branch roads. CodeYears skips the profile owner and repeated names. Select a named blue sign to visit that person’s city. Select a blank sign to see how to connect a friend."
+    "message": "Districts cover five years each, with exits along their exposed edges. CodeYears fills the available exits in the order people are mentioned in the profile bio, for example @octocat. It skips the profile owner and repeated names. Select a named blue sign to visit that person’s city. Select a blank sign to see how to connect a friend."
   },
   "roadHelpReturn": {
     "message": "A green return sign takes you back to the city you just visited in this tab."

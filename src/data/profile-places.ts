@@ -57,7 +57,6 @@ export function readProfilePlaces(doc: Document, profile: string, card = findPro
     if (!login || seen.has(login.toLowerCase())) continue;
     seen.add(login.toLowerCase());
     people.push(login);
-    if (people.length === 8) break;
   }
   return { people, organizations: [...organizations.values()], connections };
 }

@@ -648,6 +648,17 @@
     "baselineHeight": 12,
     "sampleId": "outskirts-snowy-mountains"
   },
+  "outskirts-wooded-ridge": {
+    "file": "outskirts-wooded-ridge.png",
+    "left": -24,
+    "top": -24,
+    "width": 48,
+    "height": 24,
+    "nativeWidth": 48,
+    "nativeDepth": 24,
+    "baselineHeight": 12,
+    "sampleId": "outskirts-wooded-ridge"
+  },
   "outskirts-dry-meadow": {
     "file": "outskirts-dry-meadow.png",
     "left": -20,

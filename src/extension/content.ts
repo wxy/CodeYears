@@ -311,7 +311,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
         if (!active || controller !== request) return;
         if (error) { loadFailure = new Error(error); request.abort(); }
         updateControls();
-      }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed);
+      }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed, roads.setExitCount);
       city.setRoadControls(roads.controls(),roads.returnPost());
       city.setOrganizations(places.organizations, t("cityOrganizations"));
       city.setTrafficConnections(places.connections);

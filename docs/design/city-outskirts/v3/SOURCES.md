@@ -1,4 +1,4 @@
-# 城郊远山、雪山与草场
+# 城郊远山、林木山脊、雪山与草场
 
 2026-11-19 使用内置 ImageGen 生成远山、偏暖的开阔草场与雪山。远山和草场以项目已经使用的 `outskirts-hills.png` 作质感与光照参考，雪山以同批远山为参考。图像输入只有项目素材。
 
@@ -10,6 +10,8 @@
 | `public/assets/city-runtime/outskirts-dry-meadow.png` | 1152 × 576，透明 PNG | 1,084,661 | `58123cc33531b797ee227ce32c96fde2c993c0a314bf3fa322aeb4becc0c1647` |
 | `snowy-mountains-source.png` | 1774 × 887，透明 PNG | 2,535,101 | `5de33d3c32047c7c9939b6cccbfe81492d1667bd9c717b7f951c4ffbca65f356` |
 | `public/assets/city-runtime/outskirts-snowy-mountains.png` | 1152 × 576，透明 PNG | 1,028,598 | `de05538ca8ddd1361ad1bedf32770e3e1014d369d97d161aa63dd975de7ea839` |
+| `wooded-ridge-source.png` | 1774 × 887，透明 PNG | 2,979,365 | `2fb3e0b133e1e3d517cc3c3ec37be98d8c1abcd4afd133e40938542ad8d82b79` |
+| `public/assets/city-runtime/outskirts-wooded-ridge.png` | 1152 × 576，透明 PNG | 1,242,854 | `4a16b0312c643b6063017a4109419435a817b570ad52afbed0555ca54a14b827` |
 
 使用 `sips -Z 1152 <原画> --out <运行PNG>` 等比缩小。运行图在 `src/renderers/city-baked-catalog.json` 登记，原画留作素材母版。
 
@@ -24,3 +26,5 @@ One transparent raster sprite for the terrain of CodeYears, a realistic miniatur
 ```
 
 雪山使用同批远山作为视角和日照参考，要求灰蓝裸岩、低饱和积雪和逐渐变低的林地山脚，输出四周带透明留白的宽幅独立位图。
+
+林木山脊以中国南方湿润山地为文字参考，构图为近处高低错落的三条林脊及山鞍。生成要求保留等轴俯视角、左上漫射日光、灰绿岩壁、松树和阔叶混林，山脚以透明度渐隐衔接草地。输入仅为文字描述。

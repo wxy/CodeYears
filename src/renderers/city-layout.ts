@@ -6,6 +6,7 @@ export const CITY_ROAD_WIDTH = CITY_STREET_LANE_WIDTH * 2;
 export const CITY_YEAR_GAP = CITY_STREET_LANE_WIDTH * 4;
 // 河带含两岸大道的半幅、岸带和4格水面；桥身长度按基础落点确定。
 export const CITY_PARK_DEPTH = 9.6;
+export const CITY_BAND_YEARS = 5;
 export const CITY_RIVER_DEPTH = bridgeLevels.riverDepth;
 export const CITY_RIVER_BANK_DEPTH = 1.6;
 const QUARTER_COLUMNS = 13;
@@ -24,7 +25,7 @@ export function createCityLayout(weekly: WeeklyCity): CityLayout {
   return { width: weeks + CITY_ROAD_WIDTH * 3, districts: weekly.districts.map((district, block) => {
     const quarterWeeks = [13,26,39];
     return { year: district.year,
-      z: Math.round((block * (7 + CITY_YEAR_GAP) + Math.floor(block / 5) * CITY_PARK_DEPTH) * 1000) / 1000,
+      z: Math.round((block * (7 + CITY_YEAR_GAP) + Math.floor(block / CITY_BAND_YEARS) * CITY_PARK_DEPTH) * 1000) / 1000,
       quarterWeeks,
       quarterPadding: [0,0,0,weeks-district.weeks],
       weekX(week) {

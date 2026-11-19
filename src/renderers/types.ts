@@ -22,7 +22,7 @@ export interface CityRoadLabel { label:string; returning:boolean }
 export interface LandscapeView {
   canvas: HTMLCanvasElement;
   setVehicles?(vehicles: readonly CityVehicle[]): void;
-  setRoadCount?(count: number): void;
+  exitCount?:number;
   setRoadLabels?(labels:readonly CityRoadLabel[],returnLabel?:string):void;
   setOrganizationPosters?(posters:readonly OrganizationPoster[],frame?:CitySprite):void;
   organizationFaces?(viewport:LandscapeViewport):readonly {left:number;top:number;size:number;slope:number}[];

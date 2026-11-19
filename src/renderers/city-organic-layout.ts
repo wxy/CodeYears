@@ -1,6 +1,6 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
-import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
+import { CITY_BAND_YEARS, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { cityVehicleSprites, planCityTransport, type CityTrafficSignal } from './city-transport';
@@ -8,7 +8,7 @@ import type { CityBridge } from './city-road-network';
 import { createCityBridgeApproachPainter } from './city-bridges';
 import catalog from './city-baked-catalog.json';
 import { cityExitWithSign, createCityRoadPainter, planRoadGeometry, planSignalizedApproaches, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
-import { CITY_SCENERY_IDS } from './city-outskirts';
+import { CITY_MOUNTAIN_ROAD_LEAD, CITY_SCENERY_IDS } from './city-outskirts';
 import type { CityRiver } from './city-waterways';
 
 const DAY = 86400000;
@@ -151,7 +151,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
         const profile=catalog[`transport-bridge-${style}`],waterNear=top+CITY_RIVER_BANK_DEPTH,waterFar=bottom-CITY_RIVER_BANK_DEPTH;
         const from=style==='stone'?waterNear-Math.min(...profile.supportAnchors.map(p=>p.z)):(waterNear+waterFar)/2-profile.supportAnchors[0].z;
         // 桥身跨过两岸，桥跨由模型基础间距决定；引桥使用余下岸带接回路缘。
-        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/5)-1,quarter:index+1,style,
+        bridges.push({id:`organic-bridge-${bridges.length}`,band:Math.floor(next.block/CITY_BAND_YEARS)-1,quarter:index+1,style,
           from:[x,from],to:[x,from+profile.nativeDepth],landings:{from:[x,top],to:[x,bottom]}});
       }});
     } else{
@@ -209,7 +209,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
     roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,...(area<0?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),cornerRadius:members.length&&members.every(region=>region.milestone) ? .45 : lanes===8?2.4:1.2,closed:true,points:corners});
   }
-  const {links,exits}=connectSettlements(roads,footprints);
+  const {links,exits}=connectSettlements(roads,footprints,regions);
   // 零贡献城市仍保留装饰性环路与出口，允许手动访问别人的城市。
   if(!regions.length){
     roads.push(...original.roadNetwork.roads.filter(road=>road.id==='ring'));
@@ -273,7 +273,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     const dx=end[0]-start[0],dz=end[1]-start[1],length=Math.hypot(dx,dz);
     // 目的地标字附近留空；车辆出现在路牌之外的同一条公路上。
     const along = (distance:number):RoadPoint => [end[0]+dx/length*distance,end[1]+dz/length*distance];
-    return {a:along(2),b:along(30),road};
+    return {a:along(1.5),b:along(CITY_MOUNTAIN_ROAD_LEAD),road};
   });
   const trafficRoutes = [...highways,...straights.filter(({road})=>!road.id.startsWith('exit-'))];
   // 各道路按固定世界格抽样，放大和平移共用同一车阵。
@@ -432,7 +432,8 @@ function contains(points:readonly RoadPoint[],x:number,z:number):boolean {
 }
 
 /** 在闭环直道上选最近的可行接点；最小生成树连通片区，不再统一绕到西侧。 */
-function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:readonly {left:number;right:number;top:number;bottom:number}[]) {
+function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:readonly {left:number;right:number;top:number;bottom:number}[],
+  regions:readonly OrganicRegion[]) {
   const links:CityRoadRoute[]=[],exits:CityRoadRoute[]=[];
   const rings=boundaries.filter(ring=>ring.id.startsWith('organic-ring'));
   if(!rings.length)return {links,exits};
@@ -485,16 +486,42 @@ function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:reado
     parents[from]=to;
     links.push({id:`organic-link-${links.length}`,lanes:4,lineCap:'butt',points:link.points});
   }
-  // 四向出口仍从全局最外沿出发。
+  // 同一五年城区可从左右外缘出城，首尾城区还可以向地图端部出城。
   const outer=edges.filter(e=>e.outer);
-  const vertical=outer.filter(e=>e.vertical),horizontal=outer.filter(e=>!e.vertical);
-  for(const [side,sign]of [[vertical,-1],[vertical,1]] as const){
-    const edge=[...side].sort((a,b)=>sign*(b.a[0]-a.a[0]))[0],x=edge.a[0],z=(edge.low+edge.high)/2;
-    exits.push({id:`exit-${exits.length}`,lanes:2,points:[[x,z],[x+sign*12,z]]});
+  const bandBounds=new Map<number,{top:number;bottom:number}>();
+  for(const {block,top,bottom} of regions){
+    const band=Math.floor(block/CITY_BAND_YEARS),previous=bandBounds.get(band);
+    bandBounds.set(band,previous?{top:Math.min(top,previous.top),bottom:Math.max(bottom,previous.bottom)}:{top,bottom});
   }
-  for(const sign of [-1,1]){
-    const edge=[...horizontal].sort((a,b)=>sign*(b.a[1]-a.a[1]))[0],z=edge.a[1],x=(edge.low+edge.high)/2;
-    exits.push({id:`exit-${exits.length}`,lanes:2,points:[[x,z],[x,z+sign*12]]});
+  const bands=[...bandBounds.entries()];
+  const exit=(band:number,top:number,bottom:number,axis:0|1,side:number)=>{
+    const alongAxis=1-axis, middle=(top+bottom)/2;
+    const candidates=outer.flatMap(edge=>{
+      if(edge.vertical!==(axis===0)||Math.sign(edge.b[alongAxis]-edge.a[alongAxis])*(axis===0?1:-1)!==side)return [];
+      const across=edge.a[axis];
+      if(axis===1&&(across<top-1.61||across>bottom+1.61))return [];
+      const low=axis===0?Math.max(edge.low,top):edge.low,high=axis===0?Math.min(edge.high,bottom):edge.high;
+      if(high<=low)return [];
+      const along=(low+high)/2;
+      // 凹进去的外环边也可能朝外。出口前方须有真正通往城外的连续走廊。
+      if(footprints.some(footprint=>axis===0
+        ? along>footprint.top&&along<footprint.bottom&&side*((side>0?footprint.right:footprint.left)-across)>1e-5
+        : along>footprint.left&&along<footprint.right&&side*((side>0?footprint.bottom:footprint.top)-across)>1e-5))return [];
+      return [{across,along,length:high-low}];
+    });
+    const chosen=candidates.sort((a,b)=>Number(b.length>=3.2)-Number(a.length>=3.2)||
+      side*(b.across-a.across)||(axis===0?Math.abs(a.along-middle)-Math.abs(b.along-middle):b.length-a.length))[0];
+    if(!chosen)return;
+    const {across,along}=chosen;
+    const start:RoadPoint=axis===0?[across,along]:[along,across];
+    const end:RoadPoint=axis===0?[across+side*6,along]:[along,across+side*6];
+    exits.push({id:`exit-band-${band}-${axis}-${side}`,lanes:4,laneWidth:.8,points:[start,end]});
+  };
+  for(const [i,[band,{top,bottom}]] of bands.entries()){
+    exit(band,top,bottom,0,-1);
+    exit(band,top,bottom,0,1);
+    if(i===0)exit(band,top,bottom,1,-1);
+    if(i===bands.length-1)exit(band,top,bottom,1,1);
   }
   return {links,exits};
 }

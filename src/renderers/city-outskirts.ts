@@ -1,11 +1,40 @@
-import { cityRoadWidth, clipCityExit, type CityRoadRoute } from './city-roads';
+import { cityRoadWidth, clipCityExit, type CityRoadRoute, type RoadPoint } from './city-roads';
 import type { CityImages } from './city-assets';
 import { loadUnit } from './unit-calibration';
 
 export const CITY_OUTSKIRT_MARGIN=12;
+export const CITY_MOUNTAIN_ROAD_LEAD=8;
 
 export const CITY_OUTSKIRT_IDS=['outskirts-forest','outskirts-hills','natural-ground'] as const;
-export const CITY_SCENERY_IDS=[...CITY_OUTSKIRT_IDS,'outskirts-mountains','outskirts-dry-meadow','outskirts-snowy-mountains'] as const;
+export const CITY_SCENERY_IDS=[...CITY_OUTSKIRT_IDS,'outskirts-mountains','outskirts-dry-meadow','outskirts-snowy-mountains','outskirts-wooded-ridge'] as const;
+
+/** 山脊和弯道共用一个局部坐标，路牌所处的近城直道也是整条公路的起点。 */
+export function planCityMountainRoads(exits:readonly CityRoadRoute[]) {
+  const ridges:{x:number;z:number;width:number;away:RoadPoint}[]=[];
+  const highways=exits.map((road,i)=>{
+    const [a,b]=road.points,length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    const ux=(b[0]-a[0])/length,uz=(b[1]-a[1])/length,side=ux===0?-1:1;
+    const vx=-uz*side,vz=ux*side;
+    const hillAt=22+i%3*4,ridgeWidth=18+i%3*2;
+    const point=(distance:number,offset:number):RoadPoint=>[b[0]+distance*ux+offset*vx,b[1]+distance*uz+offset*vz];
+    // 第一处山脊逼出主弯，后面沿错开的次级山坡转向另一侧山口。
+    const secondHill=hillAt+(i%2===0?27:23);
+    for(const [distance,offset,width,away] of [[hillAt,0,ridgeWidth,-1],[secondHill,9,ridgeWidth*.77,1]] as const){
+      const [x,z]=point(distance,offset);
+      ridges.push({x,z,width,away:[vx*away,vz*away]});
+    }
+    const ease=(t:number)=>{t=Math.min(1,Math.max(0,t));return t*t*t*(10+t*(-15+t*6))};
+    const detour=ridgeWidth*.59+3;
+    const offset=(distance:number)=>detour*ease((distance-CITY_MOUNTAIN_ROAD_LEAD)/(hillAt-CITY_MOUNTAIN_ROAD_LEAD))
+      -(detour+5)*ease((distance-hillAt-3)/24)+6*ease((distance-secondHill-8)/28);
+    const tail=secondHill+35;
+    const points=[a,b,point(CITY_MOUNTAIN_ROAD_LEAD,0)];
+    for(let distance=CITY_MOUNTAIN_ROAD_LEAD+.75;distance<tail;distance+=.75)points.push(point(distance,offset(distance)));
+    points.push(point(tail,offset(tail)),point(tail+3,offset(tail)));
+    return {...road,points};
+  });
+  return {highways,ridges};
+}
 
 /** 原图经过共享低alpha清理后一次缩图；返回画布由closeCityImages统一释放。 */
 export async function loadCityOutskirtsImages(base:string,signal?:AbortSignal):Promise<CityImages> {
@@ -94,44 +123,77 @@ export function createCityOutskirtsPainter(width:number,depth:number,ringOuter:n
   };
 }
 
-/** 城郊坡色和位图使用地图坐标，格外宽阔的远景才摆放雪山。 */
-export function createCitySceneryPainter(width:number,depth:number,exits:readonly CityRoadRoute[],images:CityImages,
-  {left,top,right,bottom}:{left:number;top:number;right:number;bottom:number}) {
+/** 城郊地表、河谷和立体山地依次铺在地图坐标中。 */
+export function createCitySceneryPainter(width:number,depth:number,highways:readonly CityRoadRoute[],
+  ridges:ReturnType<typeof planCityMountainRoads>['ridges'],images:CityImages,
+  {left,top,right,bottom}:{left:number;top:number;right:number;bottom:number},
+  clearsWater:(left:number,top:number,right:number,bottom:number)=>boolean) {
   const span=right-left,height=bottom-top;
   const fields=[
-    [.24,.43,.23,.32,'rgba(202,181,121,.51)'],
-    [.73,.36,.25,.33,'rgba(101,130,126,.57)'],
-    [.31,.75,.26,.24,'rgba(192,172,116,.56)'],
-    [.72,.76,.26,.23,'rgba(115,142,107,.53)'],
+    [.19,.37,.29,.39,'rgba(70,106,75,.62)'],
+    [.73,.29,.29,.32,'rgba(89,121,114,.68)'],
+    [.33,.75,.28,.24,'rgba(180,159,105,.50)'],
+    [.76,.72,.29,.34,'rgba(69,111,80,.63)'],
   ] as const;
   const mountains=images['outskirts-mountains'];
   const mountainWidth=Math.min(54,Math.max(34,(width+depth)*.46));
+  const wooded=images['outskirts-wooded-ridge'];
   const snow=images['outskirts-snowy-mountains'];
   const snowWidth=Math.min(25,span*.24),snowHeight=snow?snowWidth*snow.height/snow.width:0;
-  const snowLeft=depth>=42?[left+span*.62,left+span*.53,right-snowWidth-2,left+2].find(x=>
-    !exits.some(exit=>clipCityExit(exit,x,top+1,x+snowWidth,top+snowHeight+1))):undefined;
+  const clearsRoad=(x:number,y:number,w:number,h:number)=>
+    !highways.some(road=>clipCityExit(road,x+w*.13,y+h*.12,x+w*.87,y+h*.91));
+  const clearGround=(x:number,y:number,w:number,h:number)=>
+    clearsRoad(x,y,w,h)&&clearsWater(x+w*.24,y+h*.53,x+w*.79,y+h*.97);
+  const snowLeft=depth>=42?[left+span*.62,left+span*.53,right-snowWidth-2,left+2]
+    .find(x=>clearsRoad(x,top+1,snowWidth,snowHeight)):undefined;
   const meadow=images['outskirts-dry-meadow'];
   const meadowWidth=Math.min(45,span*.36);
   const stands=[
-    [-12,-8,'forest',1.05],[-19,depth*.27,'hills',1.42],[-24,depth*.64+3,'forest',1.55],
-    [width*.18,-13,'forest',1.45],[width*.56,-19,'hills',1.5],[width*.88,-11,'forest',1.12],
-    [width+13,depth*.18,'hills',1.68],[width+23,depth*.63,'forest',1.58],
-    [width*.78,depth+13,'forest',1.35],[width*.43,depth+17,'hills',1.6],[width*.16,depth+9,'forest',1.17],
-    [-15,depth+13,'hills',1.52],[width+7,depth+13,'hills',1.28],
+    [-10,-9,'forest',1.25],[-20,depth*.2,'hills',1.72],[-25,depth*.64+3,'forest',1.55],
+    [width*.16,-13,'forest',1.6],[width*.55,-18,'hills',1.95],[width*.9,-10,'forest',1.32],
+    [width+13,depth*.18,'hills',1.68],[width+23,depth*.63,'forest',1.68],
+    [width*.78,depth+13,'forest',1.65],[width*.44,depth+17,'hills',1.84],[width*.14,depth+9,'forest',1.4],
+    [-15,depth+13,'hills',1.85],[width+7,depth+13,'hills',1.58],
   ] as const;
-  const trees=stands.flatMap(([x,z,kind,factor])=>{
+  const vegetation=stands.flatMap(([x,z,kind,factor])=>{
     const sprite=images[`outskirts-${kind}`];
-    if(!sprite||exits.some(route=>{
-      const [a,b]=route.points,dx=b[0]-a[0],dz=b[1]-a[1];
-      const t=Math.max(0,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz));
-      return Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz)<cityRoadWidth(route)/2+4.6*factor;
-    }))return [];
+    if(!sprite)return [];
     const px=(x-z)*.5+(sprite.left-.5)*factor,py=(x+z)*.25+(sprite.top-1.75)*factor;
     const w=sprite.width*factor,h=sprite.height*factor;
-    if(px<left||px+w>right||py<top||py+h>bottom)return [];
-    return [{sprite,px,py,w,h,order:x+z}];
-  }).sort((a,b)=>a.order-b.order);
-  return (context:CanvasRenderingContext2D)=>{
+    return clearGround(px,py,w,h)?[{sprite,px,py,w,h,order:x+z}]:[];
+  });
+  const highlands=ridges.flatMap(({x,z,width,away},i)=>{
+    const sprite=images[i%3===1?'outskirts-mountains':'outskirts-wooded-ridge'];
+    if(!sprite)return [];
+    const w=width,h=width*sprite.height/sprite.width;
+    for(const inset of [0,3,7,11]){
+      const a=x+away[0]*inset,b=z+away[1]*inset;
+      const px=(a-b)*.5-w/2,py=(a+b)*.25-h*.78;
+      if(clearGround(px,py,w,h))return [{sprite,px,py,w,h,order:a+b}];
+    }
+    return [];
+  });
+  const relief=[...vegetation,...highlands];
+  const ridgelines=[
+    {sprite:mountains,preferred:mountainWidth,sites:[[.23,.02],[.29,.04],[.33,.01],[.39,.01],[.15,.12],[.02,.30]]},
+    {sprite:wooded,preferred:33,sites:[[.01,.34],[.03,.38],[.04,.29],[.13,.33],[.2,.2],[.02,.49]]},
+    {sprite:wooded,preferred:30,sites:[[.04,.79],[.12,.82],[.19,.82],[.62,.86],[.77,.34],[.76,.69]]},
+  ];
+  for(const {sprite,preferred,sites} of ridgelines){
+    if(!sprite)continue;
+    const candidate=[preferred,Math.min(preferred-3,26),21].flatMap(w=>sites.map(([u,v])=>({
+      px:left+u*span,py:top+v*height,w,h:w*sprite.height/sprite.width,
+    }))).find(({px,py,w,h})=>{
+      const lx=px+w*.16,rx=px+w*.85,ty=py+h*.55,by=py+h*.96;
+      const outside=rx+2*by<-4||lx+2*ty>width+4||2*by-lx<-4||2*ty-rx>depth+4;
+      const meetsSnow=snowLeft!==undefined&&px+w*.88>snowLeft&&px< snowLeft+snowWidth*.9&&py<top+snowHeight+1;
+      return outside&&!meetsSnow&&clearGround(px,py,w,h)&&!relief.some(r=>
+        Math.min(px+w,r.px+r.w)-Math.max(px,r.px)>w*.62&&Math.min(py+h,r.py+r.h)-Math.max(py,r.py)>h*.55);
+    });
+    if(candidate)relief.push({sprite,...candidate,order:4*(candidate.py+candidate.h*.78)});
+  }
+  relief.sort((a,b)=>a.order-b.order);
+  return (context:CanvasRenderingContext2D,paintWater:()=>void)=>{
     for(const [x,y,rx,ry,color] of fields){
       context.save();
       context.translate(left+x*span,top+y*height);
@@ -146,12 +208,12 @@ export function createCitySceneryPainter(width:number,depth:number,exits:readonl
     if(meadow){
       const meadowHeight=meadowWidth*meadow.height/meadow.width;
       context.save();
-      context.globalAlpha=.88;
+      context.globalAlpha=.67;
       context.drawImage(meadow.canvas,left+span*.12,Math.min(top+height*.61,bottom-meadowHeight-1),meadowWidth,meadowHeight);
       context.restore();
     }
+    paintWater();
     if(snow&&snowLeft!==undefined)context.drawImage(snow.canvas,snowLeft,top+1,snowWidth,snowHeight);
-    if(mountains)context.drawImage(mountains.canvas,Math.max(left+1,-mountainWidth*.60),top+1,mountainWidth,mountainWidth*mountains.height/mountains.width);
-    for(const {sprite,px,py,w,h} of trees)context.drawImage(sprite.canvas,px,py,w,h);
+    for(const {sprite,px,py,w,h} of relief)context.drawImage(sprite.canvas,px,py,w,h);
   };
 }

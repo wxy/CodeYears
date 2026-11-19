@@ -39,7 +39,7 @@ export interface ContributionLandscape {
 }
 
 /** 两种引擎共享播放/缩放/平移；缩放通知按面板的100%基准归一化。City不创建WebGL。 */
-export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void, namingOriginYear?: number, trafficSeed = 0): ContributionLandscape {
+export function createLandscape(host: HTMLElement, days: readonly DailyContribution[], onChange: (state: TimelineState, error?: string, detail?: string) => void, initialView: ViewMode = "city", assetBase = new URL(/* @vite-ignore */ "./assets/city/", import.meta.url).href, cityWonders = true, reservedYears?: readonly number[], onZoomChange?: (zoom: number) => void, namingOriginYear?: number, trafficSeed = 0, onExitCount?: (count:number)=>void): ContributionLandscape {
   const progressiveCity=initialView==="city"&&reservedYears!==undefined;
   // 原City的150%作为新100%；City缩放固定下限50%，上限不超过2000%。
   const zoomBase=progressiveCity?1.875:initialView==="city"?1.5:1;
@@ -95,7 +95,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     layer.canvas.setAttribute("aria-label",`${text}固定视角，拖动平移，滚轮缩放。`);
   };
   const configureCanvas=(next:LandscapeView)=>{
-    next.setRoadCount?.(Math.max(4,roadAnchors.length));
+    if(next.exitCount!==undefined)onExitCount?.(next.exitCount);
     next.setRoadLabels?.(roadAnchors,returnSign?.label);
     if(posters.length)next.setOrganizationPosters?.(posters,frameImages?.[organizationFrameId]);
     refitOverview(next);
@@ -257,7 +257,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
         roadLayer.append(sign);
       }
       if(post)roadLayer.append(post.surface,post.sign);
-      layer?.setRoadCount?.(Math.max(4,controls.length));layer?.setRoadLabels?.(controls,post?.label);refitOverview();positionRoads();schedule();
+      layer?.setRoadLabels?.(controls,post?.label);refitOverview();positionRoads();schedule();
     },
     buildingAt(x,y){
       if(disposed||suspended||!progressiveCity)return;
