@@ -1,4 +1,4 @@
-# 城郊远山、林木山脊、雪山与草场
+# 城郊山地、草场与地纹
 
 2026-11-19 使用内置 ImageGen 生成远山、偏暖的开阔草场与雪山。远山和草场以项目已经使用的 `outskirts-hills.png` 作质感与光照参考，雪山以同批远山为参考。图像输入只有项目素材。
 
@@ -14,6 +14,8 @@
 | `public/assets/city-runtime/outskirts-wooded-ridge.png` | 1152 × 576，透明 PNG | 1,242,854 | `4a16b0312c643b6063017a4109419435a817b570ad52afbed0555ca54a14b827` |
 | `mountain-massif-source.png` | 1774 × 887，透明 PNG | 2,609,354 | `a4f4af11328165057b41721b0a604be5a44ab589c7d4b022a10536202e59ea97` |
 | `public/assets/city-runtime/outskirts-mountain-massif.png` | 1152 × 576，透明 PNG | 1,061,985 | `5243d58e8bc1f24192d9d0d54abcbd0c530cd37f31e142641da097cb749e0849` |
+| `ground-tiles-source.png` | 1254 × 1254，四格地纹 PNG | 4,011,041 | `193d57927d4a101e849e2e043df1ec563e0732352121542c4b423cbf6bb7d159` |
+| `public/assets/city-runtime/outskirts-ground-tiles.png` | 1152 × 1152，四格地纹 PNG | 2,734,455 | `e71547051cff901fbba9ce61676f9906021b4f0b0d5655a38e190d8d99861ef1` |
 
 使用 `sips -Z 1152 <原画> --out <运行PNG>` 等比缩小。运行图在 `src/renderers/city-baked-catalog.json` 登记，原画留作素材母版。
 
@@ -32,3 +34,5 @@ One transparent raster sprite for the terrain of CodeYears, a realistic miniatur
 林木山脊以中国南方湿润山地为文字参考，构图为近处高低错落的三条林脊及山鞍。生成要求保留等轴俯视角、左上漫射日光、灰绿岩壁、松树和阔叶混林，山脚以透明度渐隐衔接草地。输入仅为文字描述。
 
 连绵的山体组采用同样的等轴角度和光照，以右侧高峰、左下方低丘、山鞍和相连的林地坡脚改变轮廓。通过 ImageGen 根据文字描述生成。道路用的 `src/renderers/city-relief-outlines.json` 从运行 PNG 的透明度提取。等比缩窄到 144 像素，逐行取透明度至少 200 的最左和最右点，计算凸包并移除近共线顶点，使用 0 至 1 的归一化坐标。
+
+四格地纹由 ImageGen 根据文字描述生成。左上为浅草，右上为湿苔，左下为带碎石的草地，右下为偏干短草。四格使用相同的正俯视角、细节尺度及漫射光。扩展取样时从每格内缩 4%，解码后为各格加上渐隐边，再统一做等轴投影。

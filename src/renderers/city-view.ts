@@ -12,6 +12,7 @@ import { createCityLayout, CITY_BAND_YEARS, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH 
 import { createCityYearMarkers } from './city-year-markers';
 import { createCityOutskirtsPainter, createCitySceneryPainter, planCityRelief, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
 import { planCityMountainRoads } from './city-mountain-roads';
+import { CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
 import { createCityWaterways, type CityRiver } from './city-waterways';
 import type { LandscapeView, LandscapeViewport } from './types';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
@@ -81,6 +82,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const progressive=previouslyRevealedDays!==undefined;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
+  const atlas=images[CITY_GROUND_ATLAS],paintGroundTiles=atlas?createCityGroundPainter(atlas.canvas):undefined;
   const terrain=images['natural-ground'],terrainPattern=terrain?context.createPattern(terrain.canvas,'repeat'):null;
   // 图案坐标与城市共用地面投影和世界原点；缩放平移时不会像屏幕壁纸滑动。
   if(terrainPattern){const size=terrain.width/terrain.canvas.width;terrainPattern.setTransform(new DOMMatrix([size*.5,size*.25,-size*.5,size*.25,0,0]))}
@@ -453,7 +455,13 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         land.fillStyle='#a3b58d';land.fillRect(0,0,viewport.width,viewport.height);
         land.save();
         land.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
-        if(terrainPattern){
+        if(paintGroundTiles){
+          paintGroundTiles(land,{left,top,right,bottom});
+          // 在整个拼贴层上统一柔化远景，避免单块透明度叠加导致深浅接缝。
+          land.globalAlpha=Math.max(0,.48-scale/160);
+          land.fillStyle='#a3b58d';land.fillRect(left,top,viewport.width/scale,viewport.height/scale);
+          land.globalAlpha=1;
+        }else if(terrainPattern){
           // 远景让城外的细碎草纹融入底色。
           land.globalAlpha=Math.min(1,(groundPainter ? .52 : .65)+scale/160);
           land.fillStyle=terrainPattern;land.fillRect(left,top,viewport.width/scale,viewport.height/scale);

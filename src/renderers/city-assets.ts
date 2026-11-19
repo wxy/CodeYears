@@ -1,5 +1,6 @@
 import catalog from './city-baked-catalog.json';
 import { createCityDecoration } from './city-decorations';
+import { CITY_GROUND_ATLAS, prepareCityGroundAtlas } from './city-ground-tiles';
 
 export interface CitySprite {
   canvas: HTMLCanvasElement;
@@ -31,6 +32,7 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
         const context = canvas.getContext('2d');
         if (!context) throw new Error('无法创建城市素材画布。');
         context.drawImage(bitmap, 0, 0);
+        if(id===CITY_GROUND_ATLAS)prepareCityGroundAtlas(context);
         const { file: _file, ...metadata } = entry;
         return { [id]: { canvas, ...metadata } };
       } catch (error) {

@@ -615,6 +615,17 @@
     "baselineHeight": 2,
     "sampleId": "outskirts-hills"
   },
+  "outskirts-ground-tiles": {
+    "file": "outskirts-ground-tiles.png",
+    "left": 0,
+    "top": 0,
+    "width": 54,
+    "height": 54,
+    "nativeWidth": 54,
+    "nativeDepth": 54,
+    "baselineHeight": 0,
+    "sampleId": "outskirts-ground-tiles"
+  },
   "natural-ground": {
     "file": "natural-ground.png",
     "left": 0,
