@@ -82,7 +82,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const progressive=previouslyRevealedDays!==undefined;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
-  const atlas=images[CITY_GROUND_ATLAS],paintGroundTiles=atlas?createCityGroundPainter(atlas.canvas):undefined;
+  const atlas=images[CITY_GROUND_ATLAS],paintGroundTiles=atlas?createCityGroundPainter(atlas.canvas,atlas.groundDetail):undefined;
   const terrain=images['natural-ground'],terrainPattern=terrain?context.createPattern(terrain.canvas,'repeat'):null;
   // 图案坐标与城市共用地面投影和世界原点；缩放平移时不会像屏幕壁纸滑动。
   if(terrainPattern){const size=terrain.width/terrain.canvas.width;terrainPattern.setTransform(new DOMMatrix([size*.5,size*.25,-size*.5,size*.25,0,0]))}
@@ -456,7 +456,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         land.save();
         land.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
         if(paintGroundTiles){
-          paintGroundTiles(land,{left,top,right,bottom});
+          paintGroundTiles(land,{left,top,right,bottom},scale);
           // 在整个拼贴层上统一柔化远景，避免单块透明度叠加导致深浅接缝。
           land.globalAlpha=Math.max(0,.48-scale/160);
           land.fillStyle='#a3b58d';land.fillRect(left,top,viewport.width/scale,viewport.height/scale);

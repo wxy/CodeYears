@@ -193,15 +193,19 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
     const max=Math.min(layer?.maxZoom?.(viewport)??5,view==="city"?zoomBase*20:5);
     // 全景有时需要小于普通的 50% 下限。从这个实际倍率连续放大。
     const min=view==="city"?cityZoomFloor:.35;
-    const next=Math.min(max,Math.max(min,viewport.zoom*factor)),ratio=next/viewport.zoom;
-    if(factor!==1&&next!==viewport.zoom)inOverview=false;
+    const next=Math.min(max,Math.max(min,viewport.zoom*factor));
+    if(factor!==1){
+      if(next===viewport.zoom)return;
+      inOverview=false;
+    }
+    const ratio=next/viewport.zoom;
     viewport.panX=x-(x-viewport.panX)*ratio;viewport.panY=y-(y-viewport.panY)*ratio;viewport.zoom=next;onZoomChange?.(next/zoomBase);schedule();
   };
   const wheel=(event:WheelEvent)=>{
-    if(event.target instanceof Element&&event.target.closest('.city-org-directory'))return;
-    const before = viewport.zoom, rect = host.getBoundingClientRect();
+    if(!event.deltaY||event.target instanceof Element&&event.target.closest('.city-org-directory'))return;
+    event.preventDefault();
+    const rect = host.getBoundingClientRect();
     zoomAt(Math.exp(-event.deltaY*.0015),event.clientX-rect.left-viewport.width/2,event.clientY-rect.top-viewport.height/2);
-    if (viewport.zoom !== before || host.closest('dialog[open]')) event.preventDefault();
   };
   // Only the stable, focused scene host owns arrows; inputs and browser shortcuts keep theirs.
   const keydown=(event:KeyboardEvent)=>{
