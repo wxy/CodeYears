@@ -1,4 +1,5 @@
 import type { GitHubPageContext } from '../platform/github/types';
+import { isCityUrl } from './city-url';
 
 // 已打开的标签页可能仍持有旧版保存的 town 站点。
 interface CityStop { login:string; map:'city'|'town' }
@@ -40,7 +41,9 @@ export function rememberCityJourney(context:GitHubPageContext,destination:string
   const returning=trail.findIndex(stop=>stop.login===destination);
   const next=returning<0?trail:trail.slice(0,returning);
   sessionStorage.setItem(entryKey(),JSON.stringify({viewer,target:context.profileLogin.toLowerCase(),trail:trail.slice(0,-1)} satisfies CityJourney));
-  const source=new URL(location.href);source.hash='codeyears-city';
-  history.replaceState(history.state,'',source);
+  if (!isCityUrl()) {
+    const source = new URL(location.href); source.hash = 'codeyears-city';
+    history.replaceState(history.state, '', source);
+  }
   sessionStorage.setItem(PENDING,JSON.stringify({viewer,target:destination,trail:next} satisfies CityJourney));
 }

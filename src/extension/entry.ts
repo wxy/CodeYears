@@ -1,6 +1,7 @@
 import type { CityPanel } from './content';
 import { entryText } from './entry-text';
 import { LANGUAGE_KEY, languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
+import { isCityUrl } from './city-url';
 
 declare global {
   interface Window { __codeyearsOpenCity?: () => boolean }
@@ -91,7 +92,7 @@ declare global {
       url.hash = 'codeyears-city';
       history.replaceState(history.state, '', url);
     }
-    let roadArrivalPending=location.hash==='#codeyears-city';
+    let roadArrivalPending=isCityUrl();
     let modulePromise: Promise<typeof import('./content')> | undefined;
     let entryState: 'preparing' | 'error' = 'preparing';
     const localize = () => {
@@ -124,7 +125,7 @@ declare global {
     };
     const selectNative = () => {
       roadArrivalPending=false;
-      if(location.hash==='#codeyears-city'){
+      if(isCityUrl()){
         const url=new URL(location.href);url.hash='';history.replaceState(history.state,'',url);
       }
       active = false; selection++; panel?.deactivate(); restoreNative();
@@ -169,16 +170,28 @@ declare global {
       const button = key === 'ArrowLeft' || key === 'Home' ? cityButton : nativeButton;
       button.focus(); button.click();
     });
+    const openRoadArrival = () => {
+      if (roadArrivalPending && !document.hidden) {
+        roadArrivalPending = false; host.scrollIntoView({block:'nearest'}); void selectCity();
+      }
+    };
     host.dataset.view = 'native';
     return {
       root, native, grid, heading, nativeStats, host, bodyHost, profile, sync, localize,
       open() { roadArrivalPending=false; host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
-      openRoadArrival() { if(roadArrivalPending&&!document.hidden){roadArrivalPending=false;host.scrollIntoView({block:'nearest'});void selectCity()} },
+      openRoadArrival,
+      syncUrl() {
+        if (!isCityUrl()) {
+          if (active) selectNative();
+          roadArrivalPending = false;
+        } else if (active) panel?.syncYearUrl();
+        else { roadArrivalPending = true; openRoadArrival(); }
+      },
       deactivate: selectNative,
       visibility(hidden: boolean) {
         if(!hidden&&roadArrivalPending){roadArrivalPending=false;host.scrollIntoView({block:'nearest'});void selectCity();return}
         if (!active || disposed) return;
-        if (hidden) panel?.deactivate(); else void panel?.activate(trafficSeed);
+        if (hidden) panel?.suspendPrivateView(); else void panel?.activate(trafficSeed);
       },
       dispose() {
         disposed = true; selection++; panel?.dispose(); restoreNative();
@@ -223,7 +236,9 @@ declare global {
   document.addEventListener('turbo:render', afterNavigate);
   document.addEventListener('turbo:load', afterNavigate);
   document.addEventListener('visibilitychange', () => { mounted?.visibility(document.hidden); });
-  window.addEventListener('popstate', reconcile);
+  const onUrlChange = () => { reconcile(); mounted?.syncUrl(); };
+  window.addEventListener('popstate', onUrlChange);
+  window.addEventListener('hashchange', onUrlChange);
   window.addEventListener('pagehide', () => { beforeNavigate(); observer.disconnect(); });
   window.addEventListener('pageshow', () => { observe(); afterNavigate(); });
   window.__codeyearsOpenCity = () => { reconcile(); if (!mounted) return false; mounted.open(); return true; };

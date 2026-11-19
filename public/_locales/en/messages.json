@@ -23,9 +23,6 @@
   "cancel": {
     "message": "Cancel"
   },
-  "apply": {
-    "message": "Apply"
-  },
   "expand": {
     "message": "Expand"
   },
@@ -76,9 +73,6 @@
   },
   "readingRange": {
     "message": "Reading $1. Your city fills as data arrives…"
-  },
-  "invalidRange": {
-    "message": "The start year must not be later than the end year."
   },
   "noData": {
     "message": "No data"
@@ -286,9 +280,6 @@
   },
   "errNetwork": {
     "message": "The network request failed. Check your connection and retry."
-  },
-  "warnYearBoundary": {
-    "message": "Available source years do not cover the full boundary. Only provided dates are shown."
   },
   "errRequestedDuplicate": {
     "message": "Duplicate requested year."
