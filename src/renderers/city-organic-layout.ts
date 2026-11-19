@@ -8,7 +8,8 @@ import type { CityBridge } from './city-road-network';
 import { createCityBridgeApproachPainter } from './city-bridges';
 import catalog from './city-baked-catalog.json';
 import { cityExitWithSign, createCityRoadPainter, planRoadGeometry, planSignalizedApproaches, cityRoadWidth, type CityRoadRoute, type CityRoadJunction, type RoadPoint } from './city-roads';
-import { CITY_MOUNTAIN_ROAD_LEAD, CITY_SCENERY_IDS } from './city-outskirts';
+import { CITY_SCENERY_IDS } from './city-outskirts';
+import { CITY_MOUNTAIN_ROAD_LEAD } from './city-mountain-roads';
 import type { CityRiver } from './city-waterways';
 
 const DAY = 86400000;

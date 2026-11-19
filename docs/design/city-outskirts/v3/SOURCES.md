@@ -12,6 +12,8 @@
 | `public/assets/city-runtime/outskirts-snowy-mountains.png` | 1152 × 576，透明 PNG | 1,028,598 | `de05538ca8ddd1361ad1bedf32770e3e1014d369d97d161aa63dd975de7ea839` |
 | `wooded-ridge-source.png` | 1774 × 887，透明 PNG | 2,979,365 | `2fb3e0b133e1e3d517cc3c3ec37be98d8c1abcd4afd133e40938542ad8d82b79` |
 | `public/assets/city-runtime/outskirts-wooded-ridge.png` | 1152 × 576，透明 PNG | 1,242,854 | `4a16b0312c643b6063017a4109419435a817b570ad52afbed0555ca54a14b827` |
+| `mountain-massif-source.png` | 1774 × 887，透明 PNG | 2,609,354 | `a4f4af11328165057b41721b0a604be5a44ab589c7d4b022a10536202e59ea97` |
+| `public/assets/city-runtime/outskirts-mountain-massif.png` | 1152 × 576，透明 PNG | 1,061,985 | `5243d58e8bc1f24192d9d0d54abcbd0c530cd37f31e142641da097cb749e0849` |
 
 使用 `sips -Z 1152 <原画> --out <运行PNG>` 等比缩小。运行图在 `src/renderers/city-baked-catalog.json` 登记，原画留作素材母版。
 
@@ -28,3 +30,5 @@ One transparent raster sprite for the terrain of CodeYears, a realistic miniatur
 雪山使用同批远山作为视角和日照参考，要求灰蓝裸岩、低饱和积雪和逐渐变低的林地山脚，输出四周带透明留白的宽幅独立位图。
 
 林木山脊以中国南方湿润山地为文字参考，构图为近处高低错落的三条林脊及山鞍。生成要求保留等轴俯视角、左上漫射日光、灰绿岩壁、松树和阔叶混林，山脚以透明度渐隐衔接草地。输入仅为文字描述。
+
+连绵的山体组采用同样的等轴角度和光照，以右侧高峰、左下方低丘、山鞍和相连的林地坡脚改变轮廓。通过 ImageGen 根据文字描述生成。道路用的 `src/renderers/city-relief-outlines.json` 从运行 PNG 的透明度提取。等比缩窄到 144 像素，逐行取透明度至少 200 的最左和最右点，计算凸包并移除近共线顶点，使用 0 至 1 的归一化坐标。

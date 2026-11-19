@@ -7,7 +7,7 @@
 - `public/icons/`：从项目原生 SVG 图标导出，母版及方法见 `docs/design/app-icon/v1/README.md`，随项目代码采用 MIT。
 - `public/assets/city/`：保留的设计源素材，包含项目专用的 AI 生成透明建筑、植被、地面、奇观和城郊图片。源文件不再直接进入下一版发行包；代码的 MIT 声明不另行承诺这些位图的独立复用授权。
 - 城市高速路牌的[正式母版与制作说明](docs/design/city-wayposts/v2/README.md)记录了两色预烘焙流程和投影标定。外环组织广告牌复用[铜绿铸铁牌架原画与标定](docs/design/city-wayposts/organization-billboard/README.md)，各组织的图标来自当前主页。
-- `public/assets/city-runtime/`：由设计源素材及标定流程生成的 105 张运行 PNG，发行时复制到 `assets/city/`。远山、林木山脊、雪山和草场的透明原画、来源与尺寸见[城郊素材记录](docs/design/city-outskirts/v3/SOURCES.md)。
+- `public/assets/city-runtime/`：由设计源素材及标定流程生成的 106 张运行 PNG，发行时复制到 `assets/city/`。远山、林木山脊、雪山和草场的透明原画、来源与尺寸见[城郊素材记录](docs/design/city-outskirts/v3/SOURCES.md)。
 - SVG 投影模板、标定 JSON 与程序绘制道路属于项目代码；运行时只使用本地资源。
 
 生成提示、来源和标定分别保留在 `docs/design/city-buildings/`、`docs/design/city-units/v2/` 至 `v4/`、`docs/design/city-outskirts/`、`docs/design/city-transport/` 和 `docs/design/city-model-expansion/`。部分提示使用城市建造游戏作为质感参考，并要求不复制游戏素材、标志或受保护的特色建筑；没有将游戏图片打包。不能仅凭提示就宣称已完成第三方权利核查。

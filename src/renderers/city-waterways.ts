@@ -1,5 +1,6 @@
 import { CITY_RIVER_BANK_DEPTH, CITY_RIVER_DEPTH } from './city-layout';
 import type { CityBridge } from './city-road-network';
+import { lakeOutline } from './city-mountain-roads';
 import catalog from './city-baked-catalog.json';
 
 export interface CityRiver {
@@ -20,6 +21,12 @@ interface Watercourse {
 
 const project=(x:number,z:number,drop=0):[number,number]=>[(x-z)*.5,(x+z)*.25+drop];
 const ease=(distance:number)=>{const t=Math.min(1,distance);return t*t*(3-2*t)};
+function crossSection(stream:Watercourse,t:number) {
+  const s=stream.sample(t),a=stream.sample(t-.16),b=stream.sample(t+.16);
+  const x=b.x-a.x,z=b.z-a.z,len=Math.hypot(x,z);
+  return {...s,nx:-z/len,nz:x/len};
+}
+const bankPoint=(s:ReturnType<typeof crossSection>,offset:number,drop=s.drop)=>project(s.x+s.nx*offset,s.z+s.nz*offset,drop);
 
 /** 水道固定在世界坐标中，主河和支流两端都裁到当前视野外。 */
 export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly CityBridge[],width:number,depth:number) {
@@ -48,16 +55,17 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     x,z:wildernessZ+10.8*Math.sin(x*.080-.65)+3.4*Math.sin(x*.179+1.38),half:.92+.21*Math.sin(x*.16),drop:0,
   })};
   const branchSource=main[0]??wilderness,first=reaches.values().next().value;
-  const branches:Watercourse[]=([-1,1] as const).map(direction=>{
+  const tributaries=([-1,1] as const).map(direction=>{
     const fork=branchSource.sample(direction<0?(first?.left??0)-13:(first?.right??width)+13);
+    const lakeAt=direction<0?18:22,lakeWidth=direction<0?3.1:3.75;
     // 两条侧谷改用南北方向推进，同主河汇合后分别转向各自的谷底。
-    return {from:direction<0?-Infinity:fork.z,to:direction<0?fork.z:Infinity,axis:1,sample(z){
+    const stream:Watercourse={from:direction<0?-Infinity:fork.z,to:direction<0?fork.z:Infinity,axis:1,sample(z){
       const distance=Math.abs(z-fork.z),split=ease(distance/19);
-      const lakeAt=direction<0?18:22,lakeWidth=direction<0?3.1:3.75;
       const lake=lakeWidth*Math.exp(-(((distance-lakeAt)/4.8)**2));
       return {x:fork.x+direction*(distance*.26+split*(6.1+6.5*Math.sin(distance*.103+.3))),
         z,half:.55+.13*Math.sin(distance*.16)+lake,drop:0};
     }};
+    return {stream,center:fork.z+direction*lakeAt};
   });
   // 河谷外侧保留一片小的牛轭湖，和支流汇出的湖湾一起形成不同形状的水面。
   const lakeX=width*.64,lakeRadius=5.4;
@@ -66,7 +74,14 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     return {x,z:wilderness.sample(x).z+7.7-2.8*t*t+.34*Math.sin(x*.73),
       half:Math.sqrt(Math.max(0,1-t*t))*(1.8+.32*Math.sin(x*.86)),drop:0};
   }};
-  const streams=[wilderness,oxbow,...branches,...main];
+  const streams=[wilderness,oxbow,...tributaries.map(({stream})=>stream),...main];
+  // 道路用同一批岸线的宽水面包络。狭窄河段仍留有穿越位置。
+  const lakes=[{stream:oxbow,center:lakeX,radius:lakeRadius},...tributaries.map(tributary=>({...tributary,radius:4.8}))]
+    .map(({stream,center,radius})=>{
+      const shores=Array.from({length:25},(_,i)=>crossSection(stream,center-radius+2*radius*i/24))
+        .flatMap(s=>[bankPoint(s,-s.half),bankPoint(s,s.half)]);
+      return lakeOutline(shores);
+    });
   const paint=(context:CanvasRenderingContext2D,left:number,top:number,right:number,bottom:number)=>{
     // 反解等轴测视口的角点，给最大河宽留余量。边界使用对应的河谷轴。
     const lows=[left+2*top-7,2*top-right-7],highs=[right+2*bottom+7,2*bottom-left+7];
@@ -75,16 +90,11 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     for(const stream of streams){
       const from=Math.max(lows[stream.axis],stream.from),to=Math.min(highs[stream.axis],stream.to);
       if(to<=from)continue;
-      const section=(t:number)=>{
-        const s=stream.sample(t),a=stream.sample(t-.16),b=stream.sample(t+.16);
-        const x=b.x-a.x,z=b.z-a.z,len=Math.hypot(x,z);
-        return {...s,nx:-z/len,nz:x/len};
-      };
+      const section=(t:number)=>crossSection(stream,t);
       const step=Math.max(.33,(to-from)/640),samples=[section(from)];
       for(let t=Math.ceil(from/step)*step;t<to;t+=step)if(t>from)samples.push(section(t));
       samples.push(section(to));
       // 急弯沿中心线法线量宽，斜着越过地图时水面也保留实际宽度。
-      const bankPoint=(s:ReturnType<typeof section>,offset:number,drop=s.drop)=>project(s.x+s.nx*offset,s.z+s.nz*offset,drop);
       const reversed=[...samples].reverse();
       for(const [path,inset,bank] of [[shore,1,.20],[water,1,0],[deep,.69,0]] as const){
         samples.forEach((s,i)=>{
@@ -130,5 +140,5 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     }
     return false;
   });
-  return {paint,clears};
+  return {paint,clears,lakes};
 }

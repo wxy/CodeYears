@@ -10,7 +10,8 @@ import { createCityBridgePainter } from './city-bridges';
 import { createCityLayout, CITY_BAND_YEARS, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
   CITY_YEAR_GAP as YEAR_GAP, CITY_PARK_DEPTH as PARK, type CityLayout } from './city-layout';
 import { createCityYearMarkers } from './city-year-markers';
-import { createCityOutskirtsPainter, createCitySceneryPainter, planCityMountainRoads, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
+import { createCityOutskirtsPainter, createCitySceneryPainter, planCityRelief, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
+import { planCityMountainRoads } from './city-mountain-roads';
 import { createCityWaterways, type CityRiver } from './city-waterways';
 import type { LandscapeView, LandscapeViewport } from './types';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
@@ -106,9 +107,19 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     return b[0]<a[0]?0:b[0]>a[0]?1:b[1]<a[1]?2:3;
   };
   const baseExits=(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')).sort((a,b)=>direction(a)-direction(b))).map(cityExitWithSign);
-  const {highways,ridges}=groundPainter?planCityMountainRoads(baseExits):{highways:baseExits,ridges:[]};
   const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork.bridges,width,depth):undefined;
-  const scenery=groundPainter&&waterways?createCitySceneryPainter(width,depth,highways,ridges,images,{left:minX,top:minY,right:maxX,bottom:maxY},waterways.clears):undefined;
+  const sceneryBounds={left:minX,top:minY,right:maxX,bottom:maxY};
+  const relief=waterways?planCityRelief(width,depth,baseExits,sceneryBounds,waterways.clears):[];
+  let highways=baseExits;
+  if(waterways){
+    // 并行谷带留不出通路时在地形阶段打开山口，再按可见山地重算整张图的公路。
+    for(;;){
+      const plan=planCityMountainRoads(baseExits,relief.map(ridge=>ridge.barrier),waterways.lakes,sceneryBounds);
+      if(plan.highways){highways=plan.highways;break}
+      relief.splice(plan.blockedRidge,1);
+    }
+  }
+  const scenery=waterways?createCitySceneryPainter(relief,images,sceneryBounds):undefined;
   const background=waterways?document.createElement('canvas'):undefined;
   let backdropKey='';
   const tallest=Math.max(1,...placed.filter(p=>!p.item.flat).map(p=>p.groundY-p.top));
@@ -449,7 +460,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
           land.globalAlpha=1;
         }
         const paintWater=()=>waterways?.paint(land,left,top,right,bottom);
-        if(scenery)scenery(land,paintWater);
+        if(scenery)scenery(land,paintWater,{left,top,right,bottom});
         else paintWater();
         land.restore();
         backdropKey=nextBackdropKey;
