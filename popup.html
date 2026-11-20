@@ -26,6 +26,7 @@
       body { margin: 0; inline-size: 350px; }
       main { padding: 16px; }
       h1 { margin: 0 0 14px; font-size: 19px; letter-spacing: -.02em; }
+      #profile-required { margin: 0 0 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
       fieldset { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
       fieldset + fieldset { margin-block-start: 14px; }
       legend { padding: 0; margin-block-end: 6px; font-weight: 600; }
@@ -39,6 +40,10 @@
       select, button { font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; background: var(--surface); }
       button { cursor: pointer; }
       #open-city { justify-self: start; border-color: var(--accent); color: var(--accent); font-weight: 600; }
+      fieldset:disabled, select:disabled { opacity: .55; }
+      fieldset:disabled .mode { background: var(--surface); border-color: var(--line); }
+      #open-city:disabled { border-color: var(--line); color: var(--muted); }
+      fieldset:disabled .mode, button:disabled, select:disabled { cursor: default; }
       :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       output { display: block; min-height: 1.45em; margin-block: 4px 8px; color: var(--accent); }
       output[data-error] { color: light-dark(#a52626, #ffa6a6); }
@@ -50,6 +55,7 @@
   <body>
     <main hidden>
       <h1 data-i18n="settingsTitle"></h1>
+      <p id="profile-required" data-i18n="popupWrongPage" hidden></p>
       <fieldset id="city-settings" disabled>
         <legend data-i18n="city"></legend>
         <label class="mode" for="show-city">

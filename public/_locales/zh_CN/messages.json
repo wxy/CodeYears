@@ -198,7 +198,7 @@
     "message": "正在打开贡献之城…"
   },
   "popupWrongPage": {
-    "message": "请先打开 GitHub 个人主页。"
+    "message": "请在 GitHub 个人主页的贡献区打开这些设置。"
   },
   "popupNotReady": {
     "message": "请在 GitHub 个人主页的贡献日历加载完成后重试。"

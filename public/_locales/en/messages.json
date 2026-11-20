@@ -198,7 +198,7 @@
     "message": "Opening Contribution City…"
   },
   "popupWrongPage": {
-    "message": "Open a GitHub profile first."
+    "message": "Open a GitHub personal profile with a contribution calendar to change these settings."
   },
   "popupNotReady": {
     "message": "Retry after the contribution calendar has loaded on the GitHub profile."

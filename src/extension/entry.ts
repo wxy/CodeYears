@@ -5,7 +5,10 @@ import { LANGUAGE_KEY, languagePreference, readLanguagePreference, resolveLangua
 import { isCityUrl } from './city-url';
 
 declare global {
-  interface Window { __codeyearsOpenCity?: () => Promise<boolean> }
+  interface Window {
+    __codeyearsOpenCity?: () => Promise<boolean>;
+    __codeyearsHasProfileCalendar?: () => boolean;
+  }
 }
 
 (() => {
@@ -288,8 +291,19 @@ declare global {
     };
   }
 
+  function profileLogin() {
+    if (location.origin === 'https://github.com') return location.pathname.match(/^\/([a-zA-Z0-9-]{1,39})\/?$/)?.[1].toLowerCase();
+  }
+
+  function findProfileCalendar() {
+    const root = document.querySelector<HTMLElement>('.js-yearly-contributions');
+    const grid = root?.querySelector<HTMLTableElement>('table.ContributionCalendar-grid');
+    const heading = root?.querySelector<HTMLElement>('#js-contribution-activity-description');
+    if (root && grid && heading) return { root, grid, heading };
+  }
+
   function reconcile() {
-    const profile = location.origin === 'https://github.com' ? location.pathname.match(/^\/([a-zA-Z0-9-]{1,39})\/?$/)?.[1].toLowerCase() : undefined;
+    const profile = profileLogin();
     if (mounted && (profile !== mounted.profile || !mounted.grid.isConnected || !mounted.heading.isConnected
         || (mounted.kind === 'city' && (!mounted.bodyHost.isConnected || !mounted.heading.contains(mounted.nativeStats) || !mounted.heading.contains(mounted.host))))) {
       mounted.dispose(); mounted = undefined;
@@ -297,10 +311,9 @@ declare global {
     if (mounted) { if (mounted.kind === 'city') mounted.sync(); return; }
     if (!appearance || showCity === undefined || navigating || !profile) return;
     if (!showCity && appearance === 'native') return;
-    const root = document.querySelector<HTMLElement>('.js-yearly-contributions');
-    const grid = root?.querySelector<HTMLTableElement>('table.ContributionCalendar-grid');
-    const heading = root?.querySelector<HTMLElement>('#js-contribution-activity-description');
-    if (!root || !grid || !heading) return;
+    const calendar = findProfileCalendar();
+    if (!calendar) return;
+    const { root, grid, heading } = calendar;
     if (!showCity) {
       mounted = { kind: 'miniature', grid, heading, profile, dispose: mountMiniature(grid) };
       return;
@@ -332,6 +345,7 @@ declare global {
   window.addEventListener('hashchange', onUrlChange);
   window.addEventListener('pagehide', () => { beforeNavigate(); observer.disconnect(); });
   window.addEventListener('pageshow', () => { observe(); afterNavigate(); });
+  window.__codeyearsHasProfileCalendar = () => Boolean(profileLogin() && findProfileCalendar());
   window.__codeyearsOpenCity = async () => {
     await settingsReady;
     reconcile();

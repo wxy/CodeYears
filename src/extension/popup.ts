@@ -8,11 +8,28 @@ const citySettings = document.querySelector<HTMLFieldSetElement>('#city-settings
 const cityVisibility = document.querySelector<HTMLInputElement>('#show-city')!;
 const languageSelect = document.querySelector<HTMLSelectElement>('#language')!;
 const openButton = document.querySelector<HTMLButtonElement>('#open-city')!;
+const profileHint = document.querySelector<HTMLElement>('#profile-required')!;
 const status = document.querySelector<HTMLOutputElement>('#save-status')!;
 const version = chrome.runtime.getManifest().version;
 let appearance: Appearance = 'native';
 let showCity = true;
 let preference: LanguagePreference = 'auto';
+let profileTarget: chrome.scripting.InjectionTarget | undefined;
+
+async function findActiveProfile() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab?.id === undefined || !tab.url || new URL(tab.url).origin !== 'https://github.com') return;
+    const target = { tabId: tab.id };
+    await chrome.scripting.executeScript({ target, files: ['entry.js'] });
+    const [probe] = await chrome.scripting.executeScript({
+      target, func: () => window.__codeyearsHasProfileCalendar?.() === true,
+    });
+    if (probe?.result) return target;
+  } catch {
+    // Chrome can restrict script access to the active page.
+  }
+}
 
 function render() {
   const language = resolveLanguage(preference);
@@ -32,7 +49,7 @@ function show(key: MessageKey, error = false) {
 }
 
 function setBusy(busy: boolean) {
-  citySettings.disabled = modes.disabled = languageSelect.disabled = busy;
+  citySettings.disabled = modes.disabled = languageSelect.disabled = busy || !profileTarget;
 }
 
 async function save(change: () => Promise<void>, control: HTMLElement, error: MessageKey) {
@@ -77,17 +94,11 @@ languageSelect.addEventListener('change', () => {
 });
 
 openButton.addEventListener('click', async () => {
+  if (!profileTarget) return;
   setBusy(true);
   show('popupOpening');
   try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id || !tab.url || new URL(tab.url).origin !== 'https://github.com') {
-      show('popupWrongPage');
-      return;
-    }
-    const target = { tabId: tab.id };
-    await chrome.scripting.executeScript({ target, files: ['entry.js'] });
-    const [result] = await chrome.scripting.executeScript({ target, func: () => window.__codeyearsOpenCity?.() ?? false });
+    const [result] = await chrome.scripting.executeScript({ target: profileTarget, func: () => window.__codeyearsOpenCity?.() ?? false });
     if (!result.result) { show('popupNotReady'); return; }
     show('popupOpened');
     window.close();
@@ -98,11 +109,13 @@ openButton.addEventListener('click', async () => {
   }
 });
 
-void Promise.all([readAppearanceSettings(), readLanguagePreference()]).then(([settings, savedLanguage]) => {
+void Promise.all([readAppearanceSettings(), readLanguagePreference(), findActiveProfile()]).then(([settings, savedLanguage, target]) => {
   appearance = settings.appearance;
   showCity = settings.showCity;
   preference = savedLanguage;
+  profileTarget = target;
   render();
+  profileHint.hidden = Boolean(profileTarget);
   main.hidden = false;
   setBusy(false);
 });
