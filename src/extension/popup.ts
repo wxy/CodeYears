@@ -10,6 +10,8 @@ const languageSelect = document.querySelector<HTMLSelectElement>('#language')!;
 const openButton = document.querySelector<HTMLButtonElement>('#open-city')!;
 const profileHint = document.querySelector<HTMLElement>('#profile-required')!;
 const status = document.querySelector<HTMLOutputElement>('#save-status')!;
+const productSite = document.querySelector<HTMLAnchorElement>('#product-site')!;
+const englishProductUrl = productSite.href;
 const version = chrome.runtime.getManifest().version;
 let appearance: Appearance = 'native';
 let showCity = true;
@@ -36,6 +38,7 @@ function render() {
   document.documentElement.lang = language;
   document.title = text(language, 'settingsTitle');
   localize(main, language);
+  productSite.href = language === 'zh-CN' ? productSite.dataset.zhHref! : englishProductUrl;
   document.querySelector<HTMLElement>('#version')!.textContent = text(language, 'version', [version]);
   languageSelect.value = preference;
   cityVisibility.checked = showCity;

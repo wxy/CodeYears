@@ -368,8 +368,14 @@
   "version": {
     "message": "版本 $1"
   },
-  "privacy": {
-    "message": "隐私说明"
+  "officialWebsite": {
+    "message": "官网"
+  },
+  "aboutAuthor": {
+    "message": "关于作者"
+  },
+  "sourceCode": {
+    "message": "源代码"
   },
   "help": {
     "message": "使用帮助"

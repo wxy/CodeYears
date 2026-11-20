@@ -47,9 +47,9 @@
       :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
       output { display: block; min-height: 1.45em; margin-block: 4px 8px; color: var(--accent); }
       output[data-error] { color: light-dark(#a52626, #ffa6a6); }
-      footer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; justify-content: space-between; padding-block-start: 10px; margin-block-start: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
-      nav { display: flex; flex-wrap: wrap; gap: 6px 12px; }
-      a { color: var(--accent); text-underline-offset: 3px; }
+      footer { display: grid; gap: 4px; padding-block-start: 10px; margin-block-start: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+      nav { display: flex; flex-wrap: wrap; gap: 4px 12px; }
+      nav a { display: inline-flex; align-items: center; min-block-size: 24px; min-inline-size: 24px; color: var(--accent); text-underline-offset: 3px; }
     </style>
   </head>
   <body>
@@ -85,12 +85,13 @@
       </div>
       <output id="save-status" role="status" aria-live="polite" aria-atomic="true"></output>
       <footer>
-        <span id="version"></span>
         <nav data-i18n-label="settingsAbout">
-          <a href="https://github.com/wxy/CodeYears#readme" target="_blank" rel="noopener noreferrer" data-i18n="help"></a>
-          <a href="https://github.com/wxy/CodeYears/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" data-i18n="privacy"></a>
+          <a id="product-site" href="https://xingyu.wang/extensions/codeyears" data-zh-href="https://xingyu.wang/zh/extensions/codeyears" target="_blank" rel="noopener noreferrer" data-i18n="officialWebsite"></a>
+          <a href="https://xingyu.wang/" target="_blank" rel="noopener noreferrer" data-i18n="aboutAuthor"></a>
+          <a href="https://github.com/wxy/CodeYears" target="_blank" rel="noopener noreferrer" data-i18n="sourceCode"></a>
           <a href="https://github.com/wxy/CodeYears/issues" target="_blank" rel="noopener noreferrer" data-i18n="feedback"></a>
         </nav>
+        <span id="version"></span>
       </footer>
     </main>
     <script type="module" src="/src/extension/popup.ts"></script>

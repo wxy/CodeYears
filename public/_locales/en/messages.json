@@ -368,8 +368,14 @@
   "version": {
     "message": "Version $1"
   },
-  "privacy": {
-    "message": "Privacy"
+  "officialWebsite": {
+    "message": "Website"
+  },
+  "aboutAuthor": {
+    "message": "About the author"
+  },
+  "sourceCode": {
+    "message": "Source code"
   },
   "help": {
     "message": "Help"

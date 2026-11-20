@@ -119,8 +119,10 @@ def verify(archive, build):
                 for target in re.findall(r'''(?:src|href)=["']([^"']+)["']|url\(["']?([^\s)'";]+)''', text):
                     target = target[0] or target[1]
                     if name == 'popup.html' and target in {
-                        'https://github.com/wxy/CodeYears#readme',
-                        'https://github.com/wxy/CodeYears/blob/main/PRIVACY.md',
+                        'https://xingyu.wang/',
+                        'https://xingyu.wang/extensions/codeyears',
+                        'https://xingyu.wang/zh/extensions/codeyears',
+                        'https://github.com/wxy/CodeYears',
                         'https://github.com/wxy/CodeYears/issues',
                     }:
                         continue
