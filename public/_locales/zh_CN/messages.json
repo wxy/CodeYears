@@ -335,14 +335,8 @@
   "appearanceNative": {
     "message": "GitHub 原图"
   },
-  "appearanceNativeDescription": {
-    "message": "使用 GitHub 原有的贡献图。"
-  },
   "appearanceMiniature": {
     "message": "微缩城市"
-  },
-  "appearanceMiniatureDescription": {
-    "message": "在贡献图里展示微缩建筑。"
   },
   "appearanceSaveError": {
     "message": "贡献图样式保存失败，请重试。"
@@ -350,14 +344,11 @@
   "showCity": {
     "message": "显示城市页签"
   },
-  "showCityDescription": {
-    "message": "在独立页签中浏览多年的贡献。"
-  },
   "cityVisibilitySaveError": {
     "message": "城市显示设置保存失败，请重试。"
   },
   "openCityShortcut": {
-    "message": "打开当前主页的城市"
+    "message": "打开城市"
   },
   "settingsAbout": {
     "message": "关于 CodeYears"
@@ -373,6 +364,33 @@
   },
   "aboutAuthor": {
     "message": "关于作者"
+  },
+  "authorLink": {
+    "message": "关于作者"
+  },
+  "backToSettings": {
+    "message": "返回设置"
+  },
+  "authorDescription": {
+    "message": "独立开发者，开发原生应用和浏览器扩展。"
+  },
+  "authorWebsite": {
+    "message": "作者官网"
+  },
+  "authorExtensions": {
+    "message": "Chrome 商店中的其他扩展"
+  },
+  "authorHitable": {
+    "message": "浏览、筛选和导出表格数据。"
+  },
+  "authorNavigraph": {
+    "message": "查看并追溯浏览路径。"
+  },
+  "authorSilentfeed": {
+    "message": "能学习阅读偏好的 RSS 阅读器。"
+  },
+  "authorAiPulse": {
+    "message": "监控 AI 服务状态、用量和余额。"
   },
   "sourceCode": {
     "message": "源代码"

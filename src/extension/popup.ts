@@ -3,6 +3,10 @@ import { localize, text, type MessageKey } from './i18n';
 import { languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
 
 const main = document.querySelector<HTMLElement>('main')!;
+const settings = document.querySelector<HTMLElement>('#settings')!;
+const about = document.querySelector<HTMLElement>('#about')!;
+const backToSettings = document.querySelector<HTMLAnchorElement>('#back-to-settings')!;
+const authorLink = document.querySelector<HTMLAnchorElement>('#about-author-link')!;
 const modes = document.querySelector<HTMLFieldSetElement>('#appearance')!;
 const citySettings = document.querySelector<HTMLFieldSetElement>('#city-settings')!;
 const cityVisibility = document.querySelector<HTMLInputElement>('#show-city')!;
@@ -12,6 +16,7 @@ const profileHint = document.querySelector<HTMLElement>('#profile-required')!;
 const status = document.querySelector<HTMLOutputElement>('#save-status')!;
 const productSite = document.querySelector<HTMLAnchorElement>('#product-site')!;
 const englishProductUrl = productSite.href;
+const versionLabel = document.querySelector<HTMLElement>('#version')!;
 const version = chrome.runtime.getManifest().version;
 let appearance: Appearance = 'native';
 let showCity = true;
@@ -36,17 +41,30 @@ async function findActiveProfile() {
 function render() {
   const language = resolveLanguage(preference);
   document.documentElement.lang = language;
-  document.title = text(language, 'settingsTitle');
   localize(main, language);
   productSite.href = language === 'zh-CN' ? productSite.dataset.zhHref! : englishProductUrl;
-  document.querySelector<HTMLElement>('#version')!.textContent = text(language, 'version', [version]);
+  for (const link of main.querySelectorAll<HTMLAnchorElement>('a[href]')) link.title = link.href;
+  versionLabel.textContent = `v${version}`;
+  versionLabel.title = text(language, 'version', [version]);
   languageSelect.value = preference;
   cityVisibility.checked = showCity;
   openButton.hidden = !showCity;
   for (const input of modes.querySelectorAll('input')) input.checked = input.value === appearance;
+  renderPane();
 }
 
-function show(key: MessageKey, error = false) {
+function renderPane(focus = false) {
+  const showAbout = location.hash === '#about';
+  settings.hidden = showAbout;
+  about.hidden = !showAbout;
+  document.title = text(resolveLanguage(preference), showAbout ? 'aboutAuthor' : 'settingsTitle');
+  if (focus) (showAbout ? backToSettings : authorLink).focus({ preventScroll: true });
+}
+window.addEventListener('hashchange', () => renderPane(true));
+
+function show(key: MessageKey, control: HTMLElement, error = false) {
+  const group = control.closest('fieldset, .language')!;
+  if (status.previousElementSibling !== group) group.after(status);
   status.toggleAttribute('data-error', error);
   status.textContent = text(resolveLanguage(preference), key);
 }
@@ -60,10 +78,10 @@ async function save(change: () => Promise<void>, control: HTMLElement, error: Me
   try {
     await change();
     render();
-    show('settingsSaved');
+    show('settingsSaved', control);
   } catch {
     render();
-    show(error, true);
+    show(error, control, true);
   } finally {
     setBusy(false);
     control.focus();
@@ -99,26 +117,27 @@ languageSelect.addEventListener('change', () => {
 openButton.addEventListener('click', async () => {
   if (!profileTarget) return;
   setBusy(true);
-  show('popupOpening');
+  show('popupOpening', openButton);
   try {
     const [result] = await chrome.scripting.executeScript({ target: profileTarget, func: () => window.__codeyearsOpenCity?.() ?? false });
-    if (!result.result) { show('popupNotReady'); return; }
-    show('popupOpened');
+    if (!result.result) { show('popupNotReady', openButton); return; }
+    show('popupOpened', openButton);
     window.close();
   } catch {
-    show('popupFailed', true);
+    show('popupFailed', openButton, true);
   } finally {
     setBusy(false);
   }
 });
 
-void Promise.all([readAppearanceSettings(), readLanguagePreference(), findActiveProfile()]).then(([settings, savedLanguage, target]) => {
-  appearance = settings.appearance;
-  showCity = settings.showCity;
+void Promise.all([readAppearanceSettings(), readLanguagePreference(), findActiveProfile()]).then(([stored, savedLanguage, target]) => {
+  appearance = stored.appearance;
+  showCity = stored.showCity;
   preference = savedLanguage;
   profileTarget = target;
   render();
   profileHint.hidden = Boolean(profileTarget);
+  settings.toggleAttribute('data-locked', !profileTarget);
   main.hidden = false;
   setBusy(false);
 });

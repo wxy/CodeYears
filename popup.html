@@ -13,13 +13,13 @@
         --muted: #4f5d54;
         --line: #cbd7cf;
         --accent: #245e40;
-        --selected: #e7f2eb;
+        --on-accent: #fff;
         background: var(--surface);
         color: var(--ink);
         font: 13px/1.45 system-ui, sans-serif;
       }
       @media (prefers-color-scheme: dark) {
-        :root { --surface: #1c2420; --ink: #eaf0ec; --muted: #b8c6bd; --line: #526359; --accent: #a8dfb9; --selected: #2a3c31; }
+        :root { --surface: #1c2420; --ink: #eaf0ec; --muted: #b8c6bd; --line: #526359; --accent: #a8dfb9; --on-accent: #1c2420; }
       }
       * { box-sizing: border-box; }
       [hidden] { display: none !important; }
@@ -27,72 +27,124 @@
       main { padding: 16px; }
       h1 { margin: 0 0 14px; font-size: 19px; letter-spacing: -.02em; }
       #profile-required { margin: 0 0 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
-      fieldset { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
-      fieldset + fieldset { margin-block-start: 14px; }
+      fieldset { margin: 0; min-inline-size: 0; padding: 0; border: 0; }
+      #appearance, .language { margin-block-start: 14px; }
       legend { padding: 0; margin-block-end: 6px; font-weight: 600; }
       #city-settings legend { font-size: 15px; }
-      #city-settings .mode { min-block-size: 44px; }
-      .mode { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
-      .mode:has(:checked) { background: var(--selected); border-color: var(--accent); }
-      .mode input { margin: 3px 0 0; accent-color: var(--accent); }
-      .mode small { display: block; color: var(--muted); font-size: 12px; }
-      .language { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-block: 12px 4px; font-weight: 600; }
+      .city-row, .language, .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+      .setting-row { min-block-size: 36px; padding: 6px 10px; cursor: pointer; }
+      .setting-row input { margin: 0; accent-color: var(--accent); }
+      .city-row .setting-row { min-block-size: 44px; padding-inline-start: 0; }
+      .settings-list, .extension-list { border: 1px solid var(--line); border-radius: 8px; }
+      .settings-list > label + label, .extension-list > li + li { border-block-start: 1px solid var(--line); }
+      .language { font-weight: 600; }
       select, button { font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; background: var(--surface); }
       button { cursor: pointer; }
-      #open-city { justify-self: start; border-color: var(--accent); color: var(--accent); font-weight: 600; }
-      fieldset:disabled, select:disabled { opacity: .55; }
-      fieldset:disabled .mode { background: var(--surface); border-color: var(--line); }
-      #open-city:disabled { border-color: var(--line); color: var(--muted); }
-      fieldset:disabled .mode, button:disabled, select:disabled { cursor: default; }
+      #open-city { min-block-size: 32px; border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; padding-inline: 12px; }
+      #open-city:active:not(:disabled) { filter: brightness(.92); }
+      #settings[data-locked] :is(fieldset, .language) { opacity: .55; }
+      #settings[data-locked] #open-city { border-color: var(--line); background: var(--surface); color: var(--muted); }
+      fieldset:disabled .setting-row, button:disabled, select:disabled { cursor: default; }
       :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-      output { display: block; min-height: 1.45em; margin-block: 4px 8px; color: var(--accent); }
+      output { display: block; color: var(--accent); }
+      output:not(:empty) { margin-block-start: 4px; }
       output[data-error] { color: light-dark(#a52626, #ffa6a6); }
-      footer { display: grid; gap: 4px; padding-block-start: 10px; margin-block-start: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
-      nav { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-      nav a { display: inline-flex; align-items: center; min-block-size: 24px; min-inline-size: 24px; color: var(--accent); text-underline-offset: 3px; }
+      footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding-block-start: 10px; margin-block-start: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+      footer nav { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+      #version { white-space: nowrap; font-variant-numeric: tabular-nums; }
+      a { color: var(--accent); text-underline-offset: 3px; }
+      footer a, .author-link { display: inline-flex; align-items: center; min-block-size: 24px; min-inline-size: 24px; }
+      #back-to-settings { gap: 5px; margin-block-end: 6px; }
+      #about h2 { margin: 0 0 6px; font-size: 13px; }
+      #about p { margin: 0; color: var(--muted); }
+      .author-intro { margin-block-end: 14px; }
+      .extension-list { margin: 0; padding: 0; list-style: none; }
+      .extension-list a { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; text-decoration: none; min-block-size: 44px; }
+      .extension-list a:hover strong { text-decoration: underline; }
+      .extension-list small { display: block; color: var(--muted); font-size: 12px; }
     </style>
   </head>
   <body>
     <main hidden>
-      <h1 data-i18n="settingsTitle"></h1>
-      <p id="profile-required" data-i18n="popupWrongPage" hidden></p>
-      <fieldset id="city-settings" disabled>
-        <legend data-i18n="city"></legend>
-        <label class="mode" for="show-city">
-          <input type="checkbox" id="show-city" checked />
-          <span><strong data-i18n="showCity"></strong><small data-i18n="showCityDescription"></small></span>
-        </label>
-        <button id="open-city" type="button" data-i18n="openCityShortcut"></button>
-      </fieldset>
-      <fieldset id="appearance" disabled>
-        <legend data-i18n="calendarAppearance"></legend>
-        <label class="mode">
-          <input type="radio" name="appearance" value="native" checked />
-          <span><strong data-i18n="appearanceNative"></strong><small data-i18n="appearanceNativeDescription"></small></span>
-        </label>
-        <label class="mode">
-          <input type="radio" name="appearance" value="miniature" />
-          <span><strong data-i18n="appearanceMiniature"></strong><small data-i18n="appearanceMiniatureDescription"></small></span>
-        </label>
-      </fieldset>
-      <div class="language">
-        <label for="language" data-i18n="language"></label>
-        <select id="language" disabled>
-          <option value="auto" data-i18n="followBrowser"></option>
-          <option value="en" lang="en">English</option>
-          <option value="zh-CN" lang="zh-CN">简体中文</option>
-        </select>
-      </div>
-      <output id="save-status" role="status" aria-live="polite" aria-atomic="true"></output>
-      <footer>
-        <nav data-i18n-label="settingsAbout">
-          <a id="product-site" href="https://xingyu.wang/extensions/codeyears" data-zh-href="https://xingyu.wang/zh/extensions/codeyears" target="_blank" rel="noopener noreferrer" data-i18n="officialWebsite"></a>
-          <a href="https://xingyu.wang/" target="_blank" rel="noopener noreferrer" data-i18n="aboutAuthor"></a>
-          <a href="https://github.com/wxy/CodeYears" target="_blank" rel="noopener noreferrer" data-i18n="sourceCode"></a>
-          <a href="https://github.com/wxy/CodeYears/issues" target="_blank" rel="noopener noreferrer" data-i18n="feedback"></a>
-        </nav>
-        <span id="version"></span>
-      </footer>
+      <section id="settings" aria-labelledby="settings-heading">
+        <h1 id="settings-heading" data-i18n="settingsTitle"></h1>
+        <p id="profile-required" data-i18n="popupWrongPage" hidden></p>
+        <fieldset id="city-settings" disabled>
+          <legend data-i18n="city"></legend>
+          <div class="city-row">
+            <label class="setting-row" for="show-city">
+              <span data-i18n="showCity"></span>
+              <input type="checkbox" id="show-city" checked />
+            </label>
+            <button id="open-city" type="button" data-i18n="openCityShortcut"></button>
+          </div>
+        </fieldset>
+        <fieldset id="appearance" disabled>
+          <legend data-i18n="calendarAppearance"></legend>
+          <div class="settings-list">
+            <label class="setting-row">
+              <span data-i18n="appearanceNative"></span>
+              <input type="radio" name="appearance" value="native" checked />
+            </label>
+            <label class="setting-row">
+              <span data-i18n="appearanceMiniature"></span>
+              <input type="radio" name="appearance" value="miniature" />
+            </label>
+          </div>
+        </fieldset>
+        <div class="language">
+          <label for="language" data-i18n="language"></label>
+          <select id="language" disabled>
+            <option value="auto" data-i18n="followBrowser"></option>
+            <option value="en" lang="en">English</option>
+            <option value="zh-CN" lang="zh-CN">简体中文</option>
+          </select>
+        </div>
+        <output id="save-status" role="status" aria-live="polite" aria-atomic="true"></output>
+        <footer>
+          <nav data-i18n-label="settingsAbout">
+            <a id="product-site" href="https://xingyu.wang/extensions/codeyears" data-zh-href="https://xingyu.wang/zh/extensions/codeyears" target="_blank" rel="noopener noreferrer" data-i18n="officialWebsite"></a>
+            <a id="about-author-link" href="#about" data-i18n="authorLink"></a>
+            <a href="https://github.com/wxy/CodeYears" target="_blank" rel="noopener noreferrer" data-i18n="sourceCode"></a>
+            <a href="https://github.com/wxy/CodeYears/issues" target="_blank" rel="noopener noreferrer" data-i18n="feedback"></a>
+          </nav>
+          <span id="version"></span>
+        </footer>
+      </section>
+      <section id="about" aria-labelledby="author-heading" hidden>
+        <a id="back-to-settings" class="author-link" href="#settings">
+          <span aria-hidden="true">‹</span><span data-i18n="backToSettings"></span>
+        </a>
+        <h1 id="author-heading" data-i18n="aboutAuthor"></h1>
+        <div class="author-intro">
+          <h2>Xingyu Wang</h2>
+          <p data-i18n="authorDescription"></p>
+          <a class="author-link" href="https://xingyu.wang/" target="_blank" rel="noopener noreferrer" data-i18n="authorWebsite"></a>
+        </div>
+        <h2 data-i18n="authorExtensions"></h2>
+        <ul class="extension-list">
+          <li>
+            <a href="https://chromewebstore.google.com/detail/hitable/gepfjnfkjimhdfemijfnnpefdpocldpc" target="_blank" rel="noopener noreferrer">
+              <span><strong>HiTable</strong><small data-i18n="authorHitable"></small></span><span aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://chromewebstore.google.com/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi" target="_blank" rel="noopener noreferrer">
+              <span><strong>Navigraph</strong><small data-i18n="authorNavigraph"></small></span><span aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://chromewebstore.google.com/detail/silentfeed/pieiedlagbmcnooloibhigmidpakneca" target="_blank" rel="noopener noreferrer">
+              <span><strong>Silent Feed</strong><small data-i18n="authorSilentfeed"></small></span><span aria-hidden="true">↗</span>
+            </a>
+          </li>
+          <li>
+            <a href="https://chromewebstore.google.com/detail/ai-pulse/dpacojibmleehcmmkcabnbgeadofkkpe" target="_blank" rel="noopener noreferrer">
+              <span><strong>AI Pulse</strong><small data-i18n="authorAiPulse"></small></span><span aria-hidden="true">↗</span>
+            </a>
+          </li>
+        </ul>
+      </section>
     </main>
     <script type="module" src="/src/extension/popup.ts"></script>
   </body>

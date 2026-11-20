@@ -30,3 +30,15 @@
 - 两种语言的四个入口在 350 像素宽弹窗内完整显示。模拟放大页脚文字到 17 像素后，导航换行且无横向溢出。四个链接的点击区域均至少为 24 × 24 CSS 像素。
 - 中文官网链接打开 `/zh/extensions/codeyears`，英文对应 `/extensions/codeyears`。官网、作者首页、仓库、Issue 列表四项均在独立标签页打开。作者首页和两种语言的产品页在线 HTTP 200，产品页均提供隐私说明链接。站外的设置控件置灰时，页脚链接仍可访问。
 - TypeScript、Vite 构建和发行包核验通过。测试 ZIP 137 项，33,436,370 字节。SHA-256 为 `439433980a1f4e6945f82cab398fb13879228a396ad44f870aa3da62249d8ef1`。
+
+## 0.1.4 作者页与审核候选
+
+日期 2026-11-20，基线 `60f9a51`。Chrome 商店公开详情当前显示 0.1.3，本轮候选版本为 0.1.4。运行 `npm run build`，然后执行 `python3 scripts/package-city.py --output-dir <候选目录>` 和 `python3 scripts/verify-city-package.py <候选目录>/codeyears-0.1.4-city.zip`。
+
+- macOS Chrome 158.0.8127.36 以新建的未登录配置加载实际 MV3 构建。通过工具栏打开弹窗，在 GitHub 公开个人主页验证「打开城市」。在 350 像素宽的中英文弹窗核对页脚四个入口与版本号同行，所有链接的 HTML `title` 等于解析后的目标地址。明暗主题实看通过。
+- 实测键盘进入作者页、浏览器返回和「返回设置」键盘操作。返回后焦点回到「关于作者」，界面语言保留。站外页面的设置保持禁用，作者页仍可打开。
+- 实际点开 HiTable、Navigraph、Silent Feed 和 AI Pulse，四项均进入独立 Chrome 商店详情标签页。AI Pulse 使用当前可公开访问的商店条目，编号为 `dpacojibmleehcmmkcabnbgeadofkkpe`。这些链接由用户点击时打开。
+- 保存反馈紧邻对应设置。空闲状态零占位。受控存储写入失败时，贡献图回到已保存的选项并显示错误。恢复存储后重试，微缩图正常出现并显示「已保存」。
+- TypeScript、Vite、版本、资源引用、权限及发行包核验通过。候选 ZIP 137 项，33,438,140 字节，SHA-256 为 `0c5fdd93b8975ee53711f334330f33ec21d9fec90ae92d66cc926dc4b92bc9a8`。本机 `dist/` 与候选 ZIP 的 133 项运行文件逐字节一致。
+
+候选包位于项目的 `release/codeyears-0.1.4-city.zip`。商店由维护者上传并提交审核。本次记录覆盖本地候选验证。

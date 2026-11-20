@@ -335,14 +335,8 @@
   "appearanceNative": {
     "message": "GitHub original"
   },
-  "appearanceNativeDescription": {
-    "message": "Use GitHub’s original contribution graph."
-  },
   "appearanceMiniature": {
     "message": "Miniature city"
-  },
-  "appearanceMiniatureDescription": {
-    "message": "Show miniature buildings in the contribution graph."
   },
   "appearanceSaveError": {
     "message": "Could not save the graph style. Try again."
@@ -350,14 +344,11 @@
   "showCity": {
     "message": "Show City tab"
   },
-  "showCityDescription": {
-    "message": "Explore several years of contributions in one city."
-  },
   "cityVisibilitySaveError": {
     "message": "Could not save City visibility. Try again."
   },
   "openCityShortcut": {
-    "message": "Open City on this profile"
+    "message": "Open City"
   },
   "settingsAbout": {
     "message": "About CodeYears"
@@ -373,6 +364,33 @@
   },
   "aboutAuthor": {
     "message": "About the author"
+  },
+  "authorLink": {
+    "message": "Author"
+  },
+  "backToSettings": {
+    "message": "Back to settings"
+  },
+  "authorDescription": {
+    "message": "Independent developer of native apps and browser extensions."
+  },
+  "authorWebsite": {
+    "message": "Author website"
+  },
+  "authorExtensions": {
+    "message": "Other extensions on the Chrome Web Store"
+  },
+  "authorHitable": {
+    "message": "Explore, filter and export tabular data."
+  },
+  "authorNavigraph": {
+    "message": "See and retrace your browsing paths."
+  },
+  "authorSilentfeed": {
+    "message": "An RSS reader that learns your reading preferences."
+  },
+  "authorAiPulse": {
+    "message": "Monitor AI service status, usage and balances."
   },
   "sourceCode": {
     "message": "Source code"

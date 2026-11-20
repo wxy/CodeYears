@@ -118,12 +118,19 @@ def verify(archive, build):
                     reference(name, target, not target.startswith('.'))
                 for target in re.findall(r'''(?:src|href)=["']([^"']+)["']|url\(["']?([^\s)'";]+)''', text):
                     target = target[0] or target[1]
+                    if name == 'popup.html' and target.startswith('#'):
+                        require(f'id="{target[1:]}"' in text, f'missing popup section: {target}')
+                        continue
                     if name == 'popup.html' and target in {
                         'https://xingyu.wang/',
                         'https://xingyu.wang/extensions/codeyears',
                         'https://xingyu.wang/zh/extensions/codeyears',
                         'https://github.com/wxy/CodeYears',
                         'https://github.com/wxy/CodeYears/issues',
+                        'https://chromewebstore.google.com/detail/hitable/gepfjnfkjimhdfemijfnnpefdpocldpc',
+                        'https://chromewebstore.google.com/detail/navigraph/jfjgdldpgmnhclffkkcnbhleijeopkhi',
+                        'https://chromewebstore.google.com/detail/silentfeed/pieiedlagbmcnooloibhigmidpakneca',
+                        'https://chromewebstore.google.com/detail/ai-pulse/dpacojibmleehcmmkcabnbgeadofkkpe',
                     }:
                         continue
                     reference(name, target)
