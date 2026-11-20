@@ -350,6 +350,9 @@
   "showCity": {
     "message": "Show City tab"
   },
+  "showCityDescription": {
+    "message": "Explore several years of contributions in one city."
+  },
   "cityVisibilitySaveError": {
     "message": "Could not save City visibility. Try again."
   },

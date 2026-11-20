@@ -47,22 +47,20 @@ function readDays(grid: HTMLTableElement) {
 
 const sceneCss = `
   .${sceneClass} { position: relative; isolation: isolate; }
-  .${sceneClass} > table { position: relative; z-index: 1; }
-  .codeyears-miniature-layer {
-    position: absolute; pointer-events: none;
+  .codeyears-miniature-layer { position: absolute; pointer-events: none; }
+  .codeyears-miniature-layer::before {
+    content: ''; position: absolute; inset: 0; z-index: -1;
     background-color: color-mix(in srgb, var(--bgColor-muted, #f6f8fa) 90%, var(--fgColor-muted, #59636e));
   }
-  .codeyears-miniature-lots > span {
-    position: absolute; width: var(--codeyears-lot-size); aspect-ratio: 1; translate: -50% -50%;
-    border-radius: 50%;
-    box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--fgColor-default, #1f2328) 24%, transparent);
-  }
-  #codeyears-miniature-canvas { display: block; position: relative; width: 100%; height: 100%; }
-  .${sceneClass}[data-painted]:not([data-measuring]) td[data-date][data-level] {
+  #codeyears-miniature-canvas { display: block; position: relative; z-index: 1; width: 100%; height: 100%; }
+  .${sceneClass}[data-painted]:not([data-measuring]) .ContributionCalendar-day[data-date] {
     translate: var(--codeyears-x, 0px) var(--codeyears-y, 0px);
-    background-color: transparent !important; border-color: transparent !important; box-shadow: none !important;
+    background-color: transparent !important;
+    border-radius: 50%;
+    box-shadow: none !important;
   }
-  .${sceneClass}[data-painted] td[data-date]:is([aria-selected="true"], :focus-visible) {
+  .${sceneClass}[data-painted] .ContributionCalendar-day[data-date]:is([aria-selected="true"], :focus-visible) {
+    position: relative; z-index: 2;
     outline: 2px solid var(--fgColor-accent, #0969da); outline-offset: -1px;
   }
   [data-codeyears-miniature-legend] {
@@ -88,14 +86,11 @@ export function mountMiniatureCalendar(grid: HTMLTableElement) {
   layer.className = 'codeyears-miniature-layer';
   layer.setAttribute('aria-hidden', 'true');
   layer.hidden = true;
-  const lotLayer = document.createElement('div');
-  lotLayer.className = 'codeyears-miniature-lots';
   const canvas = document.createElement('canvas');
   canvas.id = 'codeyears-miniature-canvas';
-  layer.append(lotLayer, canvas);
+  layer.append(canvas);
   const swatches = new Map<HTMLElement, HTMLImageElement | undefined>();
   let snapshot: ReturnType<typeof readDays>;
-  let lots: HTMLSpanElement[] = [];
   let pictures: Map<string, HTMLImageElement> | undefined;
   let frame = 0;
   let disposed = false;
@@ -126,8 +121,6 @@ export function mountMiniatureCalendar(grid: HTMLTableElement) {
 
   function updateDays() {
     snapshot = readDays(grid);
-    lots = snapshot?.days.map(() => document.createElement('span')) ?? [];
-    lotLayer.replaceChildren(...lots);
     schedule();
   }
 
@@ -167,15 +160,12 @@ export function mountMiniatureCalendar(grid: HTMLTableElement) {
     ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
     const halfWidth = columnStep * lotScale;
     const baseOffset = Math.min(columnStep, rowStep) * lotScale / 2;
-    lotLayer.style.setProperty('--codeyears-lot-size', `${baseOffset * 2}px`);
     const houses: { x: number; bottom: number; image: HTMLImageElement }[] = [];
     for (const [index, day] of days.entries()) {
       const { cell, row, column, level } = day;
       const parity = column % 2;
       const x = (column + 1) * columnStep;
       const center = (row + parity / 2 + 0.5) * rowStep;
-      lots[index].style.left = `${x}px`;
-      lots[index].style.top = `${center}px`;
       const rect = positions[index];
       cell.style.setProperty('--codeyears-x', `${x - (rect.left + rect.width / 2 - left)}px`);
       cell.style.setProperty('--codeyears-y', `${center - (rect.top + rect.height / 2 - top)}px`);

@@ -4,6 +4,7 @@ import { languagePreference, readLanguagePreference, resolveLanguage, saveLangua
 
 const main = document.querySelector<HTMLElement>('main')!;
 const modes = document.querySelector<HTMLFieldSetElement>('#appearance')!;
+const citySettings = document.querySelector<HTMLFieldSetElement>('#city-settings')!;
 const cityVisibility = document.querySelector<HTMLInputElement>('#show-city')!;
 const languageSelect = document.querySelector<HTMLSelectElement>('#language')!;
 const openButton = document.querySelector<HTMLButtonElement>('#open-city')!;
@@ -31,7 +32,7 @@ function show(key: MessageKey, error = false) {
 }
 
 function setBusy(busy: boolean) {
-  modes.disabled = cityVisibility.disabled = languageSelect.disabled = openButton.disabled = busy;
+  citySettings.disabled = modes.disabled = languageSelect.disabled = busy;
 }
 
 async function save(change: () => Promise<void>, control: HTMLElement, error: MessageKey) {

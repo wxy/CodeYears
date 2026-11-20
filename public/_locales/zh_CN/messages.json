@@ -350,6 +350,9 @@
   "showCity": {
     "message": "显示城市页签"
   },
+  "showCityDescription": {
+    "message": "在独立页签中浏览多年的贡献。"
+  },
   "cityVisibilitySaveError": {
     "message": "城市显示设置保存失败，请重试。"
   },
