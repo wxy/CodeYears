@@ -6,7 +6,7 @@
     "message": "免费的 GitHub 贡献历史可视化扩展。选择年份，用真实每日贡献生成贡献之城。"
   },
   "actionTitle": {
-    "message": "CodeYears · 贡献之城"
+    "message": "CodeYears 设置"
   },
   "viewGroup": {
     "message": "贡献展示方式"
@@ -198,7 +198,7 @@
     "message": "正在打开贡献之城…"
   },
   "popupWrongPage": {
-    "message": "请先打开 GitHub 个人主页，再点击扩展。"
+    "message": "请先打开 GitHub 个人主页。"
   },
   "popupNotReady": {
     "message": "请在 GitHub 个人主页的贡献日历加载完成后重试。"
@@ -329,8 +329,32 @@
   "settingsTitle": {
     "message": "CodeYears 设置"
   },
-  "settingsHelp": {
-    "message": "偏好设置适用于当前浏览器；年份与画面操作仍在 GitHub 个人主页中使用。"
+  "appearanceCity": {
+    "message": "大规模城市"
+  },
+  "appearanceCityDescription": {
+    "message": "添加独立的城市页签，可浏览多年的贡献。"
+  },
+  "appearanceMiniature": {
+    "message": "微缩城市"
+  },
+  "appearanceMiniatureDescription": {
+    "message": "在 GitHub 原贡献图里展示建筑和道路。"
+  },
+  "appearanceSaveError": {
+    "message": "展示方式保存失败，请重试。"
+  },
+  "openCityShortcut": {
+    "message": "打开当前主页的城市"
+  },
+  "miniatureControls": {
+    "message": "微缩城市操作"
+  },
+  "miniatureZoom": {
+    "message": "缩放微缩城市"
+  },
+  "miniatureRecord": {
+    "message": "选中日期"
   },
   "settingsAbout": {
     "message": "关于 CodeYears"

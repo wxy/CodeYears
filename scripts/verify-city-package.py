@@ -10,11 +10,14 @@ from pathlib import Path
 from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXED = {'manifest.json', 'popup.html', 'options.html', 'entry.js', 'content.js', 'landscape.js'}
+FIXED = {'manifest.json', 'popup.html', 'entry.js', 'content.js', 'landscape.js', 'calendar.js'}
+CALENDAR_ASSETS = {'cottage.webp', 'terrace.webp', 'villa.webp', 'duplex.webp', 'townhouse.webp', 'asphalt-strip.png',
+                   'courtyard.webp', 'bakery.webp', 'limestone.webp', 'terracotta.webp', 'apartment.webp'}
 NOTICES = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'ASSETS.md', 'PRIVACY.md'}
 SCOPE = ['https://github.com/*']
 ENTRY = [{'matches': SCOPE, 'js': ['entry.js'], 'run_at': 'document_idle'}]
-WAR = [{'resources': ['content.js', 'landscape.js', 'chunks/*.js', 'assets/city/*.png'], 'matches': SCOPE}]
+WAR = [{'resources': ['content.js', 'landscape.js', 'calendar.js', 'chunks/*.js', 'assets/city/*.png',
+                      'assets/calendar/*.webp', 'assets/calendar/asphalt-strip.png'], 'matches': SCOPE}]
 
 
 def require(condition, message):
@@ -54,7 +57,8 @@ def verify(archive, build):
         require(manifest.get('content_scripts') == ENTRY, 'automatic entry scope changed')
         require(manifest.get('web_accessible_resources') == WAR, 'resource exposure changed')
         require(manifest.get('content_security_policy') == {'extension_pages': "script-src 'self'; object-src 'none'"}, 'CSP changed')
-        require(manifest.get('options_ui') == {'page': 'options.html', 'open_in_tab': False}, 'options page changed')
+        require('options_ui' not in manifest and manifest['action'].get('default_popup') == 'popup.html',
+                'settings must be served by the toolbar popup')
         require(manifest == source, 'manifest differs from checkout; review new capabilities')
         require(manifest.get('default_locale') == 'en', 'expected English fallback locale')
         catalogs = [read_json(ROOT / f'public/_locales/{locale}/messages.json') for locale in ('en', 'zh_CN')]
@@ -82,7 +86,10 @@ def verify(archive, build):
         for path in runtime.glob('*.png'):
             name = 'assets/city/' + path.name
             expected[name] = build / name
-        for pattern in ('assets/popup-*.js', 'assets/options-*.js', 'assets/shared-*.js', 'chunks/*.js'):
+        require({p.name for p in (ROOT / 'public/assets/calendar').iterdir()} == CALENDAR_ASSETS,
+                'miniature calendar asset inventory mismatch')
+        expected.update((f'assets/calendar/{name}', build / 'assets/calendar' / name) for name in CALENDAR_ASSETS)
+        for pattern in ('assets/popup-*.js', 'assets/shared-*.js', 'chunks/*.js'):
             paths = list(build.glob(pattern))
             require(paths or pattern == 'assets/shared-*.js', f'build missing {pattern}')
             expected.update((p.relative_to(build).as_posix(), p) for p in paths)
@@ -94,7 +101,6 @@ def verify(archive, build):
             require(name in names, f'missing reference: {owner} -> {target}')
 
         reference('manifest.json', manifest['action']['default_popup'], True)
-        reference('manifest.json', manifest['options_ui']['page'], True)
         for group in manifest['content_scripts']:
             for name in group['js']:
                 reference('manifest.json', name, True)
@@ -111,7 +117,7 @@ def verify(archive, build):
                     reference(name, target, not target.startswith('.'))
                 for target in re.findall(r'''(?:src|href)=["']([^"']+)["']|url\(["']?([^\s)'";]+)''', text):
                     target = target[0] or target[1]
-                    if name == 'options.html' and target in {
+                    if name == 'popup.html' and target in {
                         'https://github.com/wxy/CodeYears#readme',
                         'https://github.com/wxy/CodeYears/blob/main/PRIVACY.md',
                         'https://github.com/wxy/CodeYears/issues',
@@ -120,7 +126,8 @@ def verify(archive, build):
                     reference(name, target)
                 # Baked catalog filenames are package-local resources.
                 for target in re.findall(r'''["'`]([\w-]+\.png)["'`]''', text):
-                    reference(name, 'assets/city/' + target, True)
+                    directory = 'assets/calendar/' if target in CALENDAR_ASSETS else 'assets/city/'
+                    reference(name, directory + target, True)
             require(expected[name].is_file(), f'missing build/source file: {name}')
             require(data == expected[name].read_bytes(), f'content differs from fresh build/source: {name}')
             require(data, f'empty release file: {name}')

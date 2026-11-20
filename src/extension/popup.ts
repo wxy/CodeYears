@@ -1,31 +1,95 @@
-import { text, type MessageKey } from './i18n';
-import { readLanguagePreference, resolveLanguage } from './language';
+import { appearancePreference, readAppearance, saveAppearance, type Appearance } from './appearance';
+import { localize, text, type MessageKey } from './i18n';
+import { languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
 
-const root = document.querySelector<HTMLDivElement>('#app')!;
-const shadow = root.attachShadow({ mode: 'open' });
-shadow.innerHTML = `
-  <style>
-    :host { display:block; width:280px; padding:20px; color:#202923; background:#f7f8f5; font:13px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    h1 { margin:0 0 6px; font-size:18px; letter-spacing:-.02em; } output { display:block; }
-  </style>
-  <h1>CodeYears</h1><output role="status" aria-live="polite"></output>`;
-const status = shadow.querySelector<HTMLOutputElement>('output')!;
+const main = document.querySelector<HTMLElement>('main')!;
+const modes = document.querySelector<HTMLFieldSetElement>('#appearance')!;
+const languageSelect = document.querySelector<HTMLSelectElement>('#language')!;
+const openButton = document.querySelector<HTMLButtonElement>('#open-city')!;
+const status = document.querySelector<HTMLOutputElement>('#save-status')!;
+const version = chrome.runtime.getManifest().version;
+let appearance: Appearance = 'city';
+let preference: LanguagePreference = 'auto';
 
-async function openCity() {
-  const language = resolveLanguage(await readLanguagePreference());
+function render() {
+  const language = resolveLanguage(preference);
   document.documentElement.lang = language;
-  const show = (key: MessageKey) => { status.textContent = text(language, key); };
+  document.title = text(language, 'settingsTitle');
+  localize(main, language);
+  document.querySelector<HTMLElement>('#version')!.textContent = text(language, 'version', [version]);
+  languageSelect.value = preference;
+  for (const input of modes.querySelectorAll('input')) input.checked = input.value === appearance;
+  openButton.hidden = appearance !== 'city';
+}
+
+function show(key: MessageKey, error = false) {
+  status.toggleAttribute('data-error', error);
+  status.textContent = text(resolveLanguage(preference), key);
+}
+
+function setBusy(busy: boolean) {
+  modes.disabled = languageSelect.disabled = openButton.disabled = busy;
+}
+
+async function save(change: () => Promise<void>, control: HTMLElement, error: MessageKey) {
+  setBusy(true);
+  try {
+    await change();
+    render();
+    show('settingsSaved');
+  } catch {
+    render();
+    show(error, true);
+  } finally {
+    setBusy(false);
+    control.focus();
+  }
+}
+
+modes.addEventListener('change', event => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || !input.checked) return;
+  void save(async () => {
+    const next = appearancePreference(input.value);
+    await saveAppearance(next);
+    appearance = next;
+  }, input, 'appearanceSaveError');
+});
+
+languageSelect.addEventListener('change', () => {
+  void save(async () => {
+    const next = languagePreference(languageSelect.value);
+    await saveLanguagePreference(next);
+    preference = next;
+  }, languageSelect, 'languageSaveError');
+});
+
+openButton.addEventListener('click', async () => {
+  setBusy(true);
   show('popupOpening');
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab.id || !tab.url || new URL(tab.url).origin !== 'https://github.com') { show('popupWrongPage'); return; }
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['entry.js'] });
-    const [result] = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => window.__codeyearsOpenCity?.() ?? false });
+    if (!tab?.id || !tab.url || new URL(tab.url).origin !== 'https://github.com') {
+      show('popupWrongPage');
+      return;
+    }
+    const target = { tabId: tab.id };
+    await chrome.scripting.executeScript({ target, files: ['entry.js'] });
+    const [result] = await chrome.scripting.executeScript({ target, func: () => window.__codeyearsOpenCity?.() ?? false });
     if (!result.result) { show('popupNotReady'); return; }
     show('popupOpened');
     window.close();
   } catch {
-    show('popupFailed');
+    show('popupFailed', true);
+  } finally {
+    setBusy(false);
   }
-}
-void openCity();
+});
+
+void Promise.all([readAppearance(), readLanguagePreference()]).then(([savedAppearance, savedLanguage]) => {
+  appearance = savedAppearance;
+  preference = savedLanguage;
+  render();
+  main.hidden = false;
+  setBusy(false);
+});

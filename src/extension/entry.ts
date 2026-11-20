@@ -1,22 +1,54 @@
 import type { CityPanel } from './content';
+import { APPEARANCE_KEY, appearancePreference, readAppearance, type Appearance } from './appearance';
 import { entryText } from './entry-text';
 import { LANGUAGE_KEY, languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
 import { isCityUrl } from './city-url';
 
 declare global {
-  interface Window { __codeyearsOpenCity?: () => boolean }
+  interface Window { __codeyearsOpenCity?: () => Promise<boolean> }
 }
 
 (() => {
   if (window.__codeyearsOpenCity) return;
 
-  let mounted: ReturnType<typeof mount> | undefined;
+  let mounted: ReturnType<typeof mount> | ReturnType<typeof mountMiniature> | undefined;
+  let appearance: Appearance | undefined;
   let navigating = false, queued = false;
   let preference: LanguagePreference = 'auto';
   const languageSettings = () => ({ language: resolveLanguage(preference), preference, change: async (next: LanguagePreference) => { await saveLanguagePreference(next); updateLanguage(next); } });
   const updateLanguage = (next: LanguagePreference) => { preference = next; mounted?.localize(); };
   void readLanguagePreference().then(updateLanguage);
-  chrome.storage.onChanged.addListener((changes, area) => { if (area === 'local' && changes[LANGUAGE_KEY]) updateLanguage(languagePreference(changes[LANGUAGE_KEY].newValue)); });
+  function updateAppearance(next: Appearance) {
+    if (appearance === next) return;
+    appearance = next;
+    mounted?.dispose();
+    mounted = undefined;
+    reconcile();
+  }
+  const appearanceReady = readAppearance().then(value => {
+    if (appearance === undefined) updateAppearance(value);
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local') return;
+    if (changes[LANGUAGE_KEY]) updateLanguage(languagePreference(changes[LANGUAGE_KEY].newValue));
+    if (changes[APPEARANCE_KEY]) updateAppearance(appearancePreference(changes[APPEARANCE_KEY].newValue));
+  });
+
+  function mountMiniature(grid: HTMLTableElement, heading: HTMLElement, profile: string) {
+    let view: ReturnType<typeof import('./miniature-calendar').mountMiniatureCalendar> | undefined;
+    let disposed = false;
+    void import(/* @vite-ignore */ chrome.runtime.getURL('calendar.js')).then(
+      (module: typeof import('./miniature-calendar')) => {
+        if (!disposed && grid.isConnected) view = module.mountMiniatureCalendar(grid, resolveLanguage(preference));
+      },
+      () => { /* Keep the GitHub calendar available if the optional view did not load. */ },
+    );
+    return {
+      kind: 'miniature' as const, grid, heading, profile,
+      localize() { view?.localize(resolveLanguage(preference)); },
+      dispose() { disposed = true; view?.dispose(); },
+    };
+  }
 
   function mount(root: HTMLElement, native: HTMLElement, grid: HTMLElement, heading: HTMLElement, profile: string) {
     const host = document.createElement('span');
@@ -177,6 +209,7 @@ declare global {
     };
     host.dataset.view = 'native';
     return {
+      kind: 'city' as const,
       root, native, grid, heading, nativeStats, host, bodyHost, profile, sync, localize,
       open() { roadArrivalPending=false; host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
       openRoadArrival,
@@ -208,16 +241,22 @@ declare global {
 
   function reconcile() {
     const profile = location.origin === 'https://github.com' ? location.pathname.match(/^\/([a-zA-Z0-9-]{1,39})\/?$/)?.[1].toLowerCase() : undefined;
-    if (mounted && (profile !== mounted.profile || !mounted.grid.isConnected || !mounted.heading.isConnected || !mounted.bodyHost.isConnected || !mounted.heading.contains(mounted.nativeStats) || !mounted.heading.contains(mounted.host))) {
+    if (mounted && (profile !== mounted.profile || !mounted.grid.isConnected || !mounted.heading.isConnected
+        || (mounted.kind === 'city' && (!mounted.bodyHost.isConnected || !mounted.heading.contains(mounted.nativeStats) || !mounted.heading.contains(mounted.host))))) {
       mounted.dispose(); mounted = undefined;
     }
-    if (mounted) { mounted.sync(); return; }
-    if (navigating || !profile) return;
+    if (mounted) { if (mounted.kind === 'city') mounted.sync(); return; }
+    if (!appearance || navigating || !profile) return;
     const root = document.querySelector<HTMLElement>('.js-yearly-contributions');
-    const grid = root?.querySelector<HTMLElement>('table.ContributionCalendar-grid');
+    const grid = root?.querySelector<HTMLTableElement>('table.ContributionCalendar-grid');
     const heading = root?.querySelector<HTMLElement>('#js-contribution-activity-description');
-    if (!root || !grid || !heading || !document.querySelector('a[id^="year-link-"]')) return;
-    let native = grid;
+    if (!root || !grid || !heading) return;
+    if (appearance === 'miniature') {
+      mounted = mountMiniature(grid, heading, profile);
+      return;
+    }
+    if (!document.querySelector('a[id^="year-link-"]')) return;
+    let native: HTMLElement = grid;
     while (native.parentElement !== root) native = native.parentElement!;
     if (!native.contains(heading)) return;
     mounted = mount(root, native, grid, heading, profile);
@@ -235,12 +274,18 @@ declare global {
   document.addEventListener('turbo:before-render', beforeNavigate);
   document.addEventListener('turbo:render', afterNavigate);
   document.addEventListener('turbo:load', afterNavigate);
-  document.addEventListener('visibilitychange', () => { mounted?.visibility(document.hidden); });
-  const onUrlChange = () => { reconcile(); mounted?.syncUrl(); };
+  document.addEventListener('visibilitychange', () => { if (mounted?.kind === 'city') mounted.visibility(document.hidden); });
+  const onUrlChange = () => { reconcile(); if (mounted?.kind === 'city') mounted.syncUrl(); };
   window.addEventListener('popstate', onUrlChange);
   window.addEventListener('hashchange', onUrlChange);
   window.addEventListener('pagehide', () => { beforeNavigate(); observer.disconnect(); });
   window.addEventListener('pageshow', () => { observe(); afterNavigate(); });
-  window.__codeyearsOpenCity = () => { reconcile(); if (!mounted) return false; mounted.open(); return true; };
+  window.__codeyearsOpenCity = async () => {
+    await appearanceReady;
+    reconcile();
+    if (mounted?.kind !== 'city') return false;
+    mounted.open();
+    return true;
+  };
   observe(); reconcile();
 })();

@@ -6,7 +6,7 @@
     "message": "A free GitHub contribution visualizer. Turn real daily contributions into a city."
   },
   "actionTitle": {
-    "message": "CodeYears · Contribution City"
+    "message": "CodeYears settings"
   },
   "viewGroup": {
     "message": "Contribution view"
@@ -198,7 +198,7 @@
     "message": "Opening Contribution City…"
   },
   "popupWrongPage": {
-    "message": "Open a GitHub profile first, then click CodeYears."
+    "message": "Open a GitHub profile first."
   },
   "popupNotReady": {
     "message": "Retry after the contribution calendar has loaded on the GitHub profile."
@@ -329,8 +329,32 @@
   "settingsTitle": {
     "message": "CodeYears settings"
   },
-  "settingsHelp": {
-    "message": "Preferences apply in this browser. Year and view controls stay on the GitHub profile."
+  "appearanceCity": {
+    "message": "Full-scale city"
+  },
+  "appearanceCityDescription": {
+    "message": "Add a City tab for exploring multiple years."
+  },
+  "appearanceMiniature": {
+    "message": "Miniature city"
+  },
+  "appearanceMiniatureDescription": {
+    "message": "Show buildings and streets in the GitHub contribution calendar."
+  },
+  "appearanceSaveError": {
+    "message": "Could not save the display mode. Try again."
+  },
+  "openCityShortcut": {
+    "message": "Open City on this profile"
+  },
+  "miniatureControls": {
+    "message": "Miniature city controls"
+  },
+  "miniatureZoom": {
+    "message": "Zoom miniature city"
+  },
+  "miniatureRecord": {
+    "message": "Selected day"
   },
   "settingsAbout": {
     "message": "About CodeYears"

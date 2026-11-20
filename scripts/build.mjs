@@ -37,6 +37,14 @@ await build({
   publicDir: false,
   build: {
     target: "es2022", outDir: values.outDir, emptyOutDir: false, watch,
+    lib: { entry: "src/extension/miniature-calendar.ts", formats: ["es"], fileName: () => "calendar.js" },
+  },
+});
+await build({
+  configFile: false,
+  publicDir: false,
+  build: {
+    target: "es2022", outDir: values.outDir, emptyOutDir: false, watch,
     lib: { entry: "src/renderers/landscape.ts", formats: ["es"], fileName: () => "landscape.js" },
     rollupOptions: { output: { chunkFileNames: "chunks/[name]-[hash].js" } },
   },
@@ -47,3 +55,4 @@ for (const name of ['manifest.json', '_locales', 'icons']) {
   await cp(resolve('public', name), resolve(values.outDir, name), { recursive: true });
 }
 await cp(resolve('public/assets/city-runtime'), resolve(values.outDir, 'assets/city'), { recursive: true });
+await cp(resolve('public/assets/calendar'), resolve(values.outDir, 'assets/calendar'), { recursive: true });

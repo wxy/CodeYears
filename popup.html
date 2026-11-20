@@ -1,15 +1,80 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
     <title>CodeYears</title>
     <style>
-      body { margin: 0; }
+      :root {
+        color-scheme: light dark;
+        --surface: #f7f9f7;
+        --ink: #202a24;
+        --muted: #4f5d54;
+        --line: #cbd7cf;
+        --accent: #245e40;
+        --selected: #e7f2eb;
+        background: var(--surface);
+        color: var(--ink);
+        font: 13px/1.45 system-ui, sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root { --surface: #1c2420; --ink: #eaf0ec; --muted: #b8c6bd; --line: #526359; --accent: #a8dfb9; --selected: #2a3c31; }
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; inline-size: 350px; }
+      main { padding: 16px; }
+      h1 { margin: 0 0 14px; font-size: 19px; letter-spacing: -.02em; }
+      fieldset { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+      legend { padding: 0; margin-block-end: 6px; font-weight: 600; }
+      .mode { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+      .mode:has(:checked) { background: var(--selected); border-color: var(--accent); }
+      .mode input { margin: 3px 0 0; accent-color: var(--accent); }
+      .mode small { display: block; color: var(--muted); font-size: 12px; }
+      .language { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-block: 12px 4px; font-weight: 600; }
+      select, button { font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; background: var(--surface); }
+      button { cursor: pointer; }
+      :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      output { display: block; min-height: 1.45em; margin-block: 4px 8px; color: var(--accent); }
+      output[data-error] { color: light-dark(#a52626, #ffa6a6); }
+      footer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; justify-content: space-between; padding-block-start: 10px; margin-block-start: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+      nav { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+      a { color: var(--accent); text-underline-offset: 3px; }
     </style>
   </head>
   <body>
-    <div id="app"></div>
+    <main hidden>
+      <h1 data-i18n="settingsTitle"></h1>
+      <fieldset id="appearance" disabled>
+        <legend data-i18n="viewGroup"></legend>
+        <label class="mode">
+          <input type="radio" name="appearance" value="city" checked />
+          <span><strong data-i18n="appearanceCity"></strong><small data-i18n="appearanceCityDescription"></small></span>
+        </label>
+        <label class="mode">
+          <input type="radio" name="appearance" value="miniature" />
+          <span><strong data-i18n="appearanceMiniature"></strong><small data-i18n="appearanceMiniatureDescription"></small></span>
+        </label>
+      </fieldset>
+      <div class="language">
+        <label for="language" data-i18n="language"></label>
+        <select id="language" disabled>
+          <option value="auto" data-i18n="followBrowser"></option>
+          <option value="en" lang="en">English</option>
+          <option value="zh-CN" lang="zh-CN">简体中文</option>
+        </select>
+      </div>
+      <output id="save-status" role="status" aria-live="polite" aria-atomic="true"></output>
+      <button id="open-city" type="button" data-i18n="openCityShortcut"></button>
+      <footer>
+        <span id="version"></span>
+        <nav data-i18n-label="settingsAbout">
+          <a href="https://github.com/wxy/CodeYears#readme" target="_blank" rel="noopener noreferrer" data-i18n="help"></a>
+          <a href="https://github.com/wxy/CodeYears/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer" data-i18n="privacy"></a>
+          <a href="https://github.com/wxy/CodeYears/issues" target="_blank" rel="noopener noreferrer" data-i18n="feedback"></a>
+        </nav>
+      </footer>
+    </main>
     <script type="module" src="/src/extension/popup.ts"></script>
   </body>
 </html>
