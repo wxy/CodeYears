@@ -347,6 +347,12 @@
   "appearanceSaveError": {
     "message": "贡献图样式保存失败，请重试。"
   },
+  "showCity": {
+    "message": "显示城市页签"
+  },
+  "cityVisibilitySaveError": {
+    "message": "城市显示设置保存失败，请重试。"
+  },
   "openCityShortcut": {
     "message": "打开当前主页的城市"
   },

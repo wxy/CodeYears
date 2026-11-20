@@ -26,6 +26,8 @@
       body { margin: 0; inline-size: 350px; }
       main { padding: 16px; }
       h1 { margin: 0 0 14px; font-size: 19px; letter-spacing: -.02em; }
+      .city-visibility { display: flex; align-items: center; gap: 8px; min-block-size: 44px; margin-block-end: 6px; font-weight: 600; cursor: pointer; }
+      .city-visibility input { margin: 0; accent-color: var(--accent); }
       fieldset { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
       legend { padding: 0; margin-block-end: 6px; font-weight: 600; }
       .mode { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
@@ -46,6 +48,10 @@
   <body>
     <main hidden>
       <h1 data-i18n="settingsTitle"></h1>
+      <label class="city-visibility" for="show-city">
+        <input type="checkbox" id="show-city" checked disabled />
+        <span data-i18n="showCity"></span>
+      </label>
       <fieldset id="appearance" disabled>
         <legend data-i18n="calendarAppearance"></legend>
         <label class="mode">

@@ -347,6 +347,12 @@
   "appearanceSaveError": {
     "message": "Could not save the graph style. Try again."
   },
+  "showCity": {
+    "message": "Show City tab"
+  },
+  "cityVisibilitySaveError": {
+    "message": "Could not save City visibility. Try again."
+  },
   "openCityShortcut": {
     "message": "Open City on this profile"
   },
