@@ -203,6 +203,9 @@
   "popupNotReady": {
     "message": "请在 GitHub 个人主页的贡献日历加载完成后重试。"
   },
+  "popupAlreadyMounted": {
+    "message": "当前主页已有 CodeYears 视图。重载扩展后请刷新主页，并确保只启用一个版本。"
+  },
   "popupOpened": {
     "message": "已打开城市。"
   },

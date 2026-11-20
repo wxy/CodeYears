@@ -203,6 +203,9 @@
   "popupNotReady": {
     "message": "Retry after the contribution calendar has loaded on the GitHub profile."
   },
+  "popupAlreadyMounted": {
+    "message": "CodeYears already has a view on this page. Refresh the profile after an extension reload, and keep one version enabled."
+  },
   "popupOpened": {
     "message": "City opened."
   },

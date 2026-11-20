@@ -28,11 +28,18 @@ async function findActiveProfile() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id === undefined || !tab.url || new URL(tab.url).origin !== 'https://github.com') return;
     const target = { tabId: tab.id };
-    await chrome.scripting.executeScript({ target, files: ['entry.js'] });
-    const [probe] = await chrome.scripting.executeScript({
-      target, func: () => window.__codeyearsHasProfileCalendar?.() === true,
-    });
-    if (probe?.result) return target;
+    const hasProfileCalendar = async () => {
+      const [probe] = await chrome.scripting.executeScript({
+        target, func: () => window.__codeyearsHasProfileCalendar?.() ?? null,
+      });
+      return probe?.result;
+    };
+    let profile = await hasProfileCalendar();
+    if (profile == null) {
+      await chrome.scripting.executeScript({ target, files: ['entry.js'] });
+      profile = await hasProfileCalendar();
+    }
+    if (profile) return target;
   } catch {
     // Chrome can restrict script access to the active page.
   }
@@ -120,6 +127,7 @@ openButton.addEventListener('click', async () => {
   show('popupOpening', openButton);
   try {
     const [result] = await chrome.scripting.executeScript({ target: profileTarget, func: () => window.__codeyearsOpenCity?.() ?? false });
+    if (result.result === 'already-mounted') { show('popupAlreadyMounted', openButton, true); return; }
     if (!result.result) { show('popupNotReady', openButton); return; }
     show('popupOpened', openButton);
     window.close();

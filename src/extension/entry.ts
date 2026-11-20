@@ -6,7 +6,7 @@ import { isCityUrl } from './city-url';
 
 declare global {
   interface Window {
-    __codeyearsOpenCity?: () => Promise<boolean>;
+    __codeyearsOpenCity?: () => Promise<boolean | 'already-mounted'>;
     __codeyearsHasProfileCalendar?: () => boolean;
   }
 }
@@ -14,8 +14,10 @@ declare global {
 (() => {
   if (window.__codeyearsOpenCity) return;
 
+  const mountMarker = 'data-codeyears-mounted';
   let mounted: ReturnType<typeof mount> | {
     kind: 'miniature';
+    root: HTMLElement;
     grid: HTMLTableElement;
     heading: HTMLElement;
     profile: string;
@@ -35,8 +37,7 @@ declare global {
     }
     if (mounted && (mounted.kind === 'city' || showCity || appearance === 'native')) {
       if (mounted.kind === 'city') mounted.deactivate();
-      mounted.dispose();
-      mounted = undefined;
+      disposeView();
     }
     reconcile();
   }
@@ -262,7 +263,7 @@ declare global {
     };
     host.dataset.view = 'native';
     return {
-      kind: 'city' as const, grid, heading, nativeStats, host, bodyHost, profile, sync, localize, syncAppearance,
+      kind: 'city' as const, root, grid, heading, nativeStats, host, bodyHost, profile, sync, localize, syncAppearance,
       open() { roadArrivalPending=false; host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
       openRoadArrival,
       syncUrl() {
@@ -302,11 +303,18 @@ declare global {
     if (root && grid && heading) return { root, grid, heading };
   }
 
+  function disposeView() {
+    if (!mounted) return;
+    mounted.dispose();
+    mounted.root.removeAttribute(mountMarker);
+    mounted = undefined;
+  }
+
   function reconcile() {
     const profile = profileLogin();
     if (mounted && (profile !== mounted.profile || !mounted.grid.isConnected || !mounted.heading.isConnected
         || (mounted.kind === 'city' && (!mounted.bodyHost.isConnected || !mounted.heading.contains(mounted.nativeStats) || !mounted.heading.contains(mounted.host))))) {
-      mounted.dispose(); mounted = undefined;
+      disposeView();
     }
     if (mounted) { if (mounted.kind === 'city') mounted.sync(); return; }
     if (!appearance || showCity === undefined || navigating || !profile) return;
@@ -314,17 +322,24 @@ declare global {
     const calendar = findProfileCalendar();
     if (!calendar) return;
     const { root, grid, heading } = calendar;
-    if (!showCity) {
-      mounted = { kind: 'miniature', grid, heading, profile, dispose: mountMiniature(grid) };
-      return;
+    // 内容脚本的 JavaScript 上下文彼此隔离。重载前或其他版本的宿主仍可能留在同一页面。
+    if (root.hasAttribute(mountMarker) || root.querySelector('#codeyears-profile-tabs, #codeyears-miniature-canvas')) {
+      return 'already-mounted';
     }
-    if (!document.querySelector('a[id^="year-link-"]')) return;
-    let native: HTMLElement = grid;
-    while (native.parentElement !== root) native = native.parentElement!;
-    if (!native.contains(heading)) return;
-    mounted = mount(root, native, grid, heading, profile);
-    mounted.openRoadArrival();
-    mounted.syncAppearance();
+    if (showCity) {
+      if (!document.querySelector('a[id^="year-link-"]')) return;
+      let native: HTMLElement = grid;
+      while (native.parentElement !== root) native = native.parentElement!;
+      if (!native.contains(heading)) return;
+      mounted = mount(root, native, grid, heading, profile);
+    } else {
+      mounted = { kind: 'miniature', root, grid, heading, profile, dispose: mountMiniature(grid) };
+    }
+    root.setAttribute(mountMarker, '');
+    if (mounted.kind === 'city') {
+      mounted.openRoadArrival();
+      mounted.syncAppearance();
+    }
   }
   const observer = new MutationObserver(() => {
     if (queued) return;
@@ -333,7 +348,7 @@ declare global {
   });
   const observe = () => observer.observe(document.documentElement, { childList: true, subtree: true });
   observe();
-  const beforeNavigate = () => { navigating = true; mounted?.dispose(); mounted = undefined; };
+  const beforeNavigate = () => { navigating = true; disposeView(); };
   const afterNavigate = () => { navigating = false; reconcile(); };
   document.addEventListener('turbo:before-cache', beforeNavigate);
   document.addEventListener('turbo:before-render', beforeNavigate);
@@ -348,7 +363,7 @@ declare global {
   window.__codeyearsHasProfileCalendar = () => Boolean(profileLogin() && findProfileCalendar());
   window.__codeyearsOpenCity = async () => {
     await settingsReady;
-    reconcile();
+    if (reconcile() === 'already-mounted') return 'already-mounted';
     if (mounted?.kind !== 'city') return false;
     mounted.open();
     return true;
