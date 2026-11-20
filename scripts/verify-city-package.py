@@ -13,12 +13,12 @@ ROOT = Path(__file__).resolve().parents[1]
 FIXED = {'manifest.json', 'popup.html', 'entry.js', 'content.js', 'landscape.js', 'calendar.js'}
 CALENDAR_ASSETS = {'cottage.webp', 'garden.webp', 'courtyard.webp', 'terrace.webp', 'mansard.webp', 'clinic.webp',
                    'limestone.webp', 'apartment.webp', 'duplex.webp', 'office-blue.webp', 'office-amber.webp',
-                   'tower-green.webp', 'asphalt-strip.png'}
+                   'tower-green.webp'}
 NOTICES = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'ASSETS.md', 'PRIVACY.md'}
 SCOPE = ['https://github.com/*']
 ENTRY = [{'matches': SCOPE, 'js': ['entry.js'], 'run_at': 'document_idle'}]
 WAR = [{'resources': ['content.js', 'landscape.js', 'calendar.js', 'chunks/*.js', 'assets/city/*.png',
-                      'assets/calendar/*.webp', 'assets/calendar/asphalt-strip.png'], 'matches': SCOPE}]
+                      'assets/calendar/*.webp'], 'matches': SCOPE}]
 
 
 def require(condition, message):
@@ -127,8 +127,7 @@ def verify(archive, build):
                     reference(name, target)
                 # Baked catalog filenames are package-local resources.
                 for target in re.findall(r'''["'`]([\w-]+\.png)["'`]''', text):
-                    directory = 'assets/calendar/' if target in CALENDAR_ASSETS else 'assets/city/'
-                    reference(name, directory + target, True)
+                    reference(name, 'assets/city/' + target, True)
             require(expected[name].is_file(), f'missing build/source file: {name}')
             require(data == expected[name].read_bytes(), f'content differs from fresh build/source: {name}')
             require(data, f'empty release file: {name}')

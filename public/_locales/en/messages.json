@@ -329,29 +329,23 @@
   "settingsTitle": {
     "message": "CodeYears settings"
   },
-  "appearanceCity": {
-    "message": "Full-scale city"
+  "calendarAppearance": {
+    "message": "Contribution graph style"
   },
-  "appearanceCityDescription": {
-    "message": "Add a City tab for exploring multiple years."
+  "appearanceNative": {
+    "message": "GitHub original"
+  },
+  "appearanceNativeDescription": {
+    "message": "Use GitHub’s original contribution graph."
   },
   "appearanceMiniature": {
     "message": "Miniature city"
   },
   "appearanceMiniatureDescription": {
-    "message": "Show buildings and streets in the GitHub contribution calendar."
-  },
-  "appearanceOff": {
-    "message": "Off"
-  },
-  "appearanceOffDescription": {
-    "message": "Display the original GitHub contribution graph."
-  },
-  "miniatureRoads": {
-    "message": "Show roads"
+    "message": "Show miniature buildings in the contribution graph."
   },
   "appearanceSaveError": {
-    "message": "Could not save the display mode. Try again."
+    "message": "Could not save the graph style. Try again."
   },
   "openCityShortcut": {
     "message": "Open City on this profile"

@@ -29,7 +29,7 @@ if "options_ui" in manifest or manifest["action"].get("default_popup") != "popup
     raise SystemExit("Settings must be served by the toolbar popup")
 
 # An explicit distribution list excludes repository material, source maps and local data.
-files = {name: dist / name for name in ("manifest.json", "popup.html", "entry.js", "content.js", "landscape.js", "calendar.js", "assets/calendar/asphalt-strip.png")}
+files = {name: dist / name for name in ("manifest.json", "popup.html", "entry.js", "content.js", "landscape.js", "calendar.js")}
 for locale in ("en", "zh_CN"):
     name = f"_locales/{locale}/messages.json"
     files[name] = dist / name

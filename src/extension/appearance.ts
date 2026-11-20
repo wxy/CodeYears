@@ -1,19 +1,15 @@
-export type Appearance = 'city' | 'miniature' | 'off';
+export type Appearance = 'native' | 'miniature';
 export const APPEARANCE_KEY = 'codeyears:ui:appearance';
-export const ROADS_KEY = 'codeyears:ui:miniature-roads';
 
 export function appearancePreference(value: unknown): Appearance {
-  return value === 'miniature' || value === 'off' ? value : 'city';
+  return value === 'miniature' ? 'miniature' : 'native';
 }
 
-export const roadsPreference = (value: unknown) => value !== false;
-
-export async function readAppearanceSettings(): Promise<{ appearance: Appearance; roads: boolean }> {
+export async function readAppearance(): Promise<Appearance> {
   try {
-    const values = await chrome.storage.local.get([APPEARANCE_KEY, ROADS_KEY]);
-    return { appearance: appearancePreference(values[APPEARANCE_KEY]), roads: roadsPreference(values[ROADS_KEY]) };
-  } catch { return { appearance: 'city', roads: true }; }
+    const values = await chrome.storage.local.get(APPEARANCE_KEY);
+    return appearancePreference(values[APPEARANCE_KEY]);
+  } catch { return 'native'; }
 }
 
 export const saveAppearance = (appearance: Appearance) => chrome.storage.local.set({ [APPEARANCE_KEY]: appearance });
-export const saveRoads = (roads: boolean) => chrome.storage.local.set({ [ROADS_KEY]: roads });

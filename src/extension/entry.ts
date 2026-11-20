@@ -1,5 +1,5 @@
 import type { CityPanel } from './content';
-import { APPEARANCE_KEY, ROADS_KEY, appearancePreference, readAppearanceSettings, roadsPreference, type Appearance } from './appearance';
+import { APPEARANCE_KEY, appearancePreference, readAppearance, saveAppearance, type Appearance } from './appearance';
 import { entryText } from './entry-text';
 import { LANGUAGE_KEY, languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
 import { isCityUrl } from './city-url';
@@ -11,55 +11,29 @@ declare global {
 (() => {
   if (window.__codeyearsOpenCity) return;
 
-  let mounted: ReturnType<typeof mount> | ReturnType<typeof mountMiniature> | undefined;
+  let mounted: ReturnType<typeof mount> | undefined;
   let appearance: Appearance | undefined;
-  let showRoads: boolean | undefined;
   let navigating = false, queued = false;
   let preference: LanguagePreference = 'auto';
   const languageSettings = () => ({ language: resolveLanguage(preference), preference, change: async (next: LanguagePreference) => { await saveLanguagePreference(next); updateLanguage(next); } });
-  const updateLanguage = (next: LanguagePreference) => { preference = next; if (mounted?.kind === 'city') mounted.localize(); };
+  const updateLanguage = (next: LanguagePreference) => { preference = next; mounted?.localize(); };
   void readLanguagePreference().then(updateLanguage);
   function updateAppearance(next: Appearance) {
     if (appearance === next) return;
     appearance = next;
-    mounted?.dispose();
-    mounted = undefined;
-    if (next === 'off') observer.disconnect();
-    else observe();
-    reconcile();
+    if (mounted) mounted.syncAppearance();
+    else reconcile();
   }
-  function updateRoads(next: boolean) {
-    showRoads = next;
-    if (mounted?.kind === 'miniature') mounted.setRoads(next);
-  }
-  const appearanceReady = readAppearanceSettings().then(settings => {
-    if (showRoads === undefined) updateRoads(settings.roads);
-    if (appearance === undefined) updateAppearance(settings.appearance);
+  const appearanceReady = readAppearance().then(savedAppearance => {
+    if (appearance === undefined) updateAppearance(savedAppearance);
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes[LANGUAGE_KEY]) updateLanguage(languagePreference(changes[LANGUAGE_KEY].newValue));
-    if (changes[ROADS_KEY]) updateRoads(roadsPreference(changes[ROADS_KEY].newValue));
     if (changes[APPEARANCE_KEY]) updateAppearance(appearancePreference(changes[APPEARANCE_KEY].newValue));
   });
 
-  function mountMiniature(grid: HTMLTableElement, heading: HTMLElement, profile: string) {
-    let view: ReturnType<typeof import('./miniature-calendar').mountMiniatureCalendar> | undefined;
-    let disposed = false;
-    void import(/* @vite-ignore */ chrome.runtime.getURL('calendar.js')).then(
-      (module: typeof import('./miniature-calendar')) => {
-        if (!disposed && grid.isConnected) view = module.mountMiniatureCalendar(grid, showRoads ?? true);
-      },
-      () => { /* Keep the GitHub calendar available if the optional view did not load. */ },
-    );
-    return {
-      kind: 'miniature' as const, grid, heading, profile,
-      setRoads(roads: boolean) { view?.setRoads(roads); },
-      dispose() { disposed = true; view?.dispose(); },
-    };
-  }
-
-  function mount(root: HTMLElement, native: HTMLElement, grid: HTMLElement, heading: HTMLElement, profile: string) {
+  function mount(root: HTMLElement, native: HTMLElement, grid: HTMLTableElement, heading: HTMLElement, profile: string) {
     const host = document.createElement('span');
     host.id = 'codeyears-profile-tabs';
     const shadow = host.attachShadow({ mode: 'open' });
@@ -76,6 +50,10 @@ declare global {
         button { flex:none; white-space:nowrap; font:inherit; color:inherit; cursor:pointer; padding:4px 7px; border:0; border-radius:4px; background:transparent; }
         button[aria-pressed="true"] { font-weight:600; }
         button:focus-visible { outline:2px solid #268f80; outline-offset:2px; }
+        #miniature-toggle { border:1px solid var(--borderColor-default,#d1d9e0); border-radius:6px; background:var(--bgColor-muted,#f6f8fa); }
+        #miniature-toggle[aria-pressed="true"] { color:var(--fgColor-accent,#0969da); border-color:var(--borderColor-accent-muted,#54aeff); background:var(--bgColor-accent-muted,#ddf4ff); }
+        #appearance-status:empty { position:absolute; }
+        #appearance-status:not(:empty) { flex-basis:100%; color:var(--fgColor-danger,#cf222e); }
         slot[name="native-stat"] { flex:1 1 180px; }
         ::slotted(#codeyears-native-stat) { flex:1 1 180px; min-width:0; font-size:14px; }
         ::slotted(.js-contribution-settings-menu) { float:none!important; margin:0!important; }
@@ -83,7 +61,15 @@ declare global {
       </style>
       <div class="tabs" role="group">
         <div class="tab" data-active="false"><button id="tab-city" type="button" aria-pressed="false"></button><div id="city-controls" class="controls" hidden><slot name="city-controls"></slot></div></div>
-        <div class="tab" data-active="true"><button id="tab-native" type="button" aria-pressed="true"></button><div id="native-controls" class="controls"><slot name="native-stat"></slot><slot name="native-settings"></slot></div></div>
+        <div class="tab" data-active="true">
+          <button id="tab-native" type="button" aria-pressed="true"></button>
+          <div id="native-controls" class="controls">
+            <slot name="native-stat"></slot>
+            <button id="miniature-toggle" type="button" aria-pressed="false"></button>
+            <slot name="native-settings"></slot>
+            <output id="appearance-status" role="status"></output>
+          </div>
+        </div>
       </div>`;
     const bodyHost = document.createElement('div');
     bodyHost.id = 'codeyears-city-content'; bodyHost.hidden = true;
@@ -103,6 +89,8 @@ declare global {
       <div id="city-panel" hidden></div>`;
     const nativeButton = shadow.querySelector<HTMLButtonElement>('#tab-native')!;
     const cityButton = shadow.querySelector<HTMLButtonElement>('#tab-city')!;
+    const miniatureButton = shadow.querySelector<HTMLButtonElement>('#miniature-toggle')!;
+    const appearanceStatus = shadow.querySelector<HTMLOutputElement>('#appearance-status')!;
     const nativeControls = shadow.querySelector<HTMLElement>('#native-controls')!;
     const cityControls = shadow.querySelector<HTMLElement>('#city-controls')!;
     const toolbarHost = document.createElement('div'); toolbarHost.slot = 'city-controls';
@@ -128,6 +116,8 @@ declare global {
     heading.append(host); heading.after(bodyHost);
     const hiddenNative = new Map<HTMLElement, { display: string; priority: string }>();
     let active = false, disposed = false, selection = 0, trafficSeed = 0, panel: CityPanel | undefined;
+    let miniature: ReturnType<typeof import('./miniature-calendar').mountMiniatureCalendar> | undefined;
+    let loadingMiniature = false;
     if (location.hash === '#codeyears-town') {
       const url = new URL(location.href);
       url.hash = 'codeyears-city';
@@ -140,11 +130,38 @@ declare global {
       const language = resolveLanguage(preference); host.lang = bodyHost.lang = language;
       shadow.querySelector('.tabs')!.setAttribute('aria-label', entryText(language, 'viewGroup'));
       cityButton.textContent = entryText(language, 'city'); nativeButton.textContent = entryText(language, 'contributions');
+      miniatureButton.textContent = entryText(language, 'appearanceMiniature');
+      if (appearanceStatus.textContent) appearanceStatus.textContent = entryText(language, 'appearanceSaveError');
       retry.textContent = entryText(language, 'retry');
       status.textContent = entryText(language, entryState === 'error' ? 'cityOpenError' : 'prepareCity');
       panel?.setLanguage(language, preference);
     };
     localize();
+
+    const wantsMiniature = () => !active && !disposed && appearance === 'miniature';
+    const syncAppearance = () => {
+      miniatureButton.setAttribute('aria-pressed', String(appearance === 'miniature'));
+      appearanceStatus.textContent = '';
+      if (!wantsMiniature()) {
+        miniature?.dispose();
+        miniature = undefined;
+      } else if (!miniature && !loadingMiniature) {
+        loadingMiniature = true;
+        void import(/* @vite-ignore */ chrome.runtime.getURL('calendar.js')).then(
+          (module: typeof import('./miniature-calendar')) => {
+            loadingMiniature = false;
+            if (wantsMiniature() && grid.isConnected) miniature = module.mountMiniatureCalendar(grid);
+          },
+          () => { loadingMiniature = false; },
+        );
+      }
+    };
+    miniatureButton.addEventListener('click', () => {
+      appearanceStatus.textContent = '';
+      void saveAppearance(appearance === 'miniature' ? 'native' : 'miniature').catch(() => {
+        appearanceStatus.textContent = entryText(resolveLanguage(preference), 'appearanceSaveError');
+      });
+    });
 
     const sync = () => {
       if (!active) return;
@@ -176,10 +193,12 @@ declare global {
       bodyHost.hidden = panelHost.hidden = status.hidden = retry.hidden = true;
       feedback.hidden = true;
       host.dataset.view = 'native';
+      syncAppearance();
     };
     const selectCity = async () => {
       if (active || disposed || document.hidden) return;
       active = true; const token = ++selection;
+      syncAppearance();
       trafficSeed = Math.floor(Math.random() * 0x100000000);
       sync(); nativeControls.hidden = true; cityControls.hidden = false;
       nativeButton.parentElement!.dataset.active = 'false'; cityButton.parentElement!.dataset.active = 'true';
@@ -218,8 +237,7 @@ declare global {
     };
     host.dataset.view = 'native';
     return {
-      kind: 'city' as const,
-      root, native, grid, heading, nativeStats, host, bodyHost, profile, sync, localize,
+      grid, heading, nativeStats, host, bodyHost, profile, sync, localize, syncAppearance,
       open() { roadArrivalPending=false; host.scrollIntoView({ block: 'nearest' }); void selectCity(); },
       openRoadArrival,
       syncUrl() {
@@ -236,7 +254,7 @@ declare global {
         if (hidden) panel?.suspendPrivateView(); else void panel?.activate(trafficSeed);
       },
       dispose() {
-        disposed = true; selection++; panel?.dispose(); restoreNative();
+        disposed = true; selection++; miniature?.dispose(); panel?.dispose(); restoreNative();
         if (nativeSettings) {
           if (settingsSlot == null) nativeSettings.removeAttribute('slot'); else nativeSettings.setAttribute('slot', settingsSlot);
           settingsHome.replaceWith(nativeSettings);
@@ -251,42 +269,38 @@ declare global {
   function reconcile() {
     const profile = location.origin === 'https://github.com' ? location.pathname.match(/^\/([a-zA-Z0-9-]{1,39})\/?$/)?.[1].toLowerCase() : undefined;
     if (mounted && (profile !== mounted.profile || !mounted.grid.isConnected || !mounted.heading.isConnected
-        || (mounted.kind === 'city' && (!mounted.bodyHost.isConnected || !mounted.heading.contains(mounted.nativeStats) || !mounted.heading.contains(mounted.host))))) {
+        || !mounted.bodyHost.isConnected || !mounted.heading.contains(mounted.nativeStats) || !mounted.heading.contains(mounted.host))) {
       mounted.dispose(); mounted = undefined;
     }
-    if (mounted) { if (mounted.kind === 'city') mounted.sync(); return; }
-    if (!appearance || appearance === 'off' || navigating || !profile) return;
+    if (mounted) { mounted.sync(); return; }
+    if (!appearance || navigating || !profile) return;
     const root = document.querySelector<HTMLElement>('.js-yearly-contributions');
     const grid = root?.querySelector<HTMLTableElement>('table.ContributionCalendar-grid');
     const heading = root?.querySelector<HTMLElement>('#js-contribution-activity-description');
     if (!root || !grid || !heading) return;
-    if (appearance === 'miniature') {
-      mounted = mountMiniature(grid, heading, profile);
-      return;
-    }
     if (!document.querySelector('a[id^="year-link-"]')) return;
     let native: HTMLElement = grid;
     while (native.parentElement !== root) native = native.parentElement!;
     if (!native.contains(heading)) return;
     mounted = mount(root, native, grid, heading, profile);
     mounted.openRoadArrival();
+    mounted.syncAppearance();
   }
   const observer = new MutationObserver(() => {
     if (queued) return;
     queued = true;
     queueMicrotask(() => { queued = false; reconcile(); });
   });
-  const observe = () => {
-    if (appearance && appearance !== 'off') observer.observe(document.documentElement, { childList: true, subtree: true });
-  };
+  const observe = () => observer.observe(document.documentElement, { childList: true, subtree: true });
+  observe();
   const beforeNavigate = () => { navigating = true; mounted?.dispose(); mounted = undefined; };
   const afterNavigate = () => { navigating = false; reconcile(); };
   document.addEventListener('turbo:before-cache', beforeNavigate);
   document.addEventListener('turbo:before-render', beforeNavigate);
   document.addEventListener('turbo:render', afterNavigate);
   document.addEventListener('turbo:load', afterNavigate);
-  document.addEventListener('visibilitychange', () => { if (mounted?.kind === 'city') mounted.visibility(document.hidden); });
-  const onUrlChange = () => { reconcile(); if (mounted?.kind === 'city') mounted.syncUrl(); };
+  document.addEventListener('visibilitychange', () => { mounted?.visibility(document.hidden); });
+  const onUrlChange = () => { reconcile(); mounted?.syncUrl(); };
   window.addEventListener('popstate', onUrlChange);
   window.addEventListener('hashchange', onUrlChange);
   window.addEventListener('pagehide', () => { beforeNavigate(); observer.disconnect(); });
@@ -294,7 +308,7 @@ declare global {
   window.__codeyearsOpenCity = async () => {
     await appearanceReady;
     reconcile();
-    if (mounted?.kind !== 'city') return false;
+    if (!mounted) return false;
     mounted.open();
     return true;
   };

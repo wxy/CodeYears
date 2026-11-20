@@ -22,7 +22,7 @@
     "48": "icons/codeyears-48.png",
     "128": "icons/codeyears-128.png"
   },
-  "web_accessible_resources": [{ "resources": ["content.js", "landscape.js", "calendar.js", "chunks/*.js", "assets/city/*.png", "assets/calendar/*.webp", "assets/calendar/asphalt-strip.png"], "matches": ["https://github.com/*"] }],
+  "web_accessible_resources": [{ "resources": ["content.js", "landscape.js", "calendar.js", "chunks/*.js", "assets/city/*.png", "assets/calendar/*.webp"], "matches": ["https://github.com/*"] }],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'none'"
   }

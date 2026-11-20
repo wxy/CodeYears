@@ -329,29 +329,23 @@
   "settingsTitle": {
     "message": "CodeYears 设置"
   },
-  "appearanceCity": {
-    "message": "大规模城市"
+  "calendarAppearance": {
+    "message": "贡献图样式"
   },
-  "appearanceCityDescription": {
-    "message": "添加独立的城市页签，可浏览多年的贡献。"
+  "appearanceNative": {
+    "message": "GitHub 原图"
+  },
+  "appearanceNativeDescription": {
+    "message": "使用 GitHub 原有的贡献图。"
   },
   "appearanceMiniature": {
     "message": "微缩城市"
   },
   "appearanceMiniatureDescription": {
-    "message": "在 GitHub 原贡献图里展示建筑和道路。"
-  },
-  "appearanceOff": {
-    "message": "关闭"
-  },
-  "appearanceOffDescription": {
-    "message": "显示 GitHub 原始贡献图。"
-  },
-  "miniatureRoads": {
-    "message": "显示道路"
+    "message": "在贡献图里展示微缩建筑。"
   },
   "appearanceSaveError": {
-    "message": "展示方式保存失败，请重试。"
+    "message": "贡献图样式保存失败，请重试。"
   },
   "openCityShortcut": {
     "message": "打开当前主页的城市"
