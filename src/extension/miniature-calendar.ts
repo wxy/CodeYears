@@ -1,16 +1,12 @@
-import { text } from './i18n';
-import type { Language } from './language';
-
-const selector = 'td.ContributionCalendar-day[data-date][data-level][data-ix]';
 const sceneClass = 'codeyears-miniature-scene';
 const buildings = [
   [],
-  ['cottage.webp', 'villa.webp', 'courtyard.webp'],
-  ['terrace.webp', 'bakery.webp', 'villa.webp'],
-  ['duplex.webp', 'townhouse.webp', 'limestone.webp'],
-  ['terracotta.webp', 'apartment.webp', 'limestone.webp'],
+  ['garden.webp', 'cottage.webp', 'courtyard.webp'],
+  ['terrace.webp', 'mansard.webp', 'clinic.webp'],
+  ['limestone.webp', 'apartment.webp', 'duplex.webp'],
+  ['office-blue.webp', 'office-amber.webp', 'tower-green.webp'],
 ] as const;
-const files = [...new Set(buildings.flat()), 'asphalt-strip.png'];
+const files = [...buildings.flat(), 'asphalt-strip.png'];
 const lotScale = 0.7;
 const modelSeed = Math.floor(Math.random() * 0x100000000);
 type Level = 0 | 1 | 2 | 3 | 4;
@@ -52,129 +48,113 @@ function readDays(grid: HTMLTableElement) {
 }
 
 const sceneCss = `
-  .${sceneClass} { position: relative; inline-size: max-content; isolation: isolate; }
-  .${sceneClass}[data-painted] thead > tr { height: 37px !important; }
+  .${sceneClass} { position: relative; isolation: isolate; }
   .${sceneClass} > table { position: relative; z-index: 1; }
-  .${sceneClass} > canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .${sceneClass} > canvas {
+    position: absolute; pointer-events: none; border-radius: 3px;
+    background-color: color-mix(in srgb, var(--bgColor-muted, #f6f8fa) 90%, var(--fgColor-muted, #59636e));
+  }
   .${sceneClass}[data-painted]:not([data-measuring]) td[data-date][data-level] {
     translate: var(--codeyears-x, 0px) var(--codeyears-y, 0px);
-    background-color: transparent !important;
-    box-shadow: none !important;
+    background-color: transparent !important; box-shadow: none !important;
   }
   .${sceneClass}[data-painted] td[data-date]:is([aria-selected="true"], :focus-visible) {
-    outline: 2px solid var(--fgColor-accent, #0969da);
-    outline-offset: -1px;
+    outline: 2px solid var(--fgColor-accent, #0969da); outline-offset: -1px;
+  }
+  [data-codeyears-miniature-legend] {
+    position: relative;
+    background-color: transparent !important; box-shadow: none !important;
+  }
+  [data-codeyears-miniature-legend] > img {
+    position: absolute; inset-inline-start: -1px; inset-block-end: -1px;
+    width: 12px; height: 13px; object-fit: contain; object-position: center bottom; pointer-events: none;
+  }
+  [data-codeyears-miniature-legend="0"] {
+    background-color: var(--bgColor-neutral-muted, #d0d7de) !important;
+    clip-path: polygon(50% 20%, 100% 50%, 50% 80%, 0 50%);
   }
 `;
 
-export function mountMiniatureCalendar(grid: HTMLTableElement, initialLanguage: Language) {
+export function mountMiniatureCalendar(grid: HTMLTableElement, initialRoads: boolean) {
   const scroller = grid.parentElement!;
-  const scene = document.createElement('div');
-  scene.className = sceneClass;
+  const graph = grid.closest('.js-calendar-graph');
   const style = document.createElement('style');
   style.textContent = sceneCss;
   const canvas = document.createElement('canvas');
+  canvas.id = 'codeyears-miniature-canvas';
   canvas.setAttribute('aria-hidden', 'true');
   canvas.hidden = true;
-  const controls = document.createElement('div');
-  controls.id = 'codeyears-miniature-controls';
-  controls.hidden = true;
-  const shadow = controls.attachShadow({ mode: 'open' });
-  shadow.innerHTML = `
-    <style>
-      :host { align-self:stretch; display:block; color:var(--fgColor-default,#1f2328); font:12px/1.45 system-ui,sans-serif; }
-      :host([hidden]) { display:none; }
-      .controls { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; padding:4px 0; text-align:start; }
-      label { display:inline-flex; align-items:center; gap:6px; }
-      input { width:82px; margin:0; accent-color:var(--fgColor-accent,#0969da); }
-      output { color:var(--fgColor-muted,#59636e); }
-    </style>
-    <div class="controls" role="group">
-      <label><span></span><input type="range" min="100" max="400" step="50" value="100"></label>
-      <output id="scale">100%</output>
-      <output id="day" aria-live="polite"></output>
-    </div>`;
-  const input = shadow.querySelector('input')!;
-  const record = shadow.querySelector<HTMLOutputElement>('#day')!;
-  const scaleLabel = shadow.querySelector<HTMLOutputElement>('#scale')!;
-  let language = initialLanguage;
+  const swatches = new Map<HTMLElement, HTMLImageElement | undefined>();
   let snapshot: ReturnType<typeof readDays>;
-  let chosenDate = '';
-  let descriptions = new Map<string, string>();
   let pictures: Map<string, HTMLImageElement> | undefined;
-  let frame = 0, zoom = 1;
+  let showRoads = initialRoads;
+  let frame = 0;
   let disposed = false;
 
-  function localize(next: Language) {
-    language = next;
-    controls.lang = next;
-    shadow.querySelector('.controls')!.setAttribute('aria-label', text(next, 'miniatureControls'));
-    shadow.querySelector('label span')!.textContent = text(next, 'miniatureZoom');
-    input.setAttribute('aria-valuetext', text(next, 'zoomLevel', [input.value]));
-    record.setAttribute('aria-label', text(next, 'miniatureRecord'));
+  function resetLegend() {
+    for (const [swatch, icon] of swatches) {
+      swatch.removeAttribute('data-codeyears-miniature-legend');
+      icon?.remove();
+    }
+    swatches.clear();
   }
 
-  function showRecord(day: Day) {
-    chosenDate = day.date;
-    record.textContent = descriptions.get(day.cell.id) || day.date;
+  function paintLegend() {
+    for (const [level, options] of buildings.entries()) {
+      const swatch = graph?.querySelector<HTMLElement>('#contribution-graph-legend-level-' + level);
+      if (!swatch || swatches.has(swatch)) continue;
+      swatch.dataset.codeyearsMiniatureLegend = String(level);
+      let icon: HTMLImageElement | undefined;
+      if (options.length) {
+        icon = document.createElement('img');
+        icon.src = pictures!.get(options[0])!.src;
+        icon.alt = '';
+        swatch.append(icon);
+      }
+      swatches.set(swatch, icon);
+    }
   }
 
   function updateDays() {
     snapshot = readDays(grid);
-    descriptions = new Map(Array.from(scroller.querySelectorAll('tool-tip[for]'), node =>
-      [node.getAttribute('for')!, node.textContent?.trim().replace(/\s+/g, ' ') ?? '']));
-    const days = snapshot?.days ?? [];
-    const selected = days.find(day => day.date === chosenDate)
-      ?? days.reduce<Day | undefined>((last, day) => !last || day.date > last.date ? day : last, undefined);
-    if (selected) showRecord(selected);
-    else record.textContent = '';
     schedule();
   }
 
-  function selectDay(event: Event) {
-    const target = event.target;
-    if (!(target instanceof Element)) return;
-    const cell = target.closest(selector);
-    const day = snapshot?.days.find(day => day.cell === cell);
-    if (day) showRecord(day);
+  function hide() {
+    scroller.removeAttribute('data-painted');
+    canvas.hidden = true;
+    resetLegend();
   }
 
   function paint() {
     frame = 0;
-    if (!pictures || !snapshot || !scene.isConnected) {
-      scene.removeAttribute('data-painted');
-      scene.style.removeProperty('zoom');
-      canvas.hidden = controls.hidden = true;
-      return;
-    }
-    scene.style.setProperty('zoom', String(zoom));
-    scene.setAttribute('data-painted', '');
-    scene.setAttribute('data-measuring', '');
-    const area = scene.getBoundingClientRect();
+    if (!pictures || !snapshot || !grid.isConnected) { hide(); return; }
+    scroller.setAttribute('data-measuring', '');
+    const area = scroller.getBoundingClientRect();
     const { days, rows } = snapshot;
     const positions = days.map(day => day.cell.getBoundingClientRect());
     const left = Math.min(...positions.map(rect => rect.left));
     const right = Math.max(...positions.map(rect => rect.right));
     const top = rows[0].getBoundingClientRect().top;
     const bottom = rows[6].getBoundingClientRect().bottom;
-    scene.removeAttribute('data-measuring');
-    if (left === right || top === bottom || !area.width || !area.height) {
-      scene.removeAttribute('data-painted');
-      scene.style.removeProperty('zoom');
-      canvas.hidden = controls.hidden = true;
-      return;
-    }
+    scroller.removeAttribute('data-measuring');
+    const width = right - left, height = bottom - top;
+    if (!width || !height || !area.width) { hide(); return; }
+
+    // 以原生日格的矩形为画布边界，图层绝对定位，不给表格加行或留白。
+    canvas.style.left = `${left - area.left + scroller.scrollLeft - scroller.clientLeft}px`;
+    canvas.style.top = `${top - area.top + scroller.scrollTop - scroller.clientTop}px`;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
     const columns = Math.max(...days.map(day => day.column)) + 1;
-    const columnStep = (right - left) / zoom / (columns + 1);
-    const rowStep = (bottom - top) / zoom / 7.5;
-    const originX = (left - area.left) / zoom;
-    const originY = (top - area.top) / zoom;
-    const pixelRatio = Math.min(window.devicePixelRatio * zoom, 4);
-    canvas.width = Math.ceil(area.width / zoom * pixelRatio);
-    canvas.height = Math.ceil(area.height / zoom * pixelRatio);
+    const columnStep = width / (columns + 1);
+    const rowStep = height / 7.5;
+    const pixelRatio = Math.min(window.devicePixelRatio, 3);
+    canvas.width = Math.ceil(width * pixelRatio);
+    canvas.height = Math.ceil(height * pixelRatio);
     const ctx = canvas.getContext('2d')!;
-    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    ctx.fillStyle = 'rgba(124, 124, 121, .18)';
+    ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+    ctx.fillStyle = 'rgba(127, 127, 125, .19)';
     const halfWidth = columnStep * lotScale;
     const halfHeight = rowStep * lotScale / 2;
     const segments = new Map<string, readonly [Point, Point]>();
@@ -182,12 +162,11 @@ export function mountMiniatureCalendar(grid: HTMLTableElement, initialLanguage: 
     for (const [index, day] of days.entries()) {
       const { cell, row, column, level } = day;
       const parity = column % 2;
-      const x = originX + (column + 1) * columnStep;
-      const y = originY + (row + parity / 2) * rowStep;
-      const center = y + rowStep / 2;
+      const x = (column + 1) * columnStep;
+      const center = (row + parity / 2 + 0.5) * rowStep;
       const rect = positions[index];
-      cell.style.setProperty('--codeyears-x', `${x - (rect.left + rect.width / 2 - area.left) / zoom}px`);
-      cell.style.setProperty('--codeyears-y', `${center - (rect.top + rect.height / 2 - area.top) / zoom}px`);
+      cell.style.setProperty('--codeyears-x', `${x - (rect.left + rect.width / 2 - left)}px`);
+      cell.style.setProperty('--codeyears-y', `${center - (rect.top + rect.height / 2 - top)}px`);
       if (!level) continue;
       ctx.beginPath();
       ctx.moveTo(x, center - halfHeight);
@@ -200,6 +179,7 @@ export function mountMiniatureCalendar(grid: HTMLTableElement, initialLanguage: 
       const mixed = Math.imul(seed ^ (seed >>> 16), 0x45d9f3b);
       const image = pictures.get(options[((mixed ^ (mixed >>> 16)) >>> 0) % options.length])!;
       houses.push({ x, bottom: center + halfHeight, image });
+      if (!showRoads) continue;
       const halfRow = row * 2 + parity;
       const corners: Point[] = [[column + 1, halfRow], [column + 2, halfRow + 1], [column + 1, halfRow + 2], [column, halfRow + 1]];
       for (const [i, point] of corners.entries()) {
@@ -209,67 +189,64 @@ export function mountMiniatureCalendar(grid: HTMLTableElement, initialLanguage: 
       }
     }
     const strip = pictures.get('asphalt-strip.png')!;
-    const thickness = rowStep * 0.19;
+    const thickness = rowStep * 0.16;
     const extension = thickness * 0.2;
+    ctx.globalAlpha = 0.48;
     for (const [[x1, y1], [x2, y2]] of segments.values()) {
       const dx = (x2 - x1) * columnStep;
       const dy = (y2 - y1) * rowStep / 2;
       ctx.save();
-      ctx.translate(originX + x1 * columnStep, originY + y1 * rowStep / 2);
+      ctx.translate(x1 * columnStep, y1 * rowStep / 2);
       ctx.rotate(Math.atan2(dy, dx));
       ctx.drawImage(strip, -extension, -thickness / 2, Math.hypot(dx, dy) + 2 * extension, thickness);
       ctx.restore();
     }
-    const houseWidth = 2 * halfWidth;
+    ctx.globalAlpha = 1;
     for (const house of houses.sort((a, b) => a.bottom - b.bottom)) {
-      const height = houseWidth * house.image.naturalHeight / house.image.naturalWidth;
-      ctx.drawImage(house.image, house.x - houseWidth / 2, house.bottom - height, houseWidth, height);
+      const aspect = house.image.naturalWidth / house.image.naturalHeight;
+      const width = Math.min(2 * halfWidth, Math.min(house.bottom, rowStep * 2.45) * aspect);
+      const height = width / aspect;
+      ctx.drawImage(house.image, house.x - width / 2, house.bottom - height, width, height);
     }
-    canvas.hidden = controls.hidden = false;
+    paintLegend();
+    canvas.hidden = false;
+    scroller.setAttribute('data-painted', '');
   }
 
   function schedule() {
     if (!frame && !disposed) frame = requestAnimationFrame(paint);
   }
-  input.addEventListener('input', () => {
-    zoom = input.valueAsNumber / 100;
-    scaleLabel.value = input.value + '%';
-    input.setAttribute('aria-valuetext', text(language, 'zoomLevel', [input.value]));
-    schedule();
-  });
 
   const updates = new MutationObserver(updateDays);
   const resize = new ResizeObserver(schedule);
-  localize(initialLanguage);
   void loadAssets().then(loaded => {
     if (disposed || !grid.isConnected) return;
     pictures = loaded;
-    scroller.before(controls);
-    grid.before(scene);
-    scene.append(style, canvas, grid);
-    grid.addEventListener('focusin', selectDay);
-    grid.addEventListener('click', selectDay);
+    scroller.classList.add(sceneClass);
+    grid.before(style, canvas);
     updates.observe(grid, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-ix', 'data-level', 'data-date'] });
-    resize.observe(scene);
+    resize.observe(grid);
     updateDays();
-  }, () => { /* Leave the native chart visible if the local artwork did not load. */ });
+  }, () => { /* Leave the native chart available if the local artwork did not load. */ });
 
   return {
-    localize,
+    setRoads(roads: boolean) {
+      showRoads = roads;
+      schedule();
+    },
     dispose() {
       disposed = true;
       cancelAnimationFrame(frame);
       updates.disconnect();
       resize.disconnect();
-      grid.removeEventListener('focusin', selectDay);
-      grid.removeEventListener('click', selectDay);
+      hide();
+      scroller.classList.remove(sceneClass);
       for (const cell of grid.querySelectorAll<HTMLElement>('td.ContributionCalendar-day')) {
         cell.style.removeProperty('--codeyears-x');
         cell.style.removeProperty('--codeyears-y');
       }
-      if (grid.parentElement === scene) scene.replaceWith(grid);
-      else scene.remove();
-      controls.remove();
+      style.remove();
+      canvas.remove();
       canvas.width = canvas.height = 0;
     },
   };

@@ -341,20 +341,20 @@
   "appearanceMiniatureDescription": {
     "message": "在 GitHub 原贡献图里展示建筑和道路。"
   },
+  "appearanceOff": {
+    "message": "关闭"
+  },
+  "appearanceOffDescription": {
+    "message": "显示 GitHub 原始贡献图。"
+  },
+  "miniatureRoads": {
+    "message": "显示道路"
+  },
   "appearanceSaveError": {
     "message": "展示方式保存失败，请重试。"
   },
   "openCityShortcut": {
     "message": "打开当前主页的城市"
-  },
-  "miniatureControls": {
-    "message": "微缩城市操作"
-  },
-  "miniatureZoom": {
-    "message": "缩放微缩城市"
-  },
-  "miniatureRecord": {
-    "message": "选中日期"
   },
   "settingsAbout": {
     "message": "关于 CodeYears"

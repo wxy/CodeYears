@@ -11,8 +11,9 @@ from zipfile import BadZipFile, ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXED = {'manifest.json', 'popup.html', 'entry.js', 'content.js', 'landscape.js', 'calendar.js'}
-CALENDAR_ASSETS = {'cottage.webp', 'terrace.webp', 'villa.webp', 'duplex.webp', 'townhouse.webp', 'asphalt-strip.png',
-                   'courtyard.webp', 'bakery.webp', 'limestone.webp', 'terracotta.webp', 'apartment.webp'}
+CALENDAR_ASSETS = {'cottage.webp', 'garden.webp', 'courtyard.webp', 'terrace.webp', 'mansard.webp', 'clinic.webp',
+                   'limestone.webp', 'apartment.webp', 'duplex.webp', 'office-blue.webp', 'office-amber.webp',
+                   'tower-green.webp', 'asphalt-strip.png'}
 NOTICES = {'LICENSE', 'THIRD_PARTY_NOTICES.md', 'ASSETS.md', 'PRIVACY.md'}
 SCOPE = ['https://github.com/*']
 ENTRY = [{'matches': SCOPE, 'js': ['entry.js'], 'run_at': 'document_idle'}]

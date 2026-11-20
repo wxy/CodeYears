@@ -9,7 +9,7 @@
 - 城市高速路牌的[正式母版与制作说明](docs/design/city-wayposts/v2/README.md)记录了两色预烘焙流程和投影标定。外环组织广告牌复用[铜绿铸铁牌架原画与标定](docs/design/city-wayposts/organization-billboard/README.md)，各组织的图标来自当前主页。
 - `public/assets/city-runtime/`：由设计源素材及标定流程生成的 107 张运行 PNG，发行时复制到 `assets/city/`。城郊地纹、山脊、雪山和草场的原画、来源与尺寸见[城郊素材记录](docs/design/city-outskirts/v3/SOURCES.md)。
 - SVG 投影模板、标定 JSON 与程序绘制道路属于项目代码；运行时只使用本地资源。
-- `public/assets/calendar/`：微缩贡献图的十张 WebP 来自运行版 `cottage-gable`、`low-terrace`、`villa-hip`、`res-sawtooth-duplex`、`townhouse-a`、`courtyard-flat`、`res-bakery-deep`、`res-limestone-bay`、`res-terracotta-apartment` 和 `apartment-h2-a`，裁掉透明留边并缩至长边不超过 184 像素。224 × 36 的沥青条带由程序绘制路缘、短虚线和细纹理。十一项合计 114,182 字节，发行时复制到 `assets/calendar/`。
+- `public/assets/calendar/`：微缩城市的十二张 WebP 复用 1×1 运行素材 `garden-butterfly`、`cottage-gable`、`courtyard-flat`、`low-terrace`、`res-mansard-stucco`、`civic-clinic`、`res-limestone-bay`、`apartment-h2-b`、`res-sawtooth-duplex`、`office-h3-b`、`office-h3-a`、`tower-h4-b`。裁掉透明留边并缩至长边不超过 184 像素。224 × 36 的浅灰沥青条带由程序绘制路缘、短虚线和细纹理。十三项合计 127,673 字节，发行时复制到 `assets/calendar/`。
 
 生成提示、来源和标定分别保留在 `docs/design/city-buildings/`、`docs/design/city-units/v2/` 至 `v4/`、`docs/design/city-outskirts/`、`docs/design/city-transport/` 和 `docs/design/city-model-expansion/`。部分提示使用城市建造游戏作为质感参考，并要求不复制游戏素材、标志或受保护的特色建筑；没有将游戏图片打包。不能仅凭提示就宣称已完成第三方权利核查。
 

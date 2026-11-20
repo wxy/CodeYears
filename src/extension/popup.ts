@@ -1,14 +1,16 @@
-import { appearancePreference, readAppearance, saveAppearance, type Appearance } from './appearance';
+import { appearancePreference, readAppearanceSettings, saveAppearance, saveRoads, type Appearance } from './appearance';
 import { localize, text, type MessageKey } from './i18n';
 import { languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
 
 const main = document.querySelector<HTMLElement>('main')!;
 const modes = document.querySelector<HTMLFieldSetElement>('#appearance')!;
+const roadsControl = document.querySelector<HTMLInputElement>('#miniature-roads')!;
 const languageSelect = document.querySelector<HTMLSelectElement>('#language')!;
 const openButton = document.querySelector<HTMLButtonElement>('#open-city')!;
 const status = document.querySelector<HTMLOutputElement>('#save-status')!;
 const version = chrome.runtime.getManifest().version;
 let appearance: Appearance = 'city';
+let roads = true;
 let preference: LanguagePreference = 'auto';
 
 function render() {
@@ -19,6 +21,8 @@ function render() {
   document.querySelector<HTMLElement>('#version')!.textContent = text(language, 'version', [version]);
   languageSelect.value = preference;
   for (const input of modes.querySelectorAll('input')) input.checked = input.value === appearance;
+  roadsControl.checked = roads;
+  roadsControl.parentElement!.hidden = appearance !== 'miniature';
   openButton.hidden = appearance !== 'city';
 }
 
@@ -28,7 +32,7 @@ function show(key: MessageKey, error = false) {
 }
 
 function setBusy(busy: boolean) {
-  modes.disabled = languageSelect.disabled = openButton.disabled = busy;
+  modes.disabled = roadsControl.disabled = languageSelect.disabled = openButton.disabled = busy;
 }
 
 async function save(change: () => Promise<void>, control: HTMLElement, error: MessageKey) {
@@ -54,6 +58,14 @@ modes.addEventListener('change', event => {
     await saveAppearance(next);
     appearance = next;
   }, input, 'appearanceSaveError');
+});
+
+roadsControl.addEventListener('change', () => {
+  void save(async () => {
+    const next = roadsControl.checked;
+    await saveRoads(next);
+    roads = next;
+  }, roadsControl, 'appearanceSaveError');
 });
 
 languageSelect.addEventListener('change', () => {
@@ -86,8 +98,9 @@ openButton.addEventListener('click', async () => {
   }
 });
 
-void Promise.all([readAppearance(), readLanguagePreference()]).then(([savedAppearance, savedLanguage]) => {
-  appearance = savedAppearance;
+void Promise.all([readAppearanceSettings(), readLanguagePreference()]).then(([settings, savedLanguage]) => {
+  appearance = settings.appearance;
+  roads = settings.roads;
   preference = savedLanguage;
   render();
   main.hidden = false;

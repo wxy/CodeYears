@@ -341,20 +341,20 @@
   "appearanceMiniatureDescription": {
     "message": "Show buildings and streets in the GitHub contribution calendar."
   },
+  "appearanceOff": {
+    "message": "Off"
+  },
+  "appearanceOffDescription": {
+    "message": "Display the original GitHub contribution graph."
+  },
+  "miniatureRoads": {
+    "message": "Show roads"
+  },
   "appearanceSaveError": {
     "message": "Could not save the display mode. Try again."
   },
   "openCityShortcut": {
     "message": "Open City on this profile"
-  },
-  "miniatureControls": {
-    "message": "Miniature city controls"
-  },
-  "miniatureZoom": {
-    "message": "Zoom miniature city"
-  },
-  "miniatureRecord": {
-    "message": "Selected day"
   },
   "settingsAbout": {
     "message": "About CodeYears"

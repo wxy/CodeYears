@@ -1,5 +1,5 @@
 import type { CityPanel } from './content';
-import { APPEARANCE_KEY, appearancePreference, readAppearance, type Appearance } from './appearance';
+import { APPEARANCE_KEY, ROADS_KEY, appearancePreference, readAppearanceSettings, roadsPreference, type Appearance } from './appearance';
 import { entryText } from './entry-text';
 import { LANGUAGE_KEY, languagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference, type LanguagePreference } from './language';
 import { isCityUrl } from './city-url';
@@ -13,24 +13,33 @@ declare global {
 
   let mounted: ReturnType<typeof mount> | ReturnType<typeof mountMiniature> | undefined;
   let appearance: Appearance | undefined;
+  let showRoads: boolean | undefined;
   let navigating = false, queued = false;
   let preference: LanguagePreference = 'auto';
   const languageSettings = () => ({ language: resolveLanguage(preference), preference, change: async (next: LanguagePreference) => { await saveLanguagePreference(next); updateLanguage(next); } });
-  const updateLanguage = (next: LanguagePreference) => { preference = next; mounted?.localize(); };
+  const updateLanguage = (next: LanguagePreference) => { preference = next; if (mounted?.kind === 'city') mounted.localize(); };
   void readLanguagePreference().then(updateLanguage);
   function updateAppearance(next: Appearance) {
     if (appearance === next) return;
     appearance = next;
     mounted?.dispose();
     mounted = undefined;
+    if (next === 'off') observer.disconnect();
+    else observe();
     reconcile();
   }
-  const appearanceReady = readAppearance().then(value => {
-    if (appearance === undefined) updateAppearance(value);
+  function updateRoads(next: boolean) {
+    showRoads = next;
+    if (mounted?.kind === 'miniature') mounted.setRoads(next);
+  }
+  const appearanceReady = readAppearanceSettings().then(settings => {
+    if (showRoads === undefined) updateRoads(settings.roads);
+    if (appearance === undefined) updateAppearance(settings.appearance);
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
     if (changes[LANGUAGE_KEY]) updateLanguage(languagePreference(changes[LANGUAGE_KEY].newValue));
+    if (changes[ROADS_KEY]) updateRoads(roadsPreference(changes[ROADS_KEY].newValue));
     if (changes[APPEARANCE_KEY]) updateAppearance(appearancePreference(changes[APPEARANCE_KEY].newValue));
   });
 
@@ -39,13 +48,13 @@ declare global {
     let disposed = false;
     void import(/* @vite-ignore */ chrome.runtime.getURL('calendar.js')).then(
       (module: typeof import('./miniature-calendar')) => {
-        if (!disposed && grid.isConnected) view = module.mountMiniatureCalendar(grid, resolveLanguage(preference));
+        if (!disposed && grid.isConnected) view = module.mountMiniatureCalendar(grid, showRoads ?? true);
       },
       () => { /* Keep the GitHub calendar available if the optional view did not load. */ },
     );
     return {
       kind: 'miniature' as const, grid, heading, profile,
-      localize() { view?.localize(resolveLanguage(preference)); },
+      setRoads(roads: boolean) { view?.setRoads(roads); },
       dispose() { disposed = true; view?.dispose(); },
     };
   }
@@ -246,7 +255,7 @@ declare global {
       mounted.dispose(); mounted = undefined;
     }
     if (mounted) { if (mounted.kind === 'city') mounted.sync(); return; }
-    if (!appearance || navigating || !profile) return;
+    if (!appearance || appearance === 'off' || navigating || !profile) return;
     const root = document.querySelector<HTMLElement>('.js-yearly-contributions');
     const grid = root?.querySelector<HTMLTableElement>('table.ContributionCalendar-grid');
     const heading = root?.querySelector<HTMLElement>('#js-contribution-activity-description');
@@ -267,7 +276,9 @@ declare global {
     queued = true;
     queueMicrotask(() => { queued = false; reconcile(); });
   });
-  const observe = () => observer.observe(document.documentElement, { childList: true, subtree: true });
+  const observe = () => {
+    if (appearance && appearance !== 'off') observer.observe(document.documentElement, { childList: true, subtree: true });
+  };
   const beforeNavigate = () => { navigating = true; mounted?.dispose(); mounted = undefined; };
   const afterNavigate = () => { navigating = false; reconcile(); };
   document.addEventListener('turbo:before-cache', beforeNavigate);
@@ -287,5 +298,4 @@ declare global {
     mounted.open();
     return true;
   };
-  observe(); reconcile();
 })();

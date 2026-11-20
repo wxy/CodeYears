@@ -22,6 +22,7 @@
         :root { --surface: #1c2420; --ink: #eaf0ec; --muted: #b8c6bd; --line: #526359; --accent: #a8dfb9; --selected: #2a3c31; }
       }
       * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
       body { margin: 0; inline-size: 350px; }
       main { padding: 16px; }
       h1 { margin: 0 0 14px; font-size: 19px; letter-spacing: -.02em; }
@@ -31,6 +32,8 @@
       .mode:has(:checked) { background: var(--selected); border-color: var(--accent); }
       .mode input { margin: 3px 0 0; accent-color: var(--accent); }
       .mode small { display: block; color: var(--muted); font-size: 12px; }
+      .roads { display: flex; align-items: center; gap: 7px; margin-block-start: 8px; }
+      .roads input { accent-color: var(--accent); }
       .language { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-block: 12px 4px; font-weight: 600; }
       select, button { font: inherit; color: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; background: var(--surface); }
       button { cursor: pointer; }
@@ -55,7 +58,15 @@
           <input type="radio" name="appearance" value="miniature" />
           <span><strong data-i18n="appearanceMiniature"></strong><small data-i18n="appearanceMiniatureDescription"></small></span>
         </label>
+        <label class="mode">
+          <input type="radio" name="appearance" value="off" />
+          <span><strong data-i18n="appearanceOff"></strong><small data-i18n="appearanceOffDescription"></small></span>
+        </label>
       </fieldset>
+      <label class="roads" hidden>
+        <input type="checkbox" id="miniature-roads" checked disabled />
+        <span data-i18n="miniatureRoads"></span>
+      </label>
       <div class="language">
         <label for="language" data-i18n="language"></label>
         <select id="language" disabled>
