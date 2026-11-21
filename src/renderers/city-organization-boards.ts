@@ -1,7 +1,8 @@
 import type { ProfileOrganization } from '../data/profile-places';
 import type { CitySprite } from './city-assets';
 import type { CityRoadNetwork } from './city-road-network';
-import { cityRoadWidth, planRoadGeometry, type CityRoadRoute, type RoadPoint } from './city-roads';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH } from './city-layout';
+import { cityRoadWidth, isCityOuterRing, planRoadGeometry, type CityRoadRoute, type RoadPoint } from './city-roads';
 
 type Bounds = { left:number; right:number; top:number; bottom:number };
 export type OrganizationPoster = { login:string; artwork:HTMLCanvasElement; displayOnly:boolean };
@@ -16,6 +17,7 @@ const logoInset=.18*boardScale;
 const logoSize=faceSize-2*logoInset;
 export const organizationFace = { size:faceSize, inset:logoInset };
 export const organizationFrameId='organization-billboard';
+export const CITY_ORGANIZATION_BOARD_LIMIT=(CITY_QUARTER_ROADS.length+1)*4;
 // 正视母版以双脚落地中点为原点，664px 方窗顶端 y=223，落地线 y=1372。
 const logoTop=(223-1372)*logoSize/664;
 
@@ -46,62 +48,79 @@ function distanceToSegment(x:number,z:number,a:RoadPoint,b:RoadPoint):number {
 }
 
 export function planOrganizationBoards(network:CityRoadNetwork,exits:readonly CityRoadRoute[],posters:readonly OrganizationPoster[],frame:CitySprite,
-  signs:readonly Bounds[],objects:readonly {left:number;top:number;width:number;height:number;groundY:number;item:{flat:boolean}}[]):OrganizationBoard[] {
+  signs:readonly Bounds[],objects:readonly {left:number;top:number;width:number;height:number;groundY:number;item:{flat:boolean}}[],
+  clearsGround:(x:number,z:number,margin:number)=>boolean):OrganizationBoard[] {
   if(!posters.length)return [];
   const strips=[...network.roads,...exits].flatMap(road=>planRoadGeometry(road).straights
     .map(({a,b})=>({road,a,b,half:cityRoadWidth(road)/2})));
-  const sides:{x:number;z:number;slope:number;offset:number;length:number}[][]=[[],[],[],[]];
-  for(const {road,a,b,half} of strips){
-    if(road.id!=='ring'&&!road.id.startsWith('organic-ring-'))continue;
-    const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);
-    const available=length-frame.width*2-.4;
-    if(available<0)continue;
-    const ux=dx/length,uz=dz/length;
-    // 外边界按顺时针排列，向外移到路肩。短切线保留两端圆角和灯箱脚座。
-    const steps=Math.floor(available/3);
-    for(let i=0;i<=steps;i++){
-      const offset=(i-steps/2)*3,x=(a[0]+b[0])/2+ux*offset+uz*(half+.95),
-        z=(a[1]+b[1])/2+uz*offset-ux*(half+.95);
-      if(network.junctions.some(j=>Math.hypot(x-j.x,z-j.z)<j.radius+2.8))continue;
-      if(network.bridges.some(bridge=>distanceToSegment(x,z,bridge.landings.from,bridge.landings.to)<4))continue;
-      if(strips.some(s=>s.road!==road&&distanceToSegment(x,z,s.a,s.b)<s.half+2.55))continue;
-      sides[ux<0?0:uz>0?1:ux>0?2:3].push({x,z,slope:ux===0?-.5:.5,offset:Math.abs(offset),length});
+  const blockEdges=[-Infinity,...CITY_QUARTER_ROADS.map(x=>x+CITY_ROAD_WIDTH/2),Infinity];
+  // 牌脚从外侧路缘退开，给贴着路边的树列留出空间。
+  const setbacks=[2.3,3.5,4.7];
+  type Site={x:number;z:number;roadZ:number;verge:number;offset:number;length:number};
+  const slots=blockEdges.slice(1).map(():[Site[],Site[]]=>[[],[]]);
+  const banks=strips.filter(({road,a,b})=>isCityOuterRing(road)&&a[1]===b[1]);
+  for(const {road,a,b,half} of banks){
+    const ux=Math.sign(b[0]-a[0]),side=ux>0?0:1,roadZ=a[1];
+    // 南北各四个街区。在相同街区轴上遇到退台时，继续沿露出的外环找牌位。
+    for(const [block,sides] of slots.entries()){
+      const start=Math.max(Math.min(a[0],b[0]),blockEdges[block]),end=Math.min(Math.max(a[0],b[0]),blockEdges[block+1]);
+      const length=end-start,available=length-frame.width*2-.4;
+      if(available<0)continue;
+      const steps=Math.floor(available/1.1);
+      // 出城口切开同一街区的路肩时，第二块牌可以向外退一步。
+      for(const verge of setbacks)for(let i=0;i<=steps;i++){
+        const offset=(i-steps/2)*1.1,x=(start+end)/2+offset,z=roadZ-ux*(half+verge);
+        if(banks.some(other=>ux*(other.b[0]-other.a[0])>0&&ux*(a[1]-other.a[1])>0&&
+          x>=Math.min(other.a[0],other.b[0])&&x<=Math.max(other.a[0],other.b[0])))continue;
+        if(!clearsGround(x,z,.86))continue;
+        if(network.junctions.some(j=>Math.hypot(x-j.x,z-j.z)<j.radius+2.8))continue;
+        if(network.bridges.some(bridge=>distanceToSegment(x,z,bridge.landings.from,bridge.landings.to)<4))continue;
+        if(strips.some(s=>s.road!==road&&distanceToSegment(x,z,s.a,s.b)<s.half+2.55))continue;
+        sides[side].push({x,z,roadZ,verge,offset:Math.abs(offset),length});
+      }
     }
   }
-  // 多个组织先分布到不同方位，再沿同侧延伸；有前景建筑遮挡的候选不占名额。
-  for(const side of sides)side.sort((a,b)=>a.offset-b.offset||b.length-a.length);
-  const boards:OrganizationBoard[]=[],indices=[0,0,0,0];
+  type Placement=Omit<OrganizationBoard,'paint'>;
+  const first:Placement[]=[],second:Placement[]=[],reserved:Placement[]=[];
   const overlaps=(a:Bounds,b:Bounds,margin:number)=>a.left<b.right+margin&&a.right>b.left-margin&&a.top<b.bottom+margin&&a.bottom>b.top-margin;
-  while(boards.length<posters.length){
-    let added=false;
-    for(const [i,side] of sides.entries()){
-      while(indices[i]<side.length){
-        const {x,z,slope}=side[indices[i]++],px=(x-z)/2,groundY=(x+z)/4;
+  const needPairs=posters.length>slots.flat().filter(sites=>sites.length>0).length;
+  for(const sides of slots){
+    for(const [i,sites] of sides.entries()){
+      sites.sort((a,b)=>(i===0?a.roadZ-b.roadZ:b.roadZ-a.roadZ)||a.verge-b.verge||a.offset-b.offset||b.length-a.length);
+      const candidates=sites.flatMap(({x,z})=>{
+        const slope=.5,px=(x-z)/2,groundY=(x+z)/4;
         const left=px-faceSize/2,top=groundY+logoTop-logoInset-slope*faceSize/2;
         const frameRight=frame.left+frame.width;
         const bounds={left:px+frame.left,right:px+frameRight,
           top:groundY+frame.top+Math.min(slope*frame.left,slope*frameRight),
           bottom:groundY+frame.top+frame.height+Math.max(slope*frame.left,slope*frameRight)};
-        if(signs.some(s=>overlaps(s,bounds,.45))||boards.some(s=>overlaps(s.bounds,bounds,1.3)))continue;
-        if(objects.some(o=>!o.item.flat&&o.groundY>groundY&&o.left<bounds.right&&o.left+o.width>bounds.left&&o.top<bounds.bottom&&o.top+o.height>bounds.top))continue;
-        const poster=posters[boards.length];
-        boards.push({left,top,slope,bounds,groundX:px,groundY,paint(context){
-          context.save();
-          context.transform(1,slope,0,1,px,groundY);
-          context.drawImage(frame.canvas,frame.left,frame.top,frame.width,frame.height);
-          if(!poster.displayOnly)context.drawImage(poster.artwork,-logoSize/2,logoTop,logoSize,logoSize);
-          else{
-            context.fillStyle='#275655';context.textAlign='center';context.textBaseline='middle';
-            context.translate(0,logoTop+logoSize/2);context.scale(.01*boardScale,.01*boardScale);
-            context.font='bold 105px system-ui,sans-serif';context.fillText(poster.login.slice(0,2).toUpperCase(),0,0,170);
-          }
-          context.restore();
-        }});
-        added=true;break;
+        if(signs.some(s=>overlaps(s,bounds,.45))||reserved.some(s=>overlaps(s.bounds,bounds,.45)))return [];
+        if(objects.some(o=>!o.item.flat&&o.groundY>groundY&&o.left<bounds.right&&o.left+o.width>bounds.left&&o.top<bounds.bottom&&o.top+o.height>bounds.top))return [];
+        return [{left,top,slope,bounds,groundX:px,groundY}];
+      });
+      const apart=(a:Placement,b:Placement)=>!overlaps(a.bounds,b.bounds,.45);
+      const chosen=(needPairs?candidates.find(a=>candidates.some(b=>apart(a,b))):undefined)??candidates[0];
+      if(!chosen)continue;
+      first.push(chosen);reserved.push(chosen);
+      if(needPairs){
+        const companion=candidates.find(site=>apart(chosen,site));
+        if(companion){second.push(companion);reserved.push(companion)}
       }
-      if(boards.length===posters.length)break;
     }
-    if(!added)break;
   }
-  return boards;
+  return [...first,...second].slice(0,posters.length).map((placement,index)=>({
+    ...placement,paint(context){
+      const {slope,groundX,groundY}=placement,poster=posters[index];
+      context.save();
+      context.transform(1,slope,0,1,groundX,groundY);
+      context.drawImage(frame.canvas,frame.left,frame.top,frame.width,frame.height);
+      if(!poster.displayOnly)context.drawImage(poster.artwork,-logoSize/2,logoTop,logoSize,logoSize);
+      else{
+        context.fillStyle='#275655';context.textAlign='center';context.textBaseline='middle';
+        context.translate(0,logoTop+logoSize/2);context.scale(.01*boardScale,.01*boardScale);
+        context.font='bold 105px system-ui,sans-serif';context.fillText(poster.login.slice(0,2).toUpperCase(),0,0,170);
+      }
+      context.restore();
+    },
+  }));
 }

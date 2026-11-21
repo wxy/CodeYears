@@ -626,6 +626,28 @@
     "baselineHeight": 0,
     "sampleId": "outskirts-ground-tiles"
   },
+  "outskirts-grass-detail": {
+    "file": "outskirts-grass-fairway.png",
+    "left": 0,
+    "top": 0,
+    "width": 6,
+    "height": 6,
+    "nativeWidth": 6,
+    "nativeDepth": 6,
+    "baselineHeight": 0,
+    "sampleId": "outskirts-grass-detail"
+  },
+  "transport-bridge-arterial": {
+    "file": "transport-bridge-arterial.png",
+    "left": 0,
+    "top": 0,
+    "width": 4,
+    "height": 2,
+    "nativeWidth": 3.2,
+    "nativeDepth": 6,
+    "baselineHeight": 0.3,
+    "sampleId": "transport-bridge-arterial"
+  },
   "natural-ground": {
     "file": "natural-ground.png",
     "left": 0,

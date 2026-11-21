@@ -1,4 +1,11 @@
 {
   "deckElevation": 0.18,
-  "riverDepth": 0.75
+  "riverDepth": 0.75,
+  "arterial": {
+    "sideRows": 464,
+    "sideBaseline": 112,
+    "asphaltPixels": 96,
+    "pixelsPerUnit": 300,
+    "pier": { "width": 390, "height": 227, "top": 125 }
+  }
 }

@@ -1,25 +1,28 @@
 import type { DailyContribution } from '../data/types';
+import type { RepositoryCreation } from '../data/repository-creations';
 import { planWeeklyCity, type CityParcel, type WeeklyCity } from './city-parcels';
 import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
 import { createGroundSelector } from './city-ground-style';
 import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from './city-road-network';
-import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute } from './city-roads';
+import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, isCityOuterRing, planRoadGeometry, type CityRoadRoute } from './city-roads';
 import { createCityVehiclePainter } from './city-vehicles';
 import { createCityBridgePainter, createHighwayBridgePainter } from './city-bridges';
 import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
   CITY_YEAR_GAP as YEAR_GAP, CITY_PARK_DEPTH as PARK, type CityLayout } from './city-layout';
 import { createCityYearMarkers } from './city-year-markers';
 import { createCityOutskirtsPainter, createCitySceneryPainter, planCityRelief, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
-import { planCityMountainRoads } from './city-mountain-roads';
-import { CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
+import { boundsOverlap, planCityMountainRoads } from './city-mountain-roads';
+import { CITY_GRASS_DETAIL, CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
 import { createCityWaterways, type CityRiver } from './city-waterways';
 import type { CityShareCredit, LandscapeView, LandscapeViewport } from './types';
+import { planCityRoadside } from './city-roadside';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
 import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
 import { organizationFace, planOrganizationBoards, type OrganizationBoard, type OrganizationPoster } from './city-organization-boards';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
+const groundColor='#a9c688';
 function paintShareCredit(context:CanvasRenderingContext2D,{x,y,width,height,login,icon}:CityShareCredit) {
   const textX=x+58,textWidth=width-70;
   context.save();
@@ -103,7 +106,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const progressive=previouslyRevealedDays!==undefined;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
-  const atlas=images[CITY_GROUND_ATLAS],paintGroundTiles=atlas?createCityGroundPainter(atlas.canvas,atlas.groundDetail):undefined;
+  const atlas=images[CITY_GROUND_ATLAS],paintGroundTiles=atlas?createCityGroundPainter(atlas.canvas,images[CITY_GRASS_DETAIL]):undefined;
   const terrain=images['natural-ground'],terrainPattern=terrain?context.createPattern(terrain.canvas,'repeat'):null;
   // 图案坐标与城市共用地面投影和世界原点；缩放平移时不会像屏幕壁纸滑动。
   if(terrainPattern){const size=terrain.width/terrain.canvas.width;terrainPattern.setTransform(new DOMMatrix([size*.5,size*.25,-size*.5,size*.25,0,0]))}
@@ -130,12 +133,18 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     return b[0]<a[0]?0:b[0]>a[0]?1:b[1]<a[1]?2:3;
   };
   const baseExits=(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')).sort((a,b)=>direction(a)-direction(b))).map(cityExitWithSign);
-  const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork.bridges,width,depth):undefined;
+  const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork,width,depth):undefined;
   const sceneryBounds={left:minX,top:minY,right:maxX,bottom:maxY};
+  // 外环和连接城区的四车道路共用位图桥，桥头沿实际直段和车幅定位。
+  const bridgeArt=images['transport-bridge-arterial'];
+  const ringCrossings=roadNetwork.roads.filter(road=>isCityOuterRing(road)||road.id.startsWith('organic-link-'));
+  const ringBridges=waterways&&bridgeArt
+    ?createHighwayBridgePainter(ringCrossings,waterways.roadWater(sceneryBounds),bridgeArt):undefined;
   const relief=waterways?planCityRelief(width,depth,baseExits,sceneryBounds,waterways.clears):[];
   let highways=baseExits;
   if(waterways){
-    const water=waterways.roadWater(sceneryBounds,1.75);
+    // 四车道出城路的半幅为 1.6，给桥头圆角与路缘留 0.25 格干地。
+    const water=waterways.roadWater(sceneryBounds,1.85);
     // 并行谷带留不出通路时在地形阶段打开山口，再按可见山地重算整张图的公路。
     for(;;){
       const plan=planCityMountainRoads(baseExits,relief.map(ridge=>ridge.barrier),water,sceneryBounds);
@@ -143,6 +152,17 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       relief.splice(plan.blockedRidge,1);
     }
   }
+  const clearsScenery=(x:number,z:number,margin:number)=>{
+    const [px,py]=project(x,z);
+    const bounds={left:px-margin,right:px+margin,top:py-margin/2,bottom:py+margin/2};
+    return (waterways?.clears(bounds.left,bounds.top,bounds.right,bounds.bottom)??true)&&
+      !relief.some(land=>boundsOverlap(bounds,land.barrier.bounds));
+  };
+  const roadside=waterways&&planCityRoadside(scene,highways,clearsScenery);
+  const roadsideItems=roadside?projectItems(roadside.scenery):[];
+  const roadsideTrees=new Set(roadsideItems.filter(tree=>tree.item.id==='broadleaf-a'));
+  placed=placed.concat(roadsideItems).sort(byDepth);
+  let repositoryLandmarks:{year:number;entry:RepositoryCreation;plots:PlacedItem[]}[]=[];
   const scenery=waterways?createCitySceneryPainter(relief,images,sceneryBounds):undefined;
   const background=waterways?document.createElement('canvas'):undefined;
   let backdropKey='';
@@ -182,7 +202,10 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const image=(p:{sprite:CityImages[string];left:number;top:number;width:number;height:number})=>{
     groundPaint.push({after:revealAfter,paint:target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height)});
   };
-  if(groundPainter)groundPaint.push({after:0,paint:groundPainter});
+  if(groundPainter)groundPaint.push({after:0,paint:target=>{
+    groundPainter(target);
+    ringBridges?.(target);
+  }});
   else{
     if(!progressive||CITY_OUTSKIRT_IDS.every(id=>images[id]))groundPaint.push({after:0,paint:createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images)});
     // 静态地面与路网分层；路面/车道线只在缓存构建时提交。
@@ -292,13 +315,24 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const updateBoards=()=>{
     const signs=boards.filter(board=>board!==undefined);
     if(returnBoard)signs.push(returnBoard);
+    // 先给组织牌留地，再恢复所有不遮住牌面的路树。
+    const fixed=placed.filter(item=>!roadsideTrees.has(item));
     organizationBoards=organizationFrame?planOrganizationBoards(roadNetwork,baseExits,posters,organizationFrame,
-      signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),placed):[];
+      signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),fixed,clearsScenery):[];
+    placed=fixed.concat([...roadsideTrees].filter(tree=>!organizationBoards.some(board=>{
+      if(tree.groundY<=board.groundY)return false;
+      const left=Math.max(tree.left,board.bounds.left),right=Math.min(tree.left+tree.width,board.bounds.right);
+      if(left>=right)return false;
+      // 只检查共同横向范围内的斜牌面，保留落在外接框空角内的路树。
+      const top=board.bounds.top+(left-board.bounds.left)*board.slope;
+      const bottom=board.bounds.bottom-(board.bounds.right-right)*board.slope;
+      return tree.top<bottom&&tree.top+tree.height>top;
+    }))).sort(byDepth);
     boardOrder=[...signs,...organizationBoards].sort((a,b)=>a.groundY-b.groundY);
     frameKey='';
   };
   let exitPaintKey='',paintExits:(target:CanvasRenderingContext2D)=>void;
-  let highwayBridges:ReturnType<typeof createHighwayBridgePainter>;
+  let highwayBridges:ReturnType<typeof createHighwayBridgePainter>|undefined;
   let shareCredit:CityShareCredit|undefined,creditChanged=false;
   const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
     const sprite=images[`direction-board-${kind==='outbound'?'z':'x'}`];
@@ -378,11 +412,37 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         return {left,top,size:organizationFace.size*projection.scale,slope:board.slope};
       });
     },
+    setRepositoryCreations(entries){
+      if(!roadside)return;
+      const old=new Set(repositoryLandmarks.flatMap(site=>site.plots));
+      repositoryLandmarks=roadside.repositorySites(entries).flatMap(({year,entry,items})=>{
+        const plots=projectItems(items);
+        return plots.length?[{year,entry,plots}]:[];
+      });
+      const landmarks=repositoryLandmarks.flatMap(site=>site.plots);
+      prepareSamples(landmarks);
+      placed=placed.filter(item=>!old.has(item)).concat(landmarks).sort(byDepth);
+      clearHighlight();updateBoards();
+    },
+    repositorySites(viewport){
+      const scale=fitScale(viewport)*viewport.zoom;
+      const x=viewport.width/2+viewport.panX-(minX+maxX)*scale/2;
+      const y=viewport.height/2+viewport.panY-(minY+maxY)*scale/2;
+      return repositoryLandmarks.map(({year,entry,plots})=>({
+        year,entry,buildings:plots.map(plot=>({
+          left:x+plot.left*scale,top:y+plot.top*scale,width:plot.width*scale,height:plot.height*scale,
+        })),
+      }));
+    },
     fitOverview(viewport,topInset,bottomInset){
       const signs=boardOrder.flatMap(board=>board.bounds?[board.bounds]:[]);
-      if(!signs.length&&!shareCredit)return;
-      const left=Math.min(minX,...signs.map(b=>b.left)),right=Math.max(maxX,...signs.map(b=>b.right));
-      const top=Math.min(minY,...signs.map(b=>b.top)),bottom=Math.max(maxY,...signs.map(b=>b.bottom));
+      const villages=repositoryLandmarks.flatMap(site=>site.plots.map(plot=>({
+        left:plot.left,right:plot.left+plot.width,top:plot.top,bottom:plot.top+plot.height,
+      })));
+      const landmarks=[...signs,...villages];
+      if(!landmarks.length&&!shareCredit)return;
+      const left=Math.min(minX,...landmarks.map(b=>b.left)),right=Math.max(maxX,...landmarks.map(b=>b.right));
+      const top=Math.min(minY,...landmarks.map(b=>b.top)),bottom=Math.max(maxY,...landmarks.map(b=>b.bottom));
       // 远景占地是所有倍率下的最大占地，涵盖完整牌架并为提示、缩放工具和四边留空。
       const scale=Math.min(Math.max(1,viewport.width-32)/(right-left),Math.max(1,viewport.height-topInset-bottomInset-24)/(bottom-top));
       return {zoom:scale/fitScale(viewport),panX:(minX+maxX-left-right)*scale/2,
@@ -471,9 +531,11 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const left=-sx(0)/scale,top=-sy(0)/scale,right=left+viewport.width/scale,bottom=top+viewport.height/scale;
       const exitKey=[left,top,right,bottom].join(':');
       if(exitKey!==exitPaintKey){
-        const routes=highways.flatMap(route=>clipCityExit(route,left,top,right,bottom)??[]);
+        // 视口外留一段完整桥跨，避免镜头经过岸边时裁掉桥头。
+        const bridgeBounds={left:left-8,top:top-8,right:right+8,bottom:bottom+8};
+        const routes=highways.flatMap(route=>clipCityExit(route,bridgeBounds.left,bridgeBounds.top,bridgeBounds.right,bridgeBounds.bottom)??[]);
         paintExits=createCityRoadPainter([...joiningRoads,...routes],exitJunctions,'butt');
-        highwayBridges=waterways&&createHighwayBridgePainter(routes,waterways.roadWater({left,top,right,bottom}));
+        highwayBridges=waterways&&bridgeArt?createHighwayBridgePainter(routes,waterways.roadWater(bridgeBounds),bridgeArt):undefined;
         exitPaintKey=exitKey;
       }
       context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
@@ -484,14 +546,14 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         const land=background?.getContext('2d')??context;
         land.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);
         land.imageSmoothingEnabled=true;land.imageSmoothingQuality='high';
-        land.fillStyle='#a3b58d';land.fillRect(0,0,viewport.width,viewport.height);
+        land.fillStyle=groundColor;land.fillRect(0,0,viewport.width,viewport.height);
         land.save();
         land.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
         if(paintGroundTiles){
           paintGroundTiles(land,{left,top,right,bottom},scale);
           // 在整个拼贴层上统一柔化远景，避免单块透明度叠加导致深浅接缝。
           land.globalAlpha=Math.max(0,.48-scale/160);
-          land.fillStyle='#a3b58d';land.fillRect(left,top,viewport.width/scale,viewport.height/scale);
+          land.fillStyle=groundColor;land.fillRect(left,top,viewport.width/scale,viewport.height/scale);
           land.globalAlpha=1;
         }else if(terrainPattern){
           // 远景让城外的细碎草纹融入底色。
@@ -527,9 +589,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const level=(1-Math.pow(1-progress,1.4))*tallest;
       {
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
-        highwayBridges?.deck(context);
         paintExits(context);
-        highwayBridges?.rails(context);
+        highwayBridges?.(context);
         for(const board of boards)board?.paintRoad(context);
         returnBoard?.paintRoad(context);
         context.restore();

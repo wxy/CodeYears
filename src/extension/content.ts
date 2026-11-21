@@ -9,6 +9,7 @@ import { isProfileOwner } from "../platform/github/types";
 import { clearContributionCache, confirmViewer, sameContext, ViewerChangedError } from "../platform/github/load-year";
 import { loadContributionHistory } from "../platform/github/load-history";
 import { isoYearStart } from "../data/iso-week";
+import { loadRepositoryCreations, type RepositoryCreation } from "../data/repository-creations";
 import type { ContributionLandscape } from "../renderers/landscape";
 import type { DailyContribution } from "../data/types";
 
@@ -51,6 +52,22 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { position:relative; width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
+      .compass { position:absolute; z-index:1; top:10px; left:10px; width:56px; height:56px; color:#fff; pointer-events:none; }
+      /* The map projects north (negative Z) toward the upper right at 26.565° above horizontal. */
+      .compass > svg { display:block; width:100%; height:100%; fill:currentColor; rotate:63.435deg; transform-origin:center; }
+      .compass text { font:600 10px system-ui,sans-serif; text-anchor:middle; dominant-baseline:central; }
+      .repository-sites { position:absolute; z-index:2; inset:0; overflow:hidden; pointer-events:none; }
+      .repository-site { position:absolute; pointer-events:none; }
+      .repository-site[data-open] { pointer-events:auto; }
+      .repository-site button { position:relative; display:block; width:100%; height:100%; border:0; padding:0; background:transparent; pointer-events:none; }
+      .repository-site button:active { transform:none; }
+      .repository-house { position:absolute; pointer-events:auto; cursor:pointer; }
+      .repository-site:focus-within,.repository-site:hover { z-index:1; }
+      .repository-card { position:absolute; top:100%; padding:10px 12px; overflow:auto; overscroll-behavior:contain; touch-action:pan-y; cursor:auto; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:8px; background:var(--bgColor-default,#fff); box-shadow:0 6px 24px #0003; font-size:12px; }
+      .repository-site[data-above] .repository-card { top:auto; bottom:100%; }
+      .repository-card ul { list-style:none; padding:0; margin:5px 0 0; }
+      .repository-card li { display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:3px 0; overflow-wrap:anywhere; }
+      .repository-card time { flex:none; color:var(--fgColor-muted,#59636e); font-variant-numeric:tabular-nums; }
       .building-hover { position:absolute; z-index:4; pointer-events:none; width:max-content; max-width:min(340px,calc(100% - 16px)); overflow:hidden; margin:0; padding:11px 13px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:color-mix(in srgb,var(--bgColor-default,#fff) 78%,transparent); backdrop-filter:blur(6px); box-shadow:0 6px 24px #0002; font-size:12px; line-height:1.65; overflow-wrap:anywhere; opacity:0; transition:opacity 90ms ease-out; }
       .building-hover[data-open] { opacity:1; transition-duration:120ms; }
       .building-hover-note { color:var(--fgColor-muted,#59636e); font-size:11px; }
@@ -100,6 +117,15 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     <section class="panel" data-i18n-label="cityRegion">
       <div id="expanded-controls"></div>
       <div class="scene-wrap"><div id="scene" tabindex="0" role="region" data-i18n-label="canvasKeyboardLabel"></div>
+        <div class="compass" role="img" data-i18n-label="cityCompass" hidden>
+          <svg viewBox="0 0 56 56" aria-hidden="true" focusable="false">
+            <!-- Material Design Icons compass-rose, adapted with directional lettering. -->
+            <svg x="13" y="13" width="30" height="30" viewBox="0 0 24 24">
+              <path d="M15 9L12 0L9 9L0 12L9 15L12 24L15 15L24 12L15 9M4 12L10 10L11 12H4M12 20L10 14L12 13V20M12 4L14 10L12 11V4M14 14L13 12H20L14 14M8.7 17.3L5 19L6.7 15.3L8.3 15.8L8.7 17.3M17.3 15.3L19 19L15.3 17.3L15.8 15.7L17.3 15.3M6.7 8.7L5 5L8.7 6.7L8.2 8.2L6.7 8.7M15.3 6.7L19 5L17.3 8.7L15.7 8.2L15.3 6.7Z"/>
+            </svg>
+            <text x="28" y="7">N</text><text x="28" y="49">S</text>
+          </svg>
+        </div>
         <div id="road-returns" hidden></div>
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
         <div class="view-tools" hidden>
@@ -123,6 +149,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
           <section class="more-section" aria-labelledby="profile-section">
             <h3 id="profile-section" data-i18n="moreProfileSection"></h3>
             <p id="identity" class="note"></p>
+            <p id="repository-error" class="note" data-i18n="repositoryReadFailed" hidden></p>
             <div class="data-actions"><button id="refresh" type="button" data-i18n="refreshData"></button><button id="clear" type="button" data-i18n="clearCache"></button></div>
           </section>
           <section class="more-section" aria-labelledby="help-section">
@@ -151,6 +178,28 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   const status = get<HTMLOutputElement>("#status"), summary = get<HTMLElement>("#city-summary");
   const more = get<HTMLDetailsElement>("#more");
   const cityHost = get<HTMLElement>("#scene"), tools = get<HTMLElement>(".view-tools"), feedback = get<HTMLElement>(".status");
+  const compass = get<HTMLElement>(".compass"), repositoryError = get<HTMLElement>("#repository-error");
+  let repositoryEntries: readonly RepositoryCreation[] | undefined, repositoryRequest: AbortController | undefined;
+  const showRepositoryCreations = () => {
+    if (repositoryEntries) {
+      city?.setRepositoryCreations(repositoryEntries, t("repositoryCreations"));
+      return;
+    }
+    if (repositoryRequest || !repositoryError.hidden) return;
+    const request = new AbortController();
+    repositoryRequest = request;
+    void loadRepositoryCreations(context.profileLogin, request.signal).then(entries => {
+      if (repositoryRequest !== request) return;
+      repositoryEntries = entries;
+      city?.setRepositoryCreations(entries, t("repositoryCreations"));
+    }, () => {
+      if (repositoryRequest === request) repositoryError.hidden = false;
+    }).finally(() => { if (repositoryRequest === request) repositoryRequest = undefined; });
+  };
+  const cancelRepositoryRead = () => {
+    repositoryRequest?.abort();
+    repositoryRequest = undefined;
+  };
   const zoomLevel = get<HTMLElement>("#zoom-level"), fitView = get<HTMLButtonElement>("#reset-view"), maxZoom = get<HTMLButtonElement>("#max-zoom");
   let currentZoom = 1;
   const showZoom = (zoom: number) => {
@@ -199,7 +248,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     const sources = next.organizations.map(org => org.avatar?.currentSrc);
     if (next.organizations.length !== places.organizations.length || next.organizations.some((org, i) =>
       org.login !== places.organizations[i].login || org.avatar !== places.organizations[i].avatar || sources[i] !== organizationSources[i])) {
-      city?.setOrganizations(next.organizations, t('cityOrganizations'));
+      city?.setOrganizations(next.organizations);
     }
     if (next.connections !== places.connections) city?.setTrafficConnections(next.connections);
     places = next;
@@ -253,7 +302,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   dialog.addEventListener("cancel", event => { event.preventDefault(); if (more.open) closeMore(true); else collapse(); });
   const updateControls = () => {
     const ready = !cityHost.hidden && Boolean(cityHost.querySelector(":scope > canvas"));
-    expand.disabled = !ready && !dialog.open; tools.hidden = !ready;
+    expand.disabled = !ready && !dialog.open; tools.hidden = compass.hidden = !ready;
     cancel.hidden = busy !== "reading";
     cityHost.querySelector(":scope > canvas")?.setAttribute("aria-label", t("canvasLabel"));
     updateFeedback();
@@ -290,6 +339,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
 
   const load = async (forceRefresh: boolean) => {
     if (!active || disposed) return;
+    if (forceRefresh) { cancelRepositoryRead(); repositoryEntries = undefined; repositoryError.hidden = true; }
     retryAction = () => load(forceRefresh);
     const start = Number(startSelect.value), end = Number(endSelect.value);
     const windowStart = isoYearStart(start), windowEnd = isoYearStart(end + 1);
@@ -323,8 +373,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed, roads.setExitCount);
       city.setShareCredit(context.profileLogin);
       city.setRoadControls(roads.controls(),roads.returnPost());
-      city.setOrganizations(places.organizations, t("cityOrganizations"));
+      city.setOrganizations(places.organizations);
       city.setTrafficConnections(places.connections);
+      showRepositoryCreations();
       fieldCreated = true;
       return city;
     };
@@ -458,6 +509,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
   clear.onclick = clearYears;
   const deactivate = (collapseView = true) => {
     stopObservingCard();
+    cancelRepositoryRead();
     milestoneRequest?.abort();
     hover.hide();
     active = false; controller?.abort(); controller = undefined;
@@ -475,7 +527,8 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
     roads.refresh(places.people);
-    city?.setOrganizations(places.organizations, t("cityOrganizations"));
+    city?.setOrganizations(places.organizations);
+    if (repositoryEntries) city?.setRepositoryCreations(repositoryEntries, t("repositoryCreations"));
     fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
     cityHost.setAttribute("aria-description", t("keyboardControls"));
     expand.textContent = t(dialog.open ? "collapse" : "expand");
@@ -499,7 +552,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       request.signal.throwIfAborted();
       if (!active || disposed || controller !== request) return;
       if (!sameContext(nextContext, currentContext())) { suspendForIdentity(true); return; }
-      context = nextContext; roads.refresh(places.people); cityHost.hidden = false; field.setVisible(true, trafficSeed); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
+      context = nextContext; roads.refresh(places.people); cityHost.hidden = false; field.setVisible(true, trafficSeed); showRepositoryCreations(); showIdentity(); setStatus(cached.status); setSummary(cached.summary);
       pendingMilestone?.();
     } catch (error) {
       if (!active || controller !== request) return;
