@@ -319,8 +319,15 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     const fixed=placed.filter(item=>!roadsideTrees.has(item));
     organizationBoards=organizationFrame?planOrganizationBoards(roadNetwork,baseExits,posters,organizationFrame,
       signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),fixed,clearsScenery):[];
-    placed=fixed.concat([...roadsideTrees].filter(tree=>!organizationBoards.some(board=>tree.groundY>board.groundY&&
-      boundsOverlap(board.bounds,{left:tree.left,right:tree.left+tree.width,top:tree.top,bottom:tree.top+tree.height})))).sort(byDepth);
+    placed=fixed.concat([...roadsideTrees].filter(tree=>!organizationBoards.some(board=>{
+      if(tree.groundY<=board.groundY)return false;
+      const left=Math.max(tree.left,board.bounds.left),right=Math.min(tree.left+tree.width,board.bounds.right);
+      if(left>=right)return false;
+      // 只检查共同横向范围内的斜牌面，保留落在外接框空角内的路树。
+      const top=board.bounds.top+(left-board.bounds.left)*board.slope;
+      const bottom=board.bounds.bottom-(board.bounds.right-right)*board.slope;
+      return tree.top<bottom&&tree.top+tree.height>top;
+    }))).sort(byDepth);
     boardOrder=[...signs,...organizationBoards].sort((a,b)=>a.groundY-b.groundY);
     frameKey='';
   };

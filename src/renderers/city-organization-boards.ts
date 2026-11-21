@@ -54,7 +54,8 @@ export function planOrganizationBoards(network:CityRoadNetwork,exits:readonly Ci
   const strips=[...network.roads,...exits].flatMap(road=>planRoadGeometry(road).straights
     .map(({a,b})=>({road,a,b,half:cityRoadWidth(road)/2})));
   const blockEdges=[-Infinity,...CITY_QUARTER_ROADS.map(x=>x+CITY_ROAD_WIDTH/2),Infinity];
-  const setbacks=posters.length>1?[.95,2.3,4.7]:[.95];
+  // 牌脚从外侧路缘退开，给贴着路边的树列留出空间。
+  const setbacks=[2.3,3.5,4.7];
   type Site={x:number;z:number;roadZ:number;verge:number;offset:number;length:number};
   const slots=blockEdges.slice(1).map(():[Site[],Site[]]=>[[],[]]);
   const banks=strips.filter(({road,a,b})=>isCityOuterRing(road)&&a[1]===b[1]);

@@ -16,6 +16,11 @@ export function planCityRoadside(scene: CityScene, highways: readonly CityRoadRo
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
     return { route, a, b, length, dx: (b[0] - a[0]) / length, dz: (b[1] - a[1]) / length, half: cityRoadWidth(route) / 2 };
   })).filter(edge => edge.length > 0);
+  type RoadEdge = typeof edges[number];
+  const vergePoint = (edge: RoadEdge, along: number, offset: number) => ({
+    x: edge.a[0] + edge.dx * along - edge.dz * offset,
+    z: edge.a[1] + edge.dz * along + edge.dx * offset,
+  });
   const clearsRoad = (x: number, z: number, margin: number, except?: CityRoadRoute) =>
     !edges.some(({ route, a, dx, dz, length, half }) => {
       if (route === except) return false;
@@ -68,31 +73,45 @@ export function planCityRoadside(scene: CityScene, highways: readonly CityRoadRo
       .filter(({year}) => selected.has(year));
     const homes = [[-.43, 0, .82], [.43, 0, .76], [0, .72, .64]] as const;
     const models = ['villa-hip', 'cottage-gable', 'res-mono-limestone'];
+    const yearAt = (z: number) => districts.reduce((nearest, district) =>
+      Math.abs(z - district.z - 3.5) < Math.abs(z - nearest.z - 3.5) ? district : nearest).year;
     return [-1, 1].flatMap(side => {
       const records = active.filter(record => record.side === side);
       if (!records.length) return [];
       // 东西外缘沿 Z 延伸。闭环顺时针，前进方向 dz 的符号就是向外的东西侧。
       const sideEdges = edges.filter(({route, dx, dz}) => isCityOuterRing(route) && dx === 0 && side * dz > 0);
-      const frontages = new Map<number, { edge: typeof edges[number]; start: number; end: number }[]>();
-      for (const edge of sideEdges) {
-        const {a, length, dz, half} = edge;
-        const inset = Math.min(.62, length / 4);
-        const cells = Math.ceil((length - 2 * inset) / .5);
-        const step = (length - 2 * inset) / cells;
+      const frontages = new Map<number, { edge: RoadEdge; bank: number; start: number; end: number }[]>();
+      function addFrontages(edge: RoadEdge, bank: number, from: number, to: number, frontageYear: (z: number) => number | undefined) {
+        const cells = Math.ceil((to - from) / .5), step = (to - from) / cells;
         for (let i = 0; i < cells; i++) {
-          const start = inset + i * step, z = a[1] + dz * (start + step / 2);
-          // 取整个城区这一横截面最外侧的道路，避开内收街角和两片城区之间的边缘。
-          if (sideEdges.some(other => side * (other.a[0] - a[0]) > 0 &&
-              z >= Math.min(other.a[1], other.b[1]) && z <= Math.max(other.a[1], other.b[1]))) continue;
-          const x = a[0] + side * (half + 1.15);
-          if (!clearsRoad(x, z, .98) || !clearsTerrain(x, z, 1.05)) continue;
-          const {year} = districts.reduce((nearest, district) =>
-            Math.abs(z - district.z - 3.5) < Math.abs(z - nearest.z - 3.5) ? district : nearest);
+          const start = from + i * step;
+          const {x, z} = vergePoint(edge, start + step / 2, bank * (edge.half + 1.15));
+          const year = frontageYear(z);
+          if (year === undefined || !clearsRoad(x, z, .98) || !clearsTerrain(x, z, 1.05)) continue;
           let spans = frontages.get(year);
           if (!spans) { spans = []; frontages.set(year, spans); }
           const last = spans.at(-1), end = start + step;
-          if (last?.edge === edge && Math.abs(last.end - start) < 1e-6) last.end = end;
-          else spans.push({edge, start, end});
+          if (last?.edge === edge && last.bank === bank && Math.abs(last.end - start) < 1e-6) last.end = end;
+          else spans.push({edge, bank, start, end});
+        }
+      }
+      for (const edge of sideEdges) {
+        const inset = Math.min(.62, edge.length / 4);
+        addFrontages(edge, -1, inset, edge.length - inset, z => {
+          // 取整个城区这一横截面最外侧的道路，避开内收街角和两片城区之间的边缘。
+          const inside = sideEdges.some(other => side * (other.a[0] - edge.a[0]) > 0 &&
+            z >= Math.min(other.a[1], other.b[1]) && z <= Math.max(other.a[1], other.b[1]));
+          return inside ? undefined : yearAt(z);
+        });
+      }
+      for (const route of highways) {
+        const edge = edges.find(candidate => candidate.route === route);
+        if (!edge || edge.dz !== 0 || side * edge.dx <= 0) continue;
+        const year = yearAt(edge.a[1]);
+        if (frontages.has(year) || !records.some(record => record.year === year)) continue;
+        // 同年外环被路口占满时，沿出城路两侧靠城的直段排，留开路口与远端指路牌。
+        for (const bank of [-1, 1]) {
+          addFrontages(edge, bank, 3, Math.min(10, edge.length), () => year);
         }
       }
       if (!frontages.size) return [];
@@ -105,30 +124,33 @@ export function planCityRoadside(scene: CityScene, highways: readonly CityRoadRo
         const group = lots.get(year);
         if (group) group.push(record); else lots.set(year, [record]);
       }
-      const occupied:{x:number;z:number}[]=[];
+      const occupied: { x: number; z: number; halfX: number; halfZ: number }[] = [];
       return [...lots].flatMap(([year, group]) => {
         const spans = frontages.get(year)!;
-        const fronts=spans.flatMap(({edge,start,end})=>{
-          const count=Math.max(1,Math.floor((end-start)/1.9));
-          return Array.from({length:count},(_,i)=>({edge,along:start+(end-start)*(i+.5)/count}));
+        const fronts = spans.flatMap(({edge, bank, start, end}) => {
+          const count = Math.max(1, Math.floor((end - start) / 1.9));
+          return Array.from({length: count}, (_, i) => ({edge, bank, along: start + (end - start) * (i + .5) / count}));
         });
-        const positions:{x:number;z:number;dz:number}[]=[];
+        const positions: { x: number; z: number; edge: RoadEdge; bank: number }[] = [];
         // 院落用固定尺寸。第一排贴路，空位不足时从同一段路继续向外排。
-        for(let row=0;positions.length<group.length;row++){
-          for(const {edge,along} of fronts){
-            const x=edge.a[0]+side*(edge.half+1.23+row*1.65),z=edge.a[1]+edge.dz*along;
-            if(occupied.some(lot=>Math.abs(x-lot.x)<1.6&&Math.abs(z-lot.z)<1.8)||
-              !clearsRoad(x,z,.94)||!clearsTerrain(x,z,1.05))continue;
-            const position={x,z,dz:edge.dz};
-            positions.push(position);occupied.push(position);
-            if(positions.length===group.length)break;
+        for (let row = 0; positions.length < group.length; row++) {
+          for (const {edge, bank, along} of fronts) {
+            const {x, z} = vergePoint(edge, along, bank * (edge.half + 1.23 + row * 1.65));
+            const halfX = edge.dx === 0 ? .8 : .9, halfZ = edge.dx === 0 ? .9 : .8;
+            if (occupied.some(lot => Math.abs(x - lot.x) < lot.halfX + halfX && Math.abs(z - lot.z) < lot.halfZ + halfZ) ||
+              !clearsRoad(x, z, .94) || !clearsTerrain(x, z, 1.05)) continue;
+            positions.push({x, z, edge, bank});
+            occupied.push({x, z, halfX, halfZ});
+            if (positions.length === group.length) break;
           }
         }
         return group.sort((a, b) => a.entry.date.localeCompare(b.entry.date) || a.entry.name.localeCompare(b.entry.name))
           .map(({entry, year}, index) => {
-            const {x,z,dz} = positions[index];
+            const {x, z, edge, bank} = positions[index];
             const items = homes.map(([offset, depth, size], house) => {
-              const homeX=x+side*(depth+size/2-.68),homeZ=z+dz*offset;
+              const setback = bank * (depth + size / 2 - .68);
+              const homeX = x + edge.dx * offset - edge.dz * setback;
+              const homeZ = z + edge.dz * offset + edge.dx * setback;
               return ornament(models[(index + house) % models.length], homeX, homeZ, size);
             });
             return {entry, year, items};

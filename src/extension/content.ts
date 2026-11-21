@@ -52,9 +52,9 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { position:relative; width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
-      .compass { position:absolute; z-index:1; top:10px; left:10px; width:56px; height:56px; color:var(--fgColor-default,#1f2328); pointer-events:none; }
+      .compass { position:absolute; z-index:1; top:10px; left:10px; width:56px; height:56px; color:#fff; pointer-events:none; }
       /* The map projects north (negative Z) toward the upper right at 26.565° above horizontal. */
-      .compass > svg { display:block; width:100%; height:100%; fill:currentColor; rotate:63.435deg; transform-origin:center; filter:drop-shadow(0 0 1px var(--bgColor-default,#fff)); }
+      .compass > svg { display:block; width:100%; height:100%; fill:currentColor; rotate:63.435deg; transform-origin:center; }
       .compass text { font:600 10px system-ui,sans-serif; text-anchor:middle; dominant-baseline:central; }
       .repository-sites { position:absolute; z-index:2; inset:0; overflow:hidden; pointer-events:none; }
       .repository-site { position:absolute; pointer-events:none; }
