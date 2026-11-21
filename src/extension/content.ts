@@ -248,7 +248,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     const sources = next.organizations.map(org => org.avatar?.currentSrc);
     if (next.organizations.length !== places.organizations.length || next.organizations.some((org, i) =>
       org.login !== places.organizations[i].login || org.avatar !== places.organizations[i].avatar || sources[i] !== organizationSources[i])) {
-      city?.setOrganizations(next.organizations, t('cityOrganizations'));
+      city?.setOrganizations(next.organizations);
     }
     if (next.connections !== places.connections) city?.setTrafficConnections(next.connections);
     places = next;
@@ -373,7 +373,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       }, "city", undefined, true, reservedYears, showZoom, oldestYear, trafficSeed, roads.setExitCount);
       city.setShareCredit(context.profileLogin);
       city.setRoadControls(roads.controls(),roads.returnPost());
-      city.setOrganizations(places.organizations, t("cityOrganizations"));
+      city.setOrganizations(places.organizations);
       city.setTrafficConnections(places.connections);
       showRepositoryCreations();
       fieldCreated = true;
@@ -527,7 +527,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     language = next; preference = selected; host.lang = toolbarHost.lang = language;
     localize(shadow, language); localize(controls, language);
     roads.refresh(places.people);
-    city?.setOrganizations(places.organizations, t("cityOrganizations"));
+    city?.setOrganizations(places.organizations);
     if (repositoryEntries) city?.setRepositoryCreations(repositoryEntries, t("repositoryCreations"));
     fitView.title = t("fitView"); maxZoom.title = t("maxZoom"); zoomLevel.title = t("zoomFitHelp"); showZoom(currentZoom);
     cityHost.setAttribute("aria-description", t("keyboardControls"));

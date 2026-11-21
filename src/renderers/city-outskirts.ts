@@ -180,8 +180,8 @@ export function createCitySceneryPainter(relief:readonly Relief[],images:CityIma
     context.restore();
   };
   return (context:CanvasRenderingContext2D,paintWater:()=>void,view:ProjectedBounds)=>{
-    shade(context,left+span*.28,top+height*.70,span*.32,height*.28,'rgba(168,155,116,.43)');
-    shade(context,left+span*.72,top+height*.28,span*.33,height*.37,'rgba(89,118,103,.42)');
+    shade(context,left+span*.28,top+height*.70,span*.32,height*.28,'rgba(172,168,105,.34)');
+    shade(context,left+span*.72,top+height*.28,span*.33,height*.37,'rgba(109,142,97,.29)');
     const visible=relief.filter(({x,y,w,h})=>x+w*1.25>view.left&&x-w*.25<view.right&&y+h*1.8>view.top&&y<view.bottom);
     for(const {x,y,w,h,id} of visible){
       if(id==='outskirts-hills')continue;

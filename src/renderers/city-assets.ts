@@ -32,8 +32,12 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
         canvas.width = bitmap.width; canvas.height = bitmap.height;
         const context = canvas.getContext('2d');
         if (!context) throw new Error('无法创建城市素材画布。');
+        const groundAtlas = id === CITY_GROUND_ATLAS;
+        // 仅在解码地纹时调色，复用同一张图和已有纹理缓存。
+        if (groundAtlas) context.filter = 'brightness(1.11) saturate(1.18) hue-rotate(12deg)';
         context.drawImage(bitmap, 0, 0);
-        const groundDetail=id===CITY_GROUND_ATLAS?prepareCityGroundAtlas(context):undefined;
+        if (groundAtlas) context.filter = 'none';
+        const groundDetail = groundAtlas ? prepareCityGroundAtlas(context) : undefined;
         const { file: _file, ...metadata } = entry;
         return { [id]: { canvas, ...metadata, groundDetail } };
       } catch (error) {

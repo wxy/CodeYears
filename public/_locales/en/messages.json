@@ -440,9 +440,6 @@
   "closeRoadInfo": {
     "message": "Close road sign details"
   },
-  "cityOrganizations": {
-    "message": "Organizations"
-  },
   "cityName": {
     "message": "@$1’s city"
   },

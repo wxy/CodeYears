@@ -6,7 +6,7 @@ import type { TimelineState } from "../timeline/types";
 import { closeCityImages, loadCityImages, type CityImages } from "./city-assets";
 import { joiningTowerId } from "./city-building-style";
 import { createCityView, planCityScene, type CityScene } from "./city-view";
-import { organizationFrameId, prepareOrganizationPoster, type OrganizationPoster } from "./city-organization-boards";
+import { CITY_ORGANIZATION_BOARD_LIMIT, organizationFrameId, prepareOrganizationPoster, type OrganizationPoster } from "./city-organization-boards";
 import { createOrganizationLinks } from "./city-organization-links";
 import { planOrganicCity, createOrganicGround } from "./city-organic-layout";
 import { CITY_SCENERY_IDS } from "./city-outskirts";
@@ -19,7 +19,7 @@ export interface CityReturnControl { sign:HTMLElement; surface:HTMLAnchorElement
 
 export interface ContributionLandscape {
   setShareCredit(login:string):void;
-  setOrganizations(organizations:readonly ProfileOrganization[], directoryLabel?:string):void;
+  setOrganizations(organizations:readonly ProfileOrganization[]):void;
   setTrafficConnections(connections:number):void;
   setRoadControls(controls: readonly CityRoadControl[], returnPost?:CityReturnControl): void;
   setRepositoryCreations(entries: readonly RepositoryCreation[], label: string): void;
@@ -301,10 +301,10 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(planVehicles)layer?.setVehicles?.(planVehicles(trafficSeed,trafficConnections));
       schedule();
     },
-    setOrganizations(organizations,directoryLabel='Organizations'){
+    setOrganizations(organizations){
       if(disposed)return;
-      posters=organizations.map(prepareOrganizationPoster);
-      const focused=organizationLinks.setPosters(posters,directoryLabel);
+      posters=organizations.slice(0,CITY_ORGANIZATION_BOARD_LIMIT).map(prepareOrganizationPoster);
+      const focused=organizationLinks.setPosters(posters);
       layer?.setOrganizationPosters?.(posters,frameImages?.[organizationFrameId]);refitOverview();
       organizationLinks.position(layer,viewport,focused);schedule();
       if(posters.length&&!frameRequested){
@@ -335,6 +335,7 @@ export function createLandscape(host: HTMLElement, days: readonly DailyContribut
       if(repositoryCreations!==entries){
         repositoryCreations=entries;
         layer?.setRepositoryCreations?.(entries);
+        refitOverview();
       }
       schedule();
     },

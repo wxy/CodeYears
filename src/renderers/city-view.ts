@@ -22,6 +22,7 @@ import { planDirectionBoard, type DirectionBoard } from './city-direction-boards
 import { organizationFace, planOrganizationBoards, type OrganizationBoard, type OrganizationPoster } from './city-organization-boards';
 
 const project=(x:number,z:number):[number,number]=>[(x-z)*.5,(x+z)*.25];
+const groundColor='#a9c688';
 function paintShareCredit(context:CanvasRenderingContext2D,{x,y,width,height,login,icon}:CityShareCredit) {
   const textX=x+58,textWidth=width-70;
   context.save();
@@ -428,9 +429,13 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     },
     fitOverview(viewport,topInset,bottomInset){
       const signs=boardOrder.flatMap(board=>board.bounds?[board.bounds]:[]);
-      if(!signs.length&&!shareCredit)return;
-      const left=Math.min(minX,...signs.map(b=>b.left)),right=Math.max(maxX,...signs.map(b=>b.right));
-      const top=Math.min(minY,...signs.map(b=>b.top)),bottom=Math.max(maxY,...signs.map(b=>b.bottom));
+      const villages=repositoryLandmarks.flatMap(site=>site.plots.map(plot=>({
+        left:plot.left,right:plot.left+plot.width,top:plot.top,bottom:plot.top+plot.height,
+      })));
+      const landmarks=[...signs,...villages];
+      if(!landmarks.length&&!shareCredit)return;
+      const left=Math.min(minX,...landmarks.map(b=>b.left)),right=Math.max(maxX,...landmarks.map(b=>b.right));
+      const top=Math.min(minY,...landmarks.map(b=>b.top)),bottom=Math.max(maxY,...landmarks.map(b=>b.bottom));
       // 远景占地是所有倍率下的最大占地，涵盖完整牌架并为提示、缩放工具和四边留空。
       const scale=Math.min(Math.max(1,viewport.width-32)/(right-left),Math.max(1,viewport.height-topInset-bottomInset-24)/(bottom-top));
       return {zoom:scale/fitScale(viewport),panX:(minX+maxX-left-right)*scale/2,
@@ -532,14 +537,14 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         const land=background?.getContext('2d')??context;
         land.setTransform(viewport.dpr,0,0,viewport.dpr,0,0);
         land.imageSmoothingEnabled=true;land.imageSmoothingQuality='high';
-        land.fillStyle='#a3b58d';land.fillRect(0,0,viewport.width,viewport.height);
+        land.fillStyle=groundColor;land.fillRect(0,0,viewport.width,viewport.height);
         land.save();
         land.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
         if(paintGroundTiles){
           paintGroundTiles(land,{left,top,right,bottom},scale);
           // 在整个拼贴层上统一柔化远景，避免单块透明度叠加导致深浅接缝。
           land.globalAlpha=Math.max(0,.48-scale/160);
-          land.fillStyle='#a3b58d';land.fillRect(left,top,viewport.width/scale,viewport.height/scale);
+          land.fillStyle=groundColor;land.fillRect(left,top,viewport.width/scale,viewport.height/scale);
           land.globalAlpha=1;
         }else if(terrainPattern){
           // 远景让城外的细碎草纹融入底色。

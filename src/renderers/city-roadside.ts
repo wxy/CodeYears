@@ -105,22 +105,31 @@ export function planCityRoadside(scene: CityScene, highways: readonly CityRoadRo
         const group = lots.get(year);
         if (group) group.push(record); else lots.set(year, [record]);
       }
+      const occupied:{x:number;z:number}[]=[];
       return [...lots].flatMap(([year, group]) => {
         const spans = frontages.get(year)!;
-        const length = spans.reduce((total, span) => total + span.end - span.start, 0);
-        // 给每段取整预留一个位置。仓库集中的年份缩小住宅，保留每个仓库的独立院落。
-        const scale = Math.min(1, length / (1.9 * (group.length + spans.length)));
-        const positions = spans.flatMap(({edge, start, end}) => {
-          const count = Math.floor((end - start) / (1.9 * scale));
-          return Array.from({length: count}, (_, i) => ({edge, along: start + (end - start) * (i + .5) / count}));
+        const fronts=spans.flatMap(({edge,start,end})=>{
+          const count=Math.max(1,Math.floor((end-start)/1.9));
+          return Array.from({length:count},(_,i)=>({edge,along:start+(end-start)*(i+.5)/count}));
         });
+        const positions:{x:number;z:number;dz:number}[]=[];
+        // 院落用固定尺寸。第一排贴路，空位不足时从同一段路继续向外排。
+        for(let row=0;positions.length<group.length;row++){
+          for(const {edge,along} of fronts){
+            const x=edge.a[0]+side*(edge.half+1.23+row*1.65),z=edge.a[1]+edge.dz*along;
+            if(occupied.some(lot=>Math.abs(x-lot.x)<1.6&&Math.abs(z-lot.z)<1.8)||
+              !clearsRoad(x,z,.94)||!clearsTerrain(x,z,1.05))continue;
+            const position={x,z,dz:edge.dz};
+            positions.push(position);occupied.push(position);
+            if(positions.length===group.length)break;
+          }
+        }
         return group.sort((a, b) => a.entry.date.localeCompare(b.entry.date) || a.entry.name.localeCompare(b.entry.name))
           .map(({entry, year}, index) => {
-            const {edge: {a, dz, half}, along} = positions[Math.floor(positions.length * (index + .5) / group.length)];
+            const {x,z,dz} = positions[index];
             const items = homes.map(([offset, depth, size], house) => {
-              const x = a[0] + side * (half + .55 + (depth + size / 2) * scale);
-              const z = a[1] + dz * (along + offset * scale);
-              return ornament(models[(index + house) % models.length], x, z, size * scale);
+              const homeX=x+side*(depth+size/2-.68),homeZ=z+dz*offset;
+              return ornament(models[(index + house) % models.length], homeX, homeZ, size);
             });
             return {entry, year, items};
           });

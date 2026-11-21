@@ -89,7 +89,28 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     return {x,z:wilderness.sample(x).z+7.7-2.8*t*t+.34*Math.sin(x*.73),
       half:Math.sqrt(Math.max(0,1-t*t))*(1.8+.32*Math.sin(x*.86)),drop:0};
   }};
-  const streams=[wilderness,oxbow,...tributaries,...main];
+  // 小支流的汇口和湖心都在外环之外。短年份没有城内河带时汇入原有的郊外溪流。
+  const valleyStreams=[
+    {source:branchSource,forkX:-17,side:-1,direction:1,length:17,lakeRadius:3.8},
+    {source:main.at(-1)??wilderness,forkX:width+17,side:1,direction:-1,length:20,lakeRadius:4.4},
+    {source:main[Math.floor(main.length/2)]??wilderness,forkX:width+31,side:1,direction:1,length:16,lakeRadius:3.4},
+  ].flatMap(({source,forkX,side,direction,length,lakeRadius},index):Watercourse[]=>{
+    const fork=source.sample(forkX),endZ=fork.z+direction*length;
+    const along=(distance:number)=>forkX+side*(.47*distance+1.55*Math.sin(distance*.23)+1.15*Math.sin(distance*.10));
+    const lakeX=along(length);
+    return [
+      {from:Math.min(fork.z,endZ),to:Math.max(fork.z,endZ),axis:1,sample(z){
+        const distance=(z-fork.z)*direction;
+        return {x:along(distance),z,half:.32+.065*Math.sin(distance*.57+index),drop:0};
+      }},
+      {from:lakeX-lakeRadius,to:lakeX+lakeRadius,axis:0,sample(x){
+        const t=(x-lakeX)/lakeRadius;
+        const width=Math.sqrt(Math.max(0,1-t*t))*(lakeRadius*.52+.29*Math.sin(t*4.8+index));
+        return {x,z:endZ+.58*t+.66*t*t+.28*Math.sin(t*3.6),half:width,drop:0};
+      }},
+    ];
+  });
+  const streams=[wilderness,oxbow,...tributaries,...valleyStreams,...main];
   // 保留真实河湾、支流和湖泊的岸线。按河道轴索引截面，长路也只检查它经过的水段。
   const roadWater=({left,top,right,bottom}:ProjectedBounds,clearance=0):RoadWater=>{
     const pad=clearance?24:8,step=.8;
@@ -166,7 +187,7 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
         ripples.quadraticCurveTo(...bankPoint(section(t+span*.45),offset-.045),...bankPoint(section(t+span),offset+.012));
       }
     }
-    context.fillStyle='#869b7e';context.fill(shore);
+    context.fillStyle='#83a278';context.fill(shore);
     context.fillStyle='#729d98';context.fill(water);
     context.fillStyle='#64969a';context.fill(deep);
     context.strokeStyle='#d1e3dc38';context.lineWidth=.015;context.stroke(ripples);

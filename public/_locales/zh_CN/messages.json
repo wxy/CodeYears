@@ -440,9 +440,6 @@
   "closeRoadInfo": {
     "message": "关闭路牌说明"
   },
-  "cityOrganizations": {
-    "message": "组织"
-  },
   "cityName": {
     "message": "@$1 的城市"
   },

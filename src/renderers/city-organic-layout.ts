@@ -13,6 +13,7 @@ import { CITY_MOUNTAIN_ROAD_LEAD } from './city-mountain-roads';
 import type { CityRiver } from './city-waterways';
 
 const DAY = 86400000;
+const RING_HALF=1.6+CITY_STREET_VERGE;
 export interface OrganicGap { from: string; to: string; days: number; indices: number[] }
 export interface OrganicRegion { block: number; segment: number; left: number; right: number; top:number;bottom:number;milestone?:boolean }
 export interface OrganicCity {
@@ -103,7 +104,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
   }
   items=items.filter(item=>item.parcel!.count>0||regions.some(region=>region.block===item.parcel!.block&&item.x>=region.left&&item.x+item.w<=region.right&&item.z>=region.top&&item.z+item.d<=region.bottom));
   // 外环取所有街区的并集边界，不能逐年围圈，否则边缘空档仍被道路圈住。
-  const ringHalf=1.6+CITY_STREET_VERGE, side=CITY_ROAD_WIDTH/2;
+  const ringHalf=RING_HALF, side=CITY_ROAD_WIDTH/2;
   const footprints=regions.map(region=>{
     const margin=region.milestone ? .65 : ringHalf;
     return {left:region.left-margin,right:region.right+margin,top:region.top-margin,bottom:region.bottom+margin};
@@ -214,7 +215,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
     roads.push({id:`organic-${area>0?'ring':'courtyard'}-${roads.length}`,lanes,...(area<0?{laneWidth:CITY_STREET_LANE_WIDTH}:{}),cornerRadius:members.length&&members.every(region=>region.milestone) ? .45 : lanes===8?2.4:1.2,closed:true,points:corners});
   }
-  const {links,exits}=connectSettlements(roads,footprints,regions,original.layout);
+  const {links,exits}=connectSettlements(roads,footprints,regions,original.layout,[...lines.values()].filter(line=>!line.horizontal));
   // 零贡献城市仍保留装饰性环路与出口，允许手动访问别人的城市。
   if(!regions.length){
     roads.push(...original.roadNetwork.roads.filter(road=>road.id==='ring'));
@@ -442,7 +443,7 @@ function contains(points:readonly RoadPoint[],x:number,z:number):boolean {
 
 /** 在闭环直道上选最近的可行接点；最小生成树连通片区，不再统一绕到西侧。 */
 function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:readonly {left:number;right:number;top:number;bottom:number}[],
-  regions:readonly OrganicRegion[],layout:CityLayout) {
+  regions:readonly OrganicRegion[],layout:CityLayout,streets:readonly {at:number;spans:readonly {start:number;end:number}[]}[]) {
   const links:CityRoadRoute[]=[],exits:CityRoadRoute[]=[];
   const rings=boundaries.filter(ring=>ring.id.startsWith('organic-ring'));
   if(!rings.length)return {links,exits};
@@ -503,22 +504,26 @@ function connectSettlements(boundaries:readonly CityRoadRoute[],footprints:reado
     bandBounds.set(band,previous?{top:Math.min(top,previous.top),bottom:Math.max(bottom,previous.bottom)}:{top,bottom});
   }
   const bands=[...bandBounds.entries()];
+  const preferredAxes=[1,0,2].map(index=>Math.round((CITY_QUARTER_ROADS[index]+CITY_ROAD_WIDTH/2)*1000)/1000);
   const exit=(band:number,top:number,bottom:number,axis:0|1,side:number)=>{
     const alongAxis=1-axis, middle=(top+bottom)/2;
     const candidates=outer.flatMap(edge=>{
       if(edge.vertical!==(axis===0)||Math.sign(edge.b[alongAxis]-edge.a[alongAxis])*(axis===0?1:-1)!==side)return [];
       const across=edge.a[axis];
-      if(axis===1&&(across<top-1.61||across>bottom+1.61))return [];
+      if(axis===1&&(across<top-RING_HALF-1e-5||across>bottom+RING_HALF+1e-5))return [];
       const low=axis===0?Math.max(edge.low,top):edge.low,high=axis===0?Math.min(edge.high,bottom):edge.high;
       if(high<=low)return [];
-      const along=(low+high)/2;
-      // 凹进去的外环边也可能朝外。出口前方须有真正通往城外的连续走廊。
-      if(footprints.some(footprint=>axis===0
+      const midpoint={along:(low+high)/2,priority:preferredAxes.length};
+      const aligned=axis===1?preferredAxes.flatMap((along,priority)=>
+        along>=low+1.6&&along<=high-1.6&&streets.some(street=>street.at===along&&
+          street.spans.some(span=>across>=span.start-1e-5&&across<=span.end+1e-5))?[{along,priority}]:[]):[];
+      // 出口要有连续的城外走廊。南北出口优先对准沿街区延伸到外环的真实纵路。
+      return [...aligned,midpoint].filter(({along})=>!footprints.some(footprint=>axis===0
         ? along>footprint.top&&along<footprint.bottom&&side*((side>0?footprint.right:footprint.left)-across)>1e-5
-        : along>footprint.left&&along<footprint.right&&side*((side>0?footprint.bottom:footprint.top)-across)>1e-5))return [];
-      return [{across,along,length:high-low}];
+        : along+1.6>footprint.left&&along-1.6<footprint.right&&side*((side>0?footprint.bottom:footprint.top)-across)>1e-5))
+        .map(candidate=>({...candidate,across,length:high-low}));
     });
-    const chosen=candidates.sort((a,b)=>Number(b.length>=3.2)-Number(a.length>=3.2)||
+    const chosen=candidates.sort((a,b)=>a.priority-b.priority||Number(b.length>=3.2)-Number(a.length>=3.2)||
       side*(b.across-a.across)||(axis===0?Math.abs(a.along-middle)-Math.abs(b.along-middle):b.length-a.length))[0];
     if(!chosen)return;
     const {across,along}=chosen;
