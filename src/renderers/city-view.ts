@@ -1,4 +1,6 @@
 import type { DailyContribution } from '../data/types';
+import type { RepositoryCreation } from '../data/repository-creations';
+import { isoWeekDate } from '../data/iso-week';
 import { planWeeklyCity, type CityParcel, type WeeklyCity } from './city-parcels';
 import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
@@ -11,10 +13,11 @@ import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
   CITY_YEAR_GAP as YEAR_GAP, CITY_PARK_DEPTH as PARK, type CityLayout } from './city-layout';
 import { createCityYearMarkers } from './city-year-markers';
 import { createCityOutskirtsPainter, createCitySceneryPainter, planCityRelief, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
-import { planCityMountainRoads } from './city-mountain-roads';
+import { boundsOverlap, planCityMountainRoads } from './city-mountain-roads';
 import { CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
 import { createCityWaterways, type CityRiver } from './city-waterways';
 import type { CityShareCredit, LandscapeView, LandscapeViewport } from './types';
+import { planCityRoadside } from './city-roadside';
 import { cityVehicleSprites, planCityTransport } from './city-transport';
 import { planDirectionBoard, type DirectionBoard } from './city-direction-boards';
 import { organizationFace, planOrganizationBoards, type OrganizationBoard, type OrganizationPoster } from './city-organization-boards';
@@ -143,6 +146,15 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       relief.splice(plan.blockedRidge,1);
     }
   }
+  const roadside=waterways&&planCityRoadside(scene,highways,(x,z,margin)=>{
+    const [px,py]=project(x,z);
+    const bounds={left:px-margin,right:px+margin,top:py-margin/2,bottom:py+margin/2};
+    return waterways.clears(bounds.left,bounds.top,bounds.right,bounds.bottom)&&
+      !relief.some(land=>boundsOverlap(bounds,land.barrier.bounds));
+  });
+  if(roadside)placed=placed.concat(projectItems(roadside.scenery)).sort(byDepth);
+  const districtBands=new Map(scene.layout.districts.map(district=>[district.year,district.band]));
+  let repositoryLandmarks:{band:number;years:string;entries:RepositoryCreation[];plots:PlacedItem[]}[]=[];
   const scenery=waterways?createCitySceneryPainter(relief,images,sceneryBounds):undefined;
   const background=waterways?document.createElement('canvas'):undefined;
   let backdropKey='';
@@ -377,6 +389,37 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
         const [left,top]=projection.point(board,board.left,board.top);
         return {left,top,size:organizationFace.size*projection.scale,slope:board.slope};
       });
+    },
+    setRepositoryCreations(entries){
+      if(!roadside)return;
+      const groups=new Map<number,RepositoryCreation[]>();
+      for(const entry of entries){
+        const band=districtBands.get(isoWeekDate(entry.date).year);
+        if(band===undefined)continue;
+        const group=groups.get(band);
+        if(group)group.push(entry);else groups.set(band,[entry]);
+      }
+      const old=new Set(repositoryLandmarks.flatMap(site=>site.plots));
+      repositoryLandmarks=roadside.repositorySites.flatMap(({band,firstYear,lastYear,items})=>{
+        const entries=groups.get(band);
+        if(!entries?.length)return [];
+        const plots=projectItems(items);
+        return plots.length?[{band,years:firstYear===lastYear?String(firstYear):`${firstYear}–${lastYear}`,entries,plots}]:[];
+      });
+      const landmarks=repositoryLandmarks.flatMap(site=>site.plots);
+      prepareSamples(landmarks);
+      placed=placed.filter(item=>!old.has(item)).concat(landmarks).sort(byDepth);
+      clearHighlight();frameKey='';
+    },
+    repositorySites(viewport){
+      const scale=fitScale(viewport)*viewport.zoom;
+      const x=viewport.width/2+viewport.panX-(minX+maxX)*scale/2;
+      const y=viewport.height/2+viewport.panY-(minY+maxY)*scale/2;
+      return repositoryLandmarks.map(({band,years,entries,plots})=>({
+        band,years,entries,buildings:plots.map(plot=>({
+          left:x+plot.left*scale,top:y+plot.top*scale,width:plot.width*scale,height:plot.height*scale,
+        })),
+      }));
     },
     fitOverview(viewport,topInset,bottomInset){
       const signs=boardOrder.flatMap(board=>board.bounds?[board.bounds]:[]);

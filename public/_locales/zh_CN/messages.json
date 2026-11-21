@@ -1,4 +1,13 @@
 {
+  "cityCompass": {
+    "message": "地图方向标。右上方为北，左下方为南。"
+  },
+  "repositoryCreations": {
+    "message": "公开仓库创建记录"
+  },
+  "repositoryReadFailed": {
+    "message": "暂时无法从 GitHub 读取公开仓库创建日期。可刷新重试。"
+  },
   "extensionName": {
     "message": "CodeYears：GitHub 贡献之城"
   },

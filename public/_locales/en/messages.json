@@ -1,4 +1,13 @@
 {
+  "cityCompass": {
+    "message": "Map compass. North is upper right and south is lower left."
+  },
+  "repositoryCreations": {
+    "message": "Public repository creations"
+  },
+  "repositoryReadFailed": {
+    "message": "Could not load public repository creation dates from GitHub. Refresh to retry."
+  },
   "extensionName": {
     "message": "CodeYears: GitHub Contribution City"
   },

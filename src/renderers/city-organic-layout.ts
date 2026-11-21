@@ -1,6 +1,6 @@
 import type { DailyContribution } from '../data/types';
 import { planCityScene, type CityScene } from './city-view';
-import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH, type CityLayout } from './city-layout';
+import { CITY_QUARTER_ROADS, CITY_ROAD_WIDTH, CITY_YEAR_GAP, CITY_RIVER_BANK_DEPTH, CITY_STREET_LANE_WIDTH, CITY_STREET_VERGE, type CityLayout } from './city-layout';
 import { createCityRoadLabels, cityRoadLabelLength, type CityRoadLabel } from './city-year-markers';
 import { type CityVehicle, type CityVehicleKind } from './city-vehicles';
 import { cityVehicleSprites, planCityTransport, type CityTrafficSignal } from './city-transport';
@@ -103,7 +103,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
   }
   items=items.filter(item=>item.parcel!.count>0||regions.some(region=>region.block===item.parcel!.block&&item.x>=region.left&&item.x+item.w<=region.right&&item.z>=region.top&&item.z+item.d<=region.bottom));
   // 外环取所有街区的并集边界，不能逐年围圈，否则边缘空档仍被道路圈住。
-  const ringHalf=1.6, side=CITY_ROAD_WIDTH/2;
+  const ringHalf=1.6+CITY_STREET_VERGE, side=CITY_ROAD_WIDTH/2;
   const footprints=regions.map(region=>{
     const margin=region.milestone ? .65 : ringHalf;
     return {left:region.left-margin,right:region.right+margin,top:region.top-margin,bottom:region.bottom+margin};
@@ -380,12 +380,16 @@ function planRoadLabels(scene:CityScene,regions:readonly OrganicRegion[],roads:r
     const next=districts[block+1];if(!next)return;
     const number=district.year-originYear+1;
     const suffix=number%100>=11&&number%100<=13?'TH':number%10===1?'ST':number%10===2?'ND':number%10===3?'RD':'TH';
-    // 五年带的两岸属于同一年度边界，不拆成两个大道编号。
-    const axes=[district.z+7+CITY_YEAR_GAP/2];if(next.z-district.z>7+CITY_YEAR_GAP+.001)axes.push(next.z-CITY_YEAR_GAP/2);
-    const zs=axes.map(z=>Math.round(z*1000)/1000);
-    place(district.year,`${number}${suffix} AVE`,'avenue',true,-1,
-      segments.filter(edge=>edge.road.id.startsWith('organic-avenue-')&&zs.includes(edge.a[1]))
-        .flatMap(edge=>free(edge,-Infinity,Infinity)));
+    const avenue=`${number}${suffix} AVE`;
+    const north=district.z+7+CITY_YEAR_GAP/2;
+    const river=next.z-district.z>7+CITY_YEAR_GAP+.001;
+    const banks=river?[[north,`${avenue} N BANK`],[next.z-CITY_YEAR_GAP/2,`${avenue} S BANK`]] as const:[[north,avenue]] as const;
+    for(const [z,name] of banks){
+      const axis=Math.round(z*1000)/1000;
+      place(district.year,name,'avenue',true,-1,
+        segments.filter(edge=>edge.road.id.startsWith('organic-avenue-')&&edge.a[1]===axis)
+          .flatMap(edge=>free(edge,-Infinity,Infinity)));
+    }
   });
   return labels;
 }
