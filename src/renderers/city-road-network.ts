@@ -116,6 +116,6 @@ export function cityTreeClearsBridges(x: number, z: number, w: number, d: number
   return bridges.every(bridge => {
     const t = Math.max(0, Math.min(1, (cz - bridge.from[1]) / (bridge.to[1] - bridge.from[1])));
     const bridgeX = sampleCityBridge(bridge, t).x;
-    return cz < bridge.from[1] - .7 || cz > bridge.to[1] + .7 || Math.abs(cx - bridgeX) > .65 + w / 2;
+    return cz < bridge.landings.from[1] - .7 || cz > bridge.landings.to[1] + .7 || Math.abs(cx - bridgeX) > .65 + w / 2;
   });
 }

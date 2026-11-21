@@ -21,9 +21,8 @@ export interface LandscapeViewport {
 }
 export interface CityRoadLabel { label:string; returning:boolean }
 export interface CityRepositorySite {
-  band: number;
-  years: string;
-  entries: readonly RepositoryCreation[];
+  year: number;
+  entry: RepositoryCreation;
   buildings: readonly { left: number; top: number; width: number; height: number }[];
 }
 export interface CityShareCredit {

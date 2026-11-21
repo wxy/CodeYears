@@ -52,12 +52,10 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       .scene-wrap { position:relative; height:340px; min-height:260px; }
       #scene { position:relative; width:100%; height:100%; background:transparent; }
       #scene:focus-visible { outline:3px solid #268f80; outline-offset:-3px; border-radius:6px; }
-      .compass { position:absolute; z-index:1; top:10px; left:10px; width:55px; height:43px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:9px; color:var(--fgColor-default,#1f2328); background:color-mix(in srgb,var(--bgColor-default,#fff) 82%,transparent); pointer-events:none; }
-      .compass .north,.compass .south { position:absolute; font:600 10px/1 system-ui,sans-serif; }
-      .compass .north { right:6px; top:5px; }
-      .compass .south { left:6px; bottom:5px; color:var(--fgColor-muted,#59636e); }
-      .compass .needle { position:absolute; left:15px; top:20px; width:21px; height:2px; background:currentColor; transform:rotate(-26.565deg); }
-      .compass .needle::after { content:""; position:absolute; left:100%; top:-2px; border:3px solid transparent; border-left:5px solid currentColor; }
+      .compass { position:absolute; z-index:1; top:10px; left:10px; width:56px; height:56px; color:var(--fgColor-default,#1f2328); pointer-events:none; }
+      /* The map projects north (negative Z) toward the upper right at 26.565° above horizontal. */
+      .compass > svg { display:block; width:100%; height:100%; fill:currentColor; rotate:63.435deg; transform-origin:center; filter:drop-shadow(0 0 1px var(--bgColor-default,#fff)); }
+      .compass text { font:600 10px system-ui,sans-serif; text-anchor:middle; dominant-baseline:central; }
       .repository-sites { position:absolute; z-index:2; inset:0; overflow:hidden; pointer-events:none; }
       .repository-site { position:absolute; pointer-events:none; }
       .repository-site[data-open] { pointer-events:auto; }
@@ -119,7 +117,15 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
     <section class="panel" data-i18n-label="cityRegion">
       <div id="expanded-controls"></div>
       <div class="scene-wrap"><div id="scene" tabindex="0" role="region" data-i18n-label="canvasKeyboardLabel"></div>
-        <div class="compass" role="img" data-i18n-label="cityCompass" hidden><span aria-hidden="true" class="north">N</span><span aria-hidden="true" class="south">S</span><span aria-hidden="true" class="needle"></span></div>
+        <div class="compass" role="img" data-i18n-label="cityCompass" hidden>
+          <svg viewBox="0 0 56 56" aria-hidden="true" focusable="false">
+            <!-- Material Design Icons compass-rose, adapted with directional lettering. -->
+            <svg x="13" y="13" width="30" height="30" viewBox="0 0 24 24">
+              <path d="M15 9L12 0L9 9L0 12L9 15L12 24L15 15L24 12L15 9M4 12L10 10L11 12H4M12 20L10 14L12 13V20M12 4L14 10L12 11V4M14 14L13 12H20L14 14M8.7 17.3L5 19L6.7 15.3L8.3 15.8L8.7 17.3M17.3 15.3L19 19L15.3 17.3L15.8 15.7L17.3 15.3M6.7 8.7L5 5L8.7 6.7L8.2 8.2L6.7 8.7M15.3 6.7L19 5L17.3 8.7L15.7 8.2L15.3 6.7Z"/>
+            </svg>
+            <text x="28" y="7">N</text><text x="28" y="49">S</text>
+          </svg>
+        </div>
         <div id="road-returns" hidden></div>
         <div class="status" hidden><output id="status" role="status" aria-live="polite"></output><button id="retry" type="button" data-i18n="retry" hidden></button><button id="cancel" type="button" data-i18n="cancel" hidden></button></div>
         <div class="view-tools" hidden>

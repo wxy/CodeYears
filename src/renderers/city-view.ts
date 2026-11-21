@@ -1,6 +1,5 @@
 import type { DailyContribution } from '../data/types';
 import type { RepositoryCreation } from '../data/repository-creations';
-import { isoWeekDate } from '../data/iso-week';
 import { planWeeklyCity, type CityParcel, type WeeklyCity } from './city-parcels';
 import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
@@ -153,8 +152,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       !relief.some(land=>boundsOverlap(bounds,land.barrier.bounds));
   });
   if(roadside)placed=placed.concat(projectItems(roadside.scenery)).sort(byDepth);
-  const districtBands=new Map(scene.layout.districts.map(district=>[district.year,district.band]));
-  let repositoryLandmarks:{band:number;years:string;entries:RepositoryCreation[];plots:PlacedItem[]}[]=[];
+  let repositoryLandmarks:{year:number;entry:RepositoryCreation;plots:PlacedItem[]}[]=[];
   const scenery=waterways?createCitySceneryPainter(relief,images,sceneryBounds):undefined;
   const background=waterways?document.createElement('canvas'):undefined;
   let backdropKey='';
@@ -392,19 +390,10 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     },
     setRepositoryCreations(entries){
       if(!roadside)return;
-      const groups=new Map<number,RepositoryCreation[]>();
-      for(const entry of entries){
-        const band=districtBands.get(isoWeekDate(entry.date).year);
-        if(band===undefined)continue;
-        const group=groups.get(band);
-        if(group)group.push(entry);else groups.set(band,[entry]);
-      }
       const old=new Set(repositoryLandmarks.flatMap(site=>site.plots));
-      repositoryLandmarks=roadside.repositorySites.flatMap(({band,firstYear,lastYear,items})=>{
-        const entries=groups.get(band);
-        if(!entries?.length)return [];
+      repositoryLandmarks=roadside.repositorySites(entries).flatMap(({year,entry,items})=>{
         const plots=projectItems(items);
-        return plots.length?[{band,years:firstYear===lastYear?String(firstYear):`${firstYear}–${lastYear}`,entries,plots}]:[];
+        return plots.length?[{year,entry,plots}]:[];
       });
       const landmarks=repositoryLandmarks.flatMap(site=>site.plots);
       prepareSamples(landmarks);
@@ -415,8 +404,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const scale=fitScale(viewport)*viewport.zoom;
       const x=viewport.width/2+viewport.panX-(minX+maxX)*scale/2;
       const y=viewport.height/2+viewport.panY-(minY+maxY)*scale/2;
-      return repositoryLandmarks.map(({band,years,entries,plots})=>({
-        band,years,entries,buildings:plots.map(plot=>({
+      return repositoryLandmarks.map(({year,entry,plots})=>({
+        year,entry,buildings:plots.map(plot=>({
           left:x+plot.left*scale,top:y+plot.top*scale,width:plot.width*scale,height:plot.height*scale,
         })),
       }));

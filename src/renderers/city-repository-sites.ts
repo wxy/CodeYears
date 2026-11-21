@@ -4,7 +4,7 @@ export function createRepositorySites(host: HTMLElement) {
   const layer = document.createElement('div');
   layer.className = 'repository-sites';
   host.append(layer);
-  const controls = new Map<number, ReturnType<typeof createSite>>();
+  const controls = new Map<string, ReturnType<typeof createSite>>();
   let openSite: ReturnType<typeof createSite> | undefined;
   let label = 'Public repository creations';
   const events = new AbortController();
@@ -19,7 +19,7 @@ export function createRepositorySites(host: HTMLElement) {
   function createSite(site: CityRepositorySite) {
     const root = document.createElement('div');
     root.className = 'repository-site';
-    root.dataset.repositoryYears = site.years;
+    root.dataset.repositoryYears = String(site.year);
     const button = document.createElement('button');
     button.type = 'button';
     const hits = site.buildings.map(() => {
@@ -32,7 +32,7 @@ export function createRepositorySites(host: HTMLElement) {
     button.setAttribute('aria-expanded', 'false');
     const card = document.createElement('section');
     card.className = 'repository-card';
-    card.id = `codeyears-repositories-${site.band}`;
+    card.id = `codeyears-repository-${site.entry.name}`;
     card.tabIndex = 0;
     card.hidden = true;
     const title = document.createElement('strong');
@@ -40,13 +40,11 @@ export function createRepositorySites(host: HTMLElement) {
     card.setAttribute('aria-labelledby', title.id);
     button.setAttribute('aria-controls', card.id);
     const list = document.createElement('ul');
-    for (const entry of site.entries) {
-      const row = document.createElement('li'), name = document.createElement('span'), time = document.createElement('time');
-      name.textContent = entry.name;
-      time.dateTime = time.textContent = entry.date;
-      row.append(name, time);
-      list.append(row);
-    }
+    const row = document.createElement('li'), name = document.createElement('span'), time = document.createElement('time');
+    name.textContent = site.entry.name;
+    time.dateTime = time.textContent = site.entry.date;
+    row.append(name, time);
+    list.append(row);
     card.append(title, list);
     root.append(button, card);
     layer.append(root);
@@ -84,15 +82,15 @@ export function createRepositorySites(host: HTMLElement) {
   return {
     setLabel(next: string) { label = next; },
     position(sites: readonly CityRepositorySite[], viewport: LandscapeViewport) {
-      const present = new Set(sites.map(site => site.band));
-      for (const [band, control] of controls) if (!present.has(band)) {
+      const present = new Set(sites.map(site => site.entry.name));
+      for (const [name, control] of controls) if (!present.has(name)) {
         if (openSite === control) close();
         control.root.remove();
-        controls.delete(band);
+        controls.delete(name);
       }
       for (const site of sites) {
-        let control = controls.get(site.band);
-        if (!control) { control = createSite(site); controls.set(site.band, control); }
+        let control = controls.get(site.entry.name);
+        if (!control) { control = createSite(site); controls.set(site.entry.name, control); }
         const { root, button, card, title, hits } = control;
         const left = Math.min(...site.buildings.map(building => building.left));
         const top = Math.min(...site.buildings.map(building => building.top));
@@ -101,8 +99,11 @@ export function createRepositorySites(host: HTMLElement) {
         root.hidden = left + width <= 0 || top + height <= 0 || left >= viewport.width || top >= viewport.height;
         if (root.hidden && openSite === control) close();
         if (root.hidden) continue;
-        const caption = `${label} · ${site.years}`;
-        if (title.textContent !== caption) { title.textContent = caption; button.setAttribute('aria-label', caption); }
+        const caption = `${label} · ${site.year}`;
+        if (title.textContent !== caption) {
+          title.textContent = caption;
+          button.setAttribute('aria-label', `${caption} · ${site.entry.name}`);
+        }
         const panelWidth = Math.min(290, viewport.width - 16);
         const panelLeft = Math.min(viewport.width - panelWidth - 8, Math.max(8, left + (width - panelWidth) / 2));
         const below = viewport.height - top - height;

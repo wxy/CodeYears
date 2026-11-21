@@ -1,5 +1,5 @@
 import { sampleCityBridge, type CityBridge } from './city-road-network';
-import { CITY_ROAD_WIDTH } from './city-layout';
+import { CITY_STREET_LANE_WIDTH } from './city-layout';
 import { projectGround } from './city-mountain-roads';
 import { cityRoadWidth, planRoadGeometry, type CityRoadRoute, type RoadPoint } from './city-roads';
 import { mergeWaterSpans, type RoadWater } from './city-waterways';
@@ -72,6 +72,7 @@ export function createHighwayBridgePainter(routes:readonly CityRoadRoute[],water
 /** 引桥由年度大道的靠河路缘向外起坡，不能覆盖岸路的任何一条车道。 */
 export function createCityBridgeApproachPainter(bridges:readonly CityBridge[]):(context:CanvasRenderingContext2D)=>void {
   const commands:{path:Path2D;color:string;width?:number}[]=[];
+  const roadHalf=cityRoadWidth({lanes:2,laneWidth:CITY_STREET_LANE_WIDTH})/2;
   for(const bridge of bridges)for(const near of [false,true]){
     const profile=catalog[`transport-bridge-${bridge.style}`];
     const from=near?bridge.to:bridge.landings.from,to=near?bridge.landings.to:bridge.from;
@@ -82,7 +83,7 @@ export function createCityBridgeApproachPainter(bridges:readonly CityBridge[]):(
     };
     // 每个桥型按实际标定的端面车幅过渡；石缘和黄线也使用同一宽度。
     const width=(t:number,curb=false)=>{
-      const blend=t*t*(3-2*t),from=(curb?CITY_ROAD_WIDTH+.24:CITY_ROAD_WIDTH)/2,to=(curb?profile.deckWidth:profile.carriageway)/2;
+      const blend=t*t*(3-2*t),from=roadHalf+(curb ? .06 : 0),to=(curb?profile.deckWidth:profile.carriageway)/2;
       return near?to+(from-to)*blend:from+(to-from)*blend;
     };
     const edge=(t:number,side:number,ground=false)=>point(t,width(t,true)*side,ground);

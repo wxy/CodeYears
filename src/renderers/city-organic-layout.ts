@@ -133,6 +133,7 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     }
   }
   const rivers: OrganicCity['rivers']=[],bridges:CityBridge[]=[];
+  const avenueHalf=cityRoadWidth({lanes:4,laneWidth:CITY_STREET_LANE_WIDTH})/2;
   for(const region of regions) for(const next of regions) {
     if(region.milestone||next.milestone||next.block!==region.block+1)continue;
     const beforeZ=original.layout.districts[region.block].z, afterZ=original.layout.districts[next.block].z;
@@ -144,16 +145,18 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
       rivers.push({left,right,z:(top+bottom)/2,top,bottom});
       // 景观带属于城内；外环沿两岸共同范围跨过它，不给每五年另围一圈。
       footprints.push({left:left-ringHalf,right:right+ringHalf,top:region.bottom-ringHalf,bottom:next.top+ringHalf});
-      road(true,beforeZ+7+CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,'avenue');
-      road(true,afterZ-CITY_YEAR_GAP/2,left-ringHalf,right+ringHalf,'avenue');
+      const northBank=beforeZ+7+CITY_YEAR_GAP/2,southBank=afterZ-CITY_YEAR_GAP/2;
+      road(true,northBank,left-ringHalf,right+ringHalf,'avenue');
+      road(true,southBank,left-ringHalf,right+ringHalf,'avenue');
       CITY_QUARTER_ROADS.forEach((axis,index)=>{const x=fixed(axis+side);if(x>left&&x<right){
-        road(false,x,top-CITY_YEAR_GAP/2,bottom+CITY_YEAR_GAP/2);
+        road(false,x,northBank,southBank);
         const style=(original.layout.districts[next.block].year+index)%2===0?'stone':'girder';
         const profile=catalog[`transport-bridge-${style}`],waterNear=top+CITY_RIVER_BANK_DEPTH,waterFar=bottom-CITY_RIVER_BANK_DEPTH;
         const from=style==='stone'?waterNear-Math.min(...profile.supportAnchors.map(p=>p.z)):(waterNear+waterFar)/2-profile.supportAnchors[0].z;
         // 桥身跨过两岸，桥跨由模型基础间距决定；引桥使用余下岸带接回路缘。
         bridges.push({id:`organic-bridge-${bridges.length}`,band:original.layout.districts[region.block].band,quarter:index+1,style,
-          from:[x,from],to:[x,from+profile.nativeDepth],landings:{from:[x,top],to:[x,bottom]}});
+          from:[x,from],to:[x,from+profile.nativeDepth],
+          landings:{from:[x,northBank+avenueHalf],to:[x,southBank-avenueHalf]}});
       }});
     } else{
       // 内收只改变外缘；相邻街区之间补入同一交通走廊，保留原年度共用道路轴线。
