@@ -13,7 +13,7 @@ import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
 import { createCityYearMarkers } from './city-year-markers';
 import { createCityOutskirtsPainter, createCitySceneryPainter, planCityRelief, CITY_OUTSKIRT_MARGIN, CITY_OUTSKIRT_IDS } from './city-outskirts';
 import { boundsOverlap, planCityMountainRoads } from './city-mountain-roads';
-import { CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
+import { CITY_GRASS_DETAIL, CITY_GROUND_ATLAS, createCityGroundPainter } from './city-ground-tiles';
 import { createCityWaterways, type CityRiver } from './city-waterways';
 import type { CityShareCredit, LandscapeView, LandscapeViewport } from './types';
 import { planCityRoadside } from './city-roadside';
@@ -106,7 +106,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const progressive=previouslyRevealedDays!==undefined;
   const wonderCount=weekly.parcels.filter(parcel=>parcel.wonder).length;
   const canvas=document.createElement('canvas'),context=canvas.getContext('2d')!;
-  const atlas=images[CITY_GROUND_ATLAS],paintGroundTiles=atlas?createCityGroundPainter(atlas.canvas,atlas.groundDetail):undefined;
+  const atlas=images[CITY_GROUND_ATLAS],paintGroundTiles=atlas?createCityGroundPainter(atlas.canvas,images[CITY_GRASS_DETAIL]):undefined;
   const terrain=images['natural-ground'],terrainPattern=terrain?context.createPattern(terrain.canvas,'repeat'):null;
   // 图案坐标与城市共用地面投影和世界原点；缩放平移时不会像屏幕壁纸滑动。
   if(terrainPattern){const size=terrain.width/terrain.canvas.width;terrainPattern.setTransform(new DOMMatrix([size*.5,size*.25,-size*.5,size*.25,0,0]))}

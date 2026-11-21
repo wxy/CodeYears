@@ -36,3 +36,18 @@ One transparent raster sprite for the terrain of CodeYears, a realistic miniatur
 连绵的山体组采用同样的等轴角度和光照，以右侧高峰、左下方低丘、山鞍和相连的林地坡脚改变轮廓。通过 ImageGen 根据文字描述生成。道路用的 `src/renderers/city-relief-outlines.json` 从运行 PNG 的透明度提取。等比缩窄到 144 像素，逐行取透明度至少 200 的最左和最右点，计算凸包并移除近共线顶点，使用 0 至 1 的归一化坐标。
 
 四格地纹由 ImageGen 根据文字描述生成。左上为浅草，右上为湿苔，左下为带碎石的草地，右下为偏干短草。四格使用相同的正俯视角、细节尺度及漫射光。扩展取样时从每格内缩 4%，解码后为各格加上渐隐边，再统一做等轴投影。
+
+## 近景细草
+
+2026-11-21 用内置 ImageGen 根据文字单独生成细草母版。两个方向各保留 1200 像素，并用剩余 54 像素从尾部到头部渐变衔接，重复时接缝两侧取自母版的相邻像素。按 sRGB 通道去掉母版均值，将偏差乘 0.62 后以 `(113, 138, 63)` 为新均值，调成与地图接近的草绿色。运行 PNG 使用 256 色索引，无抖动。与索引前的三通道图比较，平均绝对误差为 0.72／255，无尺寸插值。
+
+| 文件 | 规格 | 字节 | SHA-256 |
+| --- | --- | ---: | --- |
+| `short-grass-source.png` | 1254 × 1254，原始 PNG | 4,217,827 | `8f4ff1ada6510aa4f93a1cfa43097f662534329e43ac64f4650c62ee814c137c` |
+| `public/assets/city-runtime/outskirts-grass-detail.png` | 1200 × 1200，索引色 PNG | 1,418,596 | `58232dbe3785837543283349e93bbcf97a9e098a309cc74734d47a27c87922a3` |
+
+生成提示见下。
+
+```text
+Use case: stylized-concept. Asset type: one production ground texture for the outskirts of a detailed miniature isometric city. Generate a square, opaque, high-resolution raster at the largest native square resolution supported. View the grass directly overhead, orthographic and entirely flat. Fill every pixel edge to edge with dense, short living meadow grass. The game renderer will supply the isometric projection. Render tiny, crisp individual grass blades and subtle small clover-like foliage with irregular directions and natural spacing. Aim for genuinely fine leaf detail at 100% zoom, with hundreds of small tufts across the frame and no dominant clumps or sharp scratches. Overall color is a fresh medium warm meadow green, approximately #74874c, with modest variations of leaf green and spring olive. Soft even overhead daylight, low contrast at larger scales, no vignette, diagonal bands, mowing stripes, specular shine, black shadows, crosshatching, oversized thatch, exposed soil, rocks, flowers, paths, borders, shapes, text or objects. Make the left and right edges match, and the top and bottom edges match, so the square repeats seamlessly. Single texture with no sample sheet or gutters. Believable hand-rendered natural material for a refined realistic miniature.
+```

@@ -4,7 +4,6 @@ import { CITY_GROUND_ATLAS, prepareCityGroundAtlas } from './city-ground-tiles';
 
 export interface CitySprite {
   canvas: HTMLCanvasElement;
-  groundDetail?: HTMLCanvasElement;
   left: number; top: number; width: number; height: number;
   nativeWidth: number; nativeDepth: number;
   baselineHeight: number;
@@ -36,10 +35,12 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
         // 仅在解码地纹时调色，复用同一张图和已有纹理缓存。
         if (groundAtlas) context.filter = 'brightness(1.11) saturate(1.18) hue-rotate(12deg)';
         context.drawImage(bitmap, 0, 0);
-        if (groundAtlas) context.filter = 'none';
-        const groundDetail = groundAtlas ? prepareCityGroundAtlas(context) : undefined;
+        if (groundAtlas) {
+          context.filter = 'none';
+          prepareCityGroundAtlas(context);
+        }
         const { file: _file, ...metadata } = entry;
-        return { [id]: { canvas, ...metadata, groundDetail } };
+        return { [id]: { canvas, ...metadata } };
       } catch (error) {
         canvas.width = canvas.height = 0;
         throw error;
@@ -59,5 +60,4 @@ export async function loadCityImages(base: string, ids: readonly string[], signa
 
 export const closeCityImages = (images: CityImages) => Object.values(images).forEach(sprite => {
   sprite.canvas.width = sprite.canvas.height = 0;
-  if(sprite.groundDetail)sprite.groundDetail.width=sprite.groundDetail.height=0;
 });
