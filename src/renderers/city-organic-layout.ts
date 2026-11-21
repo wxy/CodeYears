@@ -201,8 +201,9 @@ export function planOrganicCity(days: readonly DailyContribution[], threshold: n
     const land=members.reduce((sum,region)=>sum+(region.right-region.left)*(region.bottom-region.top),0);
     const activeDays=items.filter(item=>item.parcel!.count>0&&contains(corners,item.x+item.w/2,item.z+item.d/2))
       .reduce((sum,item)=>sum+item.parcel!.indices.filter(index=>days[index].count>0).length,0);
-    // 一个季度以内的小片区、至多七个活跃日期的零星聚落统一用双向两车道。
-    const lanes=area<0?4:members.some(region=>region.segment===-1)||(land>91&&activeDays>7)?8:2;
+    // 跨河的外环保持双向八车道。其余小片区沿用两车道环路。
+    const crossesRiver=rivers.some(river=>contains(corners,(river.left+river.right)/2,river.z));
+    const lanes=area<0?4:crossesRiver||members.some(region=>region.segment===-1)||(land>91&&activeDays>7)?8:2;
     if(area<0){
       // 城内空档不是独立小聚落：两岸沿用年度主路的车幅和轴线。
       const axes=[...lines.values()].filter(line=>line.kind==='avenue').map(line=>line.at);

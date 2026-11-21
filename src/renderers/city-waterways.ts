@@ -52,7 +52,7 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
   }
   const main:Watercourse[]=[...reaches.values()].map(({left,right,z,top,bottom},band)=>{
     const half=(bottom-top)/2-CITY_RIVER_BANK_DEPTH;
-    const crossings=bridges.filter(bridge=>bridge.landings.from[1]===top&&bridge.landings.to[1]===bottom)
+    const crossings=bridges.filter(bridge=>bridge.from[1]<z&&bridge.to[1]>z)
       .map(bridge=>({x:bridge.from[0],clearance:catalog[`transport-bridge-${bridge.style}`].nativeWidth/2+.25}));
     return {from:-Infinity,to:Infinity,axis:0,sample(x){
       const distance=Math.max(0,left-x,x-right),outside=ease(distance/17);

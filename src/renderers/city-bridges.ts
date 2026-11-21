@@ -10,7 +10,7 @@ export const CITY_PAINTED_BRIDGE_ELEVATION=bridgeLevels.deckElevation;
 
 /** 用车行面两侧和中心与岸线的交点定位桥台。桥面接续原车道标线。 */
 export function createHighwayBridgePainter(routes:readonly CityRoadRoute[],water:RoadWater) {
-  const deck=new Path2D(),fascia=new Path2D(),rails=new Path2D(),posts=new Path2D();
+  const deck=new Path2D(),fascia=new Path2D(),rails=new Path2D(),posts=new Path2D(),piers=new Path2D();
   let hasCrossing=false;
   for(const route of routes){
     const {points,directions}=planRoadGeometry(route),half=cityRoadWidth(route)/2;
@@ -46,18 +46,30 @@ export function createHighwayBridgePainter(routes:readonly CityRoadRoute[],water
         for(const [i,p] of line.entries())i?shape.lineTo(...p):shape.moveTo(...p);
         if(close)shape.closePath();
       };
-      const width=half+.15,reverse=[...along].reverse();
+      const wide=route.lanes===8;
+      const width=half+(wide?.22:.15),depth=wide?.40:.28,railHeight=wide?.24:.19,reverse=[...along].reverse();
       path(deck,[...along.map(t=>section(t,-width)),...reverse.map(t=>section(t,width))],true);
       for(const side of [-width,width]){
-        path(fascia,[...along.map(t=>section(t,side,.28)),...reverse.map(t=>section(t,side))],true);
-        path(rails,along.map(t=>section(t,side,-.19)));
-        for(const t of postsAt)path(posts,[section(t,side),section(t,side,-.19)]);
+        path(fascia,[...along.map(t=>section(t,side,depth)),...reverse.map(t=>section(t,side))],true);
+        path(rails,along.map(t=>section(t,side,-railHeight)));
+        for(const t of postsAt)path(posts,[section(t,side),section(t,side,-railHeight)]);
+      }
+      if(wide){
+        const middle=(from+to)/2;
+        const front=section(middle,width)[1]>section(middle,-width)[1]?width:-width;
+        for(const fraction of span>3 ? [.34,.66] : [.5]){
+          const t=from+span*fraction,pierHalf=Math.min(.26,span*.12);
+          // 实际桥跨下的混凝土桥墩，内缩到梁底，保持水道可见。
+          path(piers,[section(t-pierHalf,front,depth-.04),section(t+pierHalf,front,depth-.04),
+            section(t+pierHalf*.8,front,.79),section(t-pierHalf*.8,front,.79)],true);
+        }
       }
     }
   }
   if(!hasCrossing)return;
   return {
     deck(context:CanvasRenderingContext2D){
+      context.fillStyle='#9b927d';context.fill(piers);
       context.fillStyle='#687b73';context.fill(fascia);
       context.fillStyle='#b8c4b8';context.fill(deck);
     },

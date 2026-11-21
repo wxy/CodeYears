@@ -5,7 +5,7 @@ import type { CityImages, CitySprite } from './city-assets';
 import { selectCityBuilding } from './city-building-style';
 import { createGroundSelector } from './city-ground-style';
 import { planCityRoadNetwork, cityTreeClearsBridges, type CityRoadNetwork } from './city-road-network';
-import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, planRoadGeometry, type CityRoadRoute } from './city-roads';
+import { cityExitWithSign, clipCityExit, createCityRoadPainter, cityRoadWidth, isCityOuterRing, planRoadGeometry, type CityRoadRoute } from './city-roads';
 import { createCityVehiclePainter } from './city-vehicles';
 import { createCityBridgePainter, createHighwayBridgePainter } from './city-bridges';
 import { createCityLayout, CITY_QUARTER_ROADS, CITY_ROAD_WIDTH as ROAD,
@@ -134,6 +134,11 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const baseExits=(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')).sort((a,b)=>direction(a)-direction(b))).map(cityExitWithSign);
   const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork.bridges,width,depth):undefined;
   const sceneryBounds={left:minX,top:minY,right:maxX,bottom:maxY};
+  // 采用环路实际的直段和车幅，与城外公路共用按岸线计算的桥台。
+  const ringCrossings=roadNetwork.roads.filter(road=>isCityOuterRing(road)&&road.lanes===8).flatMap(road=>
+    planRoadGeometry(road).straights.map(({a,b})=>({id:road.id,lanes:road.lanes,laneWidth:road.laneWidth,points:[a,b]})));
+  const ringBridges=waterways&&ringCrossings.length
+    ?createHighwayBridgePainter(ringCrossings,waterways.roadWater(sceneryBounds)):undefined;
   const relief=waterways?planCityRelief(width,depth,baseExits,sceneryBounds,waterways.clears):[];
   let highways=baseExits;
   if(waterways){
@@ -145,13 +150,16 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       relief.splice(plan.blockedRidge,1);
     }
   }
-  const roadside=waterways&&planCityRoadside(scene,highways,(x,z,margin)=>{
+  const clearsScenery=(x:number,z:number,margin:number)=>{
     const [px,py]=project(x,z);
     const bounds={left:px-margin,right:px+margin,top:py-margin/2,bottom:py+margin/2};
-    return waterways.clears(bounds.left,bounds.top,bounds.right,bounds.bottom)&&
+    return (waterways?.clears(bounds.left,bounds.top,bounds.right,bounds.bottom)??true)&&
       !relief.some(land=>boundsOverlap(bounds,land.barrier.bounds));
-  });
-  if(roadside)placed=placed.concat(projectItems(roadside.scenery)).sort(byDepth);
+  };
+  const roadside=waterways&&planCityRoadside(scene,highways,clearsScenery);
+  const roadsideItems=roadside?projectItems(roadside.scenery):[];
+  const roadsideTrees=new Set(roadsideItems.filter(tree=>tree.item.id==='broadleaf-a'));
+  placed=placed.concat(roadsideItems).sort(byDepth);
   let repositoryLandmarks:{year:number;entry:RepositoryCreation;plots:PlacedItem[]}[]=[];
   const scenery=waterways?createCitySceneryPainter(relief,images,sceneryBounds):undefined;
   const background=waterways?document.createElement('canvas'):undefined;
@@ -192,7 +200,11 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const image=(p:{sprite:CityImages[string];left:number;top:number;width:number;height:number})=>{
     groundPaint.push({after:revealAfter,paint:target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height)});
   };
-  if(groundPainter)groundPaint.push({after:0,paint:groundPainter});
+  if(groundPainter)groundPaint.push({after:0,paint:target=>{
+    ringBridges?.deck(target);
+    groundPainter(target);
+    ringBridges?.rails(target);
+  }});
   else{
     if(!progressive||CITY_OUTSKIRT_IDS.every(id=>images[id]))groundPaint.push({after:0,paint:createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images)});
     // 静态地面与路网分层；路面/车道线只在缓存构建时提交。
@@ -302,8 +314,12 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const updateBoards=()=>{
     const signs=boards.filter(board=>board!==undefined);
     if(returnBoard)signs.push(returnBoard);
+    // 先给组织牌留地，再恢复所有不遮住牌面的路树。
+    const fixed=placed.filter(item=>!roadsideTrees.has(item));
     organizationBoards=organizationFrame?planOrganizationBoards(roadNetwork,baseExits,posters,organizationFrame,
-      signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),placed):[];
+      signs.flatMap(sign=>sign.bounds?[sign.bounds]:[]),fixed,clearsScenery):[];
+    placed=fixed.concat([...roadsideTrees].filter(tree=>!organizationBoards.some(board=>tree.groundY>board.groundY&&
+      boundsOverlap(board.bounds,{left:tree.left,right:tree.left+tree.width,top:tree.top,bottom:tree.top+tree.height})))).sort(byDepth);
     boardOrder=[...signs,...organizationBoards].sort((a,b)=>a.groundY-b.groundY);
     frameKey='';
   };
@@ -398,7 +414,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const landmarks=repositoryLandmarks.flatMap(site=>site.plots);
       prepareSamples(landmarks);
       placed=placed.filter(item=>!old.has(item)).concat(landmarks).sort(byDepth);
-      clearHighlight();frameKey='';
+      clearHighlight();updateBoards();
     },
     repositorySites(viewport){
       const scale=fitScale(viewport)*viewport.zoom;

@@ -1,5 +1,5 @@
 import type { RepositoryCreation } from '../data/repository-creations';
-import { cityRoadWidth, planRoadGeometry, type CityRoadRoute } from './city-roads';
+import { cityRoadWidth, isCityOuterRing, planRoadGeometry, type CityRoadRoute } from './city-roads';
 import { CITY_RIVER_BANK_DEPTH } from './city-layout';
 import { cityTreeClearsBridges } from './city-road-network';
 import type { CityScene, CitySceneItem } from './city-view';
@@ -14,7 +14,7 @@ export function planCityRoadside(scene: CityScene, highways: readonly CityRoadRo
   const { roads, junctions, ringOuter, bridges } = scene.roadNetwork;
   const edges = [...roads, ...highways].flatMap(route => planRoadGeometry(route).straights.map(({ a, b }) => {
     const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    return { route, a, length, dx: (b[0] - a[0]) / length, dz: (b[1] - a[1]) / length, half: cityRoadWidth(route) / 2 };
+    return { route, a, b, length, dx: (b[0] - a[0]) / length, dz: (b[1] - a[1]) / length, half: cityRoadWidth(route) / 2 };
   })).filter(edge => edge.length > 0);
   const clearsRoad = (x: number, z: number, margin: number, except?: CityRoadRoute) =>
     !edges.some(({ route, a, dx, dz, length, half }) => {
@@ -34,6 +34,7 @@ export function planCityRoadside(scene: CityScene, highways: readonly CityRoadRo
         const verge = side * (half + .18);
         const x = a[0] + dx * distance - dz * verge, z = a[1] + dz * distance + dx * verge;
         if (junctions.some(junction => Math.hypot(x - junction.x, z - junction.z) < junction.radius + .48) ||
+            (isCityOuterRing(route) && !clearsTerrain(x, z, .22)) ||
             scene.rivers?.some(river => x > river.left && x < river.right &&
               z > river.top + CITY_RIVER_BANK_DEPTH && z < river.bottom - CITY_RIVER_BANK_DEPTH) ||
             !clearsRoad(x, z, .22, route) ||
@@ -61,64 +62,69 @@ export function planCityRoadside(scene: CityScene, highways: readonly CityRoadRo
   function repositorySites(entries: readonly RepositoryCreation[]) {
     const districts = scene.layout.districts;
     const selected = new Set(districts.map(district => district.year));
-    const active = entries.map(entry => ({entry, year: Number(entry.date.slice(0, 4))}))
+    const active = entries.map(entry => ({
+      entry, year: Number(entry.date.slice(0, 4)), side: Number(entry.date.slice(5, 7)) <= 6 ? -1 : 1,
+    }))
       .filter(({year}) => selected.has(year));
-    if (!active.length) return [];
-
-    const frontages = new Map<number, { edge: typeof edges[number]; start: number; end: number }[]>();
-    // 沿真实外环直段找可建路边。闭环按顺时针走，外侧始终在 (dz, -dx)。
-    for (const edge of edges) {
-      const { route, a, length, dx, dz, half } = edge;
-      if (route.id !== 'ring' && !route.id.startsWith('organic-ring-')) continue;
-      const inset = Math.min(.62, length / 4);
-      const cells = Math.ceil((length - 2 * inset) / .5);
-      const step = (length - 2 * inset) / cells;
-      for (let i = 0; i < cells; i++) {
-        const start = inset + i * step, middle = start + step / 2;
-        const roadZ = a[1] + dz * middle, setback = half + 1.15;
-        const x = a[0] + dx * middle + dz * setback, z = roadZ - dx * setback;
-        if (!clearsRoad(x, z, .98, route) || !clearsTerrain(x, z, 1.05)) continue;
-        const { year } = districts.reduce((nearest, district) =>
-          Math.abs(roadZ - district.z - 3.5) < Math.abs(roadZ - nearest.z - 3.5) ? district : nearest);
-        let spans = frontages.get(year);
-        if (!spans) { spans = []; frontages.set(year, spans); }
-        const last = spans.at(-1);
-        const end = start + step;
-        if (last?.edge === edge && Math.abs(last.end - start) < 1e-6) last.end = end;
-        else spans.push({ edge, start, end });
-      }
-    }
-    if (!frontages.size) return [];
-    const frontageYears = [...frontages.keys()];
-    const lots = new Map<number, typeof active>();
-    for (const record of active) {
-      // 没有同年连续环道时靠最近的可建路段，卡片保留真实创建年份。
-      const year = frontageYears.reduce((nearest, candidate) =>
-        Math.abs(record.year - candidate) < Math.abs(record.year - nearest) ? candidate : nearest);
-      const group = lots.get(year);
-      if (group) group.push(record); else lots.set(year, [record]);
-    }
     const homes = [[-.43, 0, .82], [.43, 0, .76], [0, .72, .64]] as const;
     const models = ['villa-hip', 'cottage-gable', 'res-mono-limestone'];
-    return [...lots].flatMap(([year, group]) => {
-      const spans = frontages.get(year)!;
-      const length = spans.reduce((total, span) => total + span.end - span.start, 0);
-      // 给每段取整预留一个位置。仓库集中的年份缩小住宅，仍保留每个仓库的独立院落。
-      const scale = Math.min(1, length / (1.9 * (group.length + spans.length)));
-      const positions = spans.flatMap(({edge, start, end}) => {
-        const count = Math.floor((end - start) / (1.9 * scale));
-        return Array.from({length: count}, (_, i) => ({edge, along: start + (end - start) * (i + .5) / count}));
-      });
-      return group.sort((a, b) => a.entry.date.localeCompare(b.entry.date) || a.entry.name.localeCompare(b.entry.name))
-        .map(({entry, year}, index) => {
-          const {edge: {a, dx, dz, half}, along} = positions[Math.floor(positions.length * (index + .5) / group.length)];
-          const items = homes.map(([side, depth, size], house) => {
-            const distance = along + side * scale, setback = half + .55 + (depth + size / 2) * scale;
-            const x = a[0] + dx * distance + dz * setback, z = a[1] + dz * distance - dx * setback;
-            return ornament(models[(index + house) % models.length], x, z, size * scale);
-          });
-          return {entry, year, items};
+    return [-1, 1].flatMap(side => {
+      const records = active.filter(record => record.side === side);
+      if (!records.length) return [];
+      // 东西外缘沿 Z 延伸。闭环顺时针，前进方向 dz 的符号就是向外的东西侧。
+      const sideEdges = edges.filter(({route, dx, dz}) => isCityOuterRing(route) && dx === 0 && side * dz > 0);
+      const frontages = new Map<number, { edge: typeof edges[number]; start: number; end: number }[]>();
+      for (const edge of sideEdges) {
+        const {a, length, dz, half} = edge;
+        const inset = Math.min(.62, length / 4);
+        const cells = Math.ceil((length - 2 * inset) / .5);
+        const step = (length - 2 * inset) / cells;
+        for (let i = 0; i < cells; i++) {
+          const start = inset + i * step, z = a[1] + dz * (start + step / 2);
+          // 取整个城区这一横截面最外侧的道路，避开内收街角和两片城区之间的边缘。
+          if (sideEdges.some(other => side * (other.a[0] - a[0]) > 0 &&
+              z >= Math.min(other.a[1], other.b[1]) && z <= Math.max(other.a[1], other.b[1]))) continue;
+          const x = a[0] + side * (half + 1.15);
+          if (!clearsRoad(x, z, .98) || !clearsTerrain(x, z, 1.05)) continue;
+          const {year} = districts.reduce((nearest, district) =>
+            Math.abs(z - district.z - 3.5) < Math.abs(z - nearest.z - 3.5) ? district : nearest);
+          let spans = frontages.get(year);
+          if (!spans) { spans = []; frontages.set(year, spans); }
+          const last = spans.at(-1), end = start + step;
+          if (last?.edge === edge && Math.abs(last.end - start) < 1e-6) last.end = end;
+          else spans.push({edge, start, end});
+        }
+      }
+      if (!frontages.size) return [];
+      const frontageYears = [...frontages.keys()];
+      const lots = new Map<number, typeof records>();
+      for (const record of records) {
+        // 同年路段不足时仍留在原有一侧，卡片保留真实创建年份。
+        const year = frontageYears.reduce((nearest, candidate) =>
+          Math.abs(record.year - candidate) < Math.abs(record.year - nearest) ? candidate : nearest);
+        const group = lots.get(year);
+        if (group) group.push(record); else lots.set(year, [record]);
+      }
+      return [...lots].flatMap(([year, group]) => {
+        const spans = frontages.get(year)!;
+        const length = spans.reduce((total, span) => total + span.end - span.start, 0);
+        // 给每段取整预留一个位置。仓库集中的年份缩小住宅，保留每个仓库的独立院落。
+        const scale = Math.min(1, length / (1.9 * (group.length + spans.length)));
+        const positions = spans.flatMap(({edge, start, end}) => {
+          const count = Math.floor((end - start) / (1.9 * scale));
+          return Array.from({length: count}, (_, i) => ({edge, along: start + (end - start) * (i + .5) / count}));
         });
+        return group.sort((a, b) => a.entry.date.localeCompare(b.entry.date) || a.entry.name.localeCompare(b.entry.name))
+          .map(({entry, year}, index) => {
+            const {edge: {a, dz, half}, along} = positions[Math.floor(positions.length * (index + .5) / group.length)];
+            const items = homes.map(([offset, depth, size], house) => {
+              const x = a[0] + side * (half + .55 + (depth + size / 2) * scale);
+              const z = a[1] + dz * (along + offset * scale);
+              return ornament(models[(index + house) % models.length], x, z, size * scale);
+            });
+            return {entry, year, items};
+          });
+      });
     });
   }
   return { scenery, repositorySites };
