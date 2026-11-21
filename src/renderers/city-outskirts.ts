@@ -9,7 +9,7 @@ import { CITY_GRASS_DETAIL, CITY_GROUND_ATLAS } from './city-ground-tiles';
 export const CITY_OUTSKIRT_MARGIN=12;
 
 export const CITY_OUTSKIRT_IDS=['outskirts-forest','outskirts-hills','natural-ground'] as const;
-export const CITY_SCENERY_IDS=[CITY_GROUND_ATLAS,CITY_GRASS_DETAIL,'outskirts-hills','outskirts-mountains','outskirts-dry-meadow','outskirts-snowy-mountains','outskirts-wooded-ridge','outskirts-mountain-massif'] as const;
+export const CITY_SCENERY_IDS=[CITY_GROUND_ATLAS,CITY_GRASS_DETAIL,'outskirts-hills','outskirts-mountains','outskirts-dry-meadow','outskirts-snowy-mountains','outskirts-wooded-ridge','outskirts-mountain-massif','transport-bridge-arterial'] as const;
 
 /** 原图经过共享低alpha清理后一次缩图；返回画布由closeCityImages统一释放。 */
 export async function loadCityOutskirtsImages(base:string,signal?:AbortSignal):Promise<CityImages> {

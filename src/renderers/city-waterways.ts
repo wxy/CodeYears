@@ -139,7 +139,8 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
         const start=Math.max(0,Math.floor((Math.min(worldA[axis],worldB[axis])-margin)/step)-first);
         const end=Math.min(strips.length,Math.ceil((Math.max(worldA[axis],worldB[axis])+margin)/step)-first);
         for(let i=start;i<end;i++){
-          const span=clipReliefSegment(a,b,strips[i]);
+          // 两个相邻截面的共边也在水里，沿着共边过河不能当作沿岸通行。
+          const span=clipReliefSegment(a,b,strips[i],-1e-7);
           if(span)spans.push(span);
         }
       }

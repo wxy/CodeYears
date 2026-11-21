@@ -135,11 +135,11 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const baseExits=(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')).sort((a,b)=>direction(a)-direction(b))).map(cityExitWithSign);
   const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork.bridges,width,depth):undefined;
   const sceneryBounds={left:minX,top:minY,right:maxX,bottom:maxY};
-  // 采用环路实际的直段和车幅，与城外公路共用按岸线计算的桥台。
-  const ringCrossings=roadNetwork.roads.filter(road=>isCityOuterRing(road)&&road.lanes===8).flatMap(road=>
-    planRoadGeometry(road).straights.map(({a,b})=>({id:road.id,lanes:road.lanes,laneWidth:road.laneWidth,points:[a,b]})));
-  const ringBridges=waterways&&ringCrossings.length
-    ?createHighwayBridgePainter(ringCrossings,waterways.roadWater(sceneryBounds)):undefined;
+  // 外环和连接城区的四车道路共用位图桥，桥头沿实际直段和车幅定位。
+  const bridgeArt=images['transport-bridge-arterial'];
+  const ringCrossings=roadNetwork.roads.filter(road=>isCityOuterRing(road)||road.id.startsWith('organic-link-'));
+  const ringBridges=waterways&&bridgeArt
+    ?createHighwayBridgePainter(ringCrossings,waterways.roadWater(sceneryBounds),bridgeArt):undefined;
   const relief=waterways?planCityRelief(width,depth,baseExits,sceneryBounds,waterways.clears):[];
   let highways=baseExits;
   if(waterways){
@@ -202,9 +202,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     groundPaint.push({after:revealAfter,paint:target=>target.drawImage(p.sprite.canvas,p.left,p.top,p.width,p.height)});
   };
   if(groundPainter)groundPaint.push({after:0,paint:target=>{
-    ringBridges?.deck(target);
     groundPainter(target);
-    ringBridges?.rails(target);
+    ringBridges?.(target);
   }});
   else{
     if(!progressive||CITY_OUTSKIRT_IDS.every(id=>images[id]))groundPaint.push({after:0,paint:createCityOutskirtsPainter(width,depth,roadNetwork.ringOuter,roadNetwork.roads.filter(road=>road.id.startsWith('exit-')),images)});
@@ -332,7 +331,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     frameKey='';
   };
   let exitPaintKey='',paintExits:(target:CanvasRenderingContext2D)=>void;
-  let highwayBridges:ReturnType<typeof createHighwayBridgePainter>;
+  let highwayBridges:ReturnType<typeof createHighwayBridgePainter>|undefined;
   let shareCredit:CityShareCredit|undefined,creditChanged=false;
   const planBoard=(road:CityRoadRoute,label:string,kind:'outbound'|'return'|'temporary-return',range:readonly [number,number]=[0,1])=>{
     const sprite=images[`direction-board-${kind==='outbound'?'z':'x'}`];
@@ -531,9 +530,11 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const left=-sx(0)/scale,top=-sy(0)/scale,right=left+viewport.width/scale,bottom=top+viewport.height/scale;
       const exitKey=[left,top,right,bottom].join(':');
       if(exitKey!==exitPaintKey){
-        const routes=highways.flatMap(route=>clipCityExit(route,left,top,right,bottom)??[]);
+        // 视口外留一段完整桥跨，避免镜头经过岸边时裁掉桥头。
+        const bridgeBounds={left:left-8,top:top-8,right:right+8,bottom:bottom+8};
+        const routes=highways.flatMap(route=>clipCityExit(route,bridgeBounds.left,bridgeBounds.top,bridgeBounds.right,bridgeBounds.bottom)??[]);
         paintExits=createCityRoadPainter([...joiningRoads,...routes],exitJunctions,'butt');
-        highwayBridges=waterways&&createHighwayBridgePainter(routes,waterways.roadWater({left,top,right,bottom}));
+        highwayBridges=waterways&&bridgeArt?createHighwayBridgePainter(routes,waterways.roadWater(bridgeBounds),bridgeArt):undefined;
         exitPaintKey=exitKey;
       }
       context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
@@ -587,9 +588,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
       const level=(1-Math.pow(1-progress,1.4))*tallest;
       {
         context.save();context.setTransform(viewport.dpr*scale,0,0,viewport.dpr*scale,sx(0)*viewport.dpr,sy(0)*viewport.dpr);
-        highwayBridges?.deck(context);
         paintExits(context);
-        highwayBridges?.rails(context);
+        highwayBridges?.(context);
         for(const board of boards)board?.paintRoad(context);
         returnBoard?.paintRoad(context);
         context.restore();
