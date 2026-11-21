@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     target: "es2022",
     rolldownOptions: {
-      input: { popup: "popup.html", options: "options.html" },
+      input: "popup.html",
       output: { chunkFileNames: "assets/shared-[hash].js" },
     },
   },

@@ -6,7 +6,7 @@
     "message": "免费的 GitHub 贡献历史可视化扩展。选择年份，用真实每日贡献生成贡献之城。"
   },
   "actionTitle": {
-    "message": "CodeYears · 贡献之城"
+    "message": "CodeYears 设置"
   },
   "viewGroup": {
     "message": "贡献展示方式"
@@ -198,10 +198,13 @@
     "message": "正在打开贡献之城…"
   },
   "popupWrongPage": {
-    "message": "请先打开 GitHub 个人主页，再点击扩展。"
+    "message": "请在 GitHub 个人主页的贡献区打开这些设置。"
   },
   "popupNotReady": {
     "message": "请在 GitHub 个人主页的贡献日历加载完成后重试。"
+  },
+  "popupAlreadyMounted": {
+    "message": "当前主页已有 CodeYears 视图。重载扩展后请刷新主页，并确保只启用一个版本。"
   },
   "popupOpened": {
     "message": "已打开城市。"
@@ -329,8 +332,26 @@
   "settingsTitle": {
     "message": "CodeYears 设置"
   },
-  "settingsHelp": {
-    "message": "偏好设置适用于当前浏览器；年份与画面操作仍在 GitHub 个人主页中使用。"
+  "calendarAppearance": {
+    "message": "贡献图样式"
+  },
+  "appearanceNative": {
+    "message": "GitHub 原图"
+  },
+  "appearanceMiniature": {
+    "message": "微缩城市"
+  },
+  "appearanceSaveError": {
+    "message": "贡献图样式保存失败，请重试。"
+  },
+  "showCity": {
+    "message": "显示城市页签"
+  },
+  "cityVisibilitySaveError": {
+    "message": "城市显示设置保存失败，请重试。"
+  },
+  "openCityShortcut": {
+    "message": "打开城市"
   },
   "settingsAbout": {
     "message": "关于 CodeYears"
@@ -341,8 +362,41 @@
   "version": {
     "message": "版本 $1"
   },
-  "privacy": {
-    "message": "隐私说明"
+  "officialWebsite": {
+    "message": "官网"
+  },
+  "aboutAuthor": {
+    "message": "关于作者"
+  },
+  "authorLink": {
+    "message": "关于作者"
+  },
+  "backToSettings": {
+    "message": "返回设置"
+  },
+  "authorDescription": {
+    "message": "独立开发者，开发原生应用和浏览器扩展。"
+  },
+  "authorWebsite": {
+    "message": "作者官网"
+  },
+  "authorExtensions": {
+    "message": "Chrome 商店中的其他扩展"
+  },
+  "authorHitable": {
+    "message": "浏览、筛选和导出表格数据。"
+  },
+  "authorNavigraph": {
+    "message": "查看并追溯浏览路径。"
+  },
+  "authorSilentfeed": {
+    "message": "能学习阅读偏好的 RSS 阅读器。"
+  },
+  "authorAiPulse": {
+    "message": "监控 AI 服务状态、用量和余额。"
+  },
+  "sourceCode": {
+    "message": "源代码"
   },
   "help": {
     "message": "使用帮助"

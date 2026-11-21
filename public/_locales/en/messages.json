@@ -6,7 +6,7 @@
     "message": "A free GitHub contribution visualizer. Turn real daily contributions into a city."
   },
   "actionTitle": {
-    "message": "CodeYears · Contribution City"
+    "message": "CodeYears settings"
   },
   "viewGroup": {
     "message": "Contribution view"
@@ -198,10 +198,13 @@
     "message": "Opening Contribution City…"
   },
   "popupWrongPage": {
-    "message": "Open a GitHub profile first, then click CodeYears."
+    "message": "Open a GitHub personal profile with a contribution calendar to change these settings."
   },
   "popupNotReady": {
     "message": "Retry after the contribution calendar has loaded on the GitHub profile."
+  },
+  "popupAlreadyMounted": {
+    "message": "CodeYears already has a view on this page. Refresh the profile after an extension reload, and keep one version enabled."
   },
   "popupOpened": {
     "message": "City opened."
@@ -329,8 +332,26 @@
   "settingsTitle": {
     "message": "CodeYears settings"
   },
-  "settingsHelp": {
-    "message": "Preferences apply in this browser. Year and view controls stay on the GitHub profile."
+  "calendarAppearance": {
+    "message": "Contribution graph style"
+  },
+  "appearanceNative": {
+    "message": "GitHub original"
+  },
+  "appearanceMiniature": {
+    "message": "Miniature city"
+  },
+  "appearanceSaveError": {
+    "message": "Could not save the graph style. Try again."
+  },
+  "showCity": {
+    "message": "Show City tab"
+  },
+  "cityVisibilitySaveError": {
+    "message": "Could not save City visibility. Try again."
+  },
+  "openCityShortcut": {
+    "message": "Open City"
   },
   "settingsAbout": {
     "message": "About CodeYears"
@@ -341,8 +362,41 @@
   "version": {
     "message": "Version $1"
   },
-  "privacy": {
-    "message": "Privacy"
+  "officialWebsite": {
+    "message": "Website"
+  },
+  "aboutAuthor": {
+    "message": "About the author"
+  },
+  "authorLink": {
+    "message": "Author"
+  },
+  "backToSettings": {
+    "message": "Back to settings"
+  },
+  "authorDescription": {
+    "message": "Independent developer of native apps and browser extensions."
+  },
+  "authorWebsite": {
+    "message": "Author website"
+  },
+  "authorExtensions": {
+    "message": "Other extensions on the Chrome Web Store"
+  },
+  "authorHitable": {
+    "message": "Explore, filter and export tabular data."
+  },
+  "authorNavigraph": {
+    "message": "See and retrace your browsing paths."
+  },
+  "authorSilentfeed": {
+    "message": "An RSS reader that learns your reading preferences."
+  },
+  "authorAiPulse": {
+    "message": "Monitor AI service status, usage and balances."
+  },
+  "sourceCode": {
+    "message": "Source code"
   },
   "help": {
     "message": "Help"
