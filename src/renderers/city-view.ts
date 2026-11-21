@@ -133,7 +133,7 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
     return b[0]<a[0]?0:b[0]>a[0]?1:b[1]<a[1]?2:3;
   };
   const baseExits=(roadNetwork.exits??roadNetwork.roads.filter(road=>road.id.startsWith('exit-')).sort((a,b)=>direction(a)-direction(b))).map(cityExitWithSign);
-  const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork.bridges,width,depth):undefined;
+  const waterways=scene.rivers?createCityWaterways(scene.rivers,roadNetwork,width,depth):undefined;
   const sceneryBounds={left:minX,top:minY,right:maxX,bottom:maxY};
   // 外环和连接城区的四车道路共用位图桥，桥头沿实际直段和车幅定位。
   const bridgeArt=images['transport-bridge-arterial'];
@@ -143,7 +143,8 @@ export function createCityView(scene:CityScene,images:CityImages,previouslyRevea
   const relief=waterways?planCityRelief(width,depth,baseExits,sceneryBounds,waterways.clears):[];
   let highways=baseExits;
   if(waterways){
-    const water=waterways.roadWater(sceneryBounds,1.75);
+    // 四车道出城路的半幅为 1.6，给桥头圆角与路缘留 0.25 格干地。
+    const water=waterways.roadWater(sceneryBounds,1.85);
     // 并行谷带留不出通路时在地形阶段打开山口，再按可见山地重算整张图的公路。
     for(;;){
       const plan=planCityMountainRoads(baseExits,relief.map(ridge=>ridge.barrier),water,sceneryBounds);
