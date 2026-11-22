@@ -13,11 +13,14 @@ const cityVisibility = document.querySelector<HTMLInputElement>('#show-city')!;
 const languageSelect = document.querySelector<HTMLSelectElement>('#language')!;
 const openButton = document.querySelector<HTMLButtonElement>('#open-city')!;
 const profileHint = document.querySelector<HTMLElement>('#profile-required')!;
+const siteAccessHint = document.querySelector<HTMLElement>('#site-access-hint')!;
+const extensionDetails = document.querySelector<HTMLButtonElement>('#extension-details')!;
 const status = document.querySelector<HTMLOutputElement>('#save-status')!;
 const productSite = document.querySelector<HTMLAnchorElement>('#product-site')!;
 const englishProductUrl = productSite.href;
 const versionLabel = document.querySelector<HTMLElement>('#version')!;
 const version = chrome.runtime.getManifest().version;
+const gitHubOrigin = 'https://github.com';
 let appearance: Appearance = 'native';
 let showCity = true;
 let preference: LanguagePreference = 'auto';
@@ -26,7 +29,7 @@ let profileTarget: chrome.scripting.InjectionTarget | undefined;
 async function findActiveProfile() {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (tab?.id === undefined || !tab.url || new URL(tab.url).origin !== 'https://github.com') return;
+    if (tab?.id === undefined || !tab.url || new URL(tab.url).origin !== gitHubOrigin) return;
     const target = { tabId: tab.id };
     const hasProfileCalendar = async () => {
       const [probe] = await chrome.scripting.executeScript({
@@ -138,13 +141,20 @@ openButton.addEventListener('click', async () => {
   }
 });
 
-void Promise.all([readAppearanceSettings(), readLanguagePreference(), findActiveProfile()]).then(([stored, savedLanguage, target]) => {
+extensionDetails.addEventListener('click', () => {
+  void chrome.tabs.create({ url: `chrome://extensions/?id=${chrome.runtime.id}` });
+});
+
+// The current tab can be accessible via activeTab even if automatic site access is off.
+const hasGitHubAccess = chrome.permissions.contains({ origins: [`${gitHubOrigin}/*`] });
+void Promise.all([readAppearanceSettings(), readLanguagePreference(), findActiveProfile(), hasGitHubAccess]).then(([stored, savedLanguage, target, allowed]) => {
   appearance = stored.appearance;
   showCity = stored.showCity;
   preference = savedLanguage;
   profileTarget = target;
   render();
   profileHint.hidden = Boolean(profileTarget);
+  siteAccessHint.hidden = allowed;
   settings.toggleAttribute('data-locked', !profileTarget);
   main.hidden = false;
   setBusy(false);

@@ -221,6 +221,12 @@
   "popupWrongPage": {
     "message": "Open a GitHub personal profile with a contribution calendar to change these settings."
   },
+  "popupSiteAccess": {
+    "message": "To show the City tab automatically on GitHub profiles, turn on automatic access to github.com in extension details."
+  },
+  "popupExtensionDetails": {
+    "message": "Open extension details"
+  },
   "popupNotReady": {
     "message": "Retry after the contribution calendar has loaded on the GitHub profile."
   },

@@ -221,6 +221,12 @@
   "popupWrongPage": {
     "message": "请在 GitHub 个人主页的贡献区打开这些设置。"
   },
+  "popupSiteAccess": {
+    "message": "要让城市页签随 GitHub 个人主页自动出现，请在扩展详情的「自动允许访问以下网站」下开启 github.com。"
+  },
+  "popupExtensionDetails": {
+    "message": "打开扩展详情"
+  },
   "popupNotReady": {
     "message": "请在 GitHub 个人主页的贡献日历加载完成后重试。"
   },
