@@ -93,9 +93,13 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
       #road-returns { position:absolute; z-index:5; width:320px; max-width:calc(100% - 16px); max-height:calc(100% - 16px); overflow:auto; padding:14px; border:1px solid var(--borderColor-default,#d1d9e0); border-radius:10px; background:var(--bgColor-default,#fff); box-shadow:0 8px 24px #0002; }
       #road-returns header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
       #road-returns h3 { margin:0; font-size:13px; } #road-returns p { margin:10px 0 0; }
-      #road-returns button { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
+      #road-returns header button { border:0; background:transparent; padding:0 4px; font-size:20px; line-height:1; }
       #road-returns ul { list-style:none; margin:6px 0; padding:0; overflow-wrap:anywhere; } #road-returns li { padding:5px 0; }
       #road-returns a { color:var(--fgColor-accent,#0969da); text-decoration:none; } #road-returns a:hover { text-decoration:underline; }
+      #road-returns .bio-examples li { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; }
+      #road-returns .bio-examples span { user-select:text; }
+      #road-returns .bio-examples button { min-inline-size:24px; min-block-size:24px; }
+      #road-returns .copy-status { margin:0; min-height:1.6em; }
       .language { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--borderColor-default,#d1d9e0); }
       .more-panel h3 { margin:0 0 8px; font-size:12px; font-weight:600; }
       .more-section + .more-section { margin-top:12px; padding-top:12px; border-top:1px solid var(--borderColor-default,#d1d9e0); }
@@ -155,6 +159,7 @@ export function mountCityPanel(host: HTMLElement, toolbarHost: HTMLElement, sett
           <section class="more-section" aria-labelledby="help-section">
             <h3 id="help-section" data-i18n="moreHelpSection"></h3>
             <details id="help"><summary data-i18n="help"></summary><p class="note" data-i18n="viewHelp"></p><p class="note" data-i18n="keyboardControls"></p><p class="note" data-i18n="dataHelp"></p></details>
+            <details id="data-privacy"><summary data-i18n="dataPrivacy"></summary><p data-i18n="privateContributionsOwner"></p><p data-i18n="privateContributionsVisitors"></p><p data-i18n="repositoryCreationsPrivacy"></p></details>
             <details id="road-help"><summary data-i18n="roadHelpHeading"></summary><p data-i18n="roadHelpExits"></p><p data-i18n="roadHelpReturn"></p><p data-i18n="roadHelpOrganizations"></p></details>
             <details id="legend-section"><summary data-i18n="legendLabel"></summary><div id="legend"></div></details>
           </section>

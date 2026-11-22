@@ -144,7 +144,19 @@
     "message": "Drag to pan and scroll to zoom. “Fit view” restores the full city. Data fills the field as it arrives; unavailable areas remain empty. Frame your view, then right-click the canvas and choose “Save image as…” or “Copy image”."
   },
   "dataHelp": {
-    "message": "Your city uses the daily counts visible to your signed-in account on your own profile. Other cities show the public calendar, including any anonymous private counts their owners share. Dates shown beside the total follow complete ISO weeks. Missing dates are left unfilled."
+    "message": "Dates shown beside the total follow complete ISO weeks. Missing dates are left unfilled."
+  },
+  "dataPrivacy": {
+    "message": "Data privacy"
+  },
+  "privateContributionsOwner": {
+    "message": "When you view your own city, CodeYears verifies your GitHub session. Your totals include private contributions that GitHub shows to you."
+  },
+  "privateContributionsVisitors": {
+    "message": "Visitors see the public contribution calendar. If the profile owner shares private contributions in GitHub’s contribution settings, visitors see the daily counts for those contributions. Repository names and activity details stay private."
+  },
+  "repositoryCreationsPrivacy": {
+    "message": "Villages outside the ring road show creation dates for public repositories only. These records stay in the current page and do not count toward the city’s contribution total."
   },
   "identityUnknown": {
     "message": "Identity unknown; cache is not used"
@@ -432,10 +444,31 @@
     "message": "This exit has no destination yet"
   },
   "emptyExitOwner": {
-    "message": "On your GitHub profile, choose Edit profile. In Bio, mention a friend by their GitHub username, such as @octocat, then save. Exits follow the order of the mentions in your bio."
+    "message": "On your GitHub profile, choose Edit profile, mention a friend in your bio, then save. Exits follow the order of your mentions."
   },
   "emptyExitVisitor": {
-    "message": "These exits come from @$1’s profile bio. To connect a friend’s city to your own, mention their GitHub username in your own bio, for example @octocat."
+    "message": "These exits come from @$1’s profile bio. To connect a friend’s city to yours, mention them in your own bio."
+  },
+  "bioExamplesHint": {
+    "message": "Copy a line to your bio. Replace @username with the person’s GitHub username and keep the @."
+  },
+  "bioExampleCollaborator": {
+    "message": "I collaborate with $1"
+  },
+  "bioExampleFriend": {
+    "message": "My friend $1"
+  },
+  "bioExampleOpenSource": {
+    "message": "I work on open source with $1"
+  },
+  "copyBioExample": {
+    "message": "Copy"
+  },
+  "bioExampleCopied": {
+    "message": "Copied"
+  },
+  "bioExampleCopyFailed": {
+    "message": "Couldn’t copy. Select the example to copy it manually."
   },
   "closeRoadInfo": {
     "message": "Close road sign details"
