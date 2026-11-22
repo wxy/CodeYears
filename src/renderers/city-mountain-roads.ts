@@ -47,13 +47,13 @@ const expand=({points}:ReliefOutline,pad:number)=>reliefOutline(points.flatMap((
 }));
 
 /** 用轮廓各条支撑边裁测试路段。沿边相切仍是可通行的路径。 */
-export function clipReliefSegment(a:RoadPoint,b:RoadPoint,{points,bounds}:ReliefOutline):[number,number]|undefined {
-  if(Math.max(a[0],b[0])<=bounds.left||Math.min(a[0],b[0])>=bounds.right||
-     Math.max(a[1],b[1])<=bounds.top||Math.min(a[1],b[1])>=bounds.bottom)return;
+export function clipReliefSegment(a:RoadPoint,b:RoadPoint,{points,bounds}:ReliefOutline,inset=1e-7):[number,number]|undefined {
+  if(Math.max(a[0],b[0])<bounds.left||Math.min(a[0],b[0])>bounds.right||
+     Math.max(a[1],b[1])<bounds.top||Math.min(a[1],b[1])>bounds.bottom)return;
   let from=0,to=1;
   for(let i=0;i<points.length;i++){
     const p=points[i],q=points[(i+1)%points.length];
-    const start=side(p,q,a)-1e-7,end=side(p,q,b)-1e-7;
+    const start=side(p,q,a)-inset,end=side(p,q,b)-inset;
     if(start<=0&&end<=0)return;
     if(start<0)from=Math.max(from,start/(start-end));
     if(end<0)to=Math.min(to,start/(start-end));
@@ -75,12 +75,20 @@ export function mountainRoadApproach(road:CityRoadRoute) {
 
 /** 在保持出城方向的范围内选可通行山口。直达轴线只有碰到地形才转弯。 */
 function routeAcrossValley(start:RoadPoint,ends:readonly RoadPoint[],obstacles:readonly ReliefOutline[],water:RoadWater,
-  forward:(p:RoadPoint)=>number,withinValley:(p:RoadPoint)=>boolean):RoadPoint[] {
+  forward:(p:RoadPoint)=>number,withinValley:(p:RoadPoint)=>boolean,heading:RoadPoint):RoadPoint[] {
   const clear=(a:RoadPoint,b:RoadPoint)=>!obstacles.some(outline=>segmentMeetsRelief(a,b,outline));
   if(clear(start,ends[0])&&!water.spans(start,ends[0]).length)return [start,ends[0]];
   const corners=[...obstacles.flatMap(outline=>outline.points),...water.bankPoints]
     .filter(p=>withinValley(p)&&!water.spans(p,p).length);
-  const nodes=[start,...ends,...corners];
+  // 从可通行的岸边寻找沿出城轴跨水的落点。转向所用的斜线留在陆地。
+  const oppositeBanks=[start,...corners].flatMap(point=>{
+    const [x,z]=unprojectGround(point),[dx,dz]=heading,reach=24;
+    const span=water.spans(point,projectGround(x+dx*reach,z+dz*reach))[0];
+    if(!span||span[0]*reach>7||span[1]*reach>reach-1.25)return [];
+    const beyond=span[1]*reach+1.25,end=projectGround(x+dx*beyond,z+dz*beyond);
+    return withinValley(end)&&!water.spans(end,end).length&&clear(point,end)?[end]:[];
+  });
+  const nodes=[start,...ends,...corners,...oppositeBanks];
   const crossings=nodes.map(()=>Infinity),costs=nodes.map(()=>Infinity),parents=nodes.map(()=>-1),closed=new Set<number>();
   const remaining=nodes.map(node=>Math.min(...ends.map(end=>distance(node,end))));
   const progress=nodes.map(forward);
@@ -111,7 +119,9 @@ function routeAcrossValley(start:RoadPoint,ends:readonly RoadPoint[],obstacles:r
       const dryCost=costs[current]+length+5*bend;
       if(fewest===crossings[i]&&dryCost>=costs[i]||!clear(here,node))return;
       // 沿岸方案排在任何过河方案之前。同样需要过河时，优先选择跨水更短的路线。
-      const spans=water.spans(here,node),nextCrossings=fewest+spans.length;
+      const spans=water.spans(here,node);
+      if(spans.length&&Math.abs(Math.abs(node[0]-here[0])-2*Math.abs(node[1]-here[1]))>1e-6)return;
+      const nextCrossings=fewest+spans.length;
       const next=dryCost+3*length*spans.reduce((sum,[from,to])=>sum+to-from,0);
       if(nextCrossings<crossings[i]||nextCrossings===crossings[i]&&next<costs[i]){
         crossings[i]=nextCrossings;costs[i]=next;parents[i]=current;
@@ -122,20 +132,15 @@ function routeAcrossValley(start:RoadPoint,ends:readonly RoadPoint[],obstacles:r
 }
 
 function roundValleyCorners(points:readonly RoadPoint[],water:RoadWater) {
-  const crossings=(line:readonly RoadPoint[])=>{
-    let count=0,continues=false;
-    for(let i=1;i<line.length;i++){
-      const spans=water.spans(line[i-1],line[i]);
-      count+=spans.length-(continues&&(spans[0]?.[0]??1)<1e-5?1:0);
-      continues=(spans.at(-1)?.[1]??0)>1-1e-5;
-    }
-    return count;
-  };
   const result=[points[0],points[1]];
   for(let i=2;i<points.length-1;i++){
     const a=points[i-1],b=points[i],c=points[i+1];
     const before=Math.hypot(a[0]-b[0],a[1]-b[1]),after=Math.hypot(c[0]-b[0],c[1]-b[1]);
-    const reach=Math.min(7,before*.32,after*.32);
+    const center=projectGround(...b);
+    const dryBefore=before*(water.spans(center,projectGround(...a))[0]?.[0]??1);
+    const dryAfter=after*(water.spans(center,projectGround(...c))[0]?.[0]??1);
+    const reach=Math.min(7,before*.32,after*.32,dryBefore-.2,dryAfter-.2);
+    if(reach<.15){result.push(b);continue}
     const incoming:RoadPoint=[b[0]+(a[0]-b[0])*reach/before,b[1]+(a[1]-b[1])*reach/before];
     const outgoing:RoadPoint=[b[0]+(c[0]-b[0])*reach/after,b[1]+(c[1]-b[1])*reach/after];
     const steps=Math.max(2,Math.ceil(reach/.35));
@@ -144,9 +149,8 @@ function roundValleyCorners(points:readonly RoadPoint[],water:RoadWater) {
       return [u*u*incoming[0]+2*u*t*b[0]+t*t*outgoing[0],u*u*incoming[1]+2*u*t*b[1]+t*t*outgoing[1]];
     });
     const projected=curve.map(p=>projectGround(...p));
-    // 圆滑桥头和河岸上的拐弯，只在圆角不会新增过河时采用。
-    const legs=[projected[0],projectGround(...b),projected.at(-1)!];
-    if(crossings(projected)>crossings(legs))result.push(b);
+    // 圆角完全落在岸上，跨水的段保持笔直。
+    if(projected.slice(1).some((p,i)=>water.spans(projected[i],p).length))result.push(b);
     else result.push(...curve);
   }
   result.push(points.at(-1)!);
@@ -179,18 +183,32 @@ export function planCityMountainRoads(exits:readonly CityRoadRoute[],relief:read
     };
     const ends=[0,-7,7,-16,16,-28,28,-42,42].filter(offset=>offset>=low&&offset<=high)
       .map(offset=>projectGround(...at(outlet,offset)));
-    const start=projectGround(...lead);
-    const route=routeAcrossValley(start,ends,mountains,water,p=>forward(unprojectGround(p)),withinValley);
+    const straightEnd=projectGround(...at(outlet));
+    let leadDistance=CITY_MOUNTAIN_ROAD_LEAD+5;
+    for(const [from,to] of water.spans(projectGround(...b),straightEnd)){
+      if(from*outlet>leadDistance+.4)break;
+      if(to*outlet>=leadDistance-.4)leadDistance=to*outlet+1.25;
+    }
+    const start=projectGround(...at(leadDistance)),initial=projectGround(...lead);
+    const blockedApproach=mountains.findIndex(outline=>segmentMeetsRelief(initial,start,outline));
+    if(blockedApproach>=0)return {blockedRidge:blockedApproach} as const;
+    const route=routeAcrossValley(start,ends,mountains,water,p=>forward(unprojectGround(p)),withinValley,[dx,dz]);
     if(!route.length){
-      const obstructing=mountains.flatMap((outline,index)=>segmentMeetsRelief(start,ends[0],outline)
+      const obstructing=mountains.flatMap((outline,index)=>segmentMeetsRelief(start,straightEnd,outline)
         ?[{index,distance:Math.min(...outline.points.map(p=>distance(start,p)))}]:[]).sort((a,b)=>a.distance-b.distance)[0];
       if(obstructing)return {blockedRidge:obstructing.index} as const;
-      route.push(start,ends[0]);
+      route.push(start,straightEnd);
     }
     const path=[a,b,...route.map(unprojectGround)],far=path.at(-1)!;
     const points=route.length===2&&Math.abs(lateral(far))<1e-6?[a,b,far]:roundValleyCorners(path,water);
     points.push(at(outlet+4,lateral(far)));
-    highways.push({...road,points});
+    // 通直的路牌段、引道和跨水段连成一段，桥体一次跨过两岸。
+    const straightened=points.filter((p,i)=>{
+      if(i===0||i===points.length-1)return true;
+      const a=points[i-1],b=points[i+1],ux=p[0]-a[0],uz=p[1]-a[1],vx=b[0]-p[0],vz=b[1]-p[1];
+      return Math.abs(ux*vz-uz*vx)>1e-6||ux*vx+uz*vz<0;
+    });
+    highways.push({...road,points:straightened});
   }
   return {highways} as const;
 }

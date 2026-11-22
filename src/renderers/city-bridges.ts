@@ -1,5 +1,6 @@
+import type { CitySprite } from './city-assets';
 import { sampleCityBridge, type CityBridge } from './city-road-network';
-import { CITY_ROAD_WIDTH } from './city-layout';
+import { CITY_STREET_LANE_WIDTH } from './city-layout';
 import { projectGround } from './city-mountain-roads';
 import { cityRoadWidth, planRoadGeometry, type CityRoadRoute, type RoadPoint } from './city-roads';
 import { mergeWaterSpans, type RoadWater } from './city-waterways';
@@ -8,70 +9,60 @@ import bridgeLevels from './city-bridge-levels.json';
 
 export const CITY_PAINTED_BRIDGE_ELEVATION=bridgeLevels.deckElevation;
 
-/** 用车行面两侧和中心与岸线的交点定位桥台。桥面接续原车道标线。 */
-export function createHighwayBridgePainter(routes:readonly CityRoadRoute[],water:RoadWater) {
-  const deck=new Path2D(),fascia=new Path2D(),rails=new Path2D(),posts=new Path2D();
-  let hasCrossing=false;
+/** 贴图两边独立沿桥台定位。跨度和车幅可变，栏柱和桥墩保持竖直。 */
+export function createHighwayBridgePainter(routes:readonly CityRoadRoute[],water:RoadWater,art:CitySprite) {
+  const {canvas}=art,{sideRows,sideBaseline,asphaltPixels,pixelsPerUnit,pier}=bridgeLevels.arterial;
+  const paints:((context:CanvasRenderingContext2D)=>void)[]=[];
   for(const route of routes){
-    const {points,directions}=planRoadGeometry(route),half=cityRoadWidth(route)/2;
-    if(!directions.length)continue;
-    let distance=0;
-    const stations=directions.map(d=>{const start=distance;distance+=d.length;return start});
-    const normals=points.map((_,i):RoadPoint=>{
-      const prev=directions[Math.max(0,i-1)],next=directions[Math.min(i,directions.length-1)];
-      const join=1+prev.x*next.x+prev.z*next.z;
-      return join>.05?[-(prev.z+next.z)/join,(prev.x+next.x)/join]:[-next.z,next.x];
-    });
-    const edge=(i:number,offset:number)=>projectGround(points[i][0]+normals[i][0]*offset,points[i][1]+normals[i][1]*offset);
-    const wet:[number,number][]=[];
-    for(const offset of [-half,0,half]){
-      const line=points.map((_,i)=>edge(i,offset));
-      for(const [i,{length}] of directions.entries())for(const [from,to] of water.spans(line[i],line[i+1])){
-        wet.push([Math.max(0,stations[i]+from*length-.42),Math.min(distance,stations[i]+to*length+.42)]);
-      }
-    }
-    for(const [from,to] of mergeWaterSpans(wet,.09)){
-      hasCrossing=true;
-      const span=to-from,stepCount=Math.ceil(span/1.05);
-      const postsAt=Array.from({length:stepCount+1},(_,i)=>from+span*i/stepCount);
-      const along=[...new Set([...postsAt,...stations.filter(t=>t>from&&t<to)])].sort((a,b)=>a-b);
-      const section=(t:number,offset:number,drop=0):RoadPoint=>{
-        let i=0;
-        while(i+1<stations.length&&stations[i+1]<=t)i++;
-        const u=(t-stations[i])/directions[i].length;
-        const a=edge(i,offset),b=edge(i+1,offset);
-        return [a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u+drop];
-      };
-      const path=(shape:Path2D,line:readonly RoadPoint[],close=false)=>{
-        for(const [i,p] of line.entries())i?shape.lineTo(...p):shape.moveTo(...p);
-        if(close)shape.closePath();
-      };
-      const width=half+.15,reverse=[...along].reverse();
-      path(deck,[...along.map(t=>section(t,-width)),...reverse.map(t=>section(t,width))],true);
-      for(const side of [-width,width]){
-        path(fascia,[...along.map(t=>section(t,side,.28)),...reverse.map(t=>section(t,side))],true);
-        path(rails,along.map(t=>section(t,side,-.19)));
-        for(const t of postsAt)path(posts,[section(t,side),section(t,side,-.19)]);
+    const half=cityRoadWidth(route)/2;
+    for(const {a,b} of planRoadGeometry(route).straights){
+      const dx=Math.abs(b[0]-a[0]),dz=Math.abs(b[1]-a[1]),length=Math.max(dx,dz);
+      if(Math.min(dx,dz)>1e-6||length<1e-6)continue;
+      const alongX=dx>dz,origin=Math.min(a[alongX?0:1],b[alongX?0:1]);
+      const at=a[alongX?1:0];
+      const point=(t:number,side:number):RoadPoint=>alongX?projectGround(origin+t,at+side):projectGround(at+side,origin+t);
+      const wet=[-half,0,half].map(offset=>water.spans(point(0,offset),point(length,offset)));
+      const spans=wet.flat().map(([from,to]):[number,number]=>[Math.max(0,from*length-.42),Math.min(length,to*length+.42)]);
+      for(const [from,to] of mergeWaterSpans(spans,.09)){
+        const [x,y]=point(from,-half),[x1,y1]=point(to,-half),[x2,y2]=point(from,half);
+        const edges=[-half,half].map(side=>[point(to,side),point(from,side)] as const);
+        const vertical=Math.min(1,.45+(to-from)*.15)/pixelsPerUnit;
+        // 小溪由两岸承托。长跨的桥墩以近侧实际水段为中心。
+        const waterUnderPier=wet[2].find(([a,b])=>a*length>=from&&b*length<=to&&(b-a)*length>2.6);
+        const support=waterUnderPier?.map(t=>t*length);
+        paints.push(context=>{
+          // 只用原画沥青的细纹调制桥面，车道数量、标线和路宽沿用同一条公路。
+          context.save();
+          context.transform(x1-x,y1-y,x2-x,y2-y,x,y);
+          context.globalCompositeOperation='soft-light';context.globalAlpha=.55;
+          context.drawImage(canvas,0,2*sideRows,asphaltPixels,asphaltPixels,0,0,1,1);
+          context.restore();
+          if(support){
+            const [a,b]=support,mid=(a+b)/2,radius=Math.min((to-from)*.14,(b-a)*.22);
+            const [px,py]=point(mid+radius,half),[qx,qy]=point(mid-radius,half);
+            context.save();
+            context.transform(qx-px,qy-py,0,1,px,py);
+            context.drawImage(canvas,asphaltPixels,2*sideRows,pier.width,pier.height,0,pier.top*vertical,1,.38);
+            context.restore();
+          }
+          for(const [side,[[startX,startY],[endX,endY]]] of edges.entries()){
+            context.save();
+            // 同一原画水平镜像即是另一地图轴。竖向分量不随桥长变斜。
+            context.transform(endX-startX,endY-startY,0,1,startX,startY);
+            context.drawImage(canvas,0,side*sideRows,canvas.width,sideRows,0,-sideBaseline*vertical,1,sideRows*vertical);
+            context.restore();
+          }
+        });
       }
     }
   }
-  if(!hasCrossing)return;
-  return {
-    deck(context:CanvasRenderingContext2D){
-      context.fillStyle='#687b73';context.fill(fascia);
-      context.fillStyle='#b8c4b8';context.fill(deck);
-    },
-    rails(context:CanvasRenderingContext2D){
-      context.setLineDash([]);context.lineJoin='round';context.lineCap='round';
-      context.strokeStyle='#73867e';context.lineWidth=.055;context.stroke(posts);
-      context.strokeStyle='#e0e2cf';context.lineWidth=.047;context.stroke(rails);
-    },
-  };
+  return (context:CanvasRenderingContext2D)=>{for(const paint of paints)paint(context)};
 }
 
 /** 引桥由年度大道的靠河路缘向外起坡，不能覆盖岸路的任何一条车道。 */
 export function createCityBridgeApproachPainter(bridges:readonly CityBridge[]):(context:CanvasRenderingContext2D)=>void {
   const commands:{path:Path2D;color:string;width?:number}[]=[];
+  const roadHalf=cityRoadWidth({lanes:2,laneWidth:CITY_STREET_LANE_WIDTH})/2;
   for(const bridge of bridges)for(const near of [false,true]){
     const profile=catalog[`transport-bridge-${bridge.style}`];
     const from=near?bridge.to:bridge.landings.from,to=near?bridge.landings.to:bridge.from;
@@ -82,7 +73,7 @@ export function createCityBridgeApproachPainter(bridges:readonly CityBridge[]):(
     };
     // 每个桥型按实际标定的端面车幅过渡；石缘和黄线也使用同一宽度。
     const width=(t:number,curb=false)=>{
-      const blend=t*t*(3-2*t),from=(curb?CITY_ROAD_WIDTH+.24:CITY_ROAD_WIDTH)/2,to=(curb?profile.deckWidth:profile.carriageway)/2;
+      const blend=t*t*(3-2*t),from=roadHalf+(curb ? .06 : 0),to=(curb?profile.deckWidth:profile.carriageway)/2;
       return near?to+(from-to)*blend:from+(to-from)*blend;
     };
     const edge=(t:number,side:number,ground=false)=>point(t,width(t,true)*side,ground);

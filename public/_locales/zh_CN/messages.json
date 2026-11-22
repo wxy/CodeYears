@@ -1,4 +1,13 @@
 {
+  "cityCompass": {
+    "message": "地图方向标。右上方为北，左下方为南。"
+  },
+  "repositoryCreations": {
+    "message": "公开仓库创建记录"
+  },
+  "repositoryReadFailed": {
+    "message": "暂时无法从 GitHub 读取公开仓库创建日期。可刷新重试。"
+  },
   "extensionName": {
     "message": "CodeYears：GitHub 贡献之城"
   },
@@ -135,7 +144,19 @@
     "message": "拖动平移，滚轮缩放。“全景”恢复完整取景。场地随已读取的数据逐步填入，未返回的区域保持待填充。调整好画面后，在图上右键选择“图片存储为…”或“复制图片”。"
   },
   "dataHelp": {
-    "message": "本人城市使用 GitHub 当前向你显示的每日贡献。其他城市使用公开日历，包含对方主动公开的匿名私有贡献数。合计旁显示按完整周选取的实际日期，缺失日期留空。"
+    "message": "合计旁显示按完整周选取的实际日期，缺失日期留空。"
+  },
+  "dataPrivacy": {
+    "message": "数据隐私"
+  },
+  "privateContributionsOwner": {
+    "message": "看自己的城市时，扩展会核对 GitHub 登录身份。城市合计包括 GitHub 向本人显示的私有贡献。"
+  },
+  "privateContributionsVisitors": {
+    "message": "访客看到的是公开贡献日历。如果主页主人在 GitHub 贡献设置中公开了私有贡献，访客也会看到这部分的每日数量，仓库名称和详情仍然保密。"
+  },
+  "repositoryCreationsPrivacy": {
+    "message": "环外村庄只展示公开仓库的创建日期，记录仅在此次页面内使用。创建仓库不计入城市贡献。"
   },
   "identityUnknown": {
     "message": "身份未识别，本次不读写缓存"
@@ -199,6 +220,12 @@
   },
   "popupWrongPage": {
     "message": "请在 GitHub 个人主页的贡献区打开这些设置。"
+  },
+  "popupSiteAccess": {
+    "message": "要让城市页签随 GitHub 个人主页自动出现，请在扩展详情的「自动允许访问以下网站」下开启 github.com。"
+  },
+  "popupExtensionDetails": {
+    "message": "打开扩展详情"
   },
   "popupNotReady": {
     "message": "请在 GitHub 个人主页的贡献日历加载完成后重试。"
@@ -423,16 +450,34 @@
     "message": "这个出口还没有目的地"
   },
   "emptyExitOwner": {
-    "message": "在你的 GitHub 主页选择「Edit profile」，在个人简介（Bio）中用 @ 提及朋友的 GitHub 用户名，例如 @octocat，然后保存。对方的城市就会按提及顺序出现在出口牌上。"
+    "message": "在你的 GitHub 主页选择「Edit profile」，在个人简介（Bio）中提及朋友并保存。对方的城市会按提及顺序出现在出口牌上。"
   },
   "emptyExitVisitor": {
-    "message": "这里的出口取自 @$1 的个人简介（Bio）。想在你自己的城市连接朋友，可以在自己的 Bio 中写上对方的 GitHub 用户名，例如 @octocat。"
+    "message": "这里的出口取自 @$1 的个人简介（Bio）。想在自己的城市连接朋友，可以在你自己的 Bio 中提及对方。"
+  },
+  "bioExamplesHint": {
+    "message": "复制一句到你的 Bio，把 @username 换成对方的 GitHub 用户名，保留 @。"
+  },
+  "bioExampleCollaborator": {
+    "message": "我的合作伙伴 $1"
+  },
+  "bioExampleFriend": {
+    "message": "我的朋友 $1"
+  },
+  "bioExampleOpenSource": {
+    "message": "我和 $1 一起做开源"
+  },
+  "copyBioExample": {
+    "message": "复制"
+  },
+  "bioExampleCopied": {
+    "message": "已复制"
+  },
+  "bioExampleCopyFailed": {
+    "message": "无法自动复制，请选中句式手动复制。"
   },
   "closeRoadInfo": {
     "message": "关闭路牌说明"
-  },
-  "cityOrganizations": {
-    "message": "组织"
   },
   "cityName": {
     "message": "@$1 的城市"

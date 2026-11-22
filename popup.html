@@ -26,7 +26,9 @@
       body { margin: 0; inline-size: 350px; }
       main { padding: 16px; }
       h1 { margin: 0 0 14px; font-size: 19px; letter-spacing: -.02em; }
-      #profile-required { margin: 0 0 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+      #profile-required, #site-access-hint { margin: 0 0 12px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+      #site-access-hint p { margin: 0 0 6px; }
+      #extension-details { min-block-size: 28px; color: var(--accent); }
       fieldset { margin: 0; min-inline-size: 0; padding: 0; border: 0; }
       #appearance, .language { margin-block-start: 14px; }
       legend { padding: 0; margin-block-end: 6px; font-weight: 600; }
@@ -69,6 +71,10 @@
       <section id="settings" aria-labelledby="settings-heading">
         <h1 id="settings-heading" data-i18n="settingsTitle"></h1>
         <p id="profile-required" data-i18n="popupWrongPage" hidden></p>
+        <div id="site-access-hint" hidden>
+          <p data-i18n="popupSiteAccess"></p>
+          <button id="extension-details" type="button" data-i18n="popupExtensionDetails"></button>
+        </div>
         <fieldset id="city-settings" disabled>
           <legend data-i18n="city"></legend>
           <div class="city-row">

@@ -1,7 +1,7 @@
 import { CITY_RIVER_BANK_DEPTH, CITY_RIVER_DEPTH } from './city-layout';
-import type { CityBridge } from './city-road-network';
+import type { CityRoadNetwork } from './city-road-network';
 import { clipReliefSegment, unprojectGround, waterOutline, type ProjectedBounds } from './city-mountain-roads';
-import type { RoadPoint } from './city-roads';
+import { cityRoadWidth, isCityOuterRing, type RoadPoint } from './city-roads';
 import catalog from './city-baked-catalog.json';
 
 export interface CityRiver {
@@ -36,6 +36,7 @@ export function mergeWaterSpans(spans:[number,number][],gap=1e-5) {
 
 const project=(x:number,z:number,drop=0):[number,number]=>[(x-z)*.5,(x+z)*.25+drop];
 const ease=(distance:number)=>{const t=Math.min(1,distance);return t*t*(3-2*t)};
+const mouthRun=14;
 function crossSection(stream:Watercourse,t:number) {
   const s=stream.sample(t),a=stream.sample(t-.16),b=stream.sample(t+.16);
   const x=b.x-a.x,z=b.z-a.z,len=Math.hypot(x,z);
@@ -44,21 +45,33 @@ function crossSection(stream:Watercourse,t:number) {
 const bankPoint=(s:ReturnType<typeof crossSection>,offset:number,drop=s.drop)=>project(s.x+s.nx*offset,s.z+s.nz*offset,drop);
 
 /** 水道固定在世界坐标中，主河和支流两端都裁到当前视野外。 */
-export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly CityBridge[],width:number,depth:number) {
+export function createCityWaterways(rivers:readonly CityRiver[],{roads,bridges}:CityRoadNetwork,width:number,depth:number) {
   const reaches=new Map<number,CityRiver>();
   for(const river of rivers){
     const earlier=reaches.get(river.z);
     reaches.set(river.z,earlier?{...river,left:Math.min(earlier.left,river.left),right:Math.max(earlier.right,river.right)}:river);
   }
+  // 河带的左右端只代表邻接街区的重合区，须越过全城外环的最外车行边缘再转弯。
+  let west=0,east=width;
+  for(const road of roads){
+    if(!isCityOuterRing(road))continue;
+    const half=cityRoadWidth(road)/2;
+    for(const [x] of road.points){
+      west=Math.min(west,x-half);
+      east=Math.max(east,x+half);
+    }
+  }
+  const westTurn=west-mouthRun,eastTurn=east+mouthRun;
   const main:Watercourse[]=[...reaches.values()].map(({left,right,z,top,bottom},band)=>{
     const half=(bottom-top)/2-CITY_RIVER_BANK_DEPTH;
-    const crossings=bridges.filter(bridge=>bridge.landings.from[1]===top&&bridge.landings.to[1]===bottom)
+    const crossings=bridges.filter(bridge=>bridge.from[1]<z&&bridge.to[1]>z)
       .map(bridge=>({x:bridge.from[0],clearance:catalog[`transport-bridge-${bridge.style}`].nativeWidth/2+.25}));
     return {from:-Infinity,to:Infinity,axis:0,sample(x){
       const distance=Math.max(0,left-x,x-right),outside=ease(distance/17);
-      // 城内桥台沿原河槽。出城后河谷在不同距离上转向，分开各景观带。
+      // 先沿桥位同一条轴穿过城区，再把弯道平滑接到外侧直段。
+      const turning=ease(Math.max(0,westTurn-x,x-eastTurn)/17);
       const side=(x<left?1:-1)*(band%2===0?1:-1),phase=band*.68+(x<left?.25:.85);
-      const bend=side*outside*(14*Math.sin(distance*.077+phase)+5.8*Math.sin(distance*.157+phase)+7*Math.sin(distance*.029-phase));
+      const bend=side*turning*(14*Math.sin(distance*.077+phase)+5.8*Math.sin(distance*.157+phase)+7*Math.sin(distance*.029-phase));
       const quiet=crossings.reduce((blend,bridge)=>Math.min(blend,Math.max(0,Math.abs(x-bridge.x)-bridge.clearance)),1);
       return {x,z:z+bend,half:half*(1-.27*outside)+.19*outside*Math.sin(x*.14)
         -.06*Math.sin(x*1.7+z)*quiet,drop:CITY_RIVER_DEPTH*.5*(1-ease(distance/5))};
@@ -69,9 +82,10 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
   const wilderness:Watercourse={from:-Infinity,to:Infinity,axis:0,sample:x=>({
     x,z:wildernessZ+10.8*Math.sin(x*.080-.65)+3.4*Math.sin(x*.179+1.38),half:.92+.21*Math.sin(x*.16),drop:0,
   })};
-  const branchSource=main[0]??wilderness,first=reaches.values().next().value;
+  const branchSource=main[0]??wilderness;
+  const [westFork,eastFork]=main.length?[westTurn-2,eastTurn+2]:[-13,width+13];
   const tributaries=([-1,1] as const).map(direction=>{
-    const fork=branchSource.sample(direction<0?(first?.left??0)-13:(first?.right??width)+13);
+    const fork=branchSource.sample(direction<0?westFork:eastFork);
     const lakeAt=direction<0?18:22,lakeWidth=direction<0?3.1:3.75;
     // 两条侧谷改用南北方向推进，同主河汇合后分别转向各自的谷底。
     const stream:Watercourse={from:direction<0?-Infinity:fork.z,to:direction<0?fork.z:Infinity,axis:1,sample(z){
@@ -89,7 +103,28 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
     return {x,z:wilderness.sample(x).z+7.7-2.8*t*t+.34*Math.sin(x*.73),
       half:Math.sqrt(Math.max(0,1-t*t))*(1.8+.32*Math.sin(x*.86)),drop:0};
   }};
-  const streams=[wilderness,oxbow,...tributaries,...main];
+  // 小支流的汇口和湖心都在外环之外。短年份没有城内河带时汇入原有的郊外溪流。
+  const valleyStreams=[
+    {source:branchSource,forkX:westFork-4,side:-1,direction:1,length:17,lakeRadius:3.8},
+    {source:main.at(-1)??wilderness,forkX:eastFork+4,side:1,direction:-1,length:20,lakeRadius:4.4},
+    {source:main[Math.floor(main.length/2)]??wilderness,forkX:eastFork+18,side:1,direction:1,length:16,lakeRadius:3.4},
+  ].flatMap(({source,forkX,side,direction,length,lakeRadius},index):Watercourse[]=>{
+    const fork=source.sample(forkX),endZ=fork.z+direction*length;
+    const along=(distance:number)=>forkX+side*(.47*distance+1.55*Math.sin(distance*.23)+1.15*Math.sin(distance*.10));
+    const lakeX=along(length);
+    return [
+      {from:Math.min(fork.z,endZ),to:Math.max(fork.z,endZ),axis:1,sample(z){
+        const distance=(z-fork.z)*direction;
+        return {x:along(distance),z,half:.32+.065*Math.sin(distance*.57+index),drop:0};
+      }},
+      {from:lakeX-lakeRadius,to:lakeX+lakeRadius,axis:0,sample(x){
+        const t=(x-lakeX)/lakeRadius;
+        const width=Math.sqrt(Math.max(0,1-t*t))*(lakeRadius*.52+.29*Math.sin(t*4.8+index));
+        return {x,z:endZ+.58*t+.66*t*t+.28*Math.sin(t*3.6),half:width,drop:0};
+      }},
+    ];
+  });
+  const streams=[wilderness,oxbow,...tributaries,...valleyStreams,...main];
   // 保留真实河湾、支流和湖泊的岸线。按河道轴索引截面，长路也只检查它经过的水段。
   const roadWater=({left,top,right,bottom}:ProjectedBounds,clearance=0):RoadWater=>{
     const pad=clearance?24:8,step=.8;
@@ -118,7 +153,8 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
         const start=Math.max(0,Math.floor((Math.min(worldA[axis],worldB[axis])-margin)/step)-first);
         const end=Math.min(strips.length,Math.ceil((Math.max(worldA[axis],worldB[axis])+margin)/step)-first);
         for(let i=start;i<end;i++){
-          const span=clipReliefSegment(a,b,strips[i]);
+          // 两个相邻截面的共边也在水里，沿着共边过河不能当作沿岸通行。
+          const span=clipReliefSegment(a,b,strips[i],-1e-7);
           if(span)spans.push(span);
         }
       }
@@ -166,7 +202,7 @@ export function createCityWaterways(rivers:readonly CityRiver[],bridges:readonly
         ripples.quadraticCurveTo(...bankPoint(section(t+span*.45),offset-.045),...bankPoint(section(t+span),offset+.012));
       }
     }
-    context.fillStyle='#869b7e';context.fill(shore);
+    context.fillStyle='#83a278';context.fill(shore);
     context.fillStyle='#729d98';context.fill(water);
     context.fillStyle='#64969a';context.fill(deep);
     context.strokeStyle='#d1e3dc38';context.lineWidth=.015;context.stroke(ripples);

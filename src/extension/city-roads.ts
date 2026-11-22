@@ -20,11 +20,23 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
   host.innerHTML = `<section id="road-info-dialog" role="dialog" aria-labelledby="road-info-title" aria-describedby="road-info-note">
     <header><h3 id="road-info-title"></h3><button type="button" data-i18n-label="closeRoadInfo">×</button></header>
     <ul></ul><p id="road-info-note"></p>
+    <div class="bio-examples" hidden>
+      <p class="note" data-i18n="bioExamplesHint"></p>
+      <ul></ul><p class="note copy-status" role="status"></p>
+    </div>
   </section>`;
   const closeButton = host.querySelector('button')!, list = host.querySelector('ul')!;
   const heading = host.querySelector('h3')!, note = host.querySelector('p')!;
+  const examples = host.querySelector<HTMLElement>('.bio-examples')!;
+  const exampleList = examples.querySelector('ul')!, copyStatus = examples.querySelector<HTMLElement>('.copy-status')!;
+  let copyTimeout: number | undefined;
+  function clearCopyStatus() {
+    window.clearTimeout(copyTimeout);
+    copyStatus.textContent = '';
+  }
   function close(restoreFocus = false) {
     host.hidden = true;
+    clearCopyStatus();
     if (restoreFocus) opener?.focus({ preventScroll: true });
     opener = undefined;
   }
@@ -66,8 +78,23 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
       return row;
     }));
     const language = options.language();
+    examples.hidden = true;
     showPanel(anchor, text(language, 'returnRoadHeading'), text(language, 'returnRoadLocal'));
   }
+  async function copyBioExample(value: string) {
+    clearCopyStatus();
+    try {
+      await navigator.clipboard.writeText(value);
+      copyStatus.textContent = text(options.language(), 'bioExampleCopied');
+    } catch {
+      copyStatus.textContent = text(options.language(), 'bioExampleCopyFailed');
+    }
+    copyTimeout = window.setTimeout(clearCopyStatus, 3000);
+  }
+  exampleList.addEventListener('command', event => {
+    if ((event as CommandEvent).command === '--copy') void copyBioExample((event.target as HTMLElement).textContent!);
+  }, { capture: true, signal });
+
   function emptyExit(slot: number): CityRoadControl {
     const sign = document.createElement('button');
     sign.type = 'button';
@@ -80,6 +107,23 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
       const context = options.currentContext(), language = options.language();
       const hint = isProfileOwner(context) ? 'emptyExitOwner' : 'emptyExitVisitor';
       list.replaceChildren();
+      const phrases = ['bioExampleCollaborator', 'bioExampleFriend', 'bioExampleOpenSource'] as const;
+      exampleList.replaceChildren(...phrases.map((phrase, index) => {
+        const row = document.createElement('li');
+        const example = document.createElement('span');
+        example.id = `road-bio-example-${index}`;
+        example.textContent = text(language, phrase, ['@username']);
+        const copy = document.createElement('button');
+        copy.type = 'button';
+        copy.textContent = text(language, 'copyBioExample');
+        copy.setAttribute('aria-describedby', example.id);
+        copy.setAttribute('command', '--copy');
+        copy.setAttribute('commandfor', example.id);
+        if (!('CommandEvent' in window)) copy.onclick = () => { void copyBioExample(example.textContent!); };
+        row.append(example, copy);
+        return row;
+      }));
+      examples.hidden = false;
       showPanel(sign, text(language, 'emptyExitHeading'), text(language, hint, [context.profileLogin]));
     };
     return { sign, label: '', returning: false };
@@ -149,5 +193,5 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
       exitCount = count;
       refresh(mentions);
     },
-    dispose() { lifetime.abort(); host.replaceChildren(); } };
+    dispose() { clearCopyStatus(); lifetime.abort(); host.replaceChildren(); } };
 }

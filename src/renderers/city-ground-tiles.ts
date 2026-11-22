@@ -1,6 +1,8 @@
 import type { ProjectedBounds } from './city-mountain-roads';
+import type { CitySprite } from './city-assets';
 
 export const CITY_GROUND_ATLAS='outskirts-ground-tiles';
+export const CITY_GRASS_DETAIL='outskirts-grass-detail';
 
 const tileSize=18;
 const overlap=9;
@@ -23,41 +25,7 @@ function feather(t:number,side:number,phase:number) {
   return 1-u*u*(3-2*u);
 }
 
-/** 提取浅草中的细纹。中性灰让叠层沿用下面四种地块的颜色。 */
-function createGroundDetail(context:CanvasRenderingContext2D,cell:ReturnType<typeof atlasCells>[number]) {
-  const size=Math.floor(Math.min(cell.width,cell.height)*tileSize/drawSize)-8,radius=3;
-  const image=context.getImageData(cell.x+4,cell.y+4,size,size),data=image.data;
-  const light=new Uint8Array(size*size);
-  for(let i=0;i<light.length;i++){
-    const byte=i*4;
-    light[i]=(54*data[byte]+183*data[byte+1]+19*data[byte+2])>>8;
-  }
-  for(let y=0;y<size;y++){
-    const row=y*size,above=Math.max(0,y-radius)*size,below=Math.min(size-1,y+radius)*size;
-    for(let x=0;x<size;x++){
-      const left=Math.max(0,x-radius),right=Math.min(size-1,x+radius);
-      const average=(light[row+left]+light[row+right]+light[above+x]+light[below+x]+
-        (light[above+left]+light[above+right]+light[below+left]+light[below+right])*.5)/6;
-      const detail=128+(light[row+x]-average)*2.2,byte=(row+x)*4;
-      data[byte]=data[byte+1]=data[byte+2]=detail;
-      data[byte+3]=255;
-    }
-  }
-  const sample=document.createElement('canvas'),texture=document.createElement('canvas');
-  sample.width=sample.height=size;
-  sample.getContext('2d')!.putImageData(image,0,0);
-  texture.width=texture.height=size*2;
-  const paint=texture.getContext('2d')!;
-  // 镜像边缘在重复时连续。细纹和大地块分别使用固定的地图尺度。
-  for(let y=0;y<2;y++)for(let x=0;x<2;x++){
-    paint.setTransform(x?-1:1,0,0,y?-1:1,x*texture.width,y*texture.height);
-    paint.drawImage(sample,0,0);
-  }
-  sample.width=sample.height=0;
-  return texture;
-}
-
-/** 解码时制作地块的透明边与共享细纹，由城市素材生命周期释放。 */
+/** 解码时为四格远景地纹制作透明叠边。 */
 export function prepareCityGroundAtlas(context:CanvasRenderingContext2D) {
   const mask=document.createElement('canvas'),size=96;
   mask.width=mask.height=size;
@@ -78,7 +46,6 @@ export function prepareCityGroundAtlas(context:CanvasRenderingContext2D) {
     context.restore();
   }
   mask.width=mask.height=0;
-  return createGroundDetail(context,cells[0]);
 }
 
 function tileVariant(x:number,z:number) {
@@ -87,7 +54,7 @@ function tileVariant(x:number,z:number) {
   return (hash^(hash>>>16))&3;
 }
 
-export function createCityGroundPainter(atlas:HTMLCanvasElement,detail?:HTMLCanvasElement) {
+export function createCityGroundPainter(atlas:HTMLCanvasElement,detail:CitySprite) {
   const cells=atlasCells(atlas);
   let detailPattern:CanvasPattern;
   return (context:CanvasRenderingContext2D,{left,top,right,bottom}:ProjectedBounds,scale:number)=>{
@@ -105,15 +72,17 @@ export function createCityGroundPainter(atlas:HTMLCanvasElement,detail?:HTMLCanv
       context.drawImage(atlas,image.x,image.y,image.width,image.height,x,z,drawSize,drawSize);
     }
     context.restore();
-    if(!detail||scale<=36)return;
+    if(scale<=36)return;
     if(!detailPattern){
-      detailPattern=context.createPattern(detail,'repeat')!;
-      const ratio=6.75/detail.width;
+      detailPattern=context.createPattern(detail.canvas,'repeat')!;
+      // 1200px 覆盖 6 个世界格，近景仍能用接近原生的像素密度绘制。
+      const ratio=detail.width/detail.canvas.width;
       detailPattern.setTransform(new DOMMatrix([ratio*.5,ratio*.25,-ratio*.5,ratio*.25,0,0]));
     }
     context.save();
-    context.globalAlpha=.94*Math.min(1,(scale-36)/78);
-    context.globalCompositeOperation='soft-light';
+    // 放大时用原生细草覆盖粗纹，留少量底图颜色延续地块差异。
+    const blend=Math.min(1,(scale-36)/84);
+    context.globalAlpha=.9*blend*blend*(3-2*blend);
     context.fillStyle=detailPattern;
     context.fillRect(left,top,right-left,bottom-top);
     context.restore();

@@ -3,6 +3,7 @@ export interface CityRoadRoute {id:string;points:readonly RoadPoint[];lanes:2|4|
 export interface CityRoadJunction {x:number;z:number;radius:number;roundabout?:boolean;signalized?:boolean}
 export const CITY_LANE_WIDTH=.4;
 export const cityRoadWidth=(route:Pick<CityRoadRoute,'lanes'|'laneWidth'>)=>route.lanes*(route.laneWidth??CITY_LANE_WIDTH);
+export const isCityOuterRing=(route:CityRoadRoute)=>route.id==='ring'||route.id.startsWith('organic-ring-');
 
 /** 牌面和目的地文字只占出城公路靠近城市的一段。 */
 export function cityExitWithSign(route:CityRoadRoute):CityRoadRoute {

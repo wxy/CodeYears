@@ -2,10 +2,12 @@ import type { WeeklyCity } from './city-parcels';
 import bridgeLevels from './city-bridge-levels.json';
 
 export const CITY_STREET_LANE_WIDTH = .6;
-export const CITY_ROAD_WIDTH = CITY_STREET_LANE_WIDTH * 2;
-export const CITY_YEAR_GAP = CITY_STREET_LANE_WIDTH * 4;
+// 年度和季度地块的间隔包含路面和两侧种植带。
+export const CITY_STREET_VERGE = .64;
+export const CITY_ROAD_WIDTH = CITY_STREET_LANE_WIDTH * 2 + 2 * CITY_STREET_VERGE;
+export const CITY_YEAR_GAP = CITY_STREET_LANE_WIDTH * 4 + 2 * CITY_STREET_VERGE;
 // 河带含两岸大道的半幅、岸带和4格水面；桥身长度按基础落点确定。
-export const CITY_PARK_DEPTH = 9.6;
+export const CITY_PARK_DEPTH = 9.6 + 2 * CITY_STREET_VERGE;
 export const CITY_BAND_YEARS = 5;
 export const CITY_RIVER_DEPTH = bridgeLevels.riverDepth;
 export const CITY_RIVER_BANK_DEPTH = 1.6;

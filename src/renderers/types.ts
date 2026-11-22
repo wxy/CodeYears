@@ -1,6 +1,7 @@
 import type { CityVehicle } from './city-vehicles';
 import type { CitySprite } from './city-assets';
 import type { OrganizationPoster } from './city-organization-boards';
+import type { RepositoryCreation } from '../data/repository-creations';
 
 export type ViewMode = "city" | "terrain";
 export type Theme = "signature" | "natural";
@@ -19,6 +20,11 @@ export interface LandscapeViewport {
   zoomBase?: number;
 }
 export interface CityRoadLabel { label:string; returning:boolean }
+export interface CityRepositorySite {
+  year: number;
+  entry: RepositoryCreation;
+  buildings: readonly { left: number; top: number; width: number; height: number }[];
+}
 export interface CityShareCredit {
   login:string; icon?:HTMLImageElement; foreground:HTMLCanvasElement; visible:boolean;
   x:number; y:number; width:number; height:number;
@@ -31,6 +37,8 @@ export interface LandscapeView {
   setRoadLabels?(labels:readonly CityRoadLabel[],returnLabel?:string):void;
   setOrganizationPosters?(posters:readonly OrganizationPoster[],frame?:CitySprite):void;
   organizationFaces?(viewport:LandscapeViewport):readonly {left:number;top:number;size:number;slope:number}[];
+  setRepositoryCreations?(entries: readonly RepositoryCreation[]): void;
+  repositorySites?(viewport: LandscapeViewport): CityRepositorySite[];
   /** 出城路的屏幕位置，与画布共用投影和取景。 */
   roadExits?(viewport: LandscapeViewport): readonly { board:[number,number][]; polygon: [number, number][] }[];
   returnPost?(viewport: LandscapeViewport): { board:[number,number][]; polygon:[number,number][] } | undefined;

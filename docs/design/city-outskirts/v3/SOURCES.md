@@ -36,3 +36,31 @@ One transparent raster sprite for the terrain of CodeYears, a realistic miniatur
 连绵的山体组采用同样的等轴角度和光照，以右侧高峰、左下方低丘、山鞍和相连的林地坡脚改变轮廓。通过 ImageGen 根据文字描述生成。道路用的 `src/renderers/city-relief-outlines.json` 从运行 PNG 的透明度提取。等比缩窄到 144 像素，逐行取透明度至少 200 的最左和最右点，计算凸包并移除近共线顶点，使用 0 至 1 的归一化坐标。
 
 四格地纹由 ImageGen 根据文字描述生成。左上为浅草，右上为湿苔，左下为带碎石的草地，右下为偏干短草。四格使用相同的正俯视角、细节尺度及漫射光。扩展取样时从每格内缩 4%，解码后为各格加上渐隐边，再统一做等轴投影。
+
+## 近景细草
+
+2026-11-21 用内置 ImageGen 根据文字单独生成细草母版。两个方向各保留 1200 像素，并用剩余 54 像素从尾部到头部渐变衔接，重复时接缝两侧取自母版的相邻像素。按 sRGB 通道去掉母版均值，将偏差乘 0.62 后以 `(113, 138, 63)` 为新均值，调成与地图接近的草绿色。运行 PNG 使用 256 色索引，无抖动。与索引前的三通道图比较，平均绝对误差为 0.72／255，无尺寸插值。
+
+| 文件 | 规格 | 字节 | SHA-256 |
+| --- | --- | ---: | --- |
+| `short-grass-source.png` | 1254 × 1254，原始 PNG | 4,217,827 | `8f4ff1ada6510aa4f93a1cfa43097f662534329e43ac64f4650c62ee814c137c` |
+| `short-grass-runtime.png` | 1200 × 1200，旧版运行 PNG，保留作对照 | 1,418,596 | `58232dbe3785837543283349e93bbcf97a9e098a309cc74734d47a27c87922a3` |
+
+生成提示见下。
+
+```text
+Use case: stylized-concept. Asset type: one production ground texture for the outskirts of a detailed miniature isometric city. Generate a square, opaque, high-resolution raster at the largest native square resolution supported. View the grass directly overhead, orthographic and entirely flat. Fill every pixel edge to edge with dense, short living meadow grass. The game renderer will supply the isometric projection. Render tiny, crisp individual grass blades and subtle small clover-like foliage with irregular directions and natural spacing. Aim for genuinely fine leaf detail at 100% zoom, with hundreds of small tufts across the frame and no dominant clumps or sharp scratches. Overall color is a fresh medium warm meadow green, approximately #74874c, with modest variations of leaf green and spring olive. Soft even overhead daylight, low contrast at larger scales, no vignette, diagonal bands, mowing stripes, specular shine, black shadows, crosshatching, oversized thatch, exposed soil, rocks, flowers, paths, borders, shapes, text or objects. Make the left and right edges match, and the top and bottom edges match, so the square repeats seamlessly. Single texture with no sample sheet or gutters. Believable hand-rendered natural material for a refined realistic miniature.
+```
+
+## 单向短草
+
+2026-11-21 用内置 ImageGen 根据文字生成球场式短草。草叶在母版中大致沿横向排列，经原有等轴投影后顺着地图的斜向铺开。沿用 1200 像素的取样范围与 54 像素叠边，以 `(113, 138, 63)` 为调色中心，通道对比系数取 0.49。运行图为 256 色索引 PNG，无抖动，量化平均绝对误差为 0.31／255。
+
+| 文件 | 规格 | 字节 | SHA-256 |
+| --- | --- | ---: | --- |
+| `fairway-grass-source.png` | 1254 × 1254，原始 PNG | 3,553,813 | `41b8e023a074e0d4151c770e188f85099e2b5b5fc2413909b943777a84bd9119` |
+| `public/assets/city-runtime/outskirts-grass-fairway.png` | 1200 × 1200，索引色 PNG | 1,395,988 | `6b2ad3cea44ebf4e5a01b5b16a80737b2f3925c9545ceb78ec94814006fdb116` |
+
+```text
+Use case: stylized-concept. Asset type: a single seamless square raster texture for the ground of a detailed miniature isometric map. Render closely mown golf green turf in an exactly overhead orthographic view, flat and edge to edge. The grass has a single gentle grain running left to right across the entire sheet, like short turf laid in one direction by a roller. Use thousands of very short, fine blades, almost all leaning to the right, with subtle variations in length and random spacing. At a glance it should read as a calm, continuous lawn with a faint directional sheen. At full resolution tiny blades are visible. Soft diffuse daylight and harmonious medium spring greens, near #748950, with restrained local contrast and a quiet matte finish. The single grain must be visible without broad streaks or high-contrast mowing stripes. No alternating light and dark bands, ridges, lines of planting, long curled strands, crosshatching, bunches, clover, exposed dirt, pebbles, flowers, shadows from objects, paths, holes, boundaries, lettering or watermark. No camera tilt, vanishing point, patch silhouette, grid, or gutters. Make the left and right edges match and the top and bottom edges match for repeating use. Produce one full-bleed image at the highest available native square resolution.
+```
