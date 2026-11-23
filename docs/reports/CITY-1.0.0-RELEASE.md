@@ -26,3 +26,9 @@
 - `npm run build`、`python3 scripts/package-city.py --output-dir <候选目录>` 和 `python3 scripts/verify-city-package.py <候选目录>/codeyears-1.0.0-city.zip` 通过。139 个文件，35,715,564 字节，SHA-256 为 `00bf9ac5c663e5b87165babe398db8322809112972d29c6f59a347a53c53008d`。与初次候选逐文件比对，差异为四张注册 PNG、地图署名中的同一 128 px 内嵌 PNG、素材来源说明。
 - 独立 Chrome 解压加载新安装包。扩展页逐张解码清单中的图标，扩展管理页正常显示 48 px 图标。本次测了 Chrome API 和管理页，工具栏小尺寸以独立导出的 PNG 对比图核对。
 - 新商店素材 ZIP 的 SHA-256 为 `0eef45f469811e6d0551084689b9f858eb156ad573bf2e6167ea1569a826d8b9`。已核验 ZIP CRC、15 项图像哈希和上传用 128 px 图标。三组截图和两张宣传图沿用已核对的 0.1.4 素材。
+
+## 128 px 商店图标复核
+
+- 对照旧版与新导出的 128 px 原尺寸图标及 48 px 缩略预览。楼群及底座占宽约从 65 px 增至 81 px，窗线从约 0.54 px 调至 1 px，并收短阴影。明暗背景下复核轮廓。Pillow 核对 RGBA 尺寸和 16 px 透明留白。
+- `npm run build`、`python3 scripts/package-city.py --output-dir <候选目录>` 和 `python3 scripts/verify-city-package.py <候选目录>/codeyears-1.0.0-city.zip` 通过。与前一候选逐文件比对，差异为 128 px PNG 和地图署名中内嵌的相同 PNG。
+- 本轮安装包 SHA-256 为 `862db9cf9bbf275265771683a33d9d41baca14e67876fd5310902fdbe9becceb`。商店素材包 SHA-256 为 `ee1a64d23da291b6ed54f4c0f3dbf4a40a5cb8d3dd1634d851a4d2dcba2c9c65`。上传用 PNG、商店素材包、安装包和本地 `dist/` 的 128 px PNG 字节一致。
