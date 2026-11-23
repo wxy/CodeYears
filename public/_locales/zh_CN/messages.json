@@ -458,15 +458,6 @@
   "bioExamplesHint": {
     "message": "复制一句到你的 Bio，把 @username 换成对方的 GitHub 用户名，保留 @。"
   },
-  "bioExampleCollaborator": {
-    "message": "我的合作伙伴 $1"
-  },
-  "bioExampleFriend": {
-    "message": "我的朋友 $1"
-  },
-  "bioExampleOpenSource": {
-    "message": "我和 $1 一起做开源"
-  },
   "copyBioExample": {
     "message": "复制"
   },
