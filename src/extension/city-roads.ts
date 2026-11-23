@@ -107,12 +107,17 @@ export function createCityRoads(host: HTMLElement, options: RoadOptions) {
       const context = options.currentContext(), language = options.language();
       const hint = isProfileOwner(context) ? 'emptyExitOwner' : 'emptyExitVisitor';
       list.replaceChildren();
-      const phrases = ['bioExampleRecommendation', 'bioExampleOpenSource', 'bioExampleThanks'] as const;
+      const phrases = [
+        'I also like what @username is building',
+        'I’ve worked on open source with @username',
+        'I’ve had help from @username with my projects',
+      ];
       exampleList.replaceChildren(...phrases.map((phrase, index) => {
         const row = document.createElement('li');
         const example = document.createElement('span');
         example.id = `road-bio-example-${index}`;
-        example.textContent = text(language, phrase, ['@username']);
+        example.lang = 'en';
+        example.textContent = phrase;
         const copy = document.createElement('button');
         copy.type = 'button';
         copy.textContent = text(language, 'copyBioExample');

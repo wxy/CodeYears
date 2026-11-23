@@ -458,15 +458,6 @@
   "bioExamplesHint": {
     "message": "Copy a line to your bio. Replace @username with the person’s GitHub username and keep the @."
   },
-  "bioExampleRecommendation": {
-    "message": "I also like what $1 is building"
-  },
-  "bioExampleOpenSource": {
-    "message": "I’ve worked on open source with $1"
-  },
-  "bioExampleThanks": {
-    "message": "I’ve had help from $1 with my projects"
-  },
   "copyBioExample": {
     "message": "Copy"
   },
