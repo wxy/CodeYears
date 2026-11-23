@@ -4,7 +4,7 @@
 
 - [商店文案](store-listing.md)提供英文和简体中文的完整文本，更新两种语言的详细说明。名称和简短说明沿用现有条目。
 - [审核说明](review-notes.md)包含未登录即可操作的验证步骤，以及公开仓库信息和私有贡献的可见范围。
-- 官网、支持页、图标和宣传图块沿用现有配置。隐私政策字段使用已涵盖公开仓库创建记录的[仓库隐私说明](https://github.com/wxy/CodeYears/blob/main/PRIVACY.md)。
+- 官网、支持页和宣传图块沿用现有配置。店铺图标使用素材包里的新版 128 × 128 PNG。隐私政策字段使用已涵盖公开仓库创建记录的[仓库隐私说明](https://github.com/wxy/CodeYears/blob/main/PRIVACY.md)。
 
 ## 截图
 
