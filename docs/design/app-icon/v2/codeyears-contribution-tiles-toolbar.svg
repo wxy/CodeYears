@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 160 160" role="img" aria-labelledby="t">
+  <title id="t">CodeYears · Contribution tiles</title>
+  <defs>
+    <linearGradient id="ground" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#f7faee" />
+      <stop offset="1" stop-color="#d9e8d2" />
+    </linearGradient>
+    <linearGradient id="deck" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#e5edcc" />
+      <stop offset="1" stop-color="#a6c49b" />
+    </linearGradient>
+    <linearGradient id="deck-front" x1="0" y1="0" x2="100%" y2="30%">
+      <stop stop-color="#a6c49b" />
+      <stop offset="1" stop-color="#8dab78" />
+    </linearGradient>
+    <linearGradient id="deck-side" x1="0" y1="0" x2="100%" y2="30%">
+      <stop stop-color="#8dab78" />
+      <stop offset="1" stop-color="#5b7b58" />
+    </linearGradient>
+    <filter id="ambient" x="-30%" y="-80%" width="160%" height="260%">
+      <feGaussianBlur stdDeviation="3.15" />
+    </filter>
+    <filter id="contact" x="-30%" y="-60%" width="160%" height="230%">
+      <feGaussianBlur stdDeviation="1.55" />
+    </filter>
+    <clipPath id="edge">
+      <rect x="1" y="1" width="158" height="158" rx="35" />
+    </clipPath>
+    <linearGradient id="roof0" x1="0" y1="0" x2="100%" y2="30%">
+      <stop stop-color="#b9e7ad" />
+      <stop offset="1" stop-color="#71ba82" />
+    </linearGradient>
+    <linearGradient id="left0" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#71ba82" />
+      <stop offset="1" stop-color="#307f62" />
+    </linearGradient>
+    <linearGradient id="right0" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#307f62" />
+      <stop offset="1" stop-color="#205a43" />
+    </linearGradient>
+    <linearGradient id="roof1" x1="0" y1="0" x2="100%" y2="30%">
+      <stop stop-color="#cdf0ae" />
+      <stop offset="1" stop-color="#9bcf7c" />
+    </linearGradient>
+    <linearGradient id="left1" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#9bcf7c" />
+      <stop offset="1" stop-color="#5c9764" />
+    </linearGradient>
+    <linearGradient id="right1" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#5c9764" />
+      <stop offset="1" stop-color="#397150" />
+    </linearGradient>
+    <linearGradient id="roof2" x1="0" y1="0" x2="100%" y2="30%">
+      <stop stop-color="#c4e298" />
+      <stop offset="1" stop-color="#88ba6b" />
+    </linearGradient>
+    <linearGradient id="left2" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#88ba6b" />
+      <stop offset="1" stop-color="#4e9364" />
+    </linearGradient>
+    <linearGradient id="right2" x1="0" y1="0" x2="18%" y2="100%">
+      <stop stop-color="#4e9364" />
+      <stop offset="1" stop-color="#376d4b" />
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#edge)">
+    <rect x="1" y="1" width="158" height="158" rx="35" fill="url(#ground)" stroke-width="1.35" stroke-opacity=".48" />
+    <g transform="translate(80 80) scale(1.10) translate(-80 -80)">
+      <polygon points="80.00,127.25 25.82,99.38 25.82,104.38 80.00,132.25" fill="url(#deck-front)" />
+      <polygon points="134.18,99.38 80.00,127.25 80.00,132.25 134.18,104.38" fill="url(#deck-side)" />
+      <polygon points="80.00,71.52 134.18,99.38 80.00,127.25 25.82,99.38" fill="url(#deck)" />
+      <polyline points="25.82,99.38 80.00,71.52 134.18,99.38" fill="none" stroke="#ffffea" stroke-width="1.05" stroke-opacity="0.6" stroke-linecap="round" stroke-linejoin="round" />
+      <polygon points="80.00,74.64 91.13,80.36 80.00,86.09 68.87,80.36" fill="#d7e6a1" />
+      <polygon points="92.28,80.96 103.41,86.68 92.28,92.41 81.16,86.68" fill="#82aa64" />
+      <polygon points="104.57,87.28 115.70,93.00 104.57,98.72 93.44,93.00" fill="#d7e6a1" />
+      <polygon points="116.85,93.59 127.98,99.32 116.85,105.04 105.72,99.32" fill="#acc780" />
+      <polygon points="67.72,80.96 78.84,86.68 67.72,92.41 56.59,86.68" fill="#acc780" />
+      <polygon points="80.00,87.28 91.13,93.00 80.00,98.72 68.87,93.00" fill="#739e68" />
+      <polygon points="92.28,93.59 103.42,99.32 92.28,105.04 81.16,99.32" fill="#82aa64" />
+      <polygon points="104.57,99.91 115.70,105.64 104.57,111.36 93.44,105.64" fill="#58965d" />
+      <polygon points="55.43,87.28 66.56,93.00 55.43,98.72 44.30,93.00" fill="#d7e6a1" />
+      <polygon points="67.72,93.59 78.84,99.32 67.72,105.04 56.58,99.32" fill="#acc780" />
+      <polygon points="80.00,99.91 91.13,105.64 80.00,111.36 68.87,105.64" fill="#d7e6a1" />
+      <polygon points="92.28,106.23 103.41,111.95 92.28,117.68 81.16,111.95" fill="#acc780" />
+      <polygon points="43.15,93.59 54.27,99.32 43.15,105.04 32.02,99.32" fill="#d9d995" />
+      <polygon points="55.43,99.91 66.56,105.64 55.43,111.36 44.30,105.64" fill="#82aa64" />
+      <polygon points="67.72,106.23 78.84,111.95 67.72,117.68 56.59,111.95" fill="#739e68" />
+      <polygon points="80.00,112.55 91.13,118.27 80.00,124.00 68.87,118.27" fill="#58965d" />
+      <polygon points="102.26,48.10 83.15,38.28 83.15,99.28 102.26,109.10" fill="url(#left0)" />
+      <polygon points="121.37,38.28 102.26,48.10 102.26,109.10 121.37,99.28" fill="url(#right0)" />
+      <polygon points="102.26,28.45 121.37,38.28 102.26,48.10 83.15,38.28" fill="url(#roof0)" />
+      <polyline points="83.15,38.28 102.26,28.45 121.37,38.28" fill="none" stroke="#fff9db" stroke-width="1.05" stroke-opacity="0.47" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="102.26,48.10 102.26,109.10" fill="none" stroke="#edf1c5" stroke-width="0.75" stroke-opacity="0.2585" stroke-linecap="round" stroke-linejoin="round" />
+      <polygon points="62.15,61.48 43.46,51.87 43.46,97.87 62.15,107.48" fill="url(#left1)" />
+      <polygon points="81.26,51.66 62.15,61.48 62.15,107.48 81.26,97.66" fill="url(#right1)" />
+      <polygon points="62.57,42.04 81.26,51.66 62.15,61.48 43.46,51.87" fill="url(#roof1)" />
+      <polyline points="43.46,51.87 62.57,42.04 81.26,51.66" fill="none" stroke="#fff9db" stroke-width="1.05" stroke-opacity="0.47" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="62.15,61.48 62.15,107.48" fill="none" stroke="#edf1c5" stroke-width="0.75" stroke-opacity="0.2585" stroke-linecap="round" stroke-linejoin="round" />
+      <polygon points="79.37,92.80 60.47,83.08 60.47,110.08 79.37,119.80" fill="url(#left2)" />
+      <polygon points="98.69,82.86 79.37,92.80 79.37,119.80 98.69,109.86" fill="url(#right2)" />
+      <polygon points="79.79,73.14 98.69,82.86 79.37,92.80 60.47,83.08" fill="url(#roof2)" />
+      <polyline points="60.47,83.08 79.79,73.14 98.69,82.86" fill="none" stroke="#fff9db" stroke-width="1.05" stroke-opacity="0.47" stroke-linecap="round" stroke-linejoin="round" />
+      <polyline points="79.37,92.80 79.37,119.80" fill="none" stroke="#edf1c5" stroke-width="0.75" stroke-opacity="0.2585" stroke-linecap="round" stroke-linejoin="round" />
+    </g>
+  </g>
+</svg>
